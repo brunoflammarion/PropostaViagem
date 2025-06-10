@@ -1,0 +1,125 @@
+﻿@model SistemaUsuarios.Models.ViewModels.PropostaViewModel
+
+<h2>Editar Proposta de Viagem</h2>
+
+<div class="row">
+    <div class="col-md-8">
+        <form asp-action="Editar" method="post">
+            <input asp-for="Id" type="hidden" />
+            <input asp-for="UsuarioId" type="hidden" />
+            <input asp-for="DataCriacao" type="hidden" />
+
+            <div asp-validation-summary="All" class="text-danger"></div>
+
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5>Informações Básicas</h5>
+                    <span class="badge bg-info">@Model.StatusProposta</span>
+                </div>
+                <div class="card-body">
+                    <div class="form-group mb-3">
+                        <label asp-for="Titulo" class="form-label"></label>
+                        <input asp-for="Titulo" class="form-control" />
+                        <span asp-validation-for="Titulo" class="text-danger"></span>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="DataInicio" class="form-label"></label>
+                            <input asp-for="DataInicio" class="form-control" type="date" />
+                            <span asp-validation-for="DataInicio" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="DataFim" class="form-label"></label>
+                            <input asp-for="DataFim" class="form-control" type="date" />
+                            <span asp-validation-for="DataFim" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="NumeroPassageiros" class="form-label"></label>
+                            <input asp-for="NumeroPassageiros" class="form-control" type="number" min="1" max="50" />
+                            <span asp-validation-for="NumeroPassageiros" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="NumeroCriancas" class="form-label"></label>
+                            <input asp-for="NumeroCriancas" class="form-control" type="number" min="0" max="20" />
+                            <span asp-validation-for="NumeroCriancas" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>Configurações</h5>
+                </div>
+                <div class="card-body">
+                    <div class="form-group mb-3">
+                        <label asp-for="StatusProposta" class="form-label"></label>
+                        <select asp-for="StatusProposta" class="form-control">
+                            <option value="1">Rascunho</option>
+                            <option value="2">Enviada</option>
+                            <option value="3">Aprovada</option>
+                            <option value="4">Rejeitada</option>
+                            <option value="5">Cancelada</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label asp-for="FotoCapa" class="form-label"></label>
+                        <input asp-for="FotoCapa" class="form-control" />
+                        <span asp-validation-for="FotoCapa" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label asp-for="LayoutId" class="form-label"></label>
+                        <select asp-for="LayoutId" class="form-control">
+                            <option value="">Selecione um layout</option>
+                            <option value="1">Layout Padrão - Layout padrão do sistema</option>
+                            <option value="2">Layout Executivo - Layout para viagens executivas</option>
+                            <option value="3">Layout Familiar - Layout para viagens em família</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label asp-for="ObservacoesGerais" class="form-label"></label>
+                        <textarea asp-for="ObservacoesGerais" class="form-control" rows="4"></textarea>
+                    </div>
+
+                    <div class="form-check mb-3">
+                        <input asp-for="LinkPublicoAtivo" class="form-check-input" />
+                        <label asp-for="LinkPublicoAtivo" class="form-check-label"></label>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label asp-for="DataExpiracaoLink" class="form-label"></label>
+                        <input asp-for="DataExpiracaoLink" class="form-control" type="datetime-local" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                <a href="/Proposta" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5>Informações</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Criada em:</strong> @(Model.DataCriacao?.ToString("dd/MM/yyyy HH:mm") ?? "N/A")</p>
+                @if (Model.DataModificacao.HasValue)
+                {
+                    <p><strong>Modificada em:</strong> @Model.DataModificacao.Value.ToString("dd/MM/yyyy HH:mm")</p>
+                }
+                <p><strong>Status atual:</strong> @Model.StatusProposta</p>
+            </div>
+        </div>
+    </div>
+</div>

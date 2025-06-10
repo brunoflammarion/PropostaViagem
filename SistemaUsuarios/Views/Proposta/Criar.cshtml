@@ -1,0 +1,75 @@
+﻿@model SistemaUsuarios.Models.ViewModels.PropostaViewModel
+
+<h2>Nova Proposta de Viagem</h2>
+
+<form asp-action="Criar" method="post" enctype="multipart/form-data">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>Informações da Viagem</h5>
+        </div>
+        <div class="card-body">
+            <div class="form-group mb-3">
+                <label asp-for="Titulo" class="form-label"></label>
+                <input asp-for="Titulo" class="form-control" placeholder="Ex: Viagem para Europa - Família Silva" />
+                <span asp-validation-for="Titulo" class="text-danger"></span>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label asp-for="DataInicio" class="form-label"></label>
+                    <input asp-for="DataInicio" class="form-control" type="date" />
+                    <span asp-validation-for="DataInicio" class="text-danger"></span>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label asp-for="DataFim" class="form-label"></label>
+                    <input asp-for="DataFim" class="form-control" type="date" />
+                    <span asp-validation-for="DataFim" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label asp-for="NumeroPassageiros" class="form-label"></label>
+                    <input asp-for="NumeroPassageiros" class="form-control" type="number" min="1" max="50" value="1" />
+                    <span asp-validation-for="NumeroPassageiros" class="text-danger"></span>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label asp-for="NumeroCriancas" class="form-label"></label>
+                    <input asp-for="NumeroCriancas" class="form-control" type="number" min="0" max="20" value="0" />
+                    <span asp-validation-for="NumeroCriancas" class="text-danger"></span>
+                </div>
+            </div>
+
+            <!-- NOVO CAMPO DE UPLOAD -->
+            <div class="form-group mb-3">
+                <label asp-for="FotoCapaUpload" class="form-label"></label>
+                <input asp-for="FotoCapaUpload" class="form-control" type="file" accept="image/*" />
+                <span asp-validation-for="FotoCapaUpload" class="text-danger"></span>
+                <small class="form-text text-muted">Formatos aceitos: JPG, PNG, GIF (máx: 5MB)</small>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="ObservacoesGerais" class="form-label"></label>
+                <textarea asp-for="ObservacoesGerais" class="form-control" rows="4" placeholder="Observações, preferências, requisitos especiais..."></textarea>
+            </div>
+
+            <div class="form-check mb-3">
+                <input asp-for="LinkPublicoAtivo" class="form-check-input" checked />
+                <label asp-for="LinkPublicoAtivo" class="form-check-label"></label>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="DataExpiracaoLink" class="form-label"></label>
+                <input asp-for="DataExpiracaoLink" class="form-control" type="datetime-local" />
+                <small class="form-text text-muted">Deixe em branco para nunca expirar</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <button type="submit" class="btn btn-success">Salvar Proposta</button>
+        <a href="/Proposta" class="btn btn-secondary">Cancelar</a>
+    </div>
+</form>

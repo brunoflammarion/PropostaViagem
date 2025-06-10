@@ -1,0 +1,47 @@
+﻿@{
+    ViewData["Title"] = "Página Inicial";
+}
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="jumbotron bg-light p-5 rounded">
+            <h1 class="display-4">Bem-vindo ao Sistema de Viagens!</h1>
+            <p class="lead">Gerencie usuários e propostas de viagem de forma fácil e eficiente.</p>
+            <hr class="my-4">
+            <p class="mb-4">Use a navegação acima para acessar as funcionalidades disponíveis.</p>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <i class="fas fa-users fa-3x text-primary mb-3"></i>
+                <h5 class="card-title">Gerenciar Usuários</h5>
+                <p class="card-text">Cadastre e gerencie usuários do sistema.</p>
+                <a href="/Usuario" class="btn btn-primary">Acessar</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <i class="fas fa-suitcase fa-3x text-success mb-3"></i>
+                <h5 class="card-title">Propostas de Viagem</h5>
+                <p class="card-text">Crie e gerencie propostas de viagem.</p>
+                <a href="/Proposta" class="btn btn-success">Acessar</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <i class="fas fa-plus fa-3x text-warning mb-3"></i>
+                <h5 class="card-title">Nova Proposta</h5>
+                <p class="card-text">Crie uma nova proposta de viagem.</p>
+                <a href="/Proposta/Criar" class="btn btn-warning">Criar</a>
+            </div>
+        </div>
+    </div>
+</div>

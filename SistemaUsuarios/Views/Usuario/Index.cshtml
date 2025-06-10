@@ -1,0 +1,421 @@
+﻿@model IEnumerable<SistemaUsuarios.Models.Usuario>
+@{
+    ViewData["Title"] = "Usuários";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2><i class="fas fa-users me-2"></i>Usuários Cadastrados</h2>
+        <small class="text-muted">Gerencie todos os usuários do sistema</small>
+    </div>
+    <a href="@Url.Action("Cadastrar")" class="btn btn-success">
+        <i class="fas fa-plus me-2"></i>Novo Usuário
+    </a>
+</div>
+
+<!-- Filtros e Busca -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="input-group">
+            <span class="input-group-text"><i class="fas fa-search"></i></span>
+            <input type="text" class="form-control" id="searchInput" placeholder="Buscar por nome, email, telefone ou CPF...">
+        </div>
+    </div>
+    <div class="col-md-3">
+        <select class="form-select" id="statusFilter">
+            <option value="">Todos os status</option>
+            <option value="1">Novo</option>
+            <option value="2">Ativo</option>
+            <option value="3">Inativo</option>
+            <option value="4">Bloqueado</option>
+        </select>
+    </div>
+    <div class="col-md-3">
+        <button class="btn btn-outline-secondary w-100" id="clearFilters">
+            <i class="fas fa-times me-1"></i>Limpar Filtros
+        </button>
+    </div>
+</div>
+
+<!-- Estatísticas rápidas -->
+@if (Model.Any())
+{
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-star fa-2x mb-2"></i>
+                    <h4>@Model.Count(u => u.Status == StatusUsuario.Novo)</h4>
+                    <small>Novos</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-check-circle fa-2x mb-2"></i>
+                    <h4>@Model.Count(u => u.Status == StatusUsuario.Ativo)</h4>
+                    <small>Ativos</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-secondary text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-pause-circle fa-2x mb-2"></i>
+                    <h4>@Model.Count(u => u.Status == StatusUsuario.Inativo)</h4>
+                    <small>Inativos</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-ban fa-2x mb-2"></i>
+                    <h4>@Model.Count(u => u.Status == StatusUsuario.Bloqueado)</h4>
+                    <small>Bloqueados</small>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="card shadow">
+    <div class="card-body">
+        @if (Model.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-hover" id="usuariosTable">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>
+                                <i class="fas fa-user me-1"></i>Nome
+                                <i class="fas fa-sort text-muted ms-1" style="cursor: pointer;" data-column="nome"></i>
+                            </th>
+                            <th>
+                                <i class="fas fa-envelope me-1"></i>Email
+                                <i class="fas fa-sort text-muted ms-1" style="cursor: pointer;" data-column="email"></i>
+                            </th>
+                            <th>
+                                <i class="fas fa-phone me-1"></i>Telefone
+                            </th>
+                            <th>
+                                <i class="fas fa-id-card me-1"></i>CPF
+                            </th>
+                            <th>
+                                <i class="fas fa-calendar me-1"></i>Data Criação
+                                <i class="fas fa-sort text-muted ms-1" style="cursor: pointer;" data-column="data"></i>
+                            </th>
+                            <th>
+                                <i class="fas fa-info-circle me-1"></i>Status
+                            </th>
+                            <th width="200">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var usuario in Model)
+                        {
+                            <tr data-status="@((int)usuario.Status)" data-search="@(usuario.Nome.ToLower()) @(usuario.Email.ToLower()) @(FormatarTelefone(usuario.Telefone)) @(FormatarCPF(usuario.CPF))">
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 35px; height: 35px;">
+                                            @(usuario.Nome.Substring(0, 1).ToUpper())
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold">@usuario.Nome</div>
+                                            <small class="text-muted">ID: @usuario.Id.ToString().Substring(0, 8)...</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div>
+                                        <i class="fas fa-envelope text-muted me-1"></i>
+                                        <span>@usuario.Email</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div>
+                                        <i class="fas fa-phone text-muted me-1"></i>
+                                        <span>@(FormatarTelefone(usuario.Telefone))</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div>
+                                        <i class="fas fa-id-card text-muted me-1"></i>
+                                        <span class="font-monospace">@(FormatarCPF(usuario.CPF))</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div>
+                                        <div><i class="fas fa-calendar text-muted me-1"></i>@usuario.DataCriacao.ToString("dd/MM/yyyy")</div>
+                                        <small class="text-muted"><i class="fas fa-clock me-1"></i>@usuario.DataCriacao.ToString("HH:mm")</small>
+                                    </div>
+                                </td>
+                                <td>
+                                    @switch (usuario.Status)
+                                    {
+                                        case StatusUsuario.Novo:
+                                            <span class="badge bg-info">
+                                                <i class="fas fa-star me-1"></i>Novo
+                                            </span>
+                                            break;
+                                        case StatusUsuario.Ativo:
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-check-circle me-1"></i>Ativo
+                                            </span>
+                                            break;
+                                        case StatusUsuario.Inativo:
+                                            <span class="badge bg-secondary">
+                                                <i class="fas fa-pause-circle me-1"></i>Inativo
+                                            </span>
+                                            break;
+                                        case StatusUsuario.Bloqueado:
+                                            <span class="badge bg-danger">
+                                                <i class="fas fa-ban me-1"></i>Bloqueado
+                                            </span>
+                                            break;
+                                    }
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="@Url.Action("Editar", new { id = usuario.Id })"
+                                           class="btn btn-sm btn-primary" title="Editar usuário">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+
+                                        @if (usuario.Status != StatusUsuario.Ativo)
+                                        {
+                                            <form asp-action="AlterarStatus" method="post" class="d-inline">
+                                                <input type="hidden" name="id" value="@usuario.Id" />
+                                                <input type="hidden" name="status" value="@((int)StatusUsuario.Ativo)" />
+                                                <button type="submit" class="btn btn-sm btn-success" title="Ativar usuário"
+                                                        data-confirm="Deseja ativar este usuário?">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                            </form>
+                                        }
+
+                                        @if (usuario.Status != StatusUsuario.Inativo)
+                                        {
+                                            <form asp-action="AlterarStatus" method="post" class="d-inline">
+                                                <input type="hidden" name="id" value="@usuario.Id" />
+                                                <input type="hidden" name="status" value="@((int)StatusUsuario.Inativo)" />
+                                                <button type="submit" class="btn btn-sm btn-secondary" title="Inativar usuário"
+                                                        data-confirm="Deseja inativar este usuário?">
+                                                    <i class="fas fa-pause"></i>
+                                                </button>
+                                            </form>
+                                        }
+
+                                        @if (usuario.Status != StatusUsuario.Bloqueado)
+                                        {
+                                            <form asp-action="AlterarStatus" method="post" class="d-inline">
+                                                <input type="hidden" name="id" value="@usuario.Id" />
+                                                <input type="hidden" name="status" value="@((int)StatusUsuario.Bloqueado)" />
+                                                <button type="submit" class="btn btn-sm btn-danger" title="Bloquear usuário"
+                                                        data-confirm="Deseja bloquear este usuário? Esta ação impedirá o login.">
+                                                    <i class="fas fa-lock"></i>
+                                                </button>
+                                            </form>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Mostrando <span id="showing-count">@Model.Count()</span> de <span id="total-count">@Model.Count()</span> usuários
+                    </small>
+                </div>
+                <div class="col-md-6 text-end">
+                    <small class="text-muted">
+                        <i class="fas fa-clock me-1"></i>
+                        Última atualização: @DateTime.Now.ToString("dd/MM/yyyy HH:mm")
+                    </small>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-5">
+                <i class="fas fa-users fa-4x text-muted mb-3"></i>
+                <h5 class="text-muted">Nenhum usuário cadastrado</h5>
+                <p class="text-muted mb-4">Comece criando o primeiro usuário do sistema.</p>
+                <a href="@Url.Action("Cadastrar")" class="btn btn-success btn-lg">
+                    <i class="fas fa-plus me-2"></i>Cadastrar Primeiro Usuário
+                </a>
+            </div>
+        }
+    </div>
+</div>
+
+@functions {
+    private string FormatarCPF(string cpf)
+    {
+        if (string.IsNullOrEmpty(cpf) || cpf.Length != 11)
+            return cpf;
+
+        return $"{cpf.Substring(0, 3)}.{cpf.Substring(3, 3)}.{cpf.Substring(6, 3)}-{cpf.Substring(9, 2)}";
+    }
+
+    private string FormatarTelefone(string telefone)
+    {
+        if (string.IsNullOrEmpty(telefone))
+            return telefone;
+
+        if (telefone.Length == 11)
+            return $"({telefone.Substring(0, 2)}) {telefone.Substring(2, 5)}-{telefone.Substring(7, 4)}";
+        else if (telefone.Length == 10)
+            return $"({telefone.Substring(0, 2)}) {telefone.Substring(2, 4)}-{telefone.Substring(6, 4)}";
+
+        return telefone;
+    }
+}
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // Funcionalidade de busca
+            $('#searchInput').on('keyup', function () {
+                filterTable();
+            });
+
+            // Filtro por status
+            $('#statusFilter').on('change', function () {
+                filterTable();
+            });
+
+            // Limpar filtros
+            $('#clearFilters').on('click', function () {
+                $('#searchInput').val('');
+                $('#statusFilter').val('');
+                filterTable();
+            });
+
+            // Ordenação das colunas
+            $('[data-column]').on('click', function () {
+                const column = $(this).data('column');
+                sortTable(column);
+            });
+
+            // Confirmação para alterações de status
+            $('[data-confirm]').on('click', function (e) {
+                if (!confirm($(this).data('confirm'))) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+        });
+
+        function filterTable() {
+            const searchTerm = $('#searchInput').val().toLowerCase();
+            const statusFilter = $('#statusFilter').val();
+            let visibleCount = 0;
+
+            $('#usuariosTable tbody tr').each(function () {
+                const row = $(this);
+                const searchData = row.data('search');
+                const rowStatus = row.data('status').toString();
+
+                let showRow = true;
+
+                // Filtro de busca
+                if (searchTerm && !searchData.includes(searchTerm)) {
+                    showRow = false;
+                }
+
+                // Filtro de status
+                if (statusFilter && rowStatus !== statusFilter) {
+                    showRow = false;
+                }
+
+                if (showRow) {
+                    row.show();
+                    visibleCount++;
+                } else {
+                    row.hide();
+                }
+            });
+
+            // Atualizar contador
+            $('#showing-count').text(visibleCount);
+
+            // Mostrar mensagem se nenhum resultado
+            if (visibleCount === 0 && ($('#searchInput').val() || $('#statusFilter').val())) {
+                if ($('#no-results').length === 0) {
+                    $('#usuariosTable tbody').append(`
+                                <tr id="no-results">
+                                    <td colspan="7" class="text-center py-4">
+                                        <i class="fas fa-search fa-2x text-muted mb-2"></i>
+                                        <div class="text-muted">Nenhum usuário encontrado com os filtros aplicados</div>
+                                        <small class="text-muted">Tente ajustar os critérios de busca</small>
+                                    </td>
+                                </tr>
+                            `);
+                }
+            } else {
+                $('#no-results').remove();
+            }
+        }
+
+        let sortDirection = {};
+
+        function sortTable(column) {
+            const tbody = $('#usuariosTable tbody');
+            const rows = tbody.find('tr:not(#no-results)').toArray();
+
+            // Alternar direção da ordenação
+            sortDirection[column] = sortDirection[column] === 'asc' ? 'desc' : 'asc';
+
+            rows.sort(function (a, b) {
+                let aVal, bVal;
+
+                switch (column) {
+                    case 'nome':
+                        aVal = $(a).find('td:first .fw-bold').text();
+                        bVal = $(b).find('td:first .fw-bold').text();
+                        break;
+                    case 'email':
+                        aVal = $(a).find('td:eq(1) span').text();
+                        bVal = $(b).find('td:eq(1) span').text();
+                        break;
+                    case 'data':
+                        aVal = $(a).find('td:eq(4) div').text();
+                        bVal = $(b).find('td:eq(4) div').text();
+                        break;
+                    default:
+                        return 0;
+                }
+
+                if (sortDirection[column] === 'asc') {
+                    return aVal.localeCompare(bVal);
+                } else {
+                    return bVal.localeCompare(aVal);
+                }
+            });
+
+            // Atualizar ícones de ordenação
+            $('[data-column] i.fa-sort, [data-column] i.fa-sort-up, [data-column] i.fa-sort-down')
+                .removeClass('fa-sort-up fa-sort-down').addClass('fa-sort');
+
+            const icon = $(`[data-column="${column}"] i`);
+            icon.removeClass('fa-sort').addClass(sortDirection[column] === 'asc' ? 'fa-sort-up' : 'fa-sort-down');
+
+            // Reordenar as linhas
+            $.each(rows, function (index, row) {
+                tbody.append(row);
+            });
+        }
+
+        // Auto-refresh da página a cada 5 minutos (opcional)
+        // setInterval(function() {
+        //     location.reload();
+        // }, 300000);
+    </script>
+}

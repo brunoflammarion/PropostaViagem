@@ -1,0 +1,307 @@
+﻿@model SistemaUsuarios.Models.ViewModels.PropostaFiltroViewModel
+@using SistemaUsuarios.Models
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Gerenciar Propostas de Viagem</h2>
+    <a href="/Proposta/Criar" class="btn btn-success">
+        <i class="fas fa-plus me-1"></i>Nova Proposta
+    </a>
+</div>
+
+<!-- Estatísticas -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <h4>@Model.TotalPropostas</h4>
+                <small>Total de Propostas</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-secondary text-white">
+            <div class="card-body text-center">
+                <h4>@Model.TotalRascunhos</h4>
+                <small>Rascunhos</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body text-center">
+                <h4>@Model.TotalEnviadas</h4>
+                <small>Enviadas</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <h4>@Model.TotalAprovadas</h4>
+                <small>Aprovadas</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <button class="btn btn-link" type="button" data-bs-toggle="collapse" data-bs-target="#filtros">
+                <i class="fas fa-filter me-1"></i>Filtros de Busca
+            </button>
+        </h5>
+    </div>
+    <div id="filtros" class="collapse">
+        <div class="card-body">
+            <form method="get" asp-action="Index">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label asp-for="TermoBusca" class="form-label"></label>
+                        <input asp-for="TermoBusca" class="form-control" placeholder="Buscar por título..." />
+                    </div>
+
+                    <div class="col-md-2 mb-3">
+                        <label asp-for="FiltroStatus" class="form-label"></label>
+                        <select asp-for="FiltroStatus" class="form-control">
+                            <option value="">Todos os Status</option>
+                            <option value="1">Rascunho</option>
+                            <option value="2">Enviada</option>
+                            <option value="3">Aprovada</option>
+                            <option value="4">Rejeitada</option>
+                            <option value="5">Cancelada</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-2 mb-3">
+                        <label asp-for="DataInicioFiltro" class="form-label"></label>
+                        <input asp-for="DataInicioFiltro" class="form-control" type="date" />
+                    </div>
+
+                    <div class="col-md-2 mb-3">
+                        <label asp-for="DataFimFiltro" class="form-label"></label>
+                        <input asp-for="DataFimFiltro" class="form-control" type="date" />
+                    </div>
+
+                    <div class="col-md-2 mb-3">
+                        <label asp-for="FiltroUsuario" class="form-label"></label>
+                        <select asp-for="FiltroUsuario" class="form-control">
+                            <option value="">Todos os Usuários</option>
+                            @foreach (var usuario in Model.Usuarios)
+                            {
+                                <option value="@usuario.Id">@usuario.Nome</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="col-md-1 mb-3">
+                        <label asp-for="FiltroLinkAtivo" class="form-label"></label>
+                        <select asp-for="FiltroLinkAtivo" class="form-control">
+                            <option value="">Todos</option>
+                            <option value="true">Ativo</option>
+                            <option value="false">Inativo</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search me-1"></i>Filtrar
+                        </button>
+                        <a href="/Proposta" class="btn btn-secondary">
+                            <i class="fas fa-times me-1"></i>Limpar
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Lista de Propostas -->
+@if (Model.Propostas.Any())
+{
+    <div class="card">
+        <div class="card-header">
+            <h5>Propostas Encontradas (@Model.Propostas.Count)</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Foto</th>
+                        <th>Título</th>
+                        <th>Usuário</th>
+                        <th>Período</th>
+                        <th>Passageiros</th>
+                        <th>Status</th>
+                        <th>Link</th>
+                        <th>Criada em</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var proposta in Model.Propostas)
+                    {
+                        <tr>
+                            <td>
+                                @if (!string.IsNullOrEmpty(proposta.FotoCapa))
+                                {
+                                    <img src="@proposta.FotoCapa" alt="Foto" class="img-thumbnail" style="width: 50px; height: 50px; object-fit: cover;" />
+                                }
+                                else
+                                {
+                                    <div class="bg-light d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                        <i class="fas fa-image text-muted"></i>
+                                    </div>
+                                }
+                            </td>
+                            <td>
+                                <strong>@proposta.Titulo</strong>
+                                @if (proposta.DuracaoDias.HasValue)
+                                {
+                                    <br>
+
+                                    <small class="text-muted">@proposta.DuracaoDias dias</small>
+                                }
+                            </td>
+                            <td>@proposta.NomeUsuario</td>
+                            <td>
+                                @if (proposta.DataInicio.HasValue && proposta.DataFim.HasValue)
+                                {
+                                    <span>@proposta.DataInicio.Value.ToString("dd/MM/yyyy")</span>
+
+                                    <br>
+                                    <small class="text-muted">até @proposta.DataFim.Value.ToString("dd/MM/yyyy")</small>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">Não definido</span>
+                                }
+                            </td>
+                            <td>
+                                @proposta.NumeroPassageiros adulto(s)
+                                @if (proposta.NumeroCriancas > 0)
+                                {
+                                    <br>
+
+                                    <small>@proposta.NumeroCriancas criança(s)</small>
+                                }
+                            </td>
+                            <td>
+                                <span class="badge @proposta.StatusCssClass">@proposta.StatusProposta</span>
+                            </td>
+                            <td>
+                                @if (proposta.LinkPublicoAtivo)
+                                {
+                                    <span class="text-success"><i class="fas fa-link"></i> Ativo</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted"><i class="fas fa-link-slash"></i> Inativo</span>
+                                }
+                            </td>
+                            <td>
+                                @proposta.DataCriacao.ToString("dd/MM/yyyy")
+                                @if (proposta.DataModificacao.HasValue)
+                                {
+                                    <br>
+
+                                    <small class="text-muted">Editada: @proposta.DataModificacao.Value.ToString("dd/MM/yyyy")</small>
+                                }
+                            </td>
+                            <td>
+                                <div class="btn-group-vertical btn-group-sm" role="group">
+                                    <!-- Ver Detalhes -->
+                                    <a href="/Proposta/Detalhes/@proposta.Id" class="btn btn-outline-info btn-sm" title="Ver Detalhes">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+
+                                    <!-- Editar -->
+                                    <a href="/Proposta/Editar/@proposta.Id" class="btn btn-outline-primary btn-sm" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+
+                                    <!-- Compartilhar -->
+                                    @if (proposta.LinkPublicoAtivo)
+                                    {
+                                        <button class="btn btn-outline-success btn-sm" title="Copiar Link" onclick="copiarLink('@proposta.LinkCompartilhamento')">
+                                            <i class="fas fa-share"></i>
+                                        </button>
+                                    }
+
+                                    <!-- Ativar/Inativar Link -->
+                                    <form method="post" action="/Proposta/AlterarLink" style="display:inline;">
+                                        <input type="hidden" name="id" value="@proposta.Id" />
+                                        <input type="hidden" name="ativo" value="@(!proposta.LinkPublicoAtivo)" />
+                                        @if (proposta.LinkPublicoAtivo)
+                                        {
+                                            <button type="submit" class="btn btn-outline-warning btn-sm" title="Inativar Link">
+                                                <i class="fas fa-link-slash"></i>
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <button type="submit" class="btn btn-outline-success btn-sm" title="Ativar Link">
+                                                <i class="fas fa-link"></i>
+                                            </button>
+                                        }
+                                    </form>
+
+                                    <!-- Alterar Status -->
+                                    @if (proposta.StatusProposta == StatusProposta.Rascunho)
+                                    {
+                                        <form method="post" action="/Proposta/AlterarStatus" style="display:inline;">
+                                            <input type="hidden" name="id" value="@proposta.Id" />
+                                            <input type="hidden" name="status" value="2" />
+                                            <button type="submit" class="btn btn-outline-warning btn-sm" title="Enviar">
+                                                <i class="fas fa-paper-plane"></i>
+                                            </button>
+                                        </form>
+                                    }
+
+                                    @if (proposta.StatusProposta == StatusProposta.Enviada)
+                                    {
+                                        <form method="post" action="/Proposta/AlterarStatus" style="display:inline;">
+                                            <input type="hidden" name="id" value="@proposta.Id" />
+                                            <input type="hidden" name="status" value="3" />
+                                            <button type="submit" class="btn btn-outline-success btn-sm" title="Aprovar">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                        </form>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+else
+{
+    <div class="text-center py-5">
+        <i class="fas fa-search fa-3x text-muted mb-3"></i>
+        <h5 class="text-muted">Nenhuma proposta encontrada</h5>
+        <p class="text-muted">Tente ajustar os filtros ou criar uma nova proposta.</p>
+        <a href="/Proposta/Criar" class="btn btn-success">
+            <i class="fas fa-plus me-1"></i>Criar Primeira Proposta
+        </a>
+    </div>
+}
+
+<!-- JavaScript para copiar link -->
+<script>
+    function copiarLink(link) {
+        const linkCompleto = window.location.origin + link;
+        navigator.clipboard.writeText(linkCompleto).then(function() {
+            alert('Link copiado para a área de transferência!');
+        }, function(err) {
+            console.error('Erro ao copiar link: ', err);
+            alert('Erro ao copiar link. Tente novamente.');
+        });
+    }
+</script>

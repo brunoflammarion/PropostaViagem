@@ -1,0 +1,620 @@
+﻿@{
+    Layout = "_LayoutPublico";
+    ViewData["Title"] = Model.Titulo;
+}
+@model SistemaUsuarios.Models.Proposta
+@using SistemaUsuarios.Models
+
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@Model.Titulo - Proposta de Viagem</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .hero-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 60px 0;
+        }
+
+        .card-shadow {
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease-in-out;
+        }
+
+            .card-shadow:hover {
+                transform: translateY(-2px);
+            }
+
+        .btn-contact {
+            transition: all 0.3s ease;
+        }
+
+            .btn-contact:hover {
+                transform: scale(1.05);
+            }
+
+        .scroll-indicator {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 0%;
+            height: 3px;
+            background: linear-gradient(to right, #667eea, #764ba2);
+            z-index: 9999;
+            transition: width 0.1s ease;
+        }
+
+        .analytics-debug {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Indicador de Scroll -->
+    <div class="scroll-indicator" id="scrollIndicator"></div>
+
+    <!-- Hero Section -->
+    <div class="hero-section">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="display-4 mb-3">@Model.Titulo</h1>
+                    <p class="lead">Proposta de viagem organizada por @Model.Usuario.Nome</p>
+
+                    <div class="row mt-4">
+                        @if (Model.DataInicio.HasValue && Model.DataFim.HasValue)
+                        {
+                            var dias = (Model.DataFim.Value - Model.DataInicio.Value).Days + 1;
+                            <div class="col-md-4 mb-3">
+                                <h5><i class="fas fa-calendar me-2"></i>@dias Dias</h5>
+                                <p class="mb-0">@Model.DataInicio.Value.ToString("dd/MM/yyyy") - @Model.DataFim.Value.ToString("dd/MM/yyyy")</p>
+                            </div>
+                        }
+
+                        <div class="col-md-4 mb-3">
+                            <h5><i class="fas fa-users me-2"></i>@(Model.NumeroPassageiros + Model.NumeroCriancas) Pessoas</h5>
+                            <p class="mb-0">@Model.NumeroPassageiros adultos + @Model.NumeroCriancas crianças</p>
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <h5><i class="fas fa-check-circle me-2"></i>Status</h5>
+                            <p class="mb-0">
+                                @if (Model.StatusProposta == StatusProposta.Aprovada)
+                                {
+                                    <span class="badge bg-success fs-6">Aprovada</span>
+                                }
+                                else if (Model.StatusProposta == StatusProposta.Enviada)
+                                {
+                                    <span class="badge bg-warning fs-6">Em Análise</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-info fs-6">@Model.StatusProposta</span>
+                                }
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrEmpty(Model.FotoCapa))
+                {
+                    <div class="col-md-4">
+                        <img src="@Model.FotoCapa" alt="Foto da Viagem" class="img-fluid rounded shadow" />
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Conteúdo Principal -->
+    <div class="container my-5">
+        <div class="row">
+            <div class="col-md-8">
+                @if (!string.IsNullOrEmpty(Model.ObservacoesGerais))
+                {
+                    <div class="card card-shadow mb-4">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Detalhes da Viagem</h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-0">@Html.Raw(Model.ObservacoesGerais.Replace("\n", "<br>"))</p>
+                        </div>
+                    </div>
+                }
+
+                <div class="card card-shadow">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0"><i class="fas fa-envelope me-2"></i>Interessado na Viagem?</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>Entre em contato com o organizador para mais informações:</p>
+                        <div class="d-grid gap-2">
+                            <a href="mailto:@Model.Usuario.Email?subject=Interesse na viagem: @Model.Titulo"
+                               class="btn btn-success btn-contact"
+                               data-track="email">
+                                <i class="fas fa-envelope me-2"></i>Enviar Email
+                            </a>
+                            <a href="https://wa.me/55@(Model.Usuario.Telefone?.Replace("(", "").Replace(")", "").Replace("-", "").Replace(" ", ""))?text=Olá! Tenho interesse na viagem: @Model.Titulo"
+                               class="btn btn-success btn-contact"
+                               data-track="whatsapp"
+                               target="_blank">
+                                <i class="fab fa-whatsapp me-2"></i>WhatsApp
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Seção adicional para aumentar conteúdo -->
+                <div class="card card-shadow mt-4">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0"><i class="fas fa-map-marked-alt me-2"></i>Sobre a Viagem</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>Esta proposta foi cuidadosamente planejada para oferecer uma experiência única e memorável.</p>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check text-success me-2"></i>Planejamento detalhado</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Suporte durante toda a viagem</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Experiência personalizada</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Memórias inesquecíveis</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card card-shadow mb-4">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0"><i class="fas fa-user me-2"></i>Organizador</h5>
+                    </div>
+                    <div class="card-body">
+                        <h6>@Model.Usuario.Nome</h6>
+                        <p class="text-muted mb-2">
+                            <i class="fas fa-envelope me-1"></i>@Model.Usuario.Email
+                        </p>
+                        <p class="text-muted mb-0">
+                            <i class="fas fa-phone me-1"></i>@Model.Usuario.Telefone
+                        </p>
+                    </div>
+                </div>
+
+                <div class="card card-shadow mb-4">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0"><i class="fas fa-info me-2"></i>Informações</h5>
+                    </div>
+                    <div class="card-body">
+                        <small class="text-muted">
+                            <p><strong>Criada em:</strong> @Model.DataCriacao.ToString("dd/MM/yyyy")</p>
+                            @if (Model.DataExpiracaoLink.HasValue)
+                            {
+                                <p><strong>Link válido até:</strong> @Model.DataExpiracaoLink.Value.ToString("dd/MM/yyyy")</p>
+                            }
+                            <p><strong>Visualizações:</strong> <span id="viewCount">Carregando...</span></p>
+                        </small>
+                    </div>
+                </div>
+
+                <!-- Seção de compartilhamento -->
+                <div class="card card-shadow">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="mb-0"><i class="fas fa-share me-2"></i>Compartilhar</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-outline-primary btn-sm" onclick="compartilharWhatsApp()">
+                                <i class="fab fa-whatsapp me-1"></i>Compartilhar no WhatsApp
+                            </button>
+                            <button class="btn btn-outline-info btn-sm" onclick="copiarLink()">
+                                <i class="fas fa-copy me-1"></i>Copiar Link
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white text-center py-4 mt-5">
+        <div class="container">
+            <p class="mb-2">Sistema de Propostas de Viagem</p>
+            <small class="text-muted">Link público gerado automaticamente • Visite nosso site para criar sua proposta</small>
+        </div>
+    </footer>
+
+    <!-- Debug Analytics (apenas para desenvolvimento) -->
+    <div class="analytics-debug" id="analyticsDebug">
+        <div>Sessão: <span id="debugSession">-</span></div>
+        <div>Tempo: <span id="debugTime">0s</span></div>
+        <div>Scroll: <span id="debugScroll">0%</span></div>
+        <div>Cliques: <span id="debugClicks">0</span></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Sistema de Analytics Avançado -->
+    <script>
+        // Sistema de Analytics Avançado para Propostas
+        class PropostaAnalytics {
+            constructor(propostaId) {
+                this.propostaId = propostaId;
+                this.sessionToken = this.generateSessionToken();
+                this.startTime = new Date();
+                this.maxScroll = 0;
+                this.clicks = 0;
+                this.interactions = {
+                    whatsapp: false,
+                    email: false
+                };
+
+                this.init();
+            }
+
+            init() {
+                this.trackPageLoad();
+                this.setupScrollTracking();
+                this.setupClickTracking();
+                this.setupBeforeUnload();
+                this.sendHeartbeat();
+                this.updateDebugInfo();
+            }
+
+            generateSessionToken() {
+                return 'sess_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            }
+
+            async trackPageLoad() {
+                const data = await this.collectDeviceData();
+
+                try {
+                    await fetch('/api/proposta/analytics/start', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            propostaId: this.propostaId,
+                            sessionToken: this.sessionToken,
+                            ...data
+                        })
+                    });
+                } catch (error) {
+                    console.warn('Analytics tracking failed:', error);
+                }
+            }
+
+            async collectDeviceData() {
+                const data = {
+                    // Dados temporais
+                    dataHoraInicio: new Date().toISOString(),
+
+                    // Dados do dispositivo
+                    tipoDispositivo: this.getDeviceType(),
+                    navegador: this.getBrowserInfo(),
+                    sistemaOperacional: this.getOSInfo(),
+                    resolucaoTela: `${screen.width}x${screen.height}`,
+                    idiomaNavegador: navigator.language || navigator.userLanguage,
+
+                    // Dados de navegação
+                    urlReferenciador: document.referrer,
+                    tipoReferenciador: this.getReferrerType(document.referrer),
+
+                    // Meta dados
+                    userAgent: navigator.userAgent,
+
+                    // Device fingerprint
+                    deviceFingerprint: await this.generateDeviceFingerprint()
+                };
+
+                // Tentar obter localização (opcional)
+                try {
+                    const location = await this.getLocation();
+                    if (location) {
+                        data.latitude = location.latitude;
+                        data.longitude = location.longitude;
+                    }
+                } catch (error) {
+                    // Localização não disponível - ignorar
+                }
+
+                return data;
+            }
+
+            getDeviceType() {
+                const width = window.innerWidth;
+                if (width <= 768) return 'Mobile';
+                if (width <= 1024) return 'Tablet';
+                return 'Desktop';
+            }
+
+            getBrowserInfo() {
+                const ua = navigator.userAgent;
+                let browser = 'Unknown';
+                let version = '';
+
+                if (ua.includes('Chrome/')) {
+                    browser = 'Chrome';
+                    version = ua.match(/Chrome\/([0-9.]+)/)[1];
+                } else if (ua.includes('Firefox/')) {
+                    browser = 'Firefox';
+                    version = ua.match(/Firefox\/([0-9.]+)/)[1];
+                } else if (ua.includes('Safari/') && !ua.includes('Chrome')) {
+                    browser = 'Safari';
+                    version = ua.match(/Version\/([0-9.]+)/)?.[1] || '';
+                } else if (ua.includes('Edge/')) {
+                    browser = 'Edge';
+                    version = ua.match(/Edge\/([0-9.]+)/)[1];
+                }
+
+                return `${browser} ${version}`.trim();
+            }
+
+            getOSInfo() {
+                const ua = navigator.userAgent;
+                if (ua.includes('Windows NT')) return 'Windows';
+                if (ua.includes('Mac OS X')) return 'macOS';
+                if (ua.includes('Linux')) return 'Linux';
+                if (ua.includes('Android')) return 'Android';
+                if (ua.includes('iPhone') || ua.includes('iPad')) return 'iOS';
+                return 'Unknown';
+            }
+
+            getReferrerType(referrer) {
+                if (!referrer) return 'Direto';
+                if (referrer.includes('wa.me') || referrer.includes('whatsapp')) return 'WhatsApp';
+                if (referrer.includes('mail') || referrer.includes('gmail') || referrer.includes('outlook')) return 'Email';
+                if (referrer.includes('google')) return 'Google';
+                if (referrer.includes('facebook')) return 'Facebook';
+                if (referrer.includes('instagram')) return 'Instagram';
+                if (referrer.includes('linkedin')) return 'LinkedIn';
+                return 'Website';
+            }
+
+            async generateDeviceFingerprint() {
+                // Criar fingerprint baseado em características do dispositivo
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                ctx.textBaseline = 'top';
+                ctx.font = '14px Arial';
+                ctx.fillText('Device fingerprint', 2, 2);
+
+                const fingerprint = [
+                    navigator.userAgent,
+                    navigator.language,
+                    screen.width + 'x' + screen.height,
+                    new Date().getTimezoneOffset(),
+                    navigator.platform,
+                    canvas.toDataURL ? canvas.toDataURL() : '',
+                    navigator.hardwareConcurrency || 0
+                ].join('|');
+
+                // Hash simples do fingerprint
+                let hash = 0;
+                for (let i = 0; i < fingerprint.length; i++) {
+                    const char = fingerprint.charCodeAt(i);
+                    hash = ((hash << 5) - hash) + char;
+                    hash = hash & hash;
+                }
+
+                return 'fp_' + Math.abs(hash).toString(36);
+            }
+
+            getLocation() {
+                return new Promise((resolve, reject) => {
+                    if (!navigator.geolocation) {
+                        reject(new Error('Geolocation not supported'));
+                        return;
+                    }
+
+                    navigator.geolocation.getCurrentPosition(
+                        position => resolve({
+                            latitude: position.coords.latitude,
+                            longitude: position.coords.longitude
+                        }),
+                        error => reject(error),
+                        { timeout: 5000, enableHighAccuracy: false }
+                    );
+                });
+            }
+
+            setupScrollTracking() {
+                let ticking = false;
+
+                const updateScroll = () => {
+                    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+                    const scrollPercent = Math.round((scrollTop / docHeight) * 100);
+
+                    if (scrollPercent > this.maxScroll) {
+                        this.maxScroll = Math.min(scrollPercent, 100);
+                    }
+
+                    // Atualizar indicador visual
+                    document.getElementById('scrollIndicator').style.width = Math.min(scrollPercent, 100) + '%';
+
+                    ticking = false;
+                };
+
+                window.addEventListener('scroll', () => {
+                    if (!ticking) {
+                        requestAnimationFrame(updateScroll);
+                        ticking = true;
+                    }
+                });
+            }
+
+            setupClickTracking() {
+                // Track cliques em links do WhatsApp
+                document.querySelectorAll('a[data-track="whatsapp"], a[href*="wa.me"], a[href*="whatsapp"]').forEach(link => {
+                    link.addEventListener('click', () => {
+                        this.interactions.whatsapp = true;
+                        this.clicks++;
+                        this.sendInteraction('whatsapp_click');
+                    });
+                });
+
+                // Track cliques em links de email
+                document.querySelectorAll('a[data-track="email"], a[href^="mailto:"]').forEach(link => {
+                    link.addEventListener('click', () => {
+                        this.interactions.email = true;
+                        this.clicks++;
+                        this.sendInteraction('email_click');
+                    });
+                });
+
+                // Track cliques gerais
+                document.addEventListener('click', () => {
+                    this.clicks++;
+                });
+            }
+
+            setupBeforeUnload() {
+                window.addEventListener('beforeunload', () => {
+                    this.sendFinalData();
+                });
+
+                // Fallback para mobile
+                document.addEventListener('visibilitychange', () => {
+                    if (document.visibilityState === 'hidden') {
+                        this.sendFinalData();
+                    }
+                });
+            }
+
+            sendHeartbeat() {
+                // Enviar dados a cada 30 segundos
+                setInterval(() => {
+                    this.sendUpdateData();
+                }, 30000);
+            }
+
+            updateDebugInfo() {
+                // Atualizar informações de debug a cada segundo
+                setInterval(() => {
+                    const viewTime = Math.round((new Date() - this.startTime) / 1000);
+                    document.getElementById('debugSession').textContent = this.sessionToken.substr(-8);
+                    document.getElementById('debugTime').textContent = viewTime + 's';
+                    document.getElementById('debugScroll').textContent = this.maxScroll + '%';
+                    document.getElementById('debugClicks').textContent = this.clicks;
+                }, 1000);
+            }
+
+            async sendInteraction(type) {
+                try {
+                    await fetch('/api/proposta/analytics/interaction', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            sessionToken: this.sessionToken,
+                            interactionType: type,
+                            timestamp: new Date().toISOString()
+                        })
+                    });
+                } catch (error) {
+                    console.warn('Interaction tracking failed:', error);
+                }
+            }
+
+            async sendUpdateData() {
+                const viewTime = Math.round((new Date() - this.startTime) / 1000);
+
+                try {
+                    await fetch('/api/proposta/analytics/update', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            sessionToken: this.sessionToken,
+                            tempoVisualizacaoSegundos: viewTime,
+                            scrollMaximoPercentual: this.maxScroll,
+                            numeroCliques: this.clicks,
+                            clicouWhatsApp: this.interactions.whatsapp,
+                            clicouEmail: this.interactions.email
+                        })
+                    });
+                } catch (error) {
+                    console.warn('Update tracking failed:', error);
+                }
+            }
+
+            sendFinalData() {
+                const viewTime = Math.round((new Date() - this.startTime) / 1000);
+
+                const data = {
+                    sessionToken: this.sessionToken,
+                    dataHoraFim: new Date().toISOString(),
+                    tempoVisualizacaoSegundos: viewTime,
+                    scrollMaximoPercentual: this.maxScroll,
+                    numeroCliques: this.clicks,
+                    clicouWhatsApp: this.interactions.whatsapp,
+                    clicouEmail: this.interactions.email
+                };
+
+                // Usar sendBeacon para garantir envio mesmo ao sair da página
+                if (navigator.sendBeacon) {
+                    navigator.sendBeacon('/api/proposta/analytics/finish', JSON.stringify(data));
+                } else {
+                    // Fallback para browsers antigos
+                    fetch('/api/proposta/analytics/finish', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data),
+                        keepalive: true
+                    }).catch(() => { });
+                }
+            }
+        }
+
+        // Funções auxiliares
+        function compartilharWhatsApp() {
+            const url = window.location.href;
+            const texto = `Confira esta proposta de viagem: @Model.Titulo`;
+            const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(texto + ' ' + url)}`;
+            window.open(whatsappUrl, '_blank');
+        }
+
+        function copiarLink() {
+            const url = window.location.href;
+            navigator.clipboard.writeText(url).then(() => {
+                alert('Link copiado para a área de transferência!');
+            }).catch(() => {
+                alert('Erro ao copiar link. Tente selecioná-lo manualmente.');
+            });
+        }
+
+        // Simular contador de visualizações
+        function atualizarContadorVisualizacoes() {
+            // Em produção, isso viria da API
+            const count = Math.floor(Math.random() * 50) + 10;
+            document.getElementById('viewCount').textContent = count + ' visualizações';
+        }
+
+        // Inicializar sistema
+        document.addEventListener('DOMContentLoaded', () => {
+            const propostaId = '@Model.Id';
+            window.analytics = new PropostaAnalytics(propostaId);
+            atualizarContadorVisualizacoes();
+
+            // Mostrar debug em ambiente de desenvolvimento
+            if (window.location.hostname === 'localhost') {
+                document.getElementById('analyticsDebug').style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>
