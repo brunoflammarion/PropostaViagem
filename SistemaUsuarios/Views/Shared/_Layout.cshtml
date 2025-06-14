@@ -258,6 +258,25 @@
             }
             input.value = value;
         }
+
+        function copiarLink(link, statusCancelada) {
+            if (statusCancelada) {
+                alert('Não é possível compartilhar uma proposta cancelada.');
+                return;
+            }
+
+            // Criar URL completa
+            const urlCompleta = window.location.origin + link;
+            
+            // Copiar para a área de transferência
+            navigator.clipboard.writeText(urlCompleta).then(() => {
+                // Mostrar mensagem de sucesso
+                alert('Link copiado com sucesso!');
+            }).catch(err => {
+                console.error('Erro ao copiar link:', err);
+                alert('Erro ao copiar link. Por favor, tente novamente.');
+            });
+        }
     </script>
 
     @await RenderSectionAsync("Scripts", required: false)

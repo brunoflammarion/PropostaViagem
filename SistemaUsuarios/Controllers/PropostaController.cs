@@ -414,5 +414,24 @@ namespace SistemaUsuarios.Controllers
             return RedirectToAction("Index");
         }
 
+        [HttpPost]
+        public async Task<IActionResult> Excluir(Guid id)
+        {
+            if (!UsuarioLogado())
+                return RedirectToAction("Login", "Auth");
+
+            var proposta = await _context.Propostas.FindAsync(id);
+            if (proposta == null)
+            {
+                return NotFound();
+            }
+
+            _context.Propostas.Remove(proposta);
+            await _context.SaveChangesAsync();
+
+            TempData["Sucesso"] = "Proposta excluída com sucesso!";
+            return RedirectToAction("Index");
+        }
+
     }
 }

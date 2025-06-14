@@ -1,0 +1,738 @@
+﻿@model SistemaUsuarios.Models.ViewModels.Analytics.PropostaAnalyticsDetalhadaViewModel
+@{
+    ViewData["Title"] = $"Analytics - {Model.Proposta.Titulo}";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2><i class="fas fa-chart-bar me-2"></i>Analytics Detalhado</h2>
+        <h5 class="text-muted">@Model.Proposta.Titulo</h5>
+    </div>
+    <div>
+        <a href="/PropostaAnalyticsData/Dashboard" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i>Voltar
+        </a>
+        <a href="/Proposta/Publico/@Model.Proposta.Id" target="_blank" class="btn btn-outline-success">
+            <i class="fas fa-external-link-alt me-1"></i>Ver Proposta
+        </a>
+        <button class="btn btn-primary" onclick="atualizarDados()">
+            <i class="fas fa-sync me-1"></i>Atualizar
+        </button>
+    </div>
+</div>
+
+<!-- Informações da Proposta -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        @if (!string.IsNullOrEmpty(Model.Proposta.FotoCapa))
+                        {
+                            <img src="@Model.Proposta.FotoCapa" alt="Foto da Proposta" class="img-fluid rounded" style="max-height: 120px; object-fit: cover;" />
+                        }
+                        else
+                        {
+                            <div class="bg-light d-flex align-items-center justify-content-center rounded" style="height: 120px;">
+                                <i class="fas fa-image fa-3x text-muted"></i>
+                            </div>
+                        }
+                    </div>
+                    <div class="col-md-9">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <small class="text-muted">Status</small>
+                                <p><span class="badge bg-info">@Model.Proposta.StatusProposta</span></p>
+                            </div>
+                            <div class="col-md-3">
+                                <small class="text-muted">Criada em</small>
+                                <p>@Model.Proposta.DataCriacao.ToString("dd/MM/yyyy")</p>
+                            </div>
+                            <div class="col-md-3">
+                                <small class="text-muted">Link Público</small>
+                                <p>
+                                    @if (Model.Proposta.LinkPublicoAtivo)
+                                    {
+                                        <span class="text-success"><i class="fas fa-check"></i> Ativo</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-danger"><i class="fas fa-times"></i> Inativo</span>
+                                    }
+                                </p>
+                            </div>
+                            <div class="col-md-3">
+                                <small class="text-muted">Passageiros</small>
+                                <p>@Model.Proposta.NumeroPassageiros + @Model.Proposta.NumeroCriancas</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Estatísticas Principais -->
+<div class="row mb-4">
+    <div class="col-md-2">
+        <div class="card bg-primary text-white text-center h-100">
+            <div class="card-body">
+                <i class="fas fa-eye fa-2x mb-2"></i>
+                <h4>@Model.EstatisticasGerais.TotalVisualizacoes</h4>
+                <small>Total Views</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card bg-success text-white text-center h-100">
+            <div class="card-body">
+                <i class="fas fa-users fa-2x mb-2"></i>
+                <h4>@Model.EstatisticasGerais.VisualizacoesUnicas</h4>
+                <small>Únicos</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card bg-info text-white text-center h-100">
+            <div class="card-body">
+                <i class="fas fa-clock fa-2x mb-2"></i>
+                <h4>@(Model.EstatisticasGerais.TempoMedioSegundos.ToString("F0"))s</h4>
+                <small>Tempo Médio</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card bg-warning text-white text-center h-100">
+            <div class="card-body">
+                <i class="fas fa-arrows-alt-v fa-2x mb-2"></i>
+                <h4>@(Model.EstatisticasGerais.ScrollMedioPercentual.ToString("F0"))%</h4>
+                <small>Scroll Médio</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card bg-danger text-white text-center h-100">
+            <div class="card-body">
+                <i class="fas fa-mouse-pointer fa-2x mb-2"></i>
+                <h4>@Model.EstatisticasGerais.TotalCliques</h4>
+                <small>Total Cliques</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card bg-dark text-white text-center h-100">
+            <div class="card-body">
+                <i class="fas fa-percentage fa-2x mb-2"></i>
+                <h4>@(Model.EstatisticasGerais.TaxaInteracao.ToString("F1"))%</h4>
+                <small>Taxa Interação</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Gráficos Principais -->
+<div class="row mb-4">
+    <!-- Visualizações por Dia -->
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Visualizações por Dia</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="graficoVisualizacoesDia" style="height: 300px;"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Distribuição de Tempo -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Tempos de Sessão</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="graficoTemposSessao" style="height: 300px;"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Interações e Referências -->
+<div class="row mb-4">
+    <!-- Interações -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-mouse-pointer me-2"></i>Interações</h5>
+                <small class="text-muted">@(Model.EstatisticasGerais.CliquesWhatsApp + Model.EstatisticasGerais.CliquesEmail) interações</small>
+            </div>
+            <div class="card-body">
+                <div class="row text-center mb-4">
+                    <div class="col-6">
+                        <div class="p-3 border rounded bg-success text-white">
+                            <i class="fab fa-whatsapp fa-2x mb-2"></i>
+                            <h4>@Model.EstatisticasGerais.CliquesWhatsApp</h4>
+                            <small>WhatsApp</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-3 border rounded bg-primary text-white">
+                            <i class="fas fa-envelope fa-2x mb-2"></i>
+                            <h4>@Model.EstatisticasGerais.CliquesEmail</h4>
+                            <small>Email</small>
+                        </div>
+                    </div>
+                </div>
+                <canvas id="graficoInteracoes" style="height: 150px;"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fontes de Tráfego -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-share me-2"></i>Fontes de Tráfego</h5>
+            </div>
+            <div class="card-body">
+                @if (Model.ReferenciasTrafico.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Fonte</th>
+                                    <th class="text-center">Views</th>
+                                    <th class="text-center">Tempo</th>
+                                    <th class="text-center">Taxa</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var referencia in Model.ReferenciasTrafico)
+                                {
+                                    <tr>
+                                        <td>
+                                            @if (referencia.TipoReferencia?.ToLower() == "whatsapp")
+                                            {
+                                                <i class="fab fa-whatsapp text-success me-1"></i>
+                                            }
+                                            else if (referencia.TipoReferencia?.ToLower() == "google")
+                                            {
+                                                <i class="fab fa-google text-warning me-1"></i>
+                                            }
+                                            else if (referencia.TipoReferencia?.ToLower() == "facebook")
+                                            {
+                                                <i class="fab fa-facebook text-primary me-1"></i>
+                                            }
+                                            else if (referencia.TipoReferencia?.ToLower() == "email")
+                                            {
+                                                <i class="fas fa-envelope text-info me-1"></i>
+                                            }
+                                            else
+                                            {
+                                                <i class="fas fa-globe text-muted me-1"></i>
+                                            }
+                                            @referencia.TipoReferencia
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge bg-primary">@referencia.Visualizacoes</span>
+                                        </td>
+                                        <td class="text-center">@(referencia.TempoMedio.ToString("F0"))s</td>
+                                        <td class="text-center">
+                                            <span class="badge bg-success">@(referencia.TaxaInteracao.ToString("F1"))%</span>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-share fa-2x mb-2"></i>
+                        <p>Nenhuma referência registrada</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Dispositivos e Mapa -->
+<div class="row mb-4">
+    <!-- Dispositivos e Navegadores -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-desktop me-2"></i>Dispositivos & Navegadores</h5>
+            </div>
+            <div class="card-body">
+                @if (Model.DispositivosENavegadores.Any())
+                {
+                    <div class="row">
+                        <div class="col-6">
+                            <canvas id="graficoDispositivos" style="height: 200px;"></canvas>
+                        </div>
+                        <div class="col-6">
+                            <canvas id="graficoNavegadores" style="height: 200px;"></canvas>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-desktop fa-2x mb-2"></i>
+                        <p>Nenhum dado de dispositivo</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Mapa de Visualizações -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-map me-2"></i>Mapa de Visualizações</h5>
+            </div>
+            <div class="card-body">
+                @if (Model.MapaVisualizacoes.Any())
+                {
+                    <div id="mapaVisualizacoes" style="height: 250px; background: #f8f9fa; border-radius: 5px; position: relative;">
+                        <div class="text-center pt-5">
+                            <i class="fas fa-map-marked-alt fa-3x text-primary mb-2"></i>
+                            <p class="text-muted">Mapa interativo<br><small>@Model.MapaVisualizacoes.Count localizações</small></p>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-map fa-2x mb-2"></i>
+                        <p>Nenhuma localização registrada</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Sessões de Usuários -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-users me-2"></i>Sessões de Usuários</h5>
+                <div>
+                    <small class="text-muted">Últimas @Model.InteracoesUsuarios.Count sessões</small>
+                </div>
+            </div>
+            <div class="card-body">
+                @if (Model.InteracoesUsuarios.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Sessão</th>
+                                    <th>Data/Hora</th>
+                                    <th>Duração</th>
+                                    <th>Tempo</th>
+                                    <th>Scroll</th>
+                                    <th>Cliques</th>
+                                    <th>Interações</th>
+                                    <th>Dispositivo</th>
+                                    <th>Localização</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var sessao in Model.InteracoesUsuarios.Take(20))
+                                {
+                                    <tr>
+                                        <td>
+                                            <small class="text-muted font-monospace">
+                                                @if (sessao.SessionToken.Length > 8)
+                                                {
+                                                    @sessao.SessionToken.Substring(sessao.SessionToken.Length - 8)
+                                                }
+                                                else
+                                                {
+                                                    @sessao.SessionToken
+                                                }
+                                            </small>
+                                        </td>
+                                        <td>
+                                            <small>
+                                                @sessao.DataHoraInicio.ToString("dd/MM HH:mm")
+                                                @if (sessao.DataHoraFim.HasValue)
+                                                {
+                                                    <br>
+
+                                                    <span class="text-muted">até @sessao.DataHoraFim.Value.ToString("HH:mm")</span>
+                                                }
+                                            </small>
+                                        </td>
+                                        <td>
+                                            @if (sessao.DataHoraFim.HasValue)
+                                            {
+                                                var duracao = (sessao.DataHoraFim.Value - sessao.DataHoraInicio).TotalMinutes;
+                                                <span class="badge bg-info">@(duracao.ToString("F0"))min</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-warning">Em andamento</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-primary">@sessao.TempoSegundos s</span>
+                                        </td>
+                                        <td>
+                                            <div class="progress" style="height: 15px; width: 60px;">
+                                                <div class="progress-bar" style="width: @sessao.ScrollPercentual%">
+                                                    <small>@sessao.ScrollPercentual%</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-secondary">@sessao.Cliques</span>
+                                        </td>
+                                        <td>
+                                            @if (sessao.ClicouWhatsApp)
+                                            {
+                                                <i class="fab fa-whatsapp text-success" title="WhatsApp"></i>
+                                            }
+                                            @if (sessao.ClicouEmail)
+                                            {
+                                                <i class="fas fa-envelope text-primary" title="Email"></i>
+                                            }
+                                            @if (!sessao.ClicouWhatsApp && !sessao.ClicouEmail)
+                                            {
+                                                <span class="text-muted">-</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            <small>
+                                                @if (!string.IsNullOrEmpty(sessao.TipoDispositivo))
+                                                {
+                                                    @if (sessao.TipoDispositivo.ToLower() == "mobile")
+                                                    {
+                                                        <i class="fas fa-mobile-alt text-success me-1"></i>
+                                                    }
+                                                    else if (sessao.TipoDispositivo.ToLower() == "tablet")
+                                                    {
+                                                        <i class="fas fa-tablet-alt text-warning me-1"></i>
+                                                    }
+                                                    else
+                                                    {
+                                                        <i class="fas fa-desktop text-info me-1"></i>
+                                                    }
+                                                    @sessao.TipoDispositivo
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">-</span>
+                                                }
+                                            </small>
+                                        </td>
+                                        <td>
+                                            <small>
+                                                @if (!string.IsNullOrEmpty(sessao.Cidade))
+                                                {
+                                                    <i class="fas fa-map-marker-alt text-danger me-1"></i>
+                                                    @sessao.Cidade
+                                                    @if (!string.IsNullOrEmpty(sessao.Estado))
+                                                    {
+                                                        <span>, @sessao.Estado</span>
+                                                    }
+                                                }
+                                                else if (!string.IsNullOrEmpty(sessao.Pais))
+                                                {
+                                                    <i class="fas fa-globe text-muted me-1"></i>
+                                                    @sessao.Pais
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">-</span>
+                                                }
+                                            </small>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    @if (Model.InteracoesUsuarios.Count > 20)
+                    {
+                        <div class="text-center mt-3">
+                            <button class="btn btn-outline-primary" onclick="carregarMaisSessoes()">
+                                <i class="fas fa-plus me-1"></i>Carregar Mais Sessões
+                            </button>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-users fa-2x mb-2"></i>
+                        <p>Nenhuma sessão registrada ainda</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Dados do servidor
+    const dadosVisualizacoesDia = @Html.Raw(Json.Serialize(Model.VisualizacoesPorDia));
+    const dadosDispositivos = @Html.Raw(Json.Serialize(Model.DispositivosENavegadores));
+    const dadosTemposSessao = @Html.Raw(Json.Serialize(Model.TemposPorSessao));
+    const estatisticasGerais = @Html.Raw(Json.Serialize(Model.EstatisticasGerais));
+
+    // Gráfico de Visualizações por Dia
+    function inicializarGraficoVisualizacoesDia() {
+        const ctx = document.getElementById('graficoVisualizacoesDia').getContext('2d');
+
+        const labels = dadosVisualizacoesDia.map(d => new Date(d.data).toLocaleDateString('pt-BR'));
+        const visualizacoes = dadosVisualizacoesDia.map(d => d.visualizacoes);
+        const tempoMedio = dadosVisualizacoesDia.map(d => Math.round(d.tempoMedio));
+
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Visualizações',
+                        data: visualizacoes,
+                        borderColor: '#007bff',
+                        backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Tempo Médio (s)',
+                        data: tempoMedio,
+                        borderColor: '#28a745',
+                        backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                        borderWidth: 2,
+                        fill: false,
+                        tension: 0.4,
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Visualizações'
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Tempo (segundos)'
+                        },
+                        grid: {
+                            drawOnChartArea: false,
+                        },
+                    }
+                }
+            }
+        });
+    }
+
+    // Gráfico de Tempos de Sessão
+    function inicializarGraficoTemposSessao() {
+        const ctx = document.getElementById('graficoTemposSessao').getContext('2d');
+
+        const intervalos = {
+            '0-30s': 0,
+            '31-60s': 0,
+            '1-2min': 0,
+            '2-5min': 0,
+            '5+min': 0
+        };
+
+        dadosTemposSessao.forEach(sessao => {
+            const tempo = sessao.tempoSegundos;
+            if (tempo <= 30) intervalos['0-30s']++;
+            else if (tempo <= 60) intervalos['31-60s']++;
+            else if (tempo <= 120) intervalos['1-2min']++;
+            else if (tempo <= 300) intervalos['2-5min']++;
+            else intervalos['5+min']++;
+        });
+
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(intervalos),
+                datasets: [{
+                    data: Object.values(intervalos),
+                    backgroundColor: [
+                        '#dc3545', '#ffc107', '#007bff', '#28a745', '#6f42c1'
+                    ],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    }
+
+    // Gráfico de Interações
+    function inicializarGraficoInteracoes() {
+        const ctx = document.getElementById('graficoInteracoes').getContext('2d');
+
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['WhatsApp', 'Email'],
+                datasets: [{
+                    data: [estatisticasGerais.cliquesWhatsApp, estatisticasGerais.cliquesEmail],
+                    backgroundColor: ['#25d366', '#007bff'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Gráfico de Dispositivos
+    function inicializarGraficoDispositivos() {
+        const ctx = document.getElementById('graficoDispositivos').getContext('2d');
+
+        const dispositivosCount = {};
+        dadosDispositivos.forEach(d => {
+            dispositivosCount[d.categoria] = (dispositivosCount[d.categoria] || 0) + d.quantidade;
+        });
+
+        new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: Object.keys(dispositivosCount),
+                datasets: [{
+                    data: Object.values(dispositivosCount),
+                    backgroundColor: ['#007bff', '#28a745', '#ffc107']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Dispositivos'
+                    },
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    }
+
+    // Gráfico de Navegadores
+    function inicializarGraficoNavegadores() {
+        const ctx = document.getElementById('graficoNavegadores').getContext('2d');
+
+        const navegadoresCount = {};
+        dadosDispositivos.forEach(d => {
+            const navegador = d.subcategoria && d.subcategoria.split(' ')[0] || 'Desconhecido';
+            navegadoresCount[navegador] = (navegadoresCount[navegador] || 0) + d.quantidade;
+        });
+
+        new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: Object.keys(navegadoresCount),
+                datasets: [{
+                    data: Object.values(navegadoresCount),
+                    backgroundColor: ['#17a2b8', '#6f42c1', '#e83e8c', '#fd7e14']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Navegadores'
+                    },
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    }
+
+    // Funções auxiliares
+    function atualizarDados() {
+        location.reload();
+    }
+
+    function carregarMaisSessoes() {
+        alert('Carregando mais sessões...');
+    }
+
+    // Inicializar gráficos
+    document.addEventListener('DOMContentLoaded', function () {
+        inicializarGraficoVisualizacoesDia();
+        inicializarGraficoTemposSessao();
+        inicializarGraficoInteracoes();
+
+    @if (Model.DispositivosENavegadores.Any())
+    {
+        <text>
+                    inicializarGraficoDispositivos();
+                    inicializarGraficoNavegadores();
+        </text>
+    }
+        });
+</script>
+
+<style>

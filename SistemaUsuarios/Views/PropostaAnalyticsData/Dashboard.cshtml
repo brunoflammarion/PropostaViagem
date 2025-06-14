@@ -1,0 +1,526 @@
+﻿@model SistemaUsuarios.Models.ViewModels.Analytics.DashboardAnalyticsViewModel
+@{
+    ViewData["Title"] = "Dashboard Analytics";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-chart-line me-2"></i>Dashboard Analytics</h2>
+    <div>
+        <button class="btn btn-outline-primary" onclick="exportarRelatorio()">
+            <i class="fas fa-download me-1"></i>Exportar
+        </button>
+        <button class="btn btn-primary" onclick="atualizarDados()">
+            <i class="fas fa-sync me-1"></i>Atualizar
+        </button>
+    </div>
+</div>
+
+<!-- Cards de Estatísticas Principais -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-file-alt fa-2x mb-2"></i>
+                <h3 id="totalPropostas">@Model.TotalPropostas</h3>
+                <small>Total de Propostas</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-eye fa-2x mb-2"></i>
+                <h3 id="totalVisualizacoes">@Model.TotalVisualizacoes</h3>
+                <small>Total de Visualizações</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-clock fa-2x mb-2"></i>
+                <h3 id="tempoMedio">@(Model.EstatisticasGerais.TempoMedioVisualizacao.ToString("F0"))s</h3>
+                <small>Tempo Médio</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-mouse-pointer fa-2x mb-2"></i>
+                <h3 id="taxaInteracao">@(Model.EstatisticasGerais.TaxaInteracao.ToString("F1"))%</h3>
+                <small>Taxa de Interação</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Gráficos e Estatísticas -->
+<div class="row mb-4">
+    <!-- Gráfico de Visualizações nos Últimos 30 Dias -->
+    <div class="col-md-8">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-chart-area me-2"></i>Visualizações nos Últimos 30 Dias</h5>
+                <div class="btn-group btn-group-sm" role="group">
+                    <button type="button" class="btn btn-outline-primary active" onclick="alternarGrafico('visualizacoes')">Visualizações</button>
+                    <button type="button" class="btn btn-outline-primary" onclick="alternarGrafico('tempo')">Tempo Médio</button>
+                    <button type="button" class="btn btn-outline-primary" onclick="alternarGrafico('interacoes')">Interações</button>
+                </div>
+            </div>
+            <div class="card-body">
+                <canvas id="graficoVisualizacoes" style="height: 300px;"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estatísticas Gerais -->
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Resumo Geral</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center mb-3">
+                    <div class="col-6">
+                        <h4 class="text-primary">@(Model.EstatisticasGerais.ScrollMedioPercentual.ToString("F0"))%</h4>
+                        <small>Scroll Médio</small>
+                    </div>
+                    <div class="col-6">
+                        <h4 class="text-success">@Model.EstatisticasGerais.TotalCliques</h4>
+                        <small>Total de Cliques</small>
+                    </div>
+                </div>
+                <div class="row text-center">
+                    <div class="col-12">
+                        <h4 class="text-info">@Model.EstatisticasGerais.VisualizacoesUnicasPorDispositivo</h4>
+                        <small>Visitantes Únicos</small>
+                    </div>
+                </div>
+                <hr>
+                <canvas id="graficoDispositivos" style="height: 150px;"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Propostas Populares e Localizações -->
+<div class="row mb-4">
+    <!-- Top Propostas -->
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-trophy me-2"></i>Propostas Mais Populares</h5>
+            </div>
+            <div class="card-body">
+                @if (Model.PropostasPopulares.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Proposta</th>
+                                    <th class="text-center">Views</th>
+                                    <th class="text-center">Tempo</th>
+                                    <th class="text-center">Taxa</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var proposta in Model.PropostasPopulares.Take(5))
+                                {
+                                    <tr>
+                                        <td>
+                                            <strong>@proposta.Titulo.Substring(0, Math.Min(proposta.Titulo.Length, 30))@(proposta.Titulo.Length > 30 ? "..." : "")</strong>
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge bg-primary">@proposta.TotalVisualizacoes</span>
+                                        </td>
+                                        <td class="text-center">@(proposta.TempoMedio.ToString("F0"))s</td>
+                                        <td class="text-center">
+                                            <span class="badge bg-success">@(proposta.TaxaInteracao.ToString("F1"))%</span>
+                                        </td>
+                                        <td>
+                                            <a href="/PropostaAnalyticsData/PropostaDetalhada/@proposta.PropostaId"
+                                               class="btn btn-outline-primary btn-sm" title="Ver Detalhes">
+                                                <i class="fas fa-chart-bar"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-chart-bar fa-2x mb-2"></i>
+                        <p>Nenhuma visualização ainda</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Localizações -->
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-globe me-2"></i>Principais Localizações</h5>
+            </div>
+            <div class="card-body">
+                @if (Model.LocalizacoesAcessos.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Localização</th>
+                                    <th class="text-center">Views</th>
+                                    <th class="text-center">Tempo</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var localizacao in Model.LocalizacoesAcessos.Take(8))
+                                {
+                                    <tr>
+                                        <td>
+                                            <i class="fas fa-map-marker-alt text-danger me-1"></i>
+                                            @if (!string.IsNullOrEmpty(localizacao.Cidade))
+                                            {
+                                                <span>@localizacao.Cidade</span>
+                                                @if (!string.IsNullOrEmpty(localizacao.Estado))
+                                                {
+                                                    <span>, @localizacao.Estado</span>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <span>@localizacao.Pais</span>
+                                            }
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge bg-info">@localizacao.Visualizacoes</span>
+                                        </td>
+                                        <td class="text-center">@(localizacao.TempoMedio.ToString("F0"))s</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-globe fa-2x mb-2"></i>
+                        <p>Nenhuma localização registrada</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Dispositivos e Navegadores -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-desktop me-2"></i>Dispositivos e Navegadores</h5>
+            </div>
+            <div class="card-body">
+                @if (Model.DispositivosAcessos.Any())
+                {
+                    <div class="row">
+                        <div class="col-md-6">
+                            <canvas id="graficoTipoDispositivo" style="height: 200px;"></canvas>
+                        </div>
+                        <div class="col-md-6">
+                            <canvas id="graficoNavegadores" style="height: 200px;"></canvas>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-desktop fa-2x mb-2"></i>
+                        <p>Nenhum dado de dispositivo disponível</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Dados do servidor
+    const dadosVisualizacoes = @Html.Raw(Json.Serialize(Model.VisualizacoesUltimos30Dias));
+    const dadosDispositivos = @Html.Raw(Json.Serialize(Model.DispositivosAcessos));
+
+    // Configurações globais do Chart.js
+    Chart.defaults.font.family = 'Arial, sans-serif';
+    Chart.defaults.color = '#666';
+
+    // Gráfico de Visualizações
+    let graficoVisualizacoes;
+
+    function inicializarGraficoVisualizacoes() {
+        const ctx = document.getElementById('graficoVisualizacoes').getContext('2d');
+
+        const labels = dadosVisualizacoes.map(d => new Date(d.data).toLocaleDateString('pt-BR'));
+        const visualizacoes = dadosVisualizacoes.map(d => d.visualizacoes);
+        const tempoMedio = dadosVisualizacoes.map(d => Math.round(d.tempoMedio));
+        const interacoes = dadosVisualizacoes.map(d => d.interacoes);
+
+        graficoVisualizacoes = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Visualizações',
+                    data: visualizacoes,
+                    borderColor: '#007bff',
+                    backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+    }
+
+    function alternarGrafico(tipo) {
+        // Atualizar botões ativos
+        document.querySelectorAll('.btn-group .btn').forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+
+        let dataset;
+        switch(tipo) {
+            case 'visualizacoes':
+                dataset = {
+                    label: 'Visualizações',
+                    data: dadosVisualizacoes.map(d => d.visualizacoes),
+                    borderColor: '#007bff',
+                    backgroundColor: 'rgba(0, 123, 255, 0.1)'
+                };
+                break;
+            case 'tempo':
+                dataset = {
+                    label: 'Tempo Médio (s)',
+                    data: dadosVisualizacoes.map(d => Math.round(d.tempoMedio)),
+                    borderColor: '#28a745',
+                    backgroundColor: 'rgba(40, 167, 69, 0.1)'
+                };
+                break;
+            case 'interacoes':
+                dataset = {
+                    label: 'Interações',
+                    data: dadosVisualizacoes.map(d => d.interacoes),
+                    borderColor: '#ffc107',
+                    backgroundColor: 'rgba(255, 193, 7, 0.1)'
+                };
+                break;
+        }
+
+        graficoVisualizacoes.data.datasets[0] = {
+            ...dataset,
+            borderWidth: 2,
+            fill: true,
+            tension: 0.4
+        };
+        graficoVisualizacoes.update();
+    }
+
+    // Gráfico de Dispositivos (Donut)
+    function inicializarGraficoDispositivos() {
+        const ctx = document.getElementById('graficoDispositivos').getContext('2d');
+
+        // Agrupar por tipo de dispositivo
+        const dispositivosAgrupados = {};
+        dadosDispositivos.forEach(d => {
+            if (dispositivosAgrupados[d.tipoDispositivo]) {
+                dispositivosAgrupados[d.tipoDispositivo] += d.visualizacoes;
+            } else {
+                dispositivosAgrupados[d.tipoDispositivo] = d.visualizacoes;
+            }
+        });
+
+        const labels = Object.keys(dispositivosAgrupados);
+        const valores = Object.values(dispositivosAgrupados);
+        const cores = ['#007bff', '#28a745', '#ffc107', '#dc3545', '#6f42c1'];
+
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: valores,
+                    backgroundColor: cores.slice(0, labels.length),
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 10,
+                            usePointStyle: true
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Gráfico Tipo de Dispositivo
+    function inicializarGraficoTipoDispositivo() {
+        const ctx = document.getElementById('graficoTipoDispositivo').getContext('2d');
+
+        const dispositivosCount = {};
+        dadosDispositivos.forEach(d => {
+            dispositivosCount[d.tipoDispositivo] = (dispositivosCount[d.tipoDispositivo] || 0) + d.visualizacoes;
+        });
+
+        new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: Object.keys(dispositivosCount),
+                datasets: [{
+                    data: Object.values(dispositivosCount),
+                    backgroundColor: ['#007bff', '#28a745', '#ffc107', '#dc3545']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Por Tipo de Dispositivo'
+                    },
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    }
+
+    // Gráfico Navegadores
+    function inicializarGraficoNavegadores() {
+        const ctx = document.getElementById('graficoNavegadores').getContext('2d');
+
+        const navegadoresCount = {};
+        dadosDispositivos.forEach(d => {
+            const navegador = d.navegador.split(' ')[0]; // Pegar apenas o nome do navegador
+            navegadoresCount[navegador] = (navegadoresCount[navegador] || 0) + d.visualizacoes;
+        });
+
+        new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: Object.keys(navegadoresCount),
+                datasets: [{
+                    data: Object.values(navegadoresCount),
+                    backgroundColor: ['#17a2b8', '#6f42c1', '#e83e8c', '#fd7e14', '#20c997']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Por Navegador'
+                    },
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    }
+
+    // Funções auxiliares
+    function atualizarDados() {
+        location.reload();
+    }
+
+    function exportarRelatorio() {
+        // Implementar exportação (PDF, Excel, etc.)
+        alert('Funcionalidade de exportação em desenvolvimento');
+    }
+
+    // Inicializar quando a página carregar
+    document.addEventListener('DOMContentLoaded', function() {
+        inicializarGraficoVisualizacoes();
+
+    @if (Model.DispositivosAcessos.Any())
+    {
+        <text>
+                inicializarGraficoDispositivos();
+                inicializarGraficoTipoDispositivo();
+                inicializarGraficoNavegadores();
+        </text>
+    }
+
+        // Atualizar dados em tempo real a cada 30 segundos
+        setInterval(function() {
+            fetch('/PropostaAnalyticsData/GetEstatisticasTempoReal')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('totalVisualizacoes').textContent = data.visualizacoesHoje || @Model.TotalVisualizacoes;
+                    document.getElementById('tempoMedio').textContent = Math.round(data.tempoMedioHoje || @Model.EstatisticasGerais.TempoMedioVisualizacao) + 's';
+                })
+                .catch(console.error);
+        }, 30000);
+    });
+</script>
+
+<style>
+    .card {
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        border: 1px solid rgba(0, 0, 0, 0.125);
+    }
+
+    .card-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+    }
+
+    .table th {
+        font-weight: 600;
+        font-size: 0.875rem;
+    }
+
+    .badge {
+        font-size: 0.75rem;
+    }
+
+    canvas {
+        max-height: 300px;
+    }
+</style>

@@ -52,8 +52,11 @@ namespace SistemaUsuarios.Models
         public DateTime? DataExpiracaoLink { get; set; }
 
         // Navigation Properties
-        public Usuario Usuario { get; set; }
-        public Layout Layout { get; set; }
+        public virtual Usuario Usuario { get; set; }
+        public virtual Layout Layout { get; set; }
+
+        // ✅ ADICIONANDO A PROPRIEDADE QUE ESTAVA FALTANDO
+        public virtual ICollection<PropostaVisualizacao> PropostaVisualizacoes { get; set; } = new List<PropostaVisualizacao>();
     }
 
     public enum StatusProposta
