@@ -10,60 +10,115 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <!-- Animate.css para animações -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
         :root {
-            --primary-color: #007bff;
-            --secondary-color: #6c757d;
-            --success-color: #28a745;
-            --danger-color: #dc3545;
-            --warning-color: #ffc107;
-            --info-color: #17a2b8;
-            --light-color: #f8f9fa;
-            --dark-color: #343a40;
-            --border-radius: 8px;
-            --box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            --transition: all 0.3s ease;
+            /* === CORES DO SISTEMA === */
+            --color-fundo: #FFFFFF;
+            --color-destaque: #E8E2D0;
+            --color-principal: #3A7CA5;
+            --color-texto: #2E2E2E;
+            --color-texto-secundario: #8D99AE;
+            
+            /* === UTILITÁRIOS === */
+            --border-radius: 12px;
+            --border-radius-sm: 8px;
+            --shadow-light: 0 2px 8px rgba(46, 46, 46, 0.08);
+            --shadow-medium: 0 4px 16px rgba(46, 46, 46, 0.12);
+            --shadow-strong: 0 8px 24px rgba(46, 46, 46, 0.16);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background-color: var(--light-color);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--color-fundo);
+            color: var(--color-texto);
             line-height: 1.6;
+        }
+
+        /* === NAVBAR === */
+        .navbar {
+            background: linear-gradient(135deg, var(--color-principal) 0%, #2E6A8E 100%);
+            box-shadow: var(--shadow-medium);
+            border: none;
+            padding: 1rem 0;
         }
 
         .navbar-brand {
             font-weight: 700;
-            font-size: 1.25rem;
+            font-size: 1.5rem;
+            color: white !important;
+            transition: var(--transition);
         }
 
-        .navbar {
-            box-shadow: var(--box-shadow);
-            border-bottom: 1px solid rgba(0,0,0,0.1);
+        .navbar-brand:hover {
+            transform: scale(1.05);
         }
 
+        .nav-link {
+            color: rgba(255, 255, 255, 0.9) !important;
+            font-weight: 500;
+            padding: 0.75rem 1rem !important;
+            border-radius: var(--border-radius-sm);
+            transition: var(--transition);
+            position: relative;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            background-color: rgba(255, 255, 255, 0.15);
+            color: white !important;
+            transform: translateY(-1px);
+        }
+
+        .nav-link.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 30px;
+            height: 3px;
+            background: white;
+            border-radius: 2px;
+        }
+
+        .dropdown-menu {
+            border: none;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-strong);
+            padding: 0.5rem 0;
+            background: var(--color-fundo);
+        }
+
+        .dropdown-item {
+            padding: 0.75rem 1.5rem;
+            transition: var(--transition);
+            color: var(--color-texto);
+        }
+
+        .dropdown-item:hover {
+            background: var(--color-destaque);
+            color: var(--color-principal);
+        }
+
+        /* === MAIN CONTENT === */
         .main-content {
             min-height: calc(100vh - 140px);
-            padding-top: 20px;
-            padding-bottom: 40px;
+            padding-top: 2rem;
+            padding-bottom: 3rem;
         }
 
-        .footer {
-            background: linear-gradient(135deg, var(--dark-color) 0%, #2c3e50 100%);
-            color: white;
-            padding: 30px 0;
-            margin-top: auto;
-        }
-
-        /* Alerts personalizados */
+        /* === ALERTS MODERNOS === */
         .alert {
             border-radius: var(--border-radius);
             border: none;
-            box-shadow: var(--box-shadow);
+            box-shadow: var(--shadow-light);
             position: relative;
             overflow: hidden;
+            padding: 1rem 1.5rem;
+            margin-bottom: 1.5rem;
         }
 
         .alert::before {
@@ -79,51 +134,54 @@
         .alert-success {
             background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
             color: #155724;
-            border-left: 4px solid var(--success-color);
+            border-left: 4px solid #28a745;
         }
 
         .alert-danger {
             background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
             color: #721c24;
-            border-left: 4px solid var(--danger-color);
+            border-left: 4px solid #dc3545;
         }
 
         .alert-warning {
             background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
             color: #856404;
-            border-left: 4px solid var(--warning-color);
+            border-left: 4px solid #ffc107;
         }
 
         .alert-info {
             background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
             color: #0c5460;
-            border-left: 4px solid var(--info-color);
+            border-left: 4px solid var(--color-principal);
         }
 
-        /* Cards modernos */
+        /* === CARDS MODERNOS === */
         .card {
             border: none;
-            box-shadow: var(--box-shadow);
+            box-shadow: var(--shadow-light);
             border-radius: var(--border-radius);
             transition: var(--transition);
             overflow: hidden;
+            background: var(--color-fundo);
         }
 
         .card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-strong);
         }
 
         .card-header {
-            background: linear-gradient(135deg, var(--light-color) 0%, #e9ecef 100%);
-            border-bottom: 1px solid #dee2e6;
+            background: linear-gradient(135deg, var(--color-destaque) 0%, #F2EDE0 100%);
+            border-bottom: 1px solid rgba(46, 46, 46, 0.1);
             font-weight: 600;
+            color: var(--color-texto);
+            padding: 1.25rem;
         }
 
-        /* Botões modernos */
+        /* === BOTÕES MODERNOS === */
         .btn {
-            border-radius: 6px;
-            padding: 10px 20px;
+            border-radius: var(--border-radius-sm);
+            padding: 0.75rem 1.5rem;
             font-weight: 500;
             transition: var(--transition);
             border: none;
@@ -147,176 +205,179 @@
         }
 
         .btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-medium);
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, var(--primary-color) 0%, #0056b3 100%);
+            background: linear-gradient(135deg, var(--color-principal) 0%, #2E6A8E 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #2E6A8E 0%, var(--color-principal) 100%);
+            color: white;
+        }
+
+        .btn-outline-primary {
+            border: 2px solid var(--color-principal);
+            color: var(--color-principal);
+            background: transparent;
+        }
+
+        .btn-outline-primary:hover {
+            background: var(--color-principal);
+            color: white;
+            border-color: var(--color-principal);
         }
 
         .btn-success {
-            background: linear-gradient(135deg, var(--success-color) 0%, #1e7e34 100%);
-        }
-
-        .btn-danger {
-            background: linear-gradient(135deg, var(--danger-color) 0%, #c82333 100%);
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
         }
 
         .btn-warning {
-            background: linear-gradient(135deg, var(--warning-color) 0%, #e0a800 100%);
+            background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #dc3545 0%, #e83e8c 100%);
         }
 
         .btn-info {
-            background: linear-gradient(135deg, var(--info-color) 0%, #117a8b 100%);
+            background: linear-gradient(135deg, var(--color-principal) 0%, #17a2b8 100%);
         }
 
-        /* Tables modernas */
+        .btn-secondary {
+            background: linear-gradient(135deg, var(--color-texto-secundario) 0%, #6c757d 100%);
+        }
+
+        .btn-sm {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+        }
+
+        .btn-lg {
+            padding: 1rem 2rem;
+            font-size: 1.125rem;
+        }
+
+        /* === FORM CONTROLS === */
+        .form-control, .form-select {
+            border: 2px solid var(--color-destaque);
+            border-radius: var(--border-radius-sm);
+            padding: 0.75rem 1rem;
+            transition: var(--transition);
+            background: var(--color-fundo);
+            color: var(--color-texto);
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--color-principal);
+            box-shadow: 0 0 0 0.2rem rgba(58, 124, 165, 0.25);
+            background: var(--color-fundo);
+            color: var(--color-texto);
+        }
+
+        .form-control::placeholder {
+            color: var(--color-texto-secundario);
+        }
+
+        .form-label {
+            color: var(--color-texto);
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        /* === TABLES MODERNAS === */
         .table {
-            background: white;
+            background: var(--color-fundo);
             border-radius: var(--border-radius);
             overflow: hidden;
-            box-shadow: var(--box-shadow);
+            box-shadow: var(--shadow-light);
         }
 
         .table thead th {
-            background: linear-gradient(135deg, var(--dark-color) 0%, #495057 100%);
+            background: linear-gradient(135deg, var(--color-principal) 0%, #2E6A8E 100%);
             color: white;
             border: none;
             font-weight: 600;
             text-transform: uppercase;
             font-size: 0.85rem;
             letter-spacing: 0.5px;
+            padding: 1rem;
         }
 
         .table tbody tr {
             transition: var(--transition);
+            border-bottom: 1px solid var(--color-destaque);
         }
 
         .table tbody tr:hover {
-            background-color: rgba(0,123,255,0.05);
+            background: linear-gradient(135deg, var(--color-destaque) 0%, #F2EDE0 100%);
             transform: scale(1.01);
         }
 
-        /* Form controls modernos */
-        .form-control, .form-select {
-            border-radius: 6px;
-            border: 2px solid #e9ecef;
-            transition: var(--transition);
-            padding: 12px 16px;
+        .table tbody td {
+            padding: 1rem;
+            color: var(--color-texto);
         }
 
-        .form-control:focus, .form-select:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-            transform: translateY(-1px);
+        /* === BADGES === */
+        .badge {
+            font-size: 0.75rem;
+            padding: 0.5rem 1rem;
+            border-radius: 12px;
+            font-weight: 500;
         }
 
-        /* Loading spinner */
-        .spinner-border-sm {
-            width: 1rem;
-            height: 1rem;
-        }
+        .bg-primary { background-color: var(--color-principal) !important; }
+        .bg-secondary { background-color: var(--color-texto-secundario) !important; }
+        .bg-info { background-color: var(--color-principal) !important; }
 
-        /* Toast notifications */
-        .toast-container {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 9999;
-        }
-
-        .toast {
-            border: none;
-            border-radius: var(--border-radius);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            overflow: hidden;
-        }
-
-        .toast-header {
-            background: linear-gradient(135deg, var(--light-color) 0%, #e9ecef 100%);
-            border-bottom: 1px solid #dee2e6;
-        }
-
-        /* Progress bars */
-        .progress {
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
-        }
-
-        .progress-bar {
-            background: linear-gradient(135deg, var(--primary-color) 0%, #0056b3 100%);
-            transition: width 0.6s ease;
-        }
-
-        /* Breadcrumbs */
+        /* === BREADCRUMBS === */
         .breadcrumb {
-            background: white;
+            background: var(--color-destaque);
             border-radius: var(--border-radius);
-            box-shadow: var(--box-shadow);
-            padding: 12px 20px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 1.5rem;
         }
 
         .breadcrumb-item + .breadcrumb-item::before {
             content: "›";
             font-size: 1.2em;
-            color: var(--secondary-color);
+            color: var(--color-texto-secundario);
         }
 
-        /* Status badges */
-        .badge {
-            font-size: 0.75rem;
-            padding: 6px 12px;
-            border-radius: 12px;
-            font-weight: 500;
+        .breadcrumb-item a {
+            color: var(--color-principal);
+            text-decoration: none;
         }
 
-        /* Modal modernos */
-        .modal-content {
-            border: none;
-            border-radius: var(--border-radius);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        .breadcrumb-item.active {
+            color: var(--color-texto);
         }
 
-        .modal-header {
-            background: linear-gradient(135deg, var(--primary-color) 0%, #0056b3 100%);
+        /* === FOOTER === */
+        .footer {
+            background: linear-gradient(135deg, var(--color-texto) 0%, #1a1a1a 100%);
             color: white;
-            border-bottom: none;
+            padding: 2rem 0;
+            margin-top: auto;
         }
 
-        .modal-header .btn-close {
-            filter: invert(1);
+        /* === LOADING E UTILITÁRIOS === */
+        .spinner-border {
+            color: var(--color-principal);
         }
 
-        /* Dropdown modernos */
-        .dropdown-menu {
-            border: none;
-            border-radius: var(--border-radius);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            padding: 8px 0;
-        }
+        .text-primary { color: var(--color-principal) !important; }
+        .text-secondary { color: var(--color-texto-secundario) !important; }
+        .text-muted { color: var(--color-texto-secundario) !important; }
 
-        .dropdown-item {
-            padding: 8px 20px;
-            transition: var(--transition);
-        }
-
-        .dropdown-item:hover {
-            background: linear-gradient(135deg, var(--primary-color) 0%, #0056b3 100%);
-            color: white;
-        }
-
-        /* Navigation active state */
-        .navbar-nav .nav-link.active {
-            background: rgba(255,255,255,0.1);
-            border-radius: 6px;
-        }
-
-        /* Responsive adjustments */
+        /* === RESPONSIVO === */
         @@media (max-width: 768px) {
             .main-content {
-                padding-top: 15px;
+                padding-top: 1rem;
             }
             
             .card:hover {
@@ -330,111 +391,56 @@
             .btn:hover {
                 transform: none;
             }
-        }
 
-        /* Dark mode support */
-        @@media (prefers-color-scheme: dark) {
-            :root {
-                --light-color: #2d3748;
-                --dark-color: #1a202c;
+            .navbar-brand {
+                font-size: 1.25rem;
+            }
+
+            .nav-link.active::after {
+                display: none;
             }
         }
 
-        /* Custom scrollbar */
+        /* === ANIMAÇÕES === */
+        @@keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in-up {
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        /* === SCROLLBAR CUSTOMIZADA === */
         ::-webkit-scrollbar {
             width: 8px;
         }
 
         ::-webkit-scrollbar-track {
-            background: var(--light-color);
+            background: var(--color-destaque);
         }
 
         ::-webkit-scrollbar-thumb {
-            background: var(--secondary-color);
+            background: var(--color-texto-secundario);
             border-radius: 4px;
         }
 
         ::-webkit-scrollbar-thumb:hover {
-            background: var(--primary-color);
-        }
-
-        /* Pulse animation for notifications */
-        @@keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-        }
-
-        .pulse {
-            animation: pulse 2s infinite;
-        }
-
-        /* Slide in animation for alerts */
-        .alert-slide-in {
-            animation: slideInRight 0.5s ease-out;
-        }
-
-        @@keyframes slideInRight {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-
-        /* Loading overlay */
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(255,255,255,0.9);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-            opacity: 0;
-            visibility: hidden;
-            transition: var(--transition);
-        }
-
-        .loading-overlay.show {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        .loading-spinner {
-            width: 50px;
-            height: 50px;
-            border: 4px solid var(--light-color);
-            border-top: 4px solid var(--primary-color);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @@keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            background: var(--color-principal);
         }
     </style>
 
     @await RenderSectionAsync("Styles", required: false)
 </head>
 <body>
-    <!-- Loading Overlay -->
-    <div class="loading-overlay" id="loadingOverlay">
-        <div class="text-center">
-            <div class="loading-spinner mb-3"></div>
-            <p class="text-muted">Carregando...</p>
-        </div>
-    </div>
-
     <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <nav class="navbar navbar-expand-lg">
         <div class="container">
             <a class="navbar-brand" href="@Url.Action("Index", "Proposta")">
                 <i class="fas fa-plane-departure me-2"></i>
@@ -503,15 +509,12 @@
         </div>
     </nav>
 
-    <!-- Toast Container -->
-    <div class="toast-container" id="toastContainer"></div>
-
     <!-- Main Content -->
     <div class="container main-content">
         <!-- Mensagens de Feedback -->
         @if (TempData["Sucesso"] != null)
         {
-            <div class="alert alert-success alert-dismissible fade show alert-slide-in animate__animated animate__slideInRight" role="alert">
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
                 <i class="fas fa-check-circle me-2"></i>
                 @TempData["Sucesso"]
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
@@ -520,7 +523,7 @@
 
         @if (TempData["Erro"] != null)
         {
-            <div class="alert alert-danger alert-dismissible fade show alert-slide-in animate__animated animate__slideInRight" role="alert">
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
                 <i class="fas fa-exclamation-circle me-2"></i>
                 @TempData["Erro"]
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
@@ -529,7 +532,7 @@
 
         @if (TempData["Aviso"] != null)
         {
-            <div class="alert alert-warning alert-dismissible fade show alert-slide-in animate__animated animate__slideInRight" role="alert">
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
                 <i class="fas fa-exclamation-triangle me-2"></i>
                 @TempData["Aviso"]
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
@@ -538,7 +541,7 @@
 
         @if (TempData["Info"] != null)
         {
-            <div class="alert alert-info alert-dismissible fade show alert-slide-in animate__animated animate__slideInRight" role="alert">
+            <div class="alert alert-info alert-dismissible fade show" role="alert">
                 <i class="fas fa-info-circle me-2"></i>
                 @TempData["Info"]
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
@@ -576,415 +579,11 @@
                     </p>
                 </div>
             </div>
-            <hr class="my-3 opacity-25">
-            <div class="row">
-                <div class="col-md-12 text-center">
-                    <small class="text-light opacity-50">
-                        Versão 2.0 | 
-                        <a href="#" class="text-light">Suporte</a> | 
-                        <a href="#" class="text-light">Documentação</a> |
-                        <span id="statusSistema" class="text-success">
-                            <i class="fas fa-circle me-1" style="font-size: 0.6rem;"></i>Sistema Online
-                        </span>
-                    </small>
-                </div>
-            </div>
         </div>
     </footer>
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-
-    <!-- Scripts globais -->
-    <script>
-        // Classe para gerenciar notificações
-        class NotificationManager {
-            constructor() {
-                this.container = document.getElementById('toastContainer');
-                this.init();
-            }
-
-            init() {
-                // Auto-dismiss alerts após 6 segundos
-                document.querySelectorAll('.alert').forEach(alert => {
-                    setTimeout(() => {
-                        const bsAlert = bootstrap.Alert.getOrCreateInstance(alert);
-                        if (bsAlert) bsAlert.close();
-                    }, 6000);
-                });
-            }
-
-            show(message, type = 'info', duration = 5000) {
-                const toastId = 'toast_' + Date.now();
-                const iconMap = {
-                    success: 'fa-check-circle text-success',
-                    error: 'fa-exclamation-circle text-danger',
-                    warning: 'fa-exclamation-triangle text-warning',
-                    info: 'fa-info-circle text-info'
-                };
-
-                const toast = document.createElement('div');
-                toast.className = 'toast show animate__animated animate__slideInRight';
-                toast.id = toastId;
-                toast.setAttribute('role', 'alert');
-                toast.innerHTML = `
-                    <div class="toast-header">
-                        <i class="fas ${iconMap[type]} me-2"></i>
-                        <strong class="me-auto">Sistema</strong>
-                        <small class="text-muted">agora</small>
-                        <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
-                    </div>
-                    <div class="toast-body">${message}</div>
-                `;
-
-                this.container.appendChild(toast);
-
-                // Auto-remove após duration
-                setTimeout(() => {
-                    const toastElement = document.getElementById(toastId);
-                    if (toastElement) {
-                        toastElement.classList.add('animate__slideOutRight');
-                        setTimeout(() => toastElement.remove(), 300);
-                    }
-                }, duration);
-
-                return toastId;
-            }
-
-            success(message, duration = 5000) {
-                return this.show(message, 'success', duration);
-            }
-
-            error(message, duration = 7000) {
-                return this.show(message, 'error', duration);
-            }
-
-            warning(message, duration = 6000) {
-                return this.show(message, 'warning', duration);
-            }
-
-            info(message, duration = 5000) {
-                return this.show(message, 'info', duration);
-            }
-        }
-
-        // Classe para gerenciar loading states
-        class LoadingManager {
-            constructor() {
-                this.overlay = document.getElementById('loadingOverlay');
-                this.activeRequests = 0;
-            }
-
-            show(message = 'Carregando...') {
-                this.activeRequests++;
-                this.overlay.querySelector('p').textContent = message;
-                this.overlay.classList.add('show');
-            }
-
-            hide() {
-                this.activeRequests = Math.max(0, this.activeRequests - 1);
-                if (this.activeRequests === 0) {
-                    this.overlay.classList.remove('show');
-                }
-            }
-
-            isVisible() {
-                return this.overlay.classList.contains('show');
-            }
-        }
-
-        // Classe para utilitários gerais
-        class SystemUtils {
-            static formatCurrency(value) {
-                return new Intl.NumberFormat('pt-BR', {
-                    style: 'currency',
-                    currency: 'BRL'
-                }).format(value);
-            }
-
-            static formatDate(date, options = {}) {
-                const defaultOptions = {
-                    year: 'numeric',
-                    month: '2-digit',
-                    day: '2-digit'
-                };
-                return new Intl.DateTimeFormat('pt-BR', { ...defaultOptions, ...options }).format(new Date(date));
-            }
-
-            static formatPhone(phone) {
-                const cleaned = phone.replace(/\D/g, '');
-                if (cleaned.length === 11) {
-                    return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 7)}-${cleaned.slice(7)}`;
-                } else if (cleaned.length === 10) {
-                    return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 6)}-${cleaned.slice(6)}`;
-                }
-                return phone;
-            }
-
-            static formatCPF(cpf) {
-                const cleaned = cpf.replace(/\D/g, '');
-                if (cleaned.length === 11) {
-                    return `${cleaned.slice(0, 3)}.${cleaned.slice(3, 6)}.${cleaned.slice(6, 9)}-${cleaned.slice(9)}`;
-                }
-                return cpf;
-            }
-
-            static copyToClipboard(text, successMessage = 'Copiado para a área de transferência!') {
-                navigator.clipboard.writeText(text).then(() => {
-                    window.notifications.success(successMessage);
-                }).catch(() => {
-                    window.notifications.error('Erro ao copiar. Tente novamente.');
-                });
-            }
-
-            static debounce(func, wait) {
-                let timeout;
-                return function executedFunction(...args) {
-                    const later = () => {
-                        clearTimeout(timeout);
-                        func(...args);
-                    };
-                    clearTimeout(timeout);
-                    timeout = setTimeout(later, wait);
-                };
-            }
-
-            static throttle(func, limit) {
-                let inThrottle;
-                return function() {
-                    const args = arguments;
-                    const context = this;
-                    if (!inThrottle) {
-                        func.apply(context, args);
-                        inThrottle = true;
-                        setTimeout(() => inThrottle = false, limit);
-                    }
-                }
-            }
-        }
-
-        // Inicializar managers globais
-        document.addEventListener('DOMContentLoaded', function() {
-            // Instanciar managers globalmente
-            window.notifications = new NotificationManager();
-            window.loading = new LoadingManager();
-            window.utils = SystemUtils;
-
-            // Loading states para formulários
-            document.querySelectorAll('form').forEach(form => {
-                form.addEventListener('submit', function(e) {
-                    const submitBtn = form.querySelector('button[type="submit"]');
-                    if (submitBtn && !submitBtn.disabled) {
-                        submitBtn.disabled = true;
-                        const originalText = submitBtn.innerHTML;
-                        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processando...';
-                        
-                        // Re-enable após 15 segundos como fallback
-                        setTimeout(() => {
-                            submitBtn.disabled = false;
-                            submitBtn.innerHTML = originalText;
-                        }, 15000);
-                    }
-                });
-            });
-
-            // Confirmação para ações perigosas
-            document.querySelectorAll('[data-confirm]').forEach(element => {
-                element.addEventListener('click', function(e) {
-                    const message = this.getAttribute('data-confirm');
-                    if (!confirm(message)) {
-                        e.preventDefault();
-                        return false;
-                    }
-                });
-            });
-
-            // Auto-formatação de campos
-            document.querySelectorAll('input[data-format="phone"]').forEach(input => {
-                input.addEventListener('input', function() {
-                    this.value = window.utils.formatPhone(this.value);
-                });
-            });
-
-            document.querySelectorAll('input[data-format="cpf"]').forEach(input => {
-                input.addEventListener('input', function() {
-                    this.value = window.utils.formatCPF(this.value);
-                });
-            });
-
-            // Smooth scroll para âncoras
-            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-                anchor.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const target = document.querySelector(this.getAttribute('href'));
-                    if (target) {
-                        target.scrollIntoView({
-                            behavior: 'smooth',
-                            block: 'start'
-                        });
-                    }
-                });
-            });
-
-            // Verificar status do sistema
-            checkSystemStatus();
-            setInterval(checkSystemStatus, 60000); // Verificar a cada minuto
-
-            // Performance monitoring
-            if ('performance' in window) {
-                window.addEventListener('load', () => {
-                    setTimeout(() => {
-                        const perfData = performance.getEntriesByType('navigation')[0];
-                        if (perfData && perfData.loadEventEnd - perfData.loadEventStart > 3000) {
-                            console.warn('Página carregou lentamente:', Math.round(perfData.loadEventEnd - perfData.loadEventStart), 'ms');
-                        }
-                    }, 0);
-                });
-            }
-
-            // Service Worker para cache offline
-            if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('/sw.js')
-                    .catch(err => console.log('SW registration failed:', err));
-            }
-        });
-
-        // Funções globais utilitárias
-        function confirmarAcao(mensagem = 'Tem certeza que deseja realizar esta ação?') {
-            return confirm(mensagem);
-        }
-
-        function copiarLink(link, statusCancelada = false) {
-            if (statusCancelada) {
-                window.notifications.warning('Não é possível compartilhar uma proposta cancelada.');
-                return;
-            }
-
-            const urlCompleta = window.location.origin + link;
-            window.utils.copyToClipboard(urlCompleta);
-        }
-
-        function checkSystemStatus() {
-            fetch('/api/system/status')
-                .then(response => response.ok)
-                .then(isOnline => {
-                    const statusElement = document.getElementById('statusSistema');
-                    if (statusElement) {
-                        if (isOnline) {
-                            statusElement.innerHTML = '<i class="fas fa-circle me-1 text-success" style="font-size: 0.6rem;"></i>Sistema Online';
-                            statusElement.className = 'text-success';
-                        } else {
-                            statusElement.innerHTML = '<i class="fas fa-circle me-1 text-warning" style="font-size: 0.6rem;"></i>Sistema Instável';
-                            statusElement.className = 'text-warning';
-                        }
-                    }
-                })
-                .catch(() => {
-                    const statusElement = document.getElementById('statusSistema');
-                    if (statusElement) {
-                        statusElement.innerHTML = '<i class="fas fa-circle me-1 text-danger" style="font-size: 0.6rem;"></i>Sistema Offline';
-                        statusElement.className = 'text-danger';
-                    }
-                });
-        }
-
-        // AJAX helpers
-        window.ajaxHelper = {
-            get: function(url, options = {}) {
-                window.loading.show(options.loadingMessage);
-                return fetch(url, {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        ...options.headers
-                    }
-                })
-                .then(response => {
-                    window.loading.hide();
-                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                    return response.json();
-                })
-                .catch(error => {
-                    window.loading.hide();
-                    if (options.showErrors !== false) {
-                        window.notifications.error('Erro na requisição: ' + error.message);
-                    }
-                    throw error;
-                });
-            },
-
-            post: function(url, data, options = {}) {
-                window.loading.show(options.loadingMessage);
-                return fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        ...options.headers
-                    },
-                    body: JSON.stringify(data)
-                })
-                .then(response => {
-                    window.loading.hide();
-                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                    return response.json();
-                })
-                .then(result => {
-                    if (options.successMessage && result.success) {
-                        window.notifications.success(options.successMessage);
-                    }
-                    return result;
-                })
-                .catch(error => {
-                    window.loading.hide();
-                    if (options.showErrors !== false) {
-                        window.notifications.error('Erro na requisição: ' + error.message);
-                    }
-                    throw error;
-                });
-            }
-        };
-
-        // Keyboard shortcuts
-        document.addEventListener('keydown', function(e) {
-            // Ctrl+S para salvar (previne o save do browser)
-            if (e.ctrlKey && e.key === 's') {
-                e.preventDefault();
-                const saveBtn = document.querySelector('button[type="submit"]');
-                if (saveBtn && !saveBtn.disabled) {
-                    saveBtn.click();
-                }
-            }
-
-            // ESC para fechar modals
-            if (e.key === 'Escape') {
-                const openModal = document.querySelector('.modal.show');
-                if (openModal) {
-                    const modal = bootstrap.Modal.getInstance(openModal);
-                    if (modal) modal.hide();
-                }
-            }
-        });
-
-        // Detectar quando o usuário está inativo
-        let inactivityTimer;
-        function resetInactivityTimer() {
-            clearTimeout(inactivityTimer);
-            inactivityTimer = setTimeout(() => {
-                // Usuário inativo por 30 minutos
-                if (confirm('Sua sessão está prestes a expirar por inatividade. Deseja continuar?')) {
-                    resetInactivityTimer();
-                } else {
-                    window.location.href = '/Auth/Logout';
-                }
-            }, 30 * 60 * 1000); // 30 minutos
-        }
-
-        ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'].forEach(event => {
-            document.addEventListener(event, resetInactivityTimer, true);
-        });
-
-        resetInactivityTimer();
-    </script>
 
     @await RenderSectionAsync("Scripts", required: false)
 </body>
