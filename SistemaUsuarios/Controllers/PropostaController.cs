@@ -173,11 +173,13 @@ namespace SistemaUsuarios.Controllers
             catch (InvalidOperationException ex)
             {
                 ModelState.AddModelError("FotoCapaUpload", ex.Message);
+                await CarregarDadosParaView();
                 return View(model);
             }
 
             if (!ModelState.IsValid)
             {
+                await CarregarDadosParaView();
                 return View(model);
             }
 
@@ -185,6 +187,7 @@ namespace SistemaUsuarios.Controllers
             if (model.DataInicio.HasValue && model.DataFim.HasValue && model.DataInicio > model.DataFim)
             {
                 ModelState.AddModelError("DataFim", "Data de fim deve ser posterior à data de início");
+                await CarregarDadosParaView();
                 return View(model);
             }
 
@@ -208,8 +211,10 @@ namespace SistemaUsuarios.Controllers
             _context.Propostas.Add(proposta);
             await _context.SaveChangesAsync();
 
-            TempData["Sucesso"] = "Proposta criada com sucesso!";
-            return RedirectToAction("Index");
+            TempData["Sucesso"] = "Proposta criada com sucesso! Agora você pode adicionar destinos.";
+
+            // ✅ REDIRECIONAR PARA GERENCIAR DESTINOS APÓS CRIAR
+            return RedirectToAction("Gerenciar", "Destino", new { propostaId = proposta.Id });
         }
 
         [HttpGet]
@@ -221,6 +226,7 @@ namespace SistemaUsuarios.Controllers
             var proposta = await _context.Propostas
                 .Include(p => p.Usuario)
                 .Include(p => p.Layout)
+                .Include(p => p.Destinos) // ✅ INCLUIR DESTINOS
                 .FirstOrDefaultAsync(p => p.Id == id);
 
             if (proposta == null)
@@ -252,10 +258,16 @@ namespace SistemaUsuarios.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Editar(PropostaViewModel model)
+        public async Task<IActionResult> Editar(PropostaViewModel model, string acao = "salvar")
         {
             if (!UsuarioLogado())
                 return RedirectToAction("Login", "Auth");
+
+            // ✅ SE A AÇÃO FOR "gerenciar_destinos", REDIRECIONAR DIRETO
+            if (acao == "gerenciar_destinos")
+            {
+                return RedirectToAction("Gerenciar", "Destino", new { propostaId = model.Id });
+            }
 
             if (!ModelState.IsValid)
             {
@@ -333,6 +345,8 @@ namespace SistemaUsuarios.Controllers
         {
             var proposta = await _context.Propostas
                 .Include(p => p.Usuario)
+                .Include(p => p.Destinos.OrderBy(d => d.Ordem)) // ✅ INCLUIR DESTINOS ORDENADOS
+                    .ThenInclude(d => d.Fotos.OrderBy(f => f.Ordem)) // ✅ INCLUIR FOTOS ORDENADAS
                 .FirstOrDefaultAsync(p => p.Id == id);
 
             if (proposta == null)
@@ -358,13 +372,14 @@ namespace SistemaUsuarios.Controllers
             return View(proposta);
         }
 
-
         [HttpGet]
         public async Task<IActionResult> Detalhes(Guid id)
         {
             var proposta = await _context.Propostas
                 .Include(p => p.Usuario)
                 .Include(p => p.Layout)
+                .Include(p => p.Destinos.OrderBy(d => d.Ordem)) // ✅ INCLUIR DESTINOS
+                    .ThenInclude(d => d.Fotos.OrderBy(f => f.Ordem)) // ✅ INCLUIR FOTOS
                 .FirstOrDefaultAsync(p => p.Id == id);
 
             if (proposta == null)
@@ -384,7 +399,7 @@ namespace SistemaUsuarios.Controllers
 
             ViewBag.Layouts = layouts;
         }
-        
+
         [HttpPost]
         public async Task<IActionResult> AlterarLink(Guid id, bool ativo)
         {
@@ -420,10 +435,56 @@ namespace SistemaUsuarios.Controllers
             if (!UsuarioLogado())
                 return RedirectToAction("Login", "Auth");
 
-            var proposta = await _context.Propostas.FindAsync(id);
+            var proposta = await _context.Propostas
+                .Include(p => p.Destinos) // ✅ INCLUIR DESTINOS PARA EXCLUSÃO EM CASCATA
+                    .ThenInclude(d => d.Fotos) // ✅ INCLUIR FOTOS PARA REMOÇÃO DE ARQUIVOS
+                .FirstOrDefaultAsync(p => p.Id == id);
+
             if (proposta == null)
             {
                 return NotFound();
+            }
+
+            // Remover arquivos físicos das fotos dos destinos
+            foreach (var destino in proposta.Destinos)
+            {
+                foreach (var foto in destino.Fotos)
+                {
+                    if (!string.IsNullOrEmpty(foto.CaminhoFoto))
+                    {
+                        try
+                        {
+                            var caminhoCompleto = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", foto.CaminhoFoto.TrimStart('/'));
+                            if (System.IO.File.Exists(caminhoCompleto))
+                            {
+                                System.IO.File.Delete(caminhoCompleto);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            // Log do erro mas continua com a exclusão
+                            Console.WriteLine($"Erro ao excluir arquivo de foto: {ex.Message}");
+                        }
+                    }
+                }
+            }
+
+            // Remover foto de capa da proposta
+            if (!string.IsNullOrEmpty(proposta.FotoCapa))
+            {
+                try
+                {
+                    var caminhoCompleto = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", proposta.FotoCapa.TrimStart('/'));
+                    if (System.IO.File.Exists(caminhoCompleto))
+                    {
+                        System.IO.File.Delete(caminhoCompleto);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Log do erro mas continua com a exclusão
+                    Console.WriteLine($"Erro ao excluir foto de capa: {ex.Message}");
+                }
             }
 
             _context.Propostas.Remove(proposta);
@@ -433,5 +494,14 @@ namespace SistemaUsuarios.Controllers
             return RedirectToAction("Index");
         }
 
+        // ✅ NOVO MÉTODO: GERENCIAR DESTINOS DIRETAMENTE DA PROPOSTA
+        [HttpGet]
+        public async Task<IActionResult> GerenciarDestinos(Guid id)
+        {
+            if (!UsuarioLogado())
+                return RedirectToAction("Login", "Auth");
+
+            return RedirectToAction("Gerenciar", "Destino", new { propostaId = id });
+        }
     }
 }

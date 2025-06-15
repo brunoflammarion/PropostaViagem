@@ -37,16 +37,12 @@ namespace SistemaUsuarios.Controllers
 
             var viewModel = new DashboardAnalyticsViewModel
             {
-                // Dados do usuário
                 UsuarioId = usuarioId,
-
-                // Estatísticas gerais
                 TotalPropostas = await _context.Propostas.CountAsync(p => p.UsuarioId == usuarioId),
                 TotalVisualizacoes = await _context.PropostaVisualizacoes
                     .Where(v => v.Proposta.UsuarioId == usuarioId)
                     .CountAsync(),
 
-                // Dados dos últimos 30 dias
                 VisualizacoesUltimos30Dias = await ObterVisualizacoesUltimos30Dias(usuarioId),
                 PropostasPopulares = await ObterPropostasPopulares(usuarioId),
                 EstatisticasGerais = await ObterEstatisticasGerais(usuarioId),
@@ -57,7 +53,8 @@ namespace SistemaUsuarios.Controllers
             return View(viewModel);
         }
 
-        // DASHBOARD ESPECÍFICO - Nível 2
+        // DASHBOARD ESPECÍFICO - Nível 2 - CORRIGIDO
+        [HttpGet("PropostaAnalyticsData/PropostaDetalhada/{propostaId}")]
         public async Task<IActionResult> PropostaDetalhada(Guid propostaId)
         {
             if (!UsuarioLogado())
@@ -68,10 +65,14 @@ namespace SistemaUsuarios.Controllers
             // Verificar se a proposta pertence ao usuário
             var proposta = await _context.Propostas
                 .Include(p => p.Usuario)
+                .Include(p => p.Layout)
                 .FirstOrDefaultAsync(p => p.Id == propostaId && p.UsuarioId == usuarioId);
 
             if (proposta == null)
-                return NotFound();
+            {
+                TempData["Erro"] = "Proposta não encontrada ou você não tem permissão para visualizá-la.";
+                return RedirectToAction("Dashboard");
+            }
 
             var viewModel = new PropostaAnalyticsDetalhadaViewModel
             {
@@ -89,7 +90,6 @@ namespace SistemaUsuarios.Controllers
         }
 
         // APIs para dados em tempo real
-
         [HttpGet]
         public async Task<IActionResult> GetVisualizacoesGraficos(int dias = 30)
         {
@@ -189,13 +189,13 @@ namespace SistemaUsuarios.Controllers
             return Json(stats);
         }
 
-        // Métodos auxiliares privados
-
+        // Métodos auxiliares privados - CORRIGIDOS
         private async Task<List<VisualizacaoDiariaViewModel>> ObterVisualizacoesUltimos30Dias(Guid usuarioId)
         {
             var dataInicio = DateTime.Now.AddDays(-30);
 
             return await _context.PropostaVisualizacoes
+                .Include(v => v.Proposta)
                 .Where(v => v.Proposta.UsuarioId == usuarioId && v.DataHoraInicio >= dataInicio)
                 .GroupBy(v => v.DataHoraInicio.Date)
                 .Select(g => new VisualizacaoDiariaViewModel
@@ -213,37 +213,34 @@ namespace SistemaUsuarios.Controllers
         {
             var propostas = await _context.Propostas
                 .Where(p => p.UsuarioId == usuarioId)
+                .Select(p => new
+                {
+                    p.Id,
+                    p.Titulo,
+                    Visualizacoes = p.PropostaVisualizacoes.Count(),
+                    TempoMedio = p.PropostaVisualizacoes.Any() ?
+                        p.PropostaVisualizacoes.Average(v => v.TempoVisualizacaoSegundos) : 0,
+                    Interacoes = p.PropostaVisualizacoes.Count(v => v.ClicouEmail || v.ClicouWhatsApp)
+                })
                 .ToListAsync();
 
-            var result = new List<PropostaPopularViewModel>();
-
-            foreach (var proposta in propostas)
+            return propostas.Select(p => new PropostaPopularViewModel
             {
-                var visualizacoes = await _context.PropostaVisualizacoes
-                    .Where(v => v.PropostaId == proposta.Id)
-                    .ToListAsync();
-
-                var totalVisualizacoes = visualizacoes.Count;
-                var tempoMedio = visualizacoes.Any() ? visualizacoes.Average(v => v.TempoVisualizacaoSegundos) : 0;
-                var interacoes = visualizacoes.Count(v => v.ClicouEmail || v.ClicouWhatsApp);
-                var taxaInteracao = totalVisualizacoes > 0 ? (double)interacoes / totalVisualizacoes * 100 : 0;
-
-                result.Add(new PropostaPopularViewModel
-                {
-                    PropostaId = proposta.Id,
-                    Titulo = proposta.Titulo,
-                    TotalVisualizacoes = totalVisualizacoes,
-                    TempoMedio = tempoMedio,
-                    TaxaInteracao = taxaInteracao
-                });
-            }
-
-            return result.OrderByDescending(x => x.TotalVisualizacoes).Take(10).ToList();
+                PropostaId = p.Id,
+                Titulo = p.Titulo,
+                TotalVisualizacoes = p.Visualizacoes,
+                TempoMedio = p.TempoMedio,
+                TaxaInteracao = p.Visualizacoes > 0 ? (double)p.Interacoes / p.Visualizacoes * 100 : 0
+            })
+            .OrderByDescending(x => x.TotalVisualizacoes)
+            .Take(10)
+            .ToList();
         }
 
         private async Task<EstatisticasGeraisViewModel> ObterEstatisticasGerais(Guid usuarioId)
         {
             var visualizacoes = await _context.PropostaVisualizacoes
+                .Include(v => v.Proposta)
                 .Where(v => v.Proposta.UsuarioId == usuarioId)
                 .ToListAsync();
 
@@ -256,7 +253,8 @@ namespace SistemaUsuarios.Controllers
                 TotalCliques = visualizacoes.Sum(v => v.NumeroCliques),
                 VisualizacoesUnicasPorDispositivo = visualizacoes
                     .Where(v => !string.IsNullOrEmpty(v.DeviceFingerprint))
-                    .GroupBy(v => v.DeviceFingerprint)
+                    .Select(v => v.DeviceFingerprint)
+                    .Distinct()
                     .Count()
             };
         }
@@ -264,6 +262,7 @@ namespace SistemaUsuarios.Controllers
         private async Task<List<LocalizacaoAcessoViewModel>> ObterLocalizacoesAcessos(Guid usuarioId)
         {
             return await _context.PropostaVisualizacoes
+                .Include(v => v.Proposta)
                 .Where(v => v.Proposta.UsuarioId == usuarioId && !string.IsNullOrEmpty(v.Pais))
                 .GroupBy(v => new { v.Pais, v.Estado, v.Cidade })
                 .Select(g => new LocalizacaoAcessoViewModel
@@ -282,6 +281,7 @@ namespace SistemaUsuarios.Controllers
         private async Task<List<DispositivoAcessoViewModel>> ObterDispositivosAcessos(Guid usuarioId)
         {
             return await _context.PropostaVisualizacoes
+                .Include(v => v.Proposta)
                 .Where(v => v.Proposta.UsuarioId == usuarioId && !string.IsNullOrEmpty(v.TipoDispositivo))
                 .GroupBy(v => new { v.TipoDispositivo, v.Navegador, v.SistemaOperacional })
                 .Select(g => new DispositivoAcessoViewModel
@@ -304,7 +304,19 @@ namespace SistemaUsuarios.Controllers
 
             if (!visualizacoes.Any())
             {
-                return new EstatisticasPropostaViewModel();
+                return new EstatisticasPropostaViewModel
+                {
+                    TotalVisualizacoes = 0,
+                    VisualizacoesUnicas = 0,
+                    TempoMedioSegundos = 0,
+                    ScrollMedioPercentual = 0,
+                    TotalCliques = 0,
+                    CliquesWhatsApp = 0,
+                    CliquesEmail = 0,
+                    TaxaInteracao = 0,
+                    UltimaVisualizacao = null,
+                    PrimeiraVisualizacao = null
+                };
             }
 
             return new EstatisticasPropostaViewModel
@@ -344,7 +356,7 @@ namespace SistemaUsuarios.Controllers
 
         private async Task<List<DispositivoEstatisticaViewModel>> ObterDispositivosENavegadores(Guid propostaId)
         {
-            return await _context.PropostaVisualizacoes
+            var dados = await _context.PropostaVisualizacoes
                 .Where(v => v.PropostaId == propostaId && !string.IsNullOrEmpty(v.TipoDispositivo))
                 .GroupBy(v => new { v.TipoDispositivo, v.Navegador })
                 .Select(g => new DispositivoEstatisticaViewModel
@@ -352,10 +364,22 @@ namespace SistemaUsuarios.Controllers
                     Categoria = g.Key.TipoDispositivo,
                     Subcategoria = g.Key.Navegador ?? "Desconhecido",
                     Quantidade = g.Count(),
-                    Percentual = 0 // Será calculado na view
+                    Percentual = 0 // Será calculado após buscar todos os dados
                 })
                 .OrderByDescending(x => x.Quantidade)
                 .ToListAsync();
+
+            // Calcular percentuais
+            var total = dados.Sum(d => d.Quantidade);
+            if (total > 0)
+            {
+                foreach (var item in dados)
+                {
+                    item.Percentual = (double)item.Quantidade / total * 100;
+                }
+            }
+
+            return dados;
         }
 
         private async Task<List<InteracaoUsuarioViewModel>> ObterInteracoesUsuarios(Guid propostaId)
@@ -432,128 +456,5 @@ namespace SistemaUsuarios.Controllers
                 .OrderByDescending(x => x.Visualizacoes)
                 .ToListAsync();
         }
-    }
-
-    // ViewModels para o Dashboard
-
-    public class DashboardAnalyticsViewModel
-    {
-        public Guid UsuarioId { get; set; }
-        public int TotalPropostas { get; set; }
-        public int TotalVisualizacoes { get; set; }
-        public List<VisualizacaoDiariaViewModel> VisualizacoesUltimos30Dias { get; set; } = new();
-        public List<PropostaPopularViewModel> PropostasPopulares { get; set; } = new();
-        public EstatisticasGeraisViewModel EstatisticasGerais { get; set; } = new();
-        public List<LocalizacaoAcessoViewModel> LocalizacoesAcessos { get; set; } = new();
-        public List<DispositivoAcessoViewModel> DispositivosAcessos { get; set; } = new();
-    }
-
-    public class PropostaAnalyticsDetalhadaViewModel
-    {
-        public Proposta Proposta { get; set; }
-        public EstatisticasPropostaViewModel EstatisticasGerais { get; set; } = new();
-        public List<VisualizacaoDiariaViewModel> VisualizacoesPorDia { get; set; } = new();
-        public List<DispositivoEstatisticaViewModel> DispositivosENavegadores { get; set; } = new();
-        public List<InteracaoUsuarioViewModel> InteracoesUsuarios { get; set; } = new();
-        public List<LocalizacaoVisualizacaoViewModel> MapaVisualizacoes { get; set; } = new();
-        public List<TempoSessaoViewModel> TemposPorSessao { get; set; } = new();
-        public List<ReferenciaTrafegoViewModel> ReferenciasTrafico { get; set; } = new();
-    }
-
-    // ViewModels auxiliares
-    public class VisualizacaoDiariaViewModel
-    {
-        public DateTime Data { get; set; }
-        public int Visualizacoes { get; set; }
-        public double TempoMedio { get; set; }
-        public int Interacoes { get; set; }
-    }
-
-    public class PropostaPopularViewModel
-    {
-        public Guid PropostaId { get; set; }
-        public string Titulo { get; set; }
-        public int TotalVisualizacoes { get; set; }
-        public double TempoMedio { get; set; }
-        public double TaxaInteracao { get; set; }
-    }
-
-    public class EstatisticasGeraisViewModel
-    {
-        public double TempoMedioVisualizacao { get; set; }
-        public double ScrollMedioPercentual { get; set; }
-        public double TaxaInteracao { get; set; }
-        public int TotalCliques { get; set; }
-        public int VisualizacoesUnicasPorDispositivo { get; set; }
-    }
-
-    public class LocalizacaoAcessoViewModel
-    {
-        public string Pais { get; set; }
-        public string Estado { get; set; }
-        public string Cidade { get; set; }
-        public int Visualizacoes { get; set; }
-        public double TempoMedio { get; set; }
-    }
-
-    public class DispositivoAcessoViewModel
-    {
-        public string TipoDispositivo { get; set; }
-        public string Navegador { get; set; }
-        public string SistemaOperacional { get; set; }
-        public int Visualizacoes { get; set; }
-        public double TempoMedio { get; set; }
-    }
-
-    public class DispositivoEstatisticaViewModel
-    {
-        public string Categoria { get; set; }
-        public string Subcategoria { get; set; }
-        public int Quantidade { get; set; }
-        public double Percentual { get; set; }
-    }
-
-    public class InteracaoUsuarioViewModel
-    {
-        public string SessionToken { get; set; }
-        public DateTime DataHoraInicio { get; set; }
-        public DateTime? DataHoraFim { get; set; }
-        public int TempoSegundos { get; set; }
-        public int ScrollPercentual { get; set; }
-        public int Cliques { get; set; }
-        public bool ClicouWhatsApp { get; set; }
-        public bool ClicouEmail { get; set; }
-        public string TipoDispositivo { get; set; }
-        public string Navegador { get; set; }
-        public string Cidade { get; set; }
-        public string Estado { get; set; }
-        public string Pais { get; set; }
-    }
-
-    public class LocalizacaoVisualizacaoViewModel
-    {
-        public decimal Latitude { get; set; }
-        public decimal Longitude { get; set; }
-        public string Cidade { get; set; }
-        public string Estado { get; set; }
-        public string Pais { get; set; }
-        public int Visualizacoes { get; set; }
-        public double TempoMedio { get; set; }
-    }
-
-    public class TempoSessaoViewModel
-    {
-        public string SessionToken { get; set; }
-        public int TempoSegundos { get; set; }
-        public DateTime DataHora { get; set; }
-        public int ScrollPercentual { get; set; }
-    }
-
-    public class ReferenciaTrafegoViewModel
-    {
-        public string TipoReferencia { get; set; }
-        public int Visualizacoes { get; set; }
-        public double TempoMedio { get; set; }
-        public double TaxaInteracao { get; set; }
     }
 }

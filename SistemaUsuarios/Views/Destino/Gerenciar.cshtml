@@ -1,0 +1,691 @@
+﻿@model SistemaUsuarios.Models.Proposta
+@{
+    ViewData["Title"] = $"Gerenciar Destinos - {Model.Titulo}";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2><i class="fas fa-map-marked-alt me-2"></i>Gerenciar Destinos</h2>
+        <h5 class="text-muted">@Model.Titulo</h5>
+    </div>
+    <div>
+        <a href="/Proposta" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i>Voltar às Propostas
+        </a>
+        <a href="/Proposta/Detalhes/@Model.Id" class="btn btn-outline-info">
+            <i class="fas fa-eye me-1"></i>Ver Proposta
+        </a>
+    </div>
+</div>
+
+<!-- Informações da Proposta -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-2">
+                        @if (!string.IsNullOrEmpty(Model.FotoCapa))
+                        {
+                            <img src="@Model.FotoCapa" alt="Foto da Proposta" class="img-fluid rounded" style="max-height: 80px; object-fit: cover;" />
+                        }
+                        else
+                        {
+                            <div class="bg-light d-flex align-items-center justify-content-center rounded" style="height: 80px;">
+                                <i class="fas fa-image fa-2x text-muted"></i>
+                            </div>
+                        }
+                    </div>
+                    <div class="col-md-10">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <small class="text-muted">Período</small>
+                                <p class="mb-0">
+                                    @if (Model.DataInicio.HasValue && Model.DataFim.HasValue)
+                                    {
+                                        @Model.DataInicio.Value.ToString("dd/MM/yyyy") <span class="text-muted">até</span> @Model.DataFim.Value.ToString("dd/MM/yyyy")
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">Não definido</span>
+                                    }
+                                </p>
+                            </div>
+                            <div class="col-md-2">
+                                <small class="text-muted">Passageiros</small>
+                                <p class="mb-0">@(Model.NumeroPassageiros + Model.NumeroCriancas) pessoas</p>
+                            </div>
+                            <div class="col-md-2">
+                                <small class="text-muted">Status</small>
+                                <p class="mb-0"><span class="badge bg-info">@Model.StatusProposta</span></p>
+                            </div>
+                            <div class="col-md-3">
+                                <small class="text-muted">Destinos</small>
+                                <p class="mb-0">@Model.Destinos.Count destino(s)</p>
+                            </div>
+                            <div class="col-md-2">
+                                <small class="text-muted">Link Público</small>
+                                <p class="mb-0">
+                                    @if (Model.LinkPublicoAtivo)
+                                    {
+                                        <span class="text-success"><i class="fas fa-check"></i> Ativo</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-danger"><i class="fas fa-times"></i> Inativo</span>
+                                    }
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Adicionar Novo Destino -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="fas fa-plus me-2"></i>Adicionar Novo Destino</h5>
+            </div>
+            <div class="card-body">
+                <form asp-action="AdicionarDestino" method="post">
+                    <input type="hidden" name="propostaId" value="@Model.Id" />
+
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Nome do Destino *</label>
+                            <input type="text" name="nome" class="form-control" placeholder="Ex: Paris, França" required />
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label class="form-label">País</label>
+                            <input type="text" name="pais" class="form-control" placeholder="França" />
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label class="form-label">Cidade</label>
+                            <input type="text" name="cidade" class="form-control" placeholder="Paris" />
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label class="form-label">Data Chegada</label>
+                            <input type="date" name="dataChegada" class="form-control" />
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label class="form-label">Data Saída</label>
+                            <input type="date" name="dataSaida" class="form-control" />
+                        </div>
+                        <div class="col-md-1 mb-3 d-flex align-items-end">
+                            <button type="submit" class="btn btn-success w-100">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-11 mb-3">
+                            <label class="form-label">Descrição</label>
+                            <textarea name="descricao" class="form-control" rows="2" placeholder="Descrição do destino, atividades planejadas, observações..."></textarea>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Lista de Destinos -->
+@if (Model.Destinos.Any())
+{
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-list me-2"></i>Destinos da Viagem (@Model.Destinos.Count)</h5>
+                    <small class="text-muted">Arraste para reordenar</small>
+                </div>
+                <div class="card-body p-0">
+                    <div id="destinos-container" class="list-group list-group-flush">
+                        @foreach (var destino in Model.Destinos.OrderBy(d => d.Ordem))
+                        {
+                            <div class="list-group-item" data-destino-id="@destino.Id">
+                                <div class="row align-items-center">
+                                    <!-- Handle de arrastar -->
+                                    <div class="col-auto">
+                                        <div class="drag-handle text-muted" style="cursor: move;">
+                                            <i class="fas fa-grip-vertical"></i>
+                                        </div>
+                                    </div>
+
+                                    <!-- Foto principal do destino -->
+                                    <div class="col-auto">
+                                        @if (destino.Fotos.Any(f => f.Principal))
+                                        {
+                                            var fotoPrincipal = destino.Fotos.First(f => f.Principal);
+                                            <img src="@fotoPrincipal.CaminhoFoto" alt="@destino.Nome" class="img-thumbnail" style="width: 60px; height: 60px; object-fit: cover;" />
+                                        }
+                                        else if (destino.Fotos.Any())
+                                        {
+                                            var primeiraFoto = destino.Fotos.OrderBy(f => f.Ordem).First();
+                                            <img src="@primeiraFoto.CaminhoFoto" alt="@destino.Nome" class="img-thumbnail" style="width: 60px; height: 60px; object-fit: cover;" />
+                                        }
+                                        else
+                                        {
+                                            <div class="bg-light d-flex align-items-center justify-content-center rounded" style="width: 60px; height: 60px;">
+                                                <i class="fas fa-map-marker-alt text-muted"></i>
+                                            </div>
+                                        }
+                                    </div>
+
+                                    <!-- Informações do destino -->
+                                    <div class="col">
+                                        <div class="row">
+                                            <div class="col-md-3">
+                                                <h6 class="mb-1">@destino.Nome</h6>
+                                                <small class="text-muted">
+                                                    @if (!string.IsNullOrEmpty(destino.Cidade) || !string.IsNullOrEmpty(destino.Pais))
+                                                    {
+                                                        <i class="fas fa-globe me-1"></i>
+                                                        @if (!string.IsNullOrEmpty(destino.Cidade))
+                                                        {
+                                                            @destino.Cidade
+                                                        }
+                                                        @if (!string.IsNullOrEmpty(destino.Pais))
+                                                        {
+                                                            @if (!string.IsNullOrEmpty(destino.Cidade))
+                                                            {
+                                                                <span>, </span>
+                                                            }
+                                                            @destino.Pais
+                                                        }
+                                                    }
+                                                </small>
+                                            </div>
+                                            <div class="col-md-3">
+                                                @if (destino.DataChegada.HasValue || destino.DataSaida.HasValue)
+                                                {
+                                                    <small class="text-muted">
+                                                        <i class="fas fa-calendar me-1"></i>
+                                                        @if (destino.DataChegada.HasValue)
+                                                        {
+                                                            @destino.DataChegada.Value.ToString("dd/MM")
+                                                        }
+                                                        @if (destino.DataSaida.HasValue)
+                                                        {
+                                                            <span> - @destino.DataSaida.Value.ToString("dd/MM")</span>
+                                                        }
+                                                    </small>
+                                                }
+                                            </div>
+                                            <div class="col-md-2">
+                                                <small class="text-muted">
+                                                    <i class="fas fa-images me-1"></i>
+                                                    @destino.Fotos.Count foto(s)
+                                                </small>
+                                            </div>
+                                            <div class="col-md-4">
+                                                @if (!string.IsNullOrEmpty(destino.Descricao))
+                                                {
+                                                    <small class="text-muted">
+                                                        @if (destino.Descricao.Length > 80)
+                                                        {
+                                                            @(destino.Descricao.Substring(0, 80) + "...")
+                                                        }
+                                                        else
+                                                        {
+                                                            @destino.Descricao
+                                                        }
+                                                    </small>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Ações -->
+                                    <div class="col-auto">
+                                        <div class="btn-group btn-group-sm">
+                                            <button type="button" class="btn btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#detalhes-@destino.Id">
+                                                <i class="fas fa-chevron-down"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#modalFoto-@destino.Id">
+                                                <i class="fas fa-plus"></i> Foto
+                                            </button>
+                                            <form asp-action="ExcluirDestino" method="post" style="display: inline;" onsubmit="return confirm('Tem certeza que deseja excluir este destino e todas suas fotos?');">
+                                                <input type="hidden" name="id" value="@destino.Id" />
+                                                <button type="submit" class="btn btn-outline-danger">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Detalhes expandidos do destino -->
+                                <div class="collapse mt-3" id="detalhes-@destino.Id">
+                                    <div class="border-top pt-3">
+                                        <div class="row">
+                                            <!-- Editar informações do destino -->
+                                            <div class="col-md-6">
+                                                <h6><i class="fas fa-edit me-1"></i>Editar Destino</h6>
+                                                <form asp-action="EditarDestino" method="post">
+                                                    <input type="hidden" name="id" value="@destino.Id" />
+                                                    <div class="mb-2">
+                                                        <input type="text" name="nome" class="form-control form-control-sm" value="@destino.Nome" placeholder="Nome do destino" />
+                                                    </div>
+                                                    <div class="row">
+                                                        <div class="col-6 mb-2">
+                                                            <input type="text" name="pais" class="form-control form-control-sm" value="@destino.Pais" placeholder="País" />
+                                                        </div>
+                                                        <div class="col-6 mb-2">
+                                                            <input type="text" name="cidade" class="form-control form-control-sm" value="@destino.Cidade" placeholder="Cidade" />
+                                                        </div>
+                                                    </div>
+                                                    <div class="row">
+                                                        <div class="col-6 mb-2">
+                                                            <input type="date" name="dataChegada" class="form-control form-control-sm" value="@destino.DataChegada?.ToString("yyyy-MM-dd")" />
+                                                        </div>
+                                                        <div class="col-6 mb-2">
+                                                            <input type="date" name="dataSaida" class="form-control form-control-sm" value="@destino.DataSaida?.ToString("yyyy-MM-dd")" />
+                                                        </div>
+                                                    </div>
+                                                    <div class="mb-2">
+                                                        <textarea name="descricao" class="form-control form-control-sm" rows="3" placeholder="Descrição">@destino.Descricao</textarea>
+                                                    </div>
+                                                    <button type="submit" class="btn btn-sm btn-primary">
+                                                        <i class="fas fa-save me-1"></i>Salvar
+                                                    </button>
+                                                </form>
+                                            </div>
+
+                                            <!-- Galeria de fotos -->
+                                            <div class="col-md-6">
+                                                <h6><i class="fas fa-images me-1"></i>Fotos (@destino.Fotos.Count)</h6>
+                                                @if (destino.Fotos.Any())
+                                                {
+                                                    <div class="row g-2" id="fotos-@destino.Id">
+                                                        @foreach (var foto in destino.Fotos.OrderBy(f => f.Ordem))
+                                                        {
+                                                            <div class="col-3" data-foto-id="@foto.Id">
+                                                                <div class="position-relative">
+                                                                    <img src="@foto.CaminhoFoto" alt="@foto.Descricao" class="img-fluid rounded" style="width: 100%; height: 80px; object-fit: cover;" />
+
+                                                                    @if (foto.Principal)
+                                                                    {
+                                                                        <span class="position-absolute top-0 start-0 badge bg-success">
+                                                                            <i class="fas fa-star"></i>
+                                                                        </span>
+                                                                    }
+
+                                                                    <div class="position-absolute top-0 end-0">
+                                                                        <div class="btn-group btn-group-sm">
+                                                                            @if (!foto.Principal)
+                                                                            {
+                                                                                <form asp-controller="DestinoFoto" asp-action="DefinirPrincipal" method="post" style="display: inline;">
+                                                                                    <input type="hidden" name="id" value="@foto.Id" />
+                                                                                    <button type="submit" class="btn btn-outline-warning btn-sm" title="Definir como principal">
+                                                                                        <i class="fas fa-star"></i>
+                                                                                    </button>
+                                                                                </form>
+                                                                            }
+                                                                            <form asp-controller="DestinoFoto" asp-action="ExcluirFoto" method="post" style="display: inline;" onsubmit="return confirm('Excluir esta foto?');">
+                                                                                <input type="hidden" name="id" value="@foto.Id" />
+                                                                                <button type="submit" class="btn btn-outline-danger btn-sm">
+                                                                                    <i class="fas fa-trash"></i>
+                                                                                </button>
+                                                                            </form>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    @if (!string.IsNullOrEmpty(foto.Descricao))
+                                                                    {
+                                                                        <div class="position-absolute bottom-0 start-0 w-100 bg-dark bg-opacity-75 text-white p-1">
+                                                                            <small>@foto.Descricao</small>
+                                                                        </div>
+                                                                    }
+                                                                </div>
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <div class="text-center text-muted py-3">
+                                                        <i class="fas fa-images fa-2x mb-2"></i>
+                                                        <p class="mb-0">Nenhuma foto adicionada</p>
+                                                        <small>Use o botão "+ Foto" para adicionar</small>
+                                                    </div>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Modal para adicionar foto -->
+                            <div class="modal fade" id="modalFoto-@destino.Id" tabindex="-1">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">Adicionar Foto - @destino.Nome</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <form asp-controller="DestinoFoto" asp-action="AdicionarFoto" method="post" enctype="multipart/form-data">
+                                            <div class="modal-body">
+                                                <input type="hidden" name="destinoId" value="@destino.Id" />
+
+                                                <div class="mb-3">
+                                                    <label class="form-label">Foto *</label>
+                                                    <input type="file" name="foto" class="form-control" accept="image/*" required />
+                                                    <small class="text-muted">Formatos: JPG, PNG, GIF, WebP (máx: 10MB)</small>
+                                                </div>
+
+                                                <div class="mb-3">
+                                                    <label class="form-label">Descrição</label>
+                                                    <input type="text" name="descricao" class="form-control" placeholder="Descrição da foto (opcional)" />
+                                                </div>
+
+                                                <div class="form-check">
+                                                    <input type="checkbox" name="principal" class="form-check-input" id="principal-@destino.Id" />
+                                                    <label class="form-check-label" for="principal-@destino.Id">
+                                                        Definir como foto principal
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                <button type="submit" class="btn btn-success">
+                                                    <i class="fas fa-upload me-1"></i>Adicionar Foto
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="text-center py-5">
+        <i class="fas fa-map-marked-alt fa-4x text-muted mb-3"></i>
+        <h5 class="text-muted">Nenhum destino adicionado</h5>
+        <p class="text-muted">Comece adicionando o primeiro destino da viagem usando o formulário acima.</p>
+    </div>
+}
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    <script>
+        // Tornar a lista de destinos ordenável
+        const destinosContainer = document.getElementById('destinos-container');
+        if (destinosContainer) {
+            Sortable.create(destinosContainer, {
+                handle: '.drag-handle',
+                animation: 150,
+                onEnd: function (evt) {
+                    // Coletar nova ordem
+                    const destinosIds = Array.from(destinosContainer.children).map(item =>
+                        item.getAttribute('data-destino-id')
+                    );
+
+                    // Enviar para o servidor
+                    fetch('/Destino/ReordenarDestinos', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'RequestVerificationToken': getRequestVerificationToken()
+                        },
+                        body: JSON.stringify({
+                            propostaId: '@Model.Id',
+                            destinosIds: destinosIds
+                        })
+                    }).then(response => {
+                        if (response.ok) {
+                            // Mostrar feedback visual
+                            showSuccessAlert('Ordem atualizada com sucesso!');
+                        } else {
+                            showErrorAlert('Erro ao reordenar destinos');
+                        }
+                    }).catch(error => {
+                        console.error('Erro:', error);
+                        showErrorAlert('Erro de conexão');
+                    });
+                }
+            });
+        }
+
+        // Tornar as fotos ordenáveis dentro de cada destino
+        @foreach (var destino in Model.Destinos)
+        {
+            var safeId = destino.Id.ToString().Replace("-", "");
+            <text>
+                    const fotosContainer@(safeId) = document.getElementById('fotos-@destino.Id');
+                    if (fotosContainer@(safeId)) {
+                        Sortable.create(fotosContainer@(safeId), {
+                            animation: 150,
+                            onEnd: function (evt) {
+                                const fotosIds = Array.from(fotosContainer@(safeId).children).map(item =>
+                                    item.getAttribute('data-foto-id')
+                                );
+
+                                fetch('/DestinoFoto/ReordenarFotos', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'RequestVerificationToken': getRequestVerificationToken()
+                                    },
+                                    body: JSON.stringify({
+                                        destinoId: '@destino.Id',
+                                        fotosIds: fotosIds
+                                    })
+                                }).then(response => {
+                                    if (response.ok) {
+                                        showSuccessAlert('Fotos reordenadas com sucesso!');
+                                    } else {
+                                        showErrorAlert('Erro ao reordenar fotos');
+                                    }
+                                }).catch(error => {
+                                    console.error('Erro:', error);
+                                    showErrorAlert('Erro de conexão');
+                                });
+                            }
+                        });
+                        }
+            </text>
+        }
+
+            // Funções utilitárias
+            function getRequestVerificationToken() {
+                const token = document.querySelector('input[name="__RequestVerificationToken"]');
+                return token ? token.value : '';
+            }
+
+        function showSuccessAlert(message) {
+            const alert = document.createElement('div');
+            alert.className = 'alert alert-success alert-dismissible fade show position-fixed';
+            alert.style.top = '20px';
+            alert.style.right = '20px';
+            alert.style.zIndex = '9999';
+            alert.style.minWidth = '300px';
+            alert.innerHTML = `
+                        <i class="fas fa-check me-2"></i>${message}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    `;
+            document.body.appendChild(alert);
+
+            // Remover alerta após 3 segundos
+            setTimeout(() => {
+                if (alert.parentNode) {
+                    alert.remove();
+                }
+            }, 3000);
+        }
+
+        function showErrorAlert(message) {
+            const alert = document.createElement('div');
+            alert.className = 'alert alert-danger alert-dismissible fade show position-fixed';
+            alert.style.top = '20px';
+            alert.style.right = '20px';
+            alert.style.zIndex = '9999';
+            alert.style.minWidth = '300px';
+            alert.innerHTML = `
+                        <i class="fas fa-exclamation-triangle me-2"></i>${message}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    `;
+            document.body.appendChild(alert);
+
+            // Remover alerta após 5 segundos
+            setTimeout(() => {
+                if (alert.parentNode) {
+                    alert.remove();
+                }
+            }, 5000);
+        }
+
+        // Validação de formulários
+        document.addEventListener('DOMContentLoaded', function () {
+            // Validar datas ao adicionar destino
+            const formAdicionarDestino = document.querySelector('form[action*="AdicionarDestino"]');
+            if (formAdicionarDestino) {
+                formAdicionarDestino.addEventListener('submit', function (e) {
+                    const dataChegada = this.querySelector('input[name="dataChegada"]').value;
+                    const dataSaida = this.querySelector('input[name="dataSaida"]').value;
+
+                    if (dataChegada && dataSaida && new Date(dataChegada) > new Date(dataSaida)) {
+                        e.preventDefault();
+                        showErrorAlert('Data de saída deve ser posterior à data de chegada');
+                        return false;
+                    }
+                });
+            }
+
+            // Validar datas ao editar destino
+            const formsEditarDestino = document.querySelectorAll('form[action*="EditarDestino"]');
+            formsEditarDestino.forEach(form => {
+                form.addEventListener('submit', function (e) {
+                    const dataChegada = this.querySelector('input[name="dataChegada"]').value;
+                    const dataSaida = this.querySelector('input[name="dataSaida"]').value;
+
+                    if (dataChegada && dataSaida && new Date(dataChegada) > new Date(dataSaida)) {
+                        e.preventDefault();
+                        showErrorAlert('Data de saída deve ser posterior à data de chegada');
+                        return false;
+                    }
+                });
+            });
+
+            // Validar upload de fotos
+            const formsUploadFoto = document.querySelectorAll('form[action*="AdicionarFoto"]');
+            formsUploadFoto.forEach(form => {
+                const inputFoto = form.querySelector('input[type="file"]');
+                inputFoto.addEventListener('change', function () {
+                    const file = this.files[0];
+                    if (file) {
+                        // Validar tamanho (10MB)
+                        if (file.size > 10 * 1024 * 1024) {
+                            showErrorAlert('Arquivo muito grande. Máximo 10MB permitido.');
+                            this.value = '';
+                            return;
+                        }
+
+                        // Validar tipo
+                        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/bmp', 'image/webp'];
+                        if (!allowedTypes.includes(file.type)) {
+                            showErrorAlert('Tipo de arquivo não permitido. Use JPG, PNG, GIF, BMP ou WebP.');
+                            this.value = '';
+                            return;
+                        }
+                    }
+                });
+            });
+        });
+
+        // Auto-collapse accordion items when opening a new one
+        document.addEventListener('DOMContentLoaded', function () {
+            const collapseButtons = document.querySelectorAll('[data-bs-toggle="collapse"]');
+            collapseButtons.forEach(button => {
+                button.addEventListener('click', function () {
+                    const targetId = this.getAttribute('data-bs-target');
+                    const allCollapses = document.querySelectorAll('.collapse.show');
+
+                    allCollapses.forEach(collapse => {
+                        if (collapse.id !== targetId.substring(1)) { // Remove # from targetId
+                            const bsCollapse = new bootstrap.Collapse(collapse, {
+                                toggle: false
+                            });
+                            bsCollapse.hide();
+                        }
+                    });
+                });
+            });
+        });
+    </script>
+}
+
+<style>
+    .drag-handle {
+        cursor: move;
+    }
+
+    .list-group-item:hover {
+        background-color: #f8f9fa;
+    }
+
+    .sortable-ghost {
+        opacity: 0.4;
+    }
+
+    .sortable-drag {
+        opacity: 1;
+    }
+
+    .position-fixed {
+        position: fixed !important;
+    }
+
+    .img-thumbnail {
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        transition: transform 0.2s ease-in-out;
+    }
+
+        .img-thumbnail:hover {
+            transform: scale(1.05);
+        }
+
+    .btn-group-sm .btn {
+        font-size: 0.75rem;
+    }
+
+    .collapse {
+        transition: all 0.3s ease;
+    }
+
+    .card {
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    }
+
+    .modal-dialog {
+        max-width: 500px;
+    }
+
+    @@media (max-width: 768px) {
+        .col-md-3, .col-md-2, .col-md-4 {
+            margin-bottom: 0.5rem;
+        }
+
+        .btn-group-sm {
+            display: flex;
+            flex-direction: column;
+        }
+
+            .btn-group-sm .btn {
+                margin-bottom: 0.25rem;
+            }
+    }
+</style>

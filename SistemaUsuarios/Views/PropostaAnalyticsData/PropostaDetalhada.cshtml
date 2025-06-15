@@ -3,10 +3,14 @@
     ViewData["Title"] = $"Analytics - {Model.Proposta.Titulo}";
 }
 
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h2><i class="fas fa-chart-bar me-2"></i>Analytics Detalhado</h2>
         <h5 class="text-muted">@Model.Proposta.Titulo</h5>
+        <small class="text-muted">ID: @Model.Proposta.Id</small>
     </div>
     <div>
         <a href="/PropostaAnalyticsData/Dashboard" class="btn btn-outline-secondary">
@@ -20,6 +24,16 @@
         </button>
     </div>
 </div>
+
+<!-- Alert caso não tenha dados -->
+@if (Model.EstatisticasGerais.TotalVisualizacoes == 0)
+{
+    <div class="alert alert-warning">
+        <i class="fas fa-info-circle me-2"></i>
+        <strong>Sem dados ainda!</strong> Esta proposta ainda não foi visualizada.
+        <a href="/Proposta/Publico/@Model.Proposta.Id" target="_blank" class="alert-link">Clique aqui para testá-la</a>.
+    </div>
+}
 
 <!-- Informações da Proposta -->
 <div class="row mb-4">
@@ -67,6 +81,19 @@
                                 <p>@Model.Proposta.NumeroPassageiros + @Model.Proposta.NumeroCriancas</p>
                             </div>
                         </div>
+                        @if (Model.EstatisticasGerais.TotalVisualizacoes > 0)
+                        {
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <small class="text-muted">Primeira Visualização</small>
+                                    <p>@(Model.EstatisticasGerais.PrimeiraVisualizacao?.ToString("dd/MM/yyyy HH:mm") ?? "N/A")</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <small class="text-muted">Última Visualização</small>
+                                    <p>@(Model.EstatisticasGerais.UltimaVisualizacao?.ToString("dd/MM/yyyy HH:mm") ?? "N/A")</p>
+                                </div>
+                            </div>
+                        }
                     </div>
                 </div>
             </div>
@@ -132,372 +159,605 @@
     </div>
 </div>
 
-<!-- Gráficos Principais -->
-<div class="row mb-4">
-    <!-- Visualizações por Dia -->
-    <div class="col-md-8">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Visualizações por Dia</h5>
-            </div>
-            <div class="card-body">
-                <canvas id="graficoVisualizacoesDia" style="height: 300px;"></canvas>
-            </div>
-        </div>
-    </div>
-
-    <!-- Distribuição de Tempo -->
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Tempos de Sessão</h5>
-            </div>
-            <div class="card-body">
-                <canvas id="graficoTemposSessao" style="height: 300px;"></canvas>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Interações e Referências -->
-<div class="row mb-4">
-    <!-- Interações -->
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0"><i class="fas fa-mouse-pointer me-2"></i>Interações</h5>
-                <small class="text-muted">@(Model.EstatisticasGerais.CliquesWhatsApp + Model.EstatisticasGerais.CliquesEmail) interações</small>
-            </div>
-            <div class="card-body">
-                <div class="row text-center mb-4">
-                    <div class="col-6">
-                        <div class="p-3 border rounded bg-success text-white">
-                            <i class="fab fa-whatsapp fa-2x mb-2"></i>
-                            <h4>@Model.EstatisticasGerais.CliquesWhatsApp</h4>
-                            <small>WhatsApp</small>
-                        </div>
-                    </div>
-                    <div class="col-6">
-                        <div class="p-3 border rounded bg-primary text-white">
-                            <i class="fas fa-envelope fa-2x mb-2"></i>
-                            <h4>@Model.EstatisticasGerais.CliquesEmail</h4>
-                            <small>Email</small>
-                        </div>
-                    </div>
+@if (Model.EstatisticasGerais.TotalVisualizacoes > 0)
+{
+    <!-- MAPA INTERATIVO E DISPOSITIVOS - PRIORIDADE -->
+    <div class="row mb-4">
+        <!-- Mapa de Visualizações - MAIOR -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-map-marked-alt me-2"></i>Mapa de Visualizações</h5>
                 </div>
-                <canvas id="graficoInteracoes" style="height: 150px;"></canvas>
-            </div>
-        </div>
-    </div>
+                <div class="card-body">
+                    @if (Model.MapaVisualizacoes.Any())
+                    {
+                        <!-- Mapa Interativo -->
+                        <div id="mapaVisualizacoes" style="height: 400px; border-radius: 8px;"></div>
 
-    <!-- Fontes de Tráfego -->
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="fas fa-share me-2"></i>Fontes de Tráfego</h5>
-            </div>
-            <div class="card-body">
-                @if (Model.ReferenciasTrafico.Any())
-                {
-                    <div class="table-responsive">
-                        <table class="table table-sm">
-                            <thead>
-                                <tr>
-                                    <th>Fonte</th>
-                                    <th class="text-center">Views</th>
-                                    <th class="text-center">Tempo</th>
-                                    <th class="text-center">Taxa</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var referencia in Model.ReferenciasTrafico)
+                        <!-- Lista de localizações -->
+                        <div class="mt-3">
+                            <h6 class="text-muted">Principais localizações:</h6>
+                            <div class="row">
+                                @foreach (var loc in Model.MapaVisualizacoes.Take(8))
                                 {
-                                    <tr>
-                                        <td>
-                                            @if (referencia.TipoReferencia?.ToLower() == "whatsapp")
-                                            {
-                                                <i class="fab fa-whatsapp text-success me-1"></i>
-                                            }
-                                            else if (referencia.TipoReferencia?.ToLower() == "google")
-                                            {
-                                                <i class="fab fa-google text-warning me-1"></i>
-                                            }
-                                            else if (referencia.TipoReferencia?.ToLower() == "facebook")
-                                            {
-                                                <i class="fab fa-facebook text-primary me-1"></i>
-                                            }
-                                            else if (referencia.TipoReferencia?.ToLower() == "email")
-                                            {
-                                                <i class="fas fa-envelope text-info me-1"></i>
-                                            }
-                                            else
-                                            {
-                                                <i class="fas fa-globe text-muted me-1"></i>
-                                            }
-                                            @referencia.TipoReferencia
-                                        </td>
-                                        <td class="text-center">
-                                            <span class="badge bg-primary">@referencia.Visualizacoes</span>
-                                        </td>
-                                        <td class="text-center">@(referencia.TempoMedio.ToString("F0"))s</td>
-                                        <td class="text-center">
-                                            <span class="badge bg-success">@(referencia.TaxaInteracao.ToString("F1"))%</span>
-                                        </td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-                }
-                else
-                {
-                    <div class="text-center text-muted py-4">
-                        <i class="fas fa-share fa-2x mb-2"></i>
-                        <p>Nenhuma referência registrada</p>
-                    </div>
-                }
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Dispositivos e Mapa -->
-<div class="row mb-4">
-    <!-- Dispositivos e Navegadores -->
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="fas fa-desktop me-2"></i>Dispositivos & Navegadores</h5>
-            </div>
-            <div class="card-body">
-                @if (Model.DispositivosENavegadores.Any())
-                {
-                    <div class="row">
-                        <div class="col-6">
-                            <canvas id="graficoDispositivos" style="height: 200px;"></canvas>
-                        </div>
-                        <div class="col-6">
-                            <canvas id="graficoNavegadores" style="height: 200px;"></canvas>
-                        </div>
-                    </div>
-                }
-                else
-                {
-                    <div class="text-center text-muted py-4">
-                        <i class="fas fa-desktop fa-2x mb-2"></i>
-                        <p>Nenhum dado de dispositivo</p>
-                    </div>
-                }
-            </div>
-        </div>
-    </div>
-
-    <!-- Mapa de Visualizações -->
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="fas fa-map me-2"></i>Mapa de Visualizações</h5>
-            </div>
-            <div class="card-body">
-                @if (Model.MapaVisualizacoes.Any())
-                {
-                    <div id="mapaVisualizacoes" style="height: 250px; background: #f8f9fa; border-radius: 5px; position: relative;">
-                        <div class="text-center pt-5">
-                            <i class="fas fa-map-marked-alt fa-3x text-primary mb-2"></i>
-                            <p class="text-muted">Mapa interativo<br><small>@Model.MapaVisualizacoes.Count localizações</small></p>
-                        </div>
-                    </div>
-                }
-                else
-                {
-                    <div class="text-center text-muted py-4">
-                        <i class="fas fa-map fa-2x mb-2"></i>
-                        <p>Nenhuma localização registrada</p>
-                    </div>
-                }
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Sessões de Usuários -->
-<div class="row mb-4">
-    <div class="col-md-12">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0"><i class="fas fa-users me-2"></i>Sessões de Usuários</h5>
-                <div>
-                    <small class="text-muted">Últimas @Model.InteracoesUsuarios.Count sessões</small>
-                </div>
-            </div>
-            <div class="card-body">
-                @if (Model.InteracoesUsuarios.Any())
-                {
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Sessão</th>
-                                    <th>Data/Hora</th>
-                                    <th>Duração</th>
-                                    <th>Tempo</th>
-                                    <th>Scroll</th>
-                                    <th>Cliques</th>
-                                    <th>Interações</th>
-                                    <th>Dispositivo</th>
-                                    <th>Localização</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var sessao in Model.InteracoesUsuarios.Take(20))
-                                {
-                                    <tr>
-                                        <td>
-                                            <small class="text-muted font-monospace">
-                                                @if (sessao.SessionToken.Length > 8)
+                                    <div class="col-md-6 mb-2">
+                                        <div class="d-flex justify-content-between align-items-center py-1 px-2 bg-light rounded">
+                                            <small>
+                                                <i class="fas fa-map-marker-alt text-danger me-1"></i>
+                                                @if (!string.IsNullOrEmpty(loc.Cidade))
                                                 {
-                                                    @sessao.SessionToken.Substring(sessao.SessionToken.Length - 8)
+                                                    @loc.Cidade
+
+                                                    @(!string.IsNullOrEmpty(loc.Estado) ? $", {loc.Estado}" : "")
                                                 }
                                                 else
                                                 {
-                                                    @sessao.SessionToken
+                                                    @loc.Pais
                                                 }
                                             </small>
-                                        </td>
-                                        <td>
-                                            <small>
-                                                @sessao.DataHoraInicio.ToString("dd/MM HH:mm")
-                                                @if (sessao.DataHoraFim.HasValue)
-                                                {
-                                                    <br>
-
-                                                    <span class="text-muted">até @sessao.DataHoraFim.Value.ToString("HH:mm")</span>
-                                                }
-                                            </small>
-                                        </td>
-                                        <td>
-                                            @if (sessao.DataHoraFim.HasValue)
-                                            {
-                                                var duracao = (sessao.DataHoraFim.Value - sessao.DataHoraInicio).TotalMinutes;
-                                                <span class="badge bg-info">@(duracao.ToString("F0"))min</span>
-                                            }
-                                            else
-                                            {
-                                                <span class="badge bg-warning">Em andamento</span>
-                                            }
-                                        </td>
-                                        <td>
-                                            <span class="badge bg-primary">@sessao.TempoSegundos s</span>
-                                        </td>
-                                        <td>
-                                            <div class="progress" style="height: 15px; width: 60px;">
-                                                <div class="progress-bar" style="width: @sessao.ScrollPercentual%">
-                                                    <small>@sessao.ScrollPercentual%</small>
-                                                </div>
+                                            <div>
+                                                <span class="badge bg-info me-1">@loc.Visualizacoes</span>
+                                                <small class="text-muted">@(loc.TempoMedio.ToString("F0"))s</small>
                                             </div>
-                                        </td>
-                                        <td>
-                                            <span class="badge bg-secondary">@sessao.Cliques</span>
-                                        </td>
-                                        <td>
-                                            @if (sessao.ClicouWhatsApp)
-                                            {
-                                                <i class="fab fa-whatsapp text-success" title="WhatsApp"></i>
-                                            }
-                                            @if (sessao.ClicouEmail)
-                                            {
-                                                <i class="fas fa-envelope text-primary" title="Email"></i>
-                                            }
-                                            @if (!sessao.ClicouWhatsApp && !sessao.ClicouEmail)
-                                            {
-                                                <span class="text-muted">-</span>
-                                            }
-                                        </td>
-                                        <td>
-                                            <small>
-                                                @if (!string.IsNullOrEmpty(sessao.TipoDispositivo))
-                                                {
-                                                    @if (sessao.TipoDispositivo.ToLower() == "mobile")
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center text-muted py-5">
+                            <i class="fas fa-map fa-3x mb-3"></i>
+                            <h5>Nenhuma localização registrada</h5>
+                            <p>Geolocalização não foi capturada ou não autorizada pelos visitantes</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Dispositivos e Navegadores -->
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-desktop me-2"></i>Dispositivos & Navegadores</h5>
+                </div>
+                <div class="card-body">
+                    @if (Model.DispositivosENavegadores.Any())
+                    {
+                        <!-- Gráficos -->
+                        <div class="row mb-3">
+                            <div class="col-12 mb-3">
+                                <canvas id="graficoDispositivos" style="height: 150px;"></canvas>
+                            </div>
+                            <div class="col-12">
+                                <canvas id="graficoNavegadores" style="height: 150px;"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Lista detalhada -->
+                        <div>
+                            <h6 class="text-muted">Detalhamento:</h6>
+                            @foreach (var dispositivo in Model.DispositivosENavegadores.Take(5))
+                            {
+                                <div class="d-flex justify-content-between py-1">
+                                    <small>@dispositivo.Categoria - @dispositivo.Subcategoria</small>
+                                    <small><span class="badge bg-secondary">@dispositivo.Quantidade</span></small>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-desktop fa-2x mb-2"></i>
+                            <p>Nenhum dado de dispositivo</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sessões de Usuários -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-users me-2"></i>Sessões de Usuários</h5>
+                    <div>
+                        <small class="text-muted">Últimas @Model.InteracoesUsuarios.Count sessões</small>
+                    </div>
+                </div>
+                <div class="card-body">
+                    @if (Model.InteracoesUsuarios.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Sessão</th>
+                                        <th>Data/Hora</th>
+                                        <th>Duração</th>
+                                        <th>Tempo</th>
+                                        <th>Scroll</th>
+                                        <th>Cliques</th>
+                                        <th>Interações</th>
+                                        <th>Dispositivo</th>
+                                        <th>Localização</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var sessao in Model.InteracoesUsuarios.Take(15))
+                                    {
+                                        <tr>
+                                            <td>
+                                                <small class="text-muted font-monospace">
+                                                    @if (sessao.SessionToken.Length > 8)
                                                     {
-                                                        <i class="fas fa-mobile-alt text-success me-1"></i>
-                                                    }
-                                                    else if (sessao.TipoDispositivo.ToLower() == "tablet")
-                                                    {
-                                                        <i class="fas fa-tablet-alt text-warning me-1"></i>
+                                                        @sessao.SessionToken.Substring(sessao.SessionToken.Length - 8)
                                                     }
                                                     else
                                                     {
-                                                        <i class="fas fa-desktop text-info me-1"></i>
+                                                        @sessao.SessionToken
                                                     }
-                                                    @sessao.TipoDispositivo
-                                                }
-                                                else
-                                                {
-                                                    <span class="text-muted">-</span>
-                                                }
-                                            </small>
-                                        </td>
-                                        <td>
-                                            <small>
-                                                @if (!string.IsNullOrEmpty(sessao.Cidade))
-                                                {
-                                                    <i class="fas fa-map-marker-alt text-danger me-1"></i>
-                                                    @sessao.Cidade
-                                                    @if (!string.IsNullOrEmpty(sessao.Estado))
+                                                </small>
+                                            </td>
+                                            <td>
+                                                <small>
+                                                    @sessao.DataHoraInicio.ToString("dd/MM HH:mm")
+                                                    @if (sessao.DataHoraFim.HasValue)
                                                     {
-                                                        <span>, @sessao.Estado</span>
+                                                        <br>
+                                                        <span class="text-muted">até @sessao.DataHoraFim.Value.ToString("HH:mm")</span>
                                                     }
-                                                }
-                                                else if (!string.IsNullOrEmpty(sessao.Pais))
+                                                </small>
+                                            </td>
+                                            <td>
+                                                @if (sessao.DataHoraFim.HasValue)
                                                 {
-                                                    <i class="fas fa-globe text-muted me-1"></i>
-                                                    @sessao.Pais
+                                                    var duracao = (sessao.DataHoraFim.Value - sessao.DataHoraInicio).TotalMinutes;
+                                                    <span class="badge bg-info">@(duracao.ToString("F0"))min</span>
                                                 }
                                                 else
                                                 {
+                                                    <span class="badge bg-warning">Em andamento</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-primary">@sessao.TempoSegundos s</span>
+                                            </td>
+                                            <td>
+                                                <div class="progress" style="height: 15px; width: 60px;">
+                                                    <div class="progress-bar" style="width: @sessao.ScrollPercentual%">
+                                                        <small>@sessao.ScrollPercentual%</small>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-secondary">@sessao.Cliques</span>
+                                            </td>
+                                            <td>
+                                                @if (sessao.ClicouWhatsApp)
+                                                {
+                                                    <i class="fab fa-whatsapp text-success" title="WhatsApp"></i>
+                                                }
+                                                @if (sessao.ClicouEmail)
+                                                {
+                                                    <i class="fas fa-envelope text-primary" title="Email"></i>
+                                                }
+                                                @if (!sessao.ClicouWhatsApp && !sessao.ClicouEmail)
+                                                {
                                                     <span class="text-muted">-</span>
                                                 }
-                                            </small>
-                                        </td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
+                                            </td>
+                                            <td>
+                                                <small>
+                                                    @if (!string.IsNullOrEmpty(sessao.TipoDispositivo))
+                                                    {
+                                                        @if (sessao.TipoDispositivo.ToLower() == "mobile")
+                                                        {
+                                                            <i class="fas fa-mobile-alt text-success me-1"></i>
+                                                        }
+                                                        else if (sessao.TipoDispositivo.ToLower() == "tablet")
+                                                        {
+                                                            <i class="fas fa-tablet-alt text-warning me-1"></i>
+                                                        }
+                                                        else
+                                                        {
+                                                            <i class="fas fa-desktop text-info me-1"></i>
+                                                        }
+                                                        @sessao.TipoDispositivo
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="text-muted">-</span>
+                                                    }
+                                                </small>
+                                            </td>
+                                            <td>
+                                                <small>
+                                                    @if (!string.IsNullOrEmpty(sessao.Cidade))
+                                                    {
+                                                        <i class="fas fa-map-marker-alt text-danger me-1"></i>
+                                                        @sessao.Cidade
+                                                        @if (!string.IsNullOrEmpty(sessao.Estado))
+                                                        {
+                                                            <span>, @sessao.Estado</span>
+                                                        }
+                                                    }
+                                                    else if (!string.IsNullOrEmpty(sessao.Pais))
+                                                    {
+                                                        <i class="fas fa-globe text-muted me-1"></i>
+                                                        @sessao.Pais
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="text-muted">-</span>
+                                                    }
+                                                </small>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
 
-                    @if (Model.InteracoesUsuarios.Count > 20)
+                        @if (Model.InteracoesUsuarios.Count > 15)
+                        {
+                            <div class="text-center mt-3">
+                                <button class="btn btn-outline-primary" onclick="toggleMaisSessoes()">
+                                    <i class="fas fa-plus me-1"></i>Ver Todas as Sessões
+                                </button>
+                            </div>
+                        }
+                    }
+                    else
                     {
-                        <div class="text-center mt-3">
-                            <button class="btn btn-outline-primary" onclick="carregarMaisSessoes()">
-                                <i class="fas fa-plus me-1"></i>Carregar Mais Sessões
-                            </button>
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-users fa-2x mb-2"></i>
+                            <p>Nenhuma sessão registrada ainda</p>
                         </div>
                     }
-                }
-                else
-                {
-                    <div class="text-center text-muted py-4">
-                        <i class="fas fa-users fa-2x mb-2"></i>
-                        <p>Nenhuma sessão registrada ainda</p>
-                    </div>
-                }
+                </div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Scripts -->
+    <!-- GRÁFICOS DETALHADOS - MOVIDOS PARA O FINAL -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <button class="btn btn-link text-decoration-none p-0" type="button" data-bs-toggle="collapse" data-bs-target="#graficosDetalhados">
+                            <i class="fas fa-chart-line me-2"></i>Gráficos Detalhados
+                            <i class="fas fa-chevron-down ms-2"></i>
+                        </button>
+                    </h5>
+                </div>
+                <div class="collapse" id="graficosDetalhados">
+                    <div class="card-body">
+                        <!-- Visualizações por Dia -->
+                        <div class="row mb-4">
+                            <div class="col-md-8">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h6 class="mb-0"><i class="fas fa-chart-line me-2"></i>Visualizações por Dia</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        @if (Model.VisualizacoesPorDia.Any())
+                                        {
+                                            <canvas id="graficoVisualizacoesDia" style="height: 300px;"></canvas>
+                                        }
+                                        else
+                                        {
+                                            <div class="text-center py-4 text-muted">
+                                                <i class="fas fa-chart-line fa-3x mb-2"></i>
+                                                <p>Dados insuficientes para gráfico por dia</p>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Distribuição de Tempo -->
+                            <div class="col-md-4">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h6 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Tempos de Sessão</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        @if (Model.TemposPorSessao.Any())
+                                        {
+                                            <canvas id="graficoTemposSessao" style="height: 300px;"></canvas>
+                                        }
+                                        else
+                                        {
+                                            <div class="text-center py-4 text-muted">
+                                                <i class="fas fa-chart-pie fa-2x mb-2"></i>
+                                                <p>Sem dados de tempo</p>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Interações e Referências -->
+                        <div class="row">
+                            <!-- Interações -->
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header d-flex justify-content-between align-items-center">
+                                        <h6 class="mb-0"><i class="fas fa-mouse-pointer me-2"></i>Interações</h6>
+                                        <small class="text-muted">@(Model.EstatisticasGerais.CliquesWhatsApp + Model.EstatisticasGerais.CliquesEmail) interações</small>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row text-center mb-4">
+                                            <div class="col-6">
+                                                <div class="p-3 border rounded bg-success text-white">
+                                                    <i class="fab fa-whatsapp fa-2x mb-2"></i>
+                                                    <h4>@Model.EstatisticasGerais.CliquesWhatsApp</h4>
+                                                    <small>WhatsApp</small>
+                                                </div>
+                                            </div>
+                                            <div class="col-6">
+                                                <div class="p-3 border rounded bg-primary text-white">
+                                                    <i class="fas fa-envelope fa-2x mb-2"></i>
+                                                    <h4>@Model.EstatisticasGerais.CliquesEmail</h4>
+                                                    <small>Email</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        @if (Model.EstatisticasGerais.CliquesWhatsApp > 0 || Model.EstatisticasGerais.CliquesEmail > 0)
+                                        {
+                                            <canvas id="graficoInteracoes" style="height: 150px;"></canvas>
+                                        }
+                                        else
+                                        {
+                                            <div class="text-center py-2 text-muted">
+                                                <small>Nenhuma interação registrada ainda</small>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Fontes de Tráfego -->
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h6 class="mb-0"><i class="fas fa-share me-2"></i>Fontes de Tráfego</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        @if (Model.ReferenciasTrafico.Any())
+                                        {
+                                            <div class="table-responsive">
+                                                <table class="table table-sm">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Fonte</th>
+                                                            <th class="text-center">Views</th>
+                                                            <th class="text-center">Tempo</th>
+                                                            <th class="text-center">Taxa</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @foreach (var referencia in Model.ReferenciasTrafico)
+                                                        {
+                                                            <tr>
+                                                                <td>
+                                                                    @if (referencia.TipoReferencia?.ToLower() == "whatsapp")
+                                                                    {
+                                                                        <i class="fab fa-whatsapp text-success me-1"></i>
+                                                                    }
+                                                                    else if (referencia.TipoReferencia?.ToLower() == "google")
+                                                                    {
+                                                                        <i class="fab fa-google text-warning me-1"></i>
+                                                                    }
+                                                                    else if (referencia.TipoReferencia?.ToLower() == "facebook")
+                                                                    {
+                                                                        <i class="fab fa-facebook text-primary me-1"></i>
+                                                                    }
+                                                                    else if (referencia.TipoReferencia?.ToLower() == "email")
+                                                                    {
+                                                                        <i class="fas fa-envelope text-info me-1"></i>
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        <i class="fas fa-globe text-muted me-1"></i>
+                                                                    }
+                                                                    @referencia.TipoReferencia
+                                                                </td>
+                                                                <td class="text-center">
+                                                                    <span class="badge bg-primary">@referencia.Visualizacoes</span>
+                                                                </td>
+                                                                <td class="text-center">@(referencia.TempoMedio.ToString("F0"))s</td>
+                                                                <td class="text-center">
+                                                                    <span class="badge bg-success">@(referencia.TaxaInteracao.ToString("F1"))%</span>
+                                                                </td>
+                                                            </tr>
+                                                        }
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <div class="text-center text-muted py-4">
+                                                <i class="fas fa-share fa-2x mb-2"></i>
+                                                <p>Nenhuma referência registrada</p>
+                                                <small>Os visitantes acessaram diretamente</small>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <!-- Seção de instruções quando não há dados -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-chart-bar fa-4x text-muted mb-3"></i>
+                    <h4 class="text-muted">Ainda não há dados para mostrar</h4>
+                    <p class="text-muted mb-4">Esta proposta ainda não foi visualizada por ninguém. Compartilhe o link para começar a coletar dados!</p>
+
+                    <div class="row justify-content-center">
+                        <div class="col-md-6">
+                            <div class="input-group mb-3">
+                                <input type="text" class="form-control" value="@(Context.Request.Scheme)://@(Context.Request.Host)/Proposta/Publico/@Model.Proposta.Id" id="linkProposta" readonly>
+                                <button class="btn btn-outline-primary" onclick="copiarLinkProposta()">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <a href="/Proposta/Publico/@Model.Proposta.Id" target="_blank" class="btn btn-success me-2">
+                        <i class="fas fa-external-link-alt me-1"></i>Visualizar Proposta
+                    </a>
+                    <button class="btn btn-primary" onclick="compartilharWhatsApp()">
+                        <i class="fab fa-whatsapp me-1"></i>Compartilhar no WhatsApp
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Leaflet JavaScript -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <script>
     // Dados do servidor
     const dadosVisualizacoesDia = @Html.Raw(Json.Serialize(Model.VisualizacoesPorDia));
     const dadosDispositivos = @Html.Raw(Json.Serialize(Model.DispositivosENavegadores));
     const dadosTemposSessao = @Html.Raw(Json.Serialize(Model.TemposPorSessao));
     const estatisticasGerais = @Html.Raw(Json.Serialize(Model.EstatisticasGerais));
+    const dadosMapaVisualizacoes = @Html.Raw(Json.Serialize(Model.MapaVisualizacoes));
+
+    // Variável global para o mapa
+    let mapaInterativo = null;
+
+    // Inicializar Mapa Interativo
+    function inicializarMapa() {
+        const mapContainer = document.getElementById('mapaVisualizacoes');
+        if (!mapContainer || !dadosMapaVisualizacoes.length) return;
+
+        // Criar o mapa centrado no Brasil como padrão
+        mapaInterativo = L.map('mapaVisualizacoes').setView([-15.7975, -47.8919], 4);
+
+        // Adicionar camada do mapa
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(mapaInterativo);
+
+        // Preparar dados para ajuste automático do zoom
+        const latitudes = [];
+        const longitudes = [];
+
+        // Adicionar marcadores para cada localização
+        dadosMapaVisualizacoes.forEach(function (loc) {
+            const lat = parseFloat(loc.latitude);
+            const lng = parseFloat(loc.longitude);
+
+            latitudes.push(lat);
+            longitudes.push(lng);
+
+            // Determinar tamanho do marcador baseado no número de visualizações
+            let markerSize = Math.min(Math.max(loc.visualizacoes * 3, 15), 50);
+            let color = '#007bff';
+
+            // Cores baseadas na quantidade de visualizações
+            if (loc.visualizacoes >= 10) color = '#dc3545'; // Vermelho para muitas
+            else if (loc.visualizacoes >= 5) color = '#ffc107'; // Amarelo para médias
+            else if (loc.visualizacoes >= 2) color = '#28a745'; // Verde para algumas
+            else color = '#6c757d'; // Cinza para poucas
+
+            // Criar marcador customizado
+            const marker = L.circleMarker([lat, lng], {
+                radius: markerSize / 2,
+                fillColor: color,
+                color: '#fff',
+                weight: 2,
+                opacity: 1,
+                fillOpacity: 0.8
+            }).addTo(mapaInterativo);
+
+            // Popup com informações detalhadas
+            const cidadeCompleta = loc.cidade && loc.estado ?
+                `${loc.cidade}, ${loc.estado}` :
+                (loc.cidade || loc.pais || 'Localização desconhecida');
+
+            const popupContent = `
+                    <div class="text-center">
+                        <h6><i class="fas fa-map-marker-alt text-danger"></i> ${cidadeCompleta}</h6>
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <strong>${loc.visualizacoes}</strong><br>
+                                <small class="text-muted">Visualizações</small>
+                            </div>
+                            <div class="col-6">
+                                <strong>${Math.round(loc.tempoMedio)}s</strong><br>
+                                <small class="text-muted">Tempo médio</small>
+                            </div>
+                        </div>
+                        <small class="text-muted">Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}</small>
+                    </div>
+                `;
+
+            marker.bindPopup(popupContent);
+
+            // Adicionar efeito hover
+            marker.on('mouseover', function () {
+                this.openPopup();
+                this.setStyle({ weight: 4, radius: markerSize / 1.5 });
+            });
+
+            marker.on('mouseout', function () {
+                this.setStyle({ weight: 2, radius: markerSize / 2 });
+            });
+        });
+
+        // Ajustar o zoom para mostrar todos os marcadores
+        if (latitudes.length > 1) {
+            const bounds = L.latLngBounds(
+                latitudes.map((lat, i) => [lat, longitudes[i]])
+            );
+            mapaInterativo.fitBounds(bounds, { padding: [20, 20] });
+        } else if (latitudes.length === 1) {
+            mapaInterativo.setView([latitudes[0], longitudes[0]], 10);
+        }
+
+        // Adicionar controles de zoom customizados
+        L.control.zoom({
+            position: 'topright'
+        }).addTo(mapaInterativo);
+
+        // Adicionar escala
+        L.control.scale({
+            position: 'bottomleft'
+        }).addTo(mapaInterativo);
+    }
 
     // Gráfico de Visualizações por Dia
     function inicializarGraficoVisualizacoesDia() {
-        const ctx = document.getElementById('graficoVisualizacoesDia').getContext('2d');
+        const ctx = document.getElementById('graficoVisualizacoesDia');
+        if (!ctx || !dadosVisualizacoesDia.length) return;
 
         const labels = dadosVisualizacoesDia.map(d => new Date(d.data).toLocaleDateString('pt-BR'));
         const visualizacoes = dadosVisualizacoesDia.map(d => d.visualizacoes);
@@ -564,7 +824,8 @@
 
     // Gráfico de Tempos de Sessão
     function inicializarGraficoTemposSessao() {
-        const ctx = document.getElementById('graficoTemposSessao').getContext('2d');
+        const ctx = document.getElementById('graficoTemposSessao');
+        if (!ctx || !dadosTemposSessao.length) return;
 
         const intervalos = {
             '0-30s': 0,
@@ -609,7 +870,8 @@
 
     // Gráfico de Interações
     function inicializarGraficoInteracoes() {
-        const ctx = document.getElementById('graficoInteracoes').getContext('2d');
+        const ctx = document.getElementById('graficoInteracoes');
+        if (!ctx) return;
 
         new Chart(ctx, {
             type: 'bar',
@@ -643,7 +905,8 @@
 
     // Gráfico de Dispositivos
     function inicializarGraficoDispositivos() {
-        const ctx = document.getElementById('graficoDispositivos').getContext('2d');
+        const ctx = document.getElementById('graficoDispositivos');
+        if (!ctx || !dadosDispositivos.length) return;
 
         const dispositivosCount = {};
         dadosDispositivos.forEach(d => {
@@ -677,7 +940,8 @@
 
     // Gráfico de Navegadores
     function inicializarGraficoNavegadores() {
-        const ctx = document.getElementById('graficoNavegadores').getContext('2d');
+        const ctx = document.getElementById('graficoNavegadores');
+        if (!ctx || !dadosDispositivos.length) return;
 
         const navegadoresCount = {};
         dadosDispositivos.forEach(d => {
@@ -715,24 +979,175 @@
         location.reload();
     }
 
-    function carregarMaisSessoes() {
-        alert('Carregando mais sessões...');
+    function toggleMaisSessoes() {
+        // Implementar carregamento de mais sessões via AJAX
+        alert('Funcionalidade em desenvolvimento...');
     }
 
-    // Inicializar gráficos
+    function copiarLinkProposta() {
+        const linkInput = document.getElementById('linkProposta');
+        linkInput.select();
+        document.execCommand('copy');
+
+        // Feedback visual
+        const btn = event.target;
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check"></i>';
+        btn.classList.remove('btn-outline-primary');
+        btn.classList.add('btn-success');
+
+        setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.classList.remove('btn-success');
+            btn.classList.add('btn-outline-primary');
+        }, 2000);
+    }
+
+    function compartilharWhatsApp() {
+        const link = document.getElementById('linkProposta') ?
+            document.getElementById('linkProposta').value :
+            window.location.origin + '/Proposta/Publico/@Model.Proposta.Id';
+
+        const texto = `Confira esta proposta de viagem: @Model.Proposta.Titulo`;
+        const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(texto + ' ' + link)}`;
+        window.open(whatsappUrl, '_blank');
+    }
+
+    // Inicializar tudo quando a página carregar
     document.addEventListener('DOMContentLoaded', function () {
-        inicializarGraficoVisualizacoesDia();
-        inicializarGraficoTemposSessao();
-        inicializarGraficoInteracoes();
+        // Inicializar mapa sempre (mesmo sem dados, para mostrar o mapa vazio)
+        if (document.getElementById('mapaVisualizacoes')) {
+            setTimeout(inicializarMapa, 100); // Pequeno delay para garantir que o container está pronto
+        }
+
+        // Só inicializar gráficos se houver dados
+        if (@Model.EstatisticasGerais.TotalVisualizacoes > 0) {
+            // Aguardar um pouco para que os elementos colapsáveis sejam inicializados
+            setTimeout(() => {
+                inicializarGraficoVisualizacoesDia();
+                inicializarGraficoTemposSessao();
+                inicializarGraficoInteracoes();
 
     @if (Model.DispositivosENavegadores.Any())
     {
         <text>
-                    inicializarGraficoDispositivos();
-                    inicializarGraficoNavegadores();
+                            inicializarGraficoDispositivos();
+                            inicializarGraficoNavegadores();
         </text>
     }
+                }, 500);
+        }
+
+        // Auto-refresh a cada 2 minutos se houver dados
+        if (@Model.EstatisticasGerais.TotalVisualizacoes > 0) {
+            setInterval(function () {
+                fetch('/PropostaAnalyticsData/GetPropostaEstatisticas/@Model.Proposta.Id')
+                    .then(response => response.json())
+                    .then(data => {
+                        updateStatsCards(data);
+                    })
+                    .catch(console.error);
+            }, 120000); // 2 minutos
+        }
+
+        // Inicializar gráficos quando a seção for expandida
+        document.getElementById('graficosDetalhados').addEventListener('shown.bs.collapse', function () {
+            // Re-inicializar gráficos após a expansão
+            setTimeout(() => {
+                inicializarGraficoVisualizacoesDia();
+                inicializarGraficoTemposSessao();
+                inicializarGraficoInteracoes();
+            }, 100);
         });
+    });
+
+    function updateStatsCards(data) {
+        // Implementar atualização dos cards sem refresh
+        console.log('Dados atualizados:', data);
+    }
+
+    // Redimensionar mapa quando a janela mudar de tamanho
+    window.addEventListener('resize', function () {
+        if (mapaInterativo) {
+            setTimeout(() => {
+                mapaInterativo.invalidateSize();
+            }, 100);
+        }
+    });
 </script>
 
 <style>
+    .card {
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        border: 1px solid rgba(0, 0, 0, 0.125);
+        transition: box-shadow 0.15s ease-in-out;
+    }
+
+        .card:hover {
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        }
+
+    .card-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+    }
+
+    .table th {
+        font-weight: 600;
+        font-size: 0.875rem;
+    }
+
+    .badge {
+        font-size: 0.75rem;
+    }
+
+    canvas {
+        max-height: 300px;
+    }
+
+    .progress-bar {
+        font-size: 0.7rem;
+    }
+
+    .alert-warning {
+        border-left: 4px solid #ffc107;
+    }
+
+    /* Estilos específicos do mapa */
+    #mapaVisualizacoes {
+        border: 2px solid #dee2e6;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    /* Personalizar popup do mapa */
+    .leaflet-popup-content {
+        margin: 8px 12px;
+        font-size: 13px;
+    }
+
+    .leaflet-popup-content-wrapper {
+        border-radius: 8px;
+        box-shadow: 0 3px 14px rgba(0,0,0,0.4);
+    }
+
+    /* Botão collapse personalizado */
+    .btn-link {
+        color: #495057;
+        text-decoration: none;
+    }
+
+        .btn-link:hover {
+            color: #007bff;
+        }
+
+    /* Responsividade */
+    @@media (max-width: 768px) {
+        #mapaVisualizacoes {
+            height: 300px !important;
+        }
+
+        .card-body canvas {
+            height: 200px !important;
+        }
+    }
+</style>

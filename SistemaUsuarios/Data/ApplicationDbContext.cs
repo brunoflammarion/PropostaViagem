@@ -12,19 +12,22 @@ namespace SistemaUsuarios.Data
         public DbSet<Usuario> Usuarios { get; set; }
         public DbSet<Proposta> Propostas { get; set; }
         public DbSet<PropostaVisualizacao> PropostaVisualizacoes { get; set; }
-
         public DbSet<Layout> Layouts { get; set; }
+
+        // ✅ NOVOS DBSETS
+        public DbSet<Destino> Destinos { get; set; }
+        public DbSet<DestinoFoto> DestinoFotos { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            // Configuração da tabela Usuarios
+            // ✅ CONFIGURAÇÃO DA TABELA USUARIOS
             modelBuilder.Entity<Usuario>()
                 .HasIndex(u => u.Email)
                 .IsUnique();
 
-            // Configuração da tabela Propostas
+            // ✅ CONFIGURAÇÃO DA TABELA PROPOSTAS
             modelBuilder.Entity<Proposta>()
                 .HasOne(p => p.Usuario)
                 .WithMany()
@@ -35,10 +38,38 @@ namespace SistemaUsuarios.Data
                 .Property(p => p.StatusProposta)
                 .HasConversion<int>();
 
-            // Configuração da tabela PropostaVisualizacao
+            // ✅ CONFIGURAÇÃO DA TABELA DESTINOS
+            modelBuilder.Entity<Destino>()
+                .HasOne(d => d.Proposta)
+                .WithMany(p => p.Destinos)
+                .HasForeignKey(d => d.PropostaId)
+                .OnDelete(DeleteBehavior.Cascade); // Quando a proposta for deletada, os destinos também serão
+
+            modelBuilder.Entity<Destino>()
+                .HasIndex(d => d.PropostaId);
+
+            modelBuilder.Entity<Destino>()
+                .HasIndex(d => new { d.PropostaId, d.Ordem })
+                .IsUnique(); // Garante que não haja duas ordens iguais na mesma proposta
+
+            // ✅ CONFIGURAÇÃO DA TABELA DESTINO_FOTOS
+            modelBuilder.Entity<DestinoFoto>()
+                .HasOne(df => df.Destino)
+                .WithMany(d => d.Fotos)
+                .HasForeignKey(df => df.DestinoId)
+                .OnDelete(DeleteBehavior.Cascade); // Quando o destino for deletado, as fotos também serão
+
+            modelBuilder.Entity<DestinoFoto>()
+                .HasIndex(df => df.DestinoId);
+
+            modelBuilder.Entity<DestinoFoto>()
+                .HasIndex(df => new { df.DestinoId, df.Ordem })
+                .IsUnique(); // Garante que não haja duas ordens iguais no mesmo destino
+
+            // ✅ CONFIGURAÇÃO DA TABELA PROPOSTA_VISUALIZACAO
             modelBuilder.Entity<PropostaVisualizacao>()
                 .HasOne(pv => pv.Proposta)
-                .WithMany()
+                .WithMany(p => p.PropostaVisualizacoes)
                 .HasForeignKey(pv => pv.PropostaId)
                 .OnDelete(DeleteBehavior.Cascade);
 
@@ -54,7 +85,7 @@ namespace SistemaUsuarios.Data
             modelBuilder.Entity<PropostaVisualizacao>()
                 .HasIndex(pv => pv.DeviceFingerprint);
 
-            // Configurações de precisão para campos decimais
+            // ✅ CONFIGURAÇÕES DE PRECISÃO PARA CAMPOS DECIMAIS
             modelBuilder.Entity<PropostaVisualizacao>()
                 .Property(pv => pv.Latitude)
                 .HasPrecision(10, 8);
@@ -63,7 +94,7 @@ namespace SistemaUsuarios.Data
                 .Property(pv => pv.Longitude)
                 .HasPrecision(11, 8);
 
-            // Configuração de valores padrão
+            // ✅ CONFIGURAÇÃO DE VALORES PADRÃO
             modelBuilder.Entity<PropostaVisualizacao>()
                 .Property(pv => pv.DataCriacao)
                 .HasDefaultValueSql("GETDATE()");

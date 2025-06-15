@@ -213,6 +213,7 @@ using SistemaUsuarios.Models.ViewModels.Analytics;
                                     <small class="text-muted">Editada: @proposta.DataModificacao.Value.ToString("dd/MM/yyyy")</small>
                                 }
                             </td>
+                            <!-- Seção de ações corrigida no arquivo Index.cshtml -->
                             <td>
                                 <div class="d-grid gap-1">
                                     <div class="btn-group btn-group-sm d-flex" role="group">
@@ -222,7 +223,8 @@ using SistemaUsuarios.Models.ViewModels.Analytics;
                                         <a href="/Proposta/Editar/@proposta.Id" class="btn btn-outline-primary w-100" title="Editar Proposta">
                                             <i class="fas fa-edit"></i>
                                         </a>
-                                        <a href="/PropostaAnalyticsData/PropostaDetalhada?propostaId=@proposta.Id" class="btn btn-outline-secondary w-100" title="Ver Estatísticas" target="_blank">
+                                        <!-- LINK CORRIGIDO PARA ANALYTICS -->
+                                        <a href="/PropostaAnalyticsData/PropostaDetalhada/@proposta.Id" class="btn btn-outline-secondary w-100" title="Ver Estatísticas" target="_blank">
                                             <i class="fas fa-chart-bar"></i>
                                         </a>
                                     </div>

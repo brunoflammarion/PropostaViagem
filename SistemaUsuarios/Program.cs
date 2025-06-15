@@ -10,14 +10,16 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Configurar sessão
-builder.Services.AddDistributedMemoryCache();
+// Configurar sessões
 builder.Services.AddSession(options =>
 {
     options.IdleTimeout = TimeSpan.FromMinutes(30);
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
 });
+
+// Adicionar HttpContextAccessor para acessar o contexto HTTP
+builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
 
@@ -32,11 +34,65 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
+
+// Usar sessões
 app.UseSession();
+
 app.UseAuthorization();
+
+// Configurar rotas
+app.MapControllerRoute(
+    name: "analytics",
+    pattern: "PropostaAnalyticsData/PropostaDetalhada/{propostaId}",
+    defaults: new { controller = "PropostaAnalyticsData", action = "PropostaDetalhada" });
 
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+
+// Garantir que o banco seja criado e populado
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    try
+    {
+        // Aplicar migrações pendentes
+        context.Database.Migrate();
+
+        // Seed layouts se não existirem
+        if (!context.Layouts.Any())
+        {
+            context.Layouts.AddRange(
+                new SistemaUsuarios.Models.Layout
+                {
+                    Nome = "Layout Padrão",
+                    Descricao = "Layout padrão do sistema",
+                    Ativo = true,
+                    DataCriacao = DateTime.Now
+                },
+                new SistemaUsuarios.Models.Layout
+                {
+                    Nome = "Layout Executivo",
+                    Descricao = "Layout para viagens executivas",
+                    Ativo = true,
+                    DataCriacao = DateTime.Now
+                },
+                new SistemaUsuarios.Models.Layout
+                {
+                    Nome = "Layout Familiar",
+                    Descricao = "Layout para viagens em família",
+                    Ativo = true,
+                    DataCriacao = DateTime.Now
+                }
+            );
+            context.SaveChanges();
+        }
+    }
+    catch (Exception ex)
+    {
+        // Log do erro
+        Console.WriteLine($"Erro ao inicializar banco de dados: {ex.Message}");
+    }
+}
 
 app.Run();

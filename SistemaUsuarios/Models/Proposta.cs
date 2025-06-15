@@ -55,7 +55,10 @@ namespace SistemaUsuarios.Models
         public virtual Usuario Usuario { get; set; }
         public virtual Layout Layout { get; set; }
 
-        // ✅ ADICIONANDO A PROPRIEDADE QUE ESTAVA FALTANDO
+        // ✅ RELACIONAMENTO COM DESTINOS (1:N)
+        public virtual ICollection<Destino> Destinos { get; set; } = new List<Destino>();
+
+        // ✅ RELACIONAMENTO COM VISUALIZAÇÕES (1:N)
         public virtual ICollection<PropostaVisualizacao> PropostaVisualizacoes { get; set; } = new List<PropostaVisualizacao>();
     }
 
