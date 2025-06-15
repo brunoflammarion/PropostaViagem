@@ -5,7 +5,6 @@
 @model SistemaUsuarios.Models.Proposta
 @using SistemaUsuarios.Models
 
-
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -14,51 +13,305 @@
     <title>@Model.Titulo - Proposta de Viagem</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet">
     <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --success-gradient: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            --card-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            --border-radius: 12px;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.6;
+            color: #2d3748;
+        }
+
         .hero-section {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--primary-gradient);
             color: white;
-            padding: 60px 0;
+            padding: 80px 0;
+            position: relative;
+            overflow: hidden;
         }
 
-        .card-shadow {
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            transition: transform 0.2s ease-in-out;
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 100" fill="white" opacity="0.1"><polygon points="1000,100 1000,0 0,100"/></svg>') no-repeat bottom;
+            background-size: cover;
         }
 
-            .card-shadow:hover {
-                transform: translateY(-2px);
-            }
+        .hero-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        .card-modern {
+            border: none;
+            border-radius: var(--border-radius);
+            box-shadow: var(--card-shadow);
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+
+        .card-modern:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+        }
 
         .btn-contact {
+            background: var(--success-gradient);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
             transition: all 0.3s ease;
+            color: white;
+            text-decoration: none;
+            display: inline-block;
         }
 
-            .btn-contact:hover {
-                transform: scale(1.05);
-            }
+        .btn-contact:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            color: white;
+        }
 
         .scroll-indicator {
             position: fixed;
             top: 0;
             left: 0;
             width: 0%;
-            height: 3px;
-            background: linear-gradient(to right, #667eea, #764ba2);
+            height: 4px;
+            background: var(--success-gradient);
             z-index: 9999;
             transition: width 0.1s ease;
+        }
+
+        .stats-card {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 20px;
+            text-align: center;
+            box-shadow: var(--card-shadow);
+            border-top: 4px solid #667eea;
+        }
+
+        .destination-card {
+            background: white;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: var(--card-shadow);
+            transition: all 0.3s ease;
+            margin-bottom: 24px;
+        }
+
+        .destination-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+        }
+
+        .destination-image {
+            width: 100%;
+            height: 240px;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .destination-card:hover .destination-image {
+            transform: scale(1.05);
+        }
+
+        .photo-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .photo-item {
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .photo-item:hover {
+            transform: scale(1.05);
+        }
+
+        .photo-item img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+        }
+
+        .photo-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(0,0,0,0.7));
+            color: white;
+            padding: 12px;
+            font-size: 0.9rem;
+        }
+
+        .timeline {
+            position: relative;
+            padding-left: 30px;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 15px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #e2e8f0;
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 32px;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -22px;
+            top: 8px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #667eea;
+            border: 3px solid white;
+            box-shadow: 0 0 0 3px #e2e8f0;
+        }
+
+        .floating-contact {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 1000;
+        }
+
+        .floating-contact .btn {
+            border-radius: 50px;
+            padding: 12px 24px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            animation: pulse 2s infinite;
+        }
+
+        @@keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .feature-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: var(--primary-gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            margin: 0 auto 16px;
+        }
+
+        .lightbox {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .lightbox img {
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: 8px;
+        }
+
+        .lightbox-close {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            color: white;
+            font-size: 30px;
+            cursor: pointer;
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+
+        .section-title h2 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .section-title p {
+            font-size: 1.1rem;
+            color: #64748b;
+        }
+
+        /* Responsive Design */
+        @@media (max-width: 768px) {
+            .hero-section {
+                padding: 60px 0;
+            }
+            
+            .section-title h2 {
+                font-size: 2rem;
+            }
+            
+            .photo-gallery {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .floating-contact {
+                bottom: 20px;
+                right: 20px;
+            }
+            
+            .stats-card {
+                margin-bottom: 16px;
+            }
         }
 
         .analytics-debug {
             position: fixed;
             bottom: 10px;
-            right: 10px;
+            left: 10px;
             background: rgba(0,0,0,0.8);
             color: white;
             padding: 10px;
             border-radius: 5px;
             font-size: 12px;
             display: none;
+            max-width: 250px;
         }
     </style>
 </head>
@@ -67,186 +320,364 @@
     <div class="scroll-indicator" id="scrollIndicator"></div>
 
     <!-- Hero Section -->
-    <div class="hero-section">
-        <div class="container">
+    <section class="hero-section">
+        <div class="container hero-content">
             <div class="row align-items-center">
-                <div class="col-md-8">
-                    <h1 class="display-4 mb-3">@Model.Titulo</h1>
-                    <p class="lead">Proposta de viagem organizada por @Model.Usuario.Nome</p>
+                <div class="col-lg-8" data-aos="fade-right">
+                    <h1 class="display-4 fw-bold mb-4">@Model.Titulo</h1>
+                    <p class="lead mb-4">Uma experiência única criada especialmente para você por @Model.Usuario.Nome</p>
 
-                    <div class="row mt-4">
+                    <div class="row g-4">
                         @if (Model.DataInicio.HasValue && Model.DataFim.HasValue)
                         {
                             var dias = (Model.DataFim.Value - Model.DataInicio.Value).Days + 1;
-                            <div class="col-md-4 mb-3">
-                                <h5><i class="fas fa-calendar me-2"></i>@dias Dias</h5>
-                                <p class="mb-0">@Model.DataInicio.Value.ToString("dd/MM/yyyy") - @Model.DataFim.Value.ToString("dd/MM/yyyy")</p>
+                            <div class="col-md-4">
+                                <div class="stats-card" data-aos="fade-up" data-aos-delay="100">
+                                    <div class="feature-icon">
+                                        <i class="fas fa-calendar-alt"></i>
+                                    </div>
+                                    <h3 class="fw-bold">@dias Dias</h3>
+                                    <p class="mb-0">@Model.DataInicio.Value.ToString("dd/MM") - @Model.DataFim.Value.ToString("dd/MM/yyyy")</p>
+                                </div>
                             </div>
                         }
 
-                        <div class="col-md-4 mb-3">
-                            <h5><i class="fas fa-users me-2"></i>@(Model.NumeroPassageiros + Model.NumeroCriancas) Pessoas</h5>
-                            <p class="mb-0">@Model.NumeroPassageiros adultos + @Model.NumeroCriancas crianças</p>
+                        <div class="col-md-4">
+                            <div class="stats-card" data-aos="fade-up" data-aos-delay="200">
+                                <div class="feature-icon">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                                <h3 class="fw-bold">@(Model.NumeroPassageiros + Model.NumeroCriancas)</h3>
+                                <p class="mb-0">
+                                    @if (Model.NumeroCriancas > 0)
+                                    {
+                                        <text>@Model.NumeroPassageiros adultos + @Model.NumeroCriancas crianças</text>
+                                    }
+                                    else
+                                    {
+                                        <text>@Model.NumeroPassageiros @(Model.NumeroPassageiros == 1 ? "pessoa" : "pessoas")</text>
+                                    }
+                                </p>
+                            </div>
                         </div>
 
-                        <div class="col-md-4 mb-3">
-                            <h5><i class="fas fa-check-circle me-2"></i>Status</h5>
-                            <p class="mb-0">
-                                @if (Model.StatusProposta == StatusProposta.Aprovada)
-                                {
-                                    <span class="badge bg-success fs-6">Aprovada</span>
-                                }
-                                else if (Model.StatusProposta == StatusProposta.Enviada)
-                                {
-                                    <span class="badge bg-warning fs-6">Em Análise</span>
-                                }
-                                else
-                                {
-                                    <span class="badge bg-info fs-6">@Model.StatusProposta</span>
-                                }
-                            </p>
+                        <div class="col-md-4">
+                            <div class="stats-card" data-aos="fade-up" data-aos-delay="300">
+                                <div class="feature-icon">
+                                    <i class="fas fa-map-marked-alt"></i>
+                                </div>
+                                <h3 class="fw-bold">@Model.Destinos.Count</h3>
+                                <p class="mb-0">@(Model.Destinos.Count == 1 ? "Destino" : "Destinos") Incríveis</p>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 @if (!string.IsNullOrEmpty(Model.FotoCapa))
                 {
-                    <div class="col-md-4">
-                        <img src="@Model.FotoCapa" alt="Foto da Viagem" class="img-fluid rounded shadow" />
+                    <div class="col-lg-4" data-aos="fade-left">
+                        <div class="card-modern">
+                            <img src="@Model.FotoCapa" alt="@Model.Titulo" class="img-fluid" style="width: 100%; height: 300px; object-fit: cover;" />
+                        </div>
                     </div>
                 }
             </div>
         </div>
+    </section>
+
+    <!-- Observações Gerais -->
+    @if (!string.IsNullOrEmpty(Model.ObservacoesGerais))
+    {
+        <section class="py-5">
+            <div class="container">
+                <div class="row justify-content-center">
+                    <div class="col-lg-8">
+                        <div class="card-modern" data-aos="fade-up">
+                            <div class="card-body p-4">
+                                <div class="text-center mb-4">
+                                    <div class="feature-icon">
+                                        <i class="fas fa-info-circle"></i>
+                                    </div>
+                                    <h3 class="fw-bold">Sobre Esta Viagem</h3>
+                                </div>
+                                <div class="text-center">
+                                    <p class="lead">@Html.Raw(Model.ObservacoesGerais.Replace("\n", "<br>"))</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    }
+
+    <!-- Destinos -->
+    @if (Model.Destinos.Any())
+    {
+        <section class="py-5 bg-light">
+            <div class="container">
+                <div class="section-title" data-aos="fade-up">
+                    <h2>Destinos da Viagem</h2>
+                    <p>Explore cada parada desta jornada incrível</p>
+                </div>
+
+                <div class="timeline">
+                    @foreach (var destino in Model.Destinos.OrderBy(d => d.Ordem))
+                    {
+                        <div class="timeline-item" data-aos="fade-up" data-aos-delay="@((destino.Ordem - 1) * 100)">
+                            <div class="destination-card">
+                                <div class="row g-0">
+                                    <div class="col-md-5">
+                                        @{
+                                            var fotoPrincipal = destino.Fotos.FirstOrDefault(f => f.Principal) ?? destino.Fotos.FirstOrDefault();
+                                        }
+                                        @if (fotoPrincipal != null)
+                                        {
+                                            <img src="@fotoPrincipal.CaminhoFoto" alt="@destino.Nome" class="destination-image" onclick="openLightbox('@fotoPrincipal.CaminhoFoto', '@destino.Nome')" />
+                                        }
+                                        else
+                                        {
+                                            <div class="destination-image d-flex align-items-center justify-content-center bg-light">
+                                                <i class="fas fa-map-marker-alt fa-3x text-muted"></i>
+                                            </div>
+                                        }
+                                    </div>
+                                    <div class="col-md-7">
+                                        <div class="card-body p-4">
+                                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                                <div>
+                                                    <h4 class="fw-bold text-primary">@destino.Nome</h4>
+                                                    @if (!string.IsNullOrEmpty(destino.Cidade) || !string.IsNullOrEmpty(destino.Pais))
+                                                    {
+                                                        <p class="text-muted mb-0">
+                                                            <i class="fas fa-map-marker-alt me-1"></i>
+                                                            @if (!string.IsNullOrEmpty(destino.Cidade))
+                                                            {
+                                                                @destino.Cidade
+                                                                @if (!string.IsNullOrEmpty(destino.Pais))
+                                                                {
+                                                                    <text>, @destino.Pais</text>
+                                                                }
+                                                            }
+                                                            else if (!string.IsNullOrEmpty(destino.Pais))
+                                                            {
+                                                                @destino.Pais
+                                                            }
+                                                        </p>
+                                                    }
+                                                </div>
+                                                <span class="badge bg-primary fs-6">Destino @destino.Ordem</span>
+                                            </div>
+
+                                            @if (destino.DataChegada.HasValue || destino.DataSaida.HasValue)
+                                            {
+                                                <div class="mb-3">
+                                                    <h6 class="text-muted mb-2">
+                                                        <i class="fas fa-calendar me-1"></i>Período
+                                                    </h6>
+                                                    <p class="mb-0">
+                                                        @if (destino.DataChegada.HasValue && destino.DataSaida.HasValue)
+                                                        {
+                                                            var diasDestino = (destino.DataSaida.Value - destino.DataChegada.Value).Days + 1;
+                                                            <text>@destino.DataChegada.Value.ToString("dd/MM") - @destino.DataSaida.Value.ToString("dd/MM") (@diasDestino @(diasDestino == 1 ? "dia" : "dias"))</text>
+                                                        }
+                                                        else if (destino.DataChegada.HasValue)
+                                                        {
+                                                            <text>A partir de @destino.DataChegada.Value.ToString("dd/MM/yyyy")</text>
+                                                        }
+                                                        else if (destino.DataSaida.HasValue)
+                                                        {
+                                                            <text>Até @destino.DataSaida.Value.ToString("dd/MM/yyyy")</text>
+                                                        }
+                                                    </p>
+                                                </div>
+                                            }
+
+                                            @if (!string.IsNullOrEmpty(destino.Descricao))
+                                            {
+                                                <div class="mb-3">
+                                                    <h6 class="text-muted mb-2">
+                                                        <i class="fas fa-info-circle me-1"></i>Sobre o Destino
+                                                    </h6>
+                                                    <p class="mb-0">@destino.Descricao</p>
+                                                </div>
+                                            }
+
+                                            @if (destino.Fotos.Count > 1)
+                                            {
+                                                <div class="mb-3">
+                                                    <h6 class="text-muted mb-2">
+                                                        <i class="fas fa-images me-1"></i>Galeria (@destino.Fotos.Count fotos)
+                                                    </h6>
+                                                    <div class="photo-gallery">
+                                                        @foreach (var foto in destino.Fotos.OrderBy(f => f.Ordem).Take(6))
+                                                        {
+                                                            <div class="photo-item" onclick="openLightbox('@foto.CaminhoFoto', '@(foto.Descricao ?? destino.Nome)')">
+                                                                <img src="@foto.CaminhoFoto" alt="@foto.Descricao" />
+                                                                @if (!string.IsNullOrEmpty(foto.Descricao))
+                                                                {
+                                                                    <div class="photo-overlay">
+                                                                        @foto.Descricao
+                                                                    </div>
+                                                                }
+                                                            </div>
+                                                        }
+                                                        
+                                                        @if (destino.Fotos.Count > 6)
+                                                        {
+                                                            <div class="photo-item d-flex align-items-center justify-content-center bg-light" style="cursor: pointer;" onclick="showAllPhotos('@destino.Id')">
+                                                                <div class="text-center">
+                                                                    <i class="fas fa-plus fa-2x text-muted mb-2"></i>
+                                                                    <p class="mb-0 text-muted">+@(destino.Fotos.Count - 6) fotos</p>
+                                                                </div>
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </section>
+    }
+
+    <!-- Seção de Contato -->
+    <section class="py-5">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="card-modern text-center" data-aos="fade-up">
+                        <div class="card-body p-5">
+                            <div class="feature-icon">
+                                <i class="fas fa-heart"></i>
+                            </div>
+                            <h3 class="fw-bold mb-4">Gostou da Proposta?</h3>
+                            <p class="lead mb-4">Entre em contato comigo para personalizar ainda mais esta experiência e tornar sua viagem inesquecível!</p>
+                            
+                            <div class="row g-3 justify-content-center">
+                                <div class="col-md-6">
+                                    <a href="https://wa.me/55@(Model.Usuario.Telefone?.Replace("(", "").Replace(")", "").Replace("-", "").Replace(" ", ""))?text=Olá! Tenho interesse na proposta: @Model.Titulo"
+                                       class="btn btn-contact w-100"
+                                       data-track="whatsapp"
+                                       target="_blank">
+                                        <i class="fab fa-whatsapp me-2"></i>Conversar no WhatsApp
+                                    </a>
+                                </div>
+                                <div class="col-md-6">
+                                    <a href="mailto:@Model.Usuario.Email?subject=Interesse na proposta: @Model.Titulo"
+                                       class="btn btn-contact w-100"
+                                       data-track="email"
+                                       style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                                        <i class="fas fa-envelope me-2"></i>Enviar E-mail
+                                    </a>
+                                </div>
+                            </div>
+
+                            <div class="mt-4 pt-4 border-top">
+                                <div class="row text-center">
+                                    <div class="col-md-4">
+                                        <i class="fas fa-user-tie fa-2x text-primary mb-2"></i>
+                                        <h6 class="fw-bold">@Model.Usuario.Nome</h6>
+                                        <small class="text-muted">Consultor de Viagens</small>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <i class="fas fa-envelope fa-2x text-primary mb-2"></i>
+                                        <h6 class="fw-bold">E-mail</h6>
+                                        <small class="text-muted">@Model.Usuario.Email</small>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <i class="fas fa-phone fa-2x text-primary mb-2"></i>
+                                        <h6 class="fw-bold">Telefone</h6>
+                                        <small class="text-muted">@Model.Usuario.Telefone</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Floating Contact Button -->
+    <div class="floating-contact d-md-none">
+        <a href="https://wa.me/55@(Model.Usuario.Telefone?.Replace("(", "").Replace(")", "").Replace("-", "").Replace(" ", ""))?text=Olá! Tenho interesse na proposta: @Model.Titulo"
+           class="btn btn-contact"
+           data-track="whatsapp"
+           target="_blank">
+            <i class="fab fa-whatsapp me-2"></i>Falar Agora
+        </a>
     </div>
 
-    <!-- Conteúdo Principal -->
-    <div class="container my-5">
-        <div class="row">
-            <div class="col-md-8">
-                @if (!string.IsNullOrEmpty(Model.ObservacoesGerais))
-                {
-                    <div class="card card-shadow mb-4">
-                        <div class="card-header bg-primary text-white">
-                            <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Detalhes da Viagem</h5>
-                        </div>
-                        <div class="card-body">
-                            <p class="mb-0">@Html.Raw(Model.ObservacoesGerais.Replace("\n", "<br>"))</p>
-                        </div>
-                    </div>
-                }
-
-                <div class="card card-shadow">
-                    <div class="card-header bg-success text-white">
-                        <h5 class="mb-0"><i class="fas fa-envelope me-2"></i>Interessado na Viagem?</h5>
-                    </div>
-                    <div class="card-body">
-                        <p>Entre em contato com o organizador para mais informações:</p>
-                        <div class="d-grid gap-2">
-                            <a href="mailto:@Model.Usuario.Email?subject=Interesse na viagem: @Model.Titulo"
-                               class="btn btn-success btn-contact"
-                               data-track="email">
-                                <i class="fas fa-envelope me-2"></i>Enviar Email
-                            </a>
-                            <a href="https://wa.me/55@(Model.Usuario.Telefone?.Replace("(", "").Replace(")", "").Replace("-", "").Replace(" ", ""))?text=Olá! Tenho interesse na viagem: @Model.Titulo"
-                               class="btn btn-success btn-contact"
-                               data-track="whatsapp"
-                               target="_blank">
-                                <i class="fab fa-whatsapp me-2"></i>WhatsApp
-                            </a>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Seção adicional para aumentar conteúdo -->
-                <div class="card card-shadow mt-4">
-                    <div class="card-header bg-info text-white">
-                        <h5 class="mb-0"><i class="fas fa-map-marked-alt me-2"></i>Sobre a Viagem</h5>
-                    </div>
-                    <div class="card-body">
-                        <p>Esta proposta foi cuidadosamente planejada para oferecer uma experiência única e memorável.</p>
-                        <ul class="list-unstyled">
-                            <li><i class="fas fa-check text-success me-2"></i>Planejamento detalhado</li>
-                            <li><i class="fas fa-check text-success me-2"></i>Suporte durante toda a viagem</li>
-                            <li><i class="fas fa-check text-success me-2"></i>Experiência personalizada</li>
-                            <li><i class="fas fa-check text-success me-2"></i>Memórias inesquecíveis</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-md-4">
-                <div class="card card-shadow mb-4">
-                    <div class="card-header bg-info text-white">
-                        <h5 class="mb-0"><i class="fas fa-user me-2"></i>Organizador</h5>
-                    </div>
-                    <div class="card-body">
-                        <h6>@Model.Usuario.Nome</h6>
-                        <p class="text-muted mb-2">
-                            <i class="fas fa-envelope me-1"></i>@Model.Usuario.Email
-                        </p>
-                        <p class="text-muted mb-0">
-                            <i class="fas fa-phone me-1"></i>@Model.Usuario.Telefone
-                        </p>
-                    </div>
-                </div>
-
-                <div class="card card-shadow mb-4">
-                    <div class="card-header bg-warning text-dark">
-                        <h5 class="mb-0"><i class="fas fa-info me-2"></i>Informações</h5>
-                    </div>
-                    <div class="card-body">
-                        <small class="text-muted">
-                            <p><strong>Criada em:</strong> @Model.DataCriacao.ToString("dd/MM/yyyy")</p>
-                            @if (Model.DataExpiracaoLink.HasValue)
-                            {
-                                <p><strong>Link válido até:</strong> @Model.DataExpiracaoLink.Value.ToString("dd/MM/yyyy")</p>
-                            }
-                            <p><strong>Visualizações:</strong> <span id="viewCount">Carregando...</span></p>
-                        </small>
-                    </div>
-                </div>
-
-                <!-- Seção de compartilhamento -->
-                <div class="card card-shadow">
-                    <div class="card-header bg-secondary text-white">
-                        <h5 class="mb-0"><i class="fas fa-share me-2"></i>Compartilhar</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="d-grid gap-2">
-                            <button class="btn btn-outline-primary btn-sm" onclick="compartilharWhatsApp()">
-                                <i class="fab fa-whatsapp me-1"></i>Compartilhar no WhatsApp
-                            </button>
-                            <button class="btn btn-outline-info btn-sm" onclick="copiarLink()">
-                                <i class="fas fa-copy me-1"></i>Copiar Link
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <!-- Lightbox -->
+    <div class="lightbox" id="lightbox" onclick="closeLightbox()">
+        <span class="lightbox-close">&times;</span>
+        <img id="lightboxImage" src="" alt="" />
     </div>
 
     <!-- Footer -->
-    <footer class="bg-dark text-white text-center py-4 mt-5">
-        <div class="container">
-            <p class="mb-2">Sistema de Propostas de Viagem</p>
-            <small class="text-muted">Link público gerado automaticamente • Visite nosso site para criar sua proposta</small>
+    <footer class="bg-dark text-white py-4">
+        <div class="container text-center">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Sistema de Propostas de Viagem</h6>
+                    <p class="mb-0 text-muted">Criando experiências inesquecíveis</p>
+                </div>
+                <div class="col-md-6">
+                    <div class="mt-3 mt-md-0">
+                        <button class="btn btn-outline-light btn-sm me-2" onclick="compartilharWhatsApp()">
+                            <i class="fab fa-whatsapp me-1"></i>Compartilhar
+                        </button>
+                        <button class="btn btn-outline-light btn-sm" onclick="copiarLink()">
+                            <i class="fas fa-copy me-1"></i>Copiar Link
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <hr class="my-3">
+            <small class="text-muted">
+                Proposta criada em @Model.DataCriacao.ToString("dd/MM/yyyy") • 
+                <span id="viewCount">Carregando visualizações...</span> • 
+                Link público válido
+                @if (Model.DataExpiracaoLink.HasValue)
+                {
+                    <text> até @Model.DataExpiracaoLink.Value.ToString("dd/MM/yyyy")</text>
+                }
+            </small>
         </div>
     </footer>
 
-    <!-- Debug Analytics (apenas para desenvolvimento) -->
+    <!-- Debug Analytics -->
     <div class="analytics-debug" id="analyticsDebug">
+        <div><strong>Analytics Debug</strong></div>
         <div>Sessão: <span id="debugSession">-</span></div>
         <div>Tempo: <span id="debugTime">0s</span></div>
         <div>Scroll: <span id="debugScroll">0%</span></div>
         <div>Cliques: <span id="debugClicks">0</span></div>
+        <div>WhatsApp: <span id="debugWhatsApp">❌</span></div>
+        <div>Email: <span id="debugEmail">❌</span></div>
     </div>
 
+    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
 
     <!-- Sistema de Analytics Avançado -->
     <script>
-        // Sistema de Analytics Avançado para Propostas
+        // Inicializar AOS (Animate on Scroll)
+        AOS.init({
+            duration: 800,
+            easing: 'ease-in-out',
+            once: true,
+            offset: 100
+        });
+
+        // Sistema de Analytics Completo
         class PropostaAnalytics {
             constructor(propostaId) {
                 this.propostaId = propostaId;
@@ -297,28 +728,18 @@
 
             async collectDeviceData() {
                 const data = {
-                    // Dados temporais
                     dataHoraInicio: new Date().toISOString(),
-
-                    // Dados do dispositivo
                     tipoDispositivo: this.getDeviceType(),
                     navegador: this.getBrowserInfo(),
                     sistemaOperacional: this.getOSInfo(),
                     resolucaoTela: `${screen.width}x${screen.height}`,
                     idiomaNavegador: navigator.language || navigator.userLanguage,
-
-                    // Dados de navegação
                     urlReferenciador: document.referrer,
                     tipoReferenciador: this.getReferrerType(document.referrer),
-
-                    // Meta dados
                     userAgent: navigator.userAgent,
-
-                    // Device fingerprint
                     deviceFingerprint: await this.generateDeviceFingerprint()
                 };
 
-                // Tentar obter localização (opcional)
                 try {
                     const location = await this.getLocation();
                     if (location) {
@@ -326,7 +747,7 @@
                         data.longitude = location.longitude;
                     }
                 } catch (error) {
-                    // Localização não disponível - ignorar
+                    // Localização não disponível
                 }
 
                 return data;
@@ -346,16 +767,16 @@
 
                 if (ua.includes('Chrome/')) {
                     browser = 'Chrome';
-                    version = ua.match(/Chrome\/([0-9.]+)/)[1];
+                    version = ua.match(/Chrome\/([0-9.]+)/)?.[1] || '';
                 } else if (ua.includes('Firefox/')) {
                     browser = 'Firefox';
-                    version = ua.match(/Firefox\/([0-9.]+)/)[1];
+                    version = ua.match(/Firefox\/([0-9.]+)/)?.[1] || '';
                 } else if (ua.includes('Safari/') && !ua.includes('Chrome')) {
                     browser = 'Safari';
                     version = ua.match(/Version\/([0-9.]+)/)?.[1] || '';
                 } else if (ua.includes('Edge/')) {
                     browser = 'Edge';
-                    version = ua.match(/Edge\/([0-9.]+)/)[1];
+                    version = ua.match(/Edge\/([0-9.]+)/)?.[1] || '';
                 }
 
                 return `${browser} ${version}`.trim();
@@ -374,21 +795,18 @@
             getReferrerType(referrer) {
                 if (!referrer) return 'Direto';
                 if (referrer.includes('wa.me') || referrer.includes('whatsapp')) return 'WhatsApp';
-                if (referrer.includes('mail') || referrer.includes('gmail') || referrer.includes('outlook')) return 'Email';
                 if (referrer.includes('google')) return 'Google';
                 if (referrer.includes('facebook')) return 'Facebook';
                 if (referrer.includes('instagram')) return 'Instagram';
-                if (referrer.includes('linkedin')) return 'LinkedIn';
                 return 'Website';
             }
 
             async generateDeviceFingerprint() {
-                // Criar fingerprint baseado em características do dispositivo
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
                 ctx.textBaseline = 'top';
                 ctx.font = '14px Arial';
-                ctx.fillText('Device fingerprint', 2, 2);
+                ctx.fillText('Fingerprint', 2, 2);
 
                 const fingerprint = [
                     navigator.userAgent,
@@ -396,11 +814,10 @@
                     screen.width + 'x' + screen.height,
                     new Date().getTimezoneOffset(),
                     navigator.platform,
-                    canvas.toDataURL ? canvas.toDataURL() : '',
+                    canvas.toDataURL(),
                     navigator.hardwareConcurrency || 0
                 ].join('|');
 
-                // Hash simples do fingerprint
                 let hash = 0;
                 for (let i = 0; i < fingerprint.length; i++) {
                     const char = fingerprint.charCodeAt(i);
@@ -441,9 +858,7 @@
                         this.maxScroll = Math.min(scrollPercent, 100);
                     }
 
-                    // Atualizar indicador visual
                     document.getElementById('scrollIndicator').style.width = Math.min(scrollPercent, 100) + '%';
-
                     ticking = false;
                 };
 
@@ -456,8 +871,8 @@
             }
 
             setupClickTracking() {
-                // Track cliques em links do WhatsApp
-                document.querySelectorAll('a[data-track="whatsapp"], a[href*="wa.me"], a[href*="whatsapp"]').forEach(link => {
+                // Track WhatsApp clicks
+                document.querySelectorAll('a[data-track="whatsapp"]').forEach(link => {
                     link.addEventListener('click', () => {
                         this.interactions.whatsapp = true;
                         this.clicks++;
@@ -465,8 +880,8 @@
                     });
                 });
 
-                // Track cliques em links de email
-                document.querySelectorAll('a[data-track="email"], a[href^="mailto:"]').forEach(link => {
+                // Track Email clicks
+                document.querySelectorAll('a[data-track="email"]').forEach(link => {
                     link.addEventListener('click', () => {
                         this.interactions.email = true;
                         this.clicks++;
@@ -474,7 +889,7 @@
                     });
                 });
 
-                // Track cliques gerais
+                // Track general clicks
                 document.addEventListener('click', () => {
                     this.clicks++;
                 });
@@ -485,7 +900,6 @@
                     this.sendFinalData();
                 });
 
-                // Fallback para mobile
                 document.addEventListener('visibilitychange', () => {
                     if (document.visibilityState === 'hidden') {
                         this.sendFinalData();
@@ -494,20 +908,20 @@
             }
 
             sendHeartbeat() {
-                // Enviar dados a cada 30 segundos
                 setInterval(() => {
                     this.sendUpdateData();
                 }, 30000);
             }
 
             updateDebugInfo() {
-                // Atualizar informações de debug a cada segundo
                 setInterval(() => {
                     const viewTime = Math.round((new Date() - this.startTime) / 1000);
                     document.getElementById('debugSession').textContent = this.sessionToken.substr(-8);
                     document.getElementById('debugTime').textContent = viewTime + 's';
                     document.getElementById('debugScroll').textContent = this.maxScroll + '%';
                     document.getElementById('debugClicks').textContent = this.clicks;
+                    document.getElementById('debugWhatsApp').textContent = this.interactions.whatsapp ? '✅' : '❌';
+                    document.getElementById('debugEmail').textContent = this.interactions.email ? '✅' : '❌';
                 }, 1000);
             }
 
@@ -515,9 +929,7 @@
                 try {
                     await fetch('/api/proposta/analytics/interaction', {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
+                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             sessionToken: this.sessionToken,
                             interactionType: type,
@@ -535,9 +947,7 @@
                 try {
                     await fetch('/api/proposta/analytics/update', {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
+                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             sessionToken: this.sessionToken,
                             tempoVisualizacaoSegundos: viewTime,
@@ -565,25 +975,35 @@
                     clicouEmail: this.interactions.email
                 };
 
-                // Usar sendBeacon para garantir envio mesmo ao sair da página
                 if (navigator.sendBeacon) {
                     navigator.sendBeacon('/api/proposta/analytics/finish', JSON.stringify(data));
                 } else {
-                    // Fallback para browsers antigos
                     fetch('/api/proposta/analytics/finish', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(data),
                         keepalive: true
-                    }).catch(() => { });
+                    }).catch(() => {});
                 }
             }
         }
 
-        // Funções auxiliares
+        // Funções globais
+        function openLightbox(src, alt) {
+            document.getElementById('lightboxImage').src = src;
+            document.getElementById('lightboxImage').alt = alt;
+            document.getElementById('lightbox').style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeLightbox() {
+            document.getElementById('lightbox').style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
         function compartilharWhatsApp() {
             const url = window.location.href;
-            const texto = `Confira esta proposta de viagem: @Model.Titulo`;
+            const texto = `Confira esta proposta de viagem incrível: @Model.Titulo`;
             const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(texto + ' ' + url)}`;
             window.open(whatsappUrl, '_blank');
         }
@@ -591,30 +1011,193 @@
         function copiarLink() {
             const url = window.location.href;
             navigator.clipboard.writeText(url).then(() => {
-                alert('Link copiado para a área de transferência!');
+                showNotification('Link copiado para a área de transferência!', 'success');
             }).catch(() => {
-                alert('Erro ao copiar link. Tente selecioná-lo manualmente.');
+                showNotification('Erro ao copiar link. Tente novamente.', 'error');
             });
         }
 
-        // Simular contador de visualizações
-        function atualizarContadorVisualizacoes() {
-            // Em produção, isso viria da API
-            const count = Math.floor(Math.random() * 50) + 10;
-            document.getElementById('viewCount').textContent = count + ' visualizações';
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.className = `alert alert-${type === 'success' ? 'success' : 'danger'} position-fixed`;
+            notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            notification.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>
+                ${message}
+                <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 5000);
         }
 
-        // Inicializar sistema
+        function showAllPhotos(destinoId) {
+            // Implementar modal para mostrar todas as fotos do destino
+            alert('Funcionalidade em desenvolvimento: Galeria completa do destino');
+        }
+
+        function atualizarContadorVisualizacoes() {
+            // Simular contador (em produção viria da API)
+            const count = Math.floor(Math.random() * 100) + 25;
+            document.getElementById('viewCount').textContent = `${count} visualizações`;
+        }
+
+        // Inicialização
         document.addEventListener('DOMContentLoaded', () => {
             const propostaId = '@Model.Id';
             window.analytics = new PropostaAnalytics(propostaId);
             atualizarContadorVisualizacoes();
 
-            // Mostrar debug em ambiente de desenvolvimento
-            if (window.location.hostname === 'localhost') {
+            // Mostrar debug apenas em desenvolvimento
+            if (window.location.hostname === 'localhost' || window.location.search.includes('debug=true')) {
                 document.getElementById('analyticsDebug').style.display = 'block';
             }
+
+            // Lazy loading para imagens
+            if ('IntersectionObserver' in window) {
+                const imageObserver = new IntersectionObserver((entries, observer) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            const img = entry.target;
+                            img.classList.remove('lazy');
+                            observer.unobserve(img);
+                        }
+                    });
+                });
+
+                document.querySelectorAll('img[data-src]').forEach(img => {
+                    imageObserver.observe(img);
+                });
+            }
+
+            // Smooth scroll para âncoras internas
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                });
+            });
+
+            // Keyboard navigation para lightbox
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    closeLightbox();
+                }
+            });
+
+            // Performance monitoring
+            if ('performance' in window) {
+                window.addEventListener('load', () => {
+                    setTimeout(() => {
+                        const perfData = performance.getEntriesByType('navigation')[0];
+                        if (perfData) {
+                            console.log('Page load time:', Math.round(perfData.loadEventEnd - perfData.loadEventStart), 'ms');
+                        }
+                    }, 0);
+                });
+            }
         });
+
+        // Service Worker para cache (opcional)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .catch(err => console.log('SW registration failed'));
+            });
+        }
+
+        // Detectar dispositivo móvel para otimizações
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        if (isMobile) {
+            document.body.classList.add('mobile-device');
+        }
+
+        // Preload de imagens críticas
+        function preloadImages() {
+            const criticalImages = document.querySelectorAll('.destination-image, .hero img');
+            criticalImages.forEach(img => {
+                const link = document.createElement('link');
+                link.rel = 'preload';
+                link.as = 'image';
+                link.href = img.src;
+                document.head.appendChild(link);
+            });
+        }
+
+        // Otimização de scroll performance
+        let scrollTimer = null;
+        window.addEventListener('scroll', () => {
+            if (scrollTimer !== null) {
+                clearTimeout(scrollTimer);
+            }
+            scrollTimer = setTimeout(() => {
+                // Scroll ended
+                document.body.classList.remove('scrolling');
+            }, 150);
+            
+            document.body.classList.add('scrolling');
+        }, { passive: true });
+    </script>
+
+    <!-- Schema.org structured data para SEO -->
+    <script type="application/ld+json">
+    {
+        "@@context": "https://schema.org",
+        "@@type": "TravelAgency",
+        "name": "@Model.Usuario.Nome",
+        "email": "@Model.Usuario.Email",
+        "telephone": "@Model.Usuario.Telefone",
+        "offers": {
+            "@@type": "Offer",
+            "name": "@Model.Titulo",
+            "description": "@(Model.ObservacoesGerais ?? Model.Titulo)",
+            "validFrom": "@Model.DataCriacao.ToString("yyyy-MM-dd")",
+            @if (Model.DataExpiracaoLink.HasValue)
+            {
+                <text>"validThrough": "@Model.DataExpiracaoLink.Value.ToString("yyyy-MM-dd")",</text>
+            }
+            "itemOffered": {
+                "@@type": "Trip",
+                "name": "@Model.Titulo",
+                @if (Model.DataInicio.HasValue)
+                {
+                    <text>"startDate": "@Model.DataInicio.Value.ToString("yyyy-MM-dd")",</text>
+                }
+                @if (Model.DataFim.HasValue)
+                {
+                    <text>"endDate": "@Model.DataFim.Value.ToString("yyyy-MM-dd")",</text>
+                }
+                "itinerary": [
+                    @for (int i = 0; i < Model.Destinos.Count; i++)
+                    {
+                        var destino = Model.Destinos.ElementAt(i);
+                        <text>
+                        {
+                            "@@type": "Place",
+                            "name": "@destino.Nome",
+                            @if (!string.IsNullOrEmpty(destino.Cidade))
+                            {
+                                <text>"address": "@destino.Cidade@(!string.IsNullOrEmpty(destino.Pais) ? ", " + destino.Pais : "")",</text>
+                            }
+                            "description": "@(destino.Descricao ?? destino.Nome)"
+                        }@(i < Model.Destinos.Count - 1 ? "," : "")
+                        </text>
+                    }
+                ]
+            }
+        }
+    }
     </script>
 </body>
 </html>

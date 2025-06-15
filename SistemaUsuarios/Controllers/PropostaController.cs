@@ -157,7 +157,7 @@ namespace SistemaUsuarios.Controllers
             // DEFINIR USUÁRIO DA SESSÃO
             model.UsuarioId = ObterUsuarioLogadoId();
 
-            // REMOVER TODAS AS VALIDAÇÕES PROBLEMÁTICAS
+            // REMOVER VALIDAÇÕES PROBLEMÁTICAS
             ModelState.Remove("UsuarioId");
             ModelState.Remove("FotoCapa");
             ModelState.Remove("FotoCapaUpload");
@@ -211,9 +211,9 @@ namespace SistemaUsuarios.Controllers
             _context.Propostas.Add(proposta);
             await _context.SaveChangesAsync();
 
-            TempData["Sucesso"] = "Proposta criada com sucesso! Agora você pode adicionar destinos.";
+            TempData["Sucesso"] = "Proposta criada com sucesso! Agora você pode adicionar destinos e fotos.";
 
-            // ✅ REDIRECIONAR PARA GERENCIAR DESTINOS APÓS CRIAR
+            // REDIRECIONAR DIRETO PARA GERENCIAR DESTINOS
             return RedirectToAction("Gerenciar", "Destino", new { propostaId = proposta.Id });
         }
 
@@ -226,7 +226,7 @@ namespace SistemaUsuarios.Controllers
             var proposta = await _context.Propostas
                 .Include(p => p.Usuario)
                 .Include(p => p.Layout)
-                .Include(p => p.Destinos) // ✅ INCLUIR DESTINOS
+                .Include(p => p.Destinos)
                 .FirstOrDefaultAsync(p => p.Id == id);
 
             if (proposta == null)
@@ -263,9 +263,11 @@ namespace SistemaUsuarios.Controllers
             if (!UsuarioLogado())
                 return RedirectToAction("Login", "Auth");
 
-            // ✅ SE A AÇÃO FOR "gerenciar_destinos", REDIRECIONAR DIRETO
+            // SE A AÇÃO FOR "gerenciar_destinos", REDIRECIONAR DIRETO
             if (acao == "gerenciar_destinos")
             {
+                // Salvar primeiro se houver mudanças
+                await SalvarAlteracoesProposta(model);
                 return RedirectToAction("Gerenciar", "Destino", new { propostaId = model.Id });
             }
 
@@ -275,18 +277,21 @@ namespace SistemaUsuarios.Controllers
                 return View(model);
             }
 
+            await SalvarAlteracoesProposta(model);
+
+            TempData["Sucesso"] = "Proposta atualizada com sucesso!";
+            return RedirectToAction("Index");
+        }
+
+        private async Task SalvarAlteracoesProposta(PropostaViewModel model)
+        {
             var proposta = await _context.Propostas.FindAsync(model.Id);
-            if (proposta == null)
-            {
-                return NotFound();
-            }
+            if (proposta == null) return;
 
             // Validação customizada de datas
             if (model.DataInicio.HasValue && model.DataFim.HasValue && model.DataInicio > model.DataFim)
             {
-                ModelState.AddModelError("DataFim", "Data de fim deve ser posterior à data de início");
-                await CarregarDadosParaView();
-                return View(model);
+                throw new InvalidOperationException("Data de fim deve ser posterior à data de início");
             }
 
             proposta.Titulo = model.Titulo;
@@ -303,9 +308,6 @@ namespace SistemaUsuarios.Controllers
             proposta.DataModificacao = DateTime.Now;
 
             await _context.SaveChangesAsync();
-
-            TempData["Sucesso"] = "Proposta atualizada com sucesso!";
-            return RedirectToAction("Index");
         }
 
         [HttpPost]
@@ -345,8 +347,8 @@ namespace SistemaUsuarios.Controllers
         {
             var proposta = await _context.Propostas
                 .Include(p => p.Usuario)
-                .Include(p => p.Destinos.OrderBy(d => d.Ordem)) // ✅ INCLUIR DESTINOS ORDENADOS
-                    .ThenInclude(d => d.Fotos.OrderBy(f => f.Ordem)) // ✅ INCLUIR FOTOS ORDENADAS
+                .Include(p => p.Destinos.OrderBy(d => d.Ordem))
+                    .ThenInclude(d => d.Fotos.OrderBy(f => f.Ordem))
                 .FirstOrDefaultAsync(p => p.Id == id);
 
             if (proposta == null)
@@ -378,8 +380,8 @@ namespace SistemaUsuarios.Controllers
             var proposta = await _context.Propostas
                 .Include(p => p.Usuario)
                 .Include(p => p.Layout)
-                .Include(p => p.Destinos.OrderBy(d => d.Ordem)) // ✅ INCLUIR DESTINOS
-                    .ThenInclude(d => d.Fotos.OrderBy(f => f.Ordem)) // ✅ INCLUIR FOTOS
+                .Include(p => p.Destinos.OrderBy(d => d.Ordem))
+                    .ThenInclude(d => d.Fotos.OrderBy(f => f.Ordem))
                 .FirstOrDefaultAsync(p => p.Id == id);
 
             if (proposta == null)
@@ -436,8 +438,8 @@ namespace SistemaUsuarios.Controllers
                 return RedirectToAction("Login", "Auth");
 
             var proposta = await _context.Propostas
-                .Include(p => p.Destinos) // ✅ INCLUIR DESTINOS PARA EXCLUSÃO EM CASCATA
-                    .ThenInclude(d => d.Fotos) // ✅ INCLUIR FOTOS PARA REMOÇÃO DE ARQUIVOS
+                .Include(p => p.Destinos)
+                    .ThenInclude(d => d.Fotos)
                 .FirstOrDefaultAsync(p => p.Id == id);
 
             if (proposta == null)
@@ -494,7 +496,6 @@ namespace SistemaUsuarios.Controllers
             return RedirectToAction("Index");
         }
 
-        // ✅ NOVO MÉTODO: GERENCIAR DESTINOS DIRETAMENTE DA PROPOSTA
         [HttpGet]
         public async Task<IActionResult> GerenciarDestinos(Guid id)
         {
@@ -503,5 +504,338 @@ namespace SistemaUsuarios.Controllers
 
             return RedirectToAction("Gerenciar", "Destino", new { propostaId = id });
         }
+
+        // API ENDPOINTS PARA AJAX
+        [HttpGet("api/proposta/{propostaId}/destinos")]
+        public async Task<IActionResult> GetDestinos(Guid propostaId)
+        {
+            if (!UsuarioLogado())
+                return Unauthorized();
+
+            var usuarioId = ObterUsuarioLogadoId();
+
+            var proposta = await _context.Propostas
+                .Include(p => p.Destinos.OrderBy(d => d.Ordem))
+                    .ThenInclude(d => d.Fotos.OrderBy(f => f.Ordem))
+                .FirstOrDefaultAsync(p => p.Id == propostaId && p.UsuarioId == usuarioId);
+
+            if (proposta == null)
+                return NotFound();
+
+            var destinos = proposta.Destinos.Select(d => new
+            {
+                id = d.Id,
+                nome = d.Nome,
+                descricao = d.Descricao,
+                cidade = d.Cidade,
+                pais = d.Pais,
+                dataChegada = d.DataChegada?.ToString("yyyy-MM-dd"),
+                dataSaida = d.DataSaida?.ToString("yyyy-MM-dd"),
+                ordem = d.Ordem,
+                fotos = d.Fotos.Select(f => new
+                {
+                    id = f.Id,
+                    caminhoFoto = f.CaminhoFoto,
+                    descricao = f.Descricao,
+                    principal = f.Principal,
+                    ordem = f.Ordem
+                }).ToList()
+            }).ToList();
+
+            return Json(destinos);
+        }
+
+        [HttpGet("api/proposta/{propostaId}/resumo")]
+        public async Task<IActionResult> GetResumo(Guid propostaId)
+        {
+            if (!UsuarioLogado())
+                return Unauthorized();
+
+            var usuarioId = ObterUsuarioLogadoId();
+
+            var proposta = await _context.Propostas
+                .Include(p => p.Destinos)
+                    .ThenInclude(d => d.Fotos)
+                .FirstOrDefaultAsync(p => p.Id == propostaId && p.UsuarioId == usuarioId);
+
+            if (proposta == null)
+                return NotFound();
+
+            var resumo = new
+            {
+                id = proposta.Id,
+                titulo = proposta.Titulo,
+                status = proposta.StatusProposta.ToString(),
+                linkPublicoAtivo = proposta.LinkPublicoAtivo,
+                totalDestinos = proposta.Destinos.Count,
+                totalFotos = proposta.Destinos.Sum(d => d.Fotos.Count),
+                dataInicio = proposta.DataInicio?.ToString("yyyy-MM-dd"),
+                dataFim = proposta.DataFim?.ToString("yyyy-MM-dd"),
+                numeroPassageiros = proposta.NumeroPassageiros,
+                numeroCriancas = proposta.NumeroCriancas
+            };
+
+            return Json(resumo);
+        }
+
+        [HttpPost("api/proposta/{propostaId}/status")]
+        public async Task<IActionResult> AlterarStatusAjax(Guid propostaId, [FromBody] AlterarStatusRequest request)
+        {
+            if (!UsuarioLogado())
+                return Unauthorized();
+
+            var usuarioId = ObterUsuarioLogadoId();
+
+            var proposta = await _context.Propostas
+                .FirstOrDefaultAsync(p => p.Id == propostaId && p.UsuarioId == usuarioId);
+
+            if (proposta == null)
+                return NotFound();
+
+            proposta.StatusProposta = request.Status;
+            proposta.DataModificacao = DateTime.Now;
+
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true, message = "Status alterado com sucesso!" });
+        }
+
+        [HttpPost("api/proposta/{propostaId}/link")]
+        public async Task<IActionResult> AlterarLinkAjax(Guid propostaId, [FromBody] AlterarLinkRequest request)
+        {
+            if (!UsuarioLogado())
+                return Unauthorized();
+
+            var usuarioId = ObterUsuarioLogadoId();
+
+            var proposta = await _context.Propostas
+                .FirstOrDefaultAsync(p => p.Id == propostaId && p.UsuarioId == usuarioId);
+
+            if (proposta == null)
+                return NotFound();
+
+            proposta.LinkPublicoAtivo = request.Ativo;
+            proposta.DataModificacao = DateTime.Now;
+
+            // Se estiver ativando e não tem data de expiração, definir para 30 dias
+            if (request.Ativo && !proposta.DataExpiracaoLink.HasValue)
+            {
+                proposta.DataExpiracaoLink = DateTime.Now.AddDays(30);
+            }
+
+            await _context.SaveChangesAsync();
+
+            var linkPublico = request.Ativo ?
+                $"{Request.Scheme}://{Request.Host}/Proposta/Publico/{propostaId}" : null;
+
+            return Json(new
+            {
+                success = true,
+                message = request.Ativo ? "Link público ativado!" : "Link público desativado!",
+                linkPublico = linkPublico
+            });
+        }
+
+        // Endpoint para obter estatísticas rápidas
+        [HttpGet("api/proposta/{propostaId}/stats")]
+        public async Task<IActionResult> GetEstatisticas(Guid propostaId)
+        {
+            if (!UsuarioLogado())
+                return Unauthorized();
+
+            var usuarioId = ObterUsuarioLogadoId();
+
+            var proposta = await _context.Propostas
+                .Include(p => p.Destinos)
+                    .ThenInclude(d => d.Fotos)
+                .Include(p => p.PropostaVisualizacoes)
+                .FirstOrDefaultAsync(p => p.Id == propostaId && p.UsuarioId == usuarioId);
+
+            if (proposta == null)
+                return NotFound();
+
+            var stats = new
+            {
+                totalDestinos = proposta.Destinos.Count,
+                totalFotos = proposta.Destinos.Sum(d => d.Fotos.Count),
+                totalVisualizacoes = proposta.PropostaVisualizacoes.Count,
+                ultimaVisualizacao = proposta.PropostaVisualizacoes
+                    .OrderByDescending(v => v.DataHoraInicio)
+                    .FirstOrDefault()?.DataHoraInicio.ToString("dd/MM/yyyy HH:mm"),
+                tempoMedioVisualizacao = proposta.PropostaVisualizacoes.Any() ?
+                    Math.Round(proposta.PropostaVisualizacoes.Average(v => v.TempoVisualizacaoSegundos)) : 0,
+                taxaInteracao = proposta.PropostaVisualizacoes.Any() ?
+                    Math.Round((double)proposta.PropostaVisualizacoes.Count(v => v.ClicouEmail || v.ClicouWhatsApp) /
+                               proposta.PropostaVisualizacoes.Count * 100, 1) : 0
+            };
+
+            return Json(stats);
+        }
+
+        // Endpoint para duplicar proposta
+        [HttpPost("api/proposta/{propostaId}/duplicar")]
+        public async Task<IActionResult> DuplicarProposta(Guid propostaId)
+        {
+            if (!UsuarioLogado())
+                return Unauthorized();
+
+            var usuarioId = ObterUsuarioLogadoId();
+
+            var propostaOriginal = await _context.Propostas
+                .Include(p => p.Destinos)
+                    .ThenInclude(d => d.Fotos)
+                .FirstOrDefaultAsync(p => p.Id == propostaId && p.UsuarioId == usuarioId);
+
+            if (propostaOriginal == null)
+                return NotFound();
+
+            var novaProposta = new Proposta
+            {
+                Id = Guid.NewGuid(),
+                Titulo = $"[CÓPIA] {propostaOriginal.Titulo}",
+                UsuarioId = usuarioId,
+                DataInicio = propostaOriginal.DataInicio,
+                DataFim = propostaOriginal.DataFim,
+                NumeroPassageiros = propostaOriginal.NumeroPassageiros,
+                NumeroCriancas = propostaOriginal.NumeroCriancas,
+                FotoCapa = propostaOriginal.FotoCapa,
+                LayoutId = propostaOriginal.LayoutId,
+                ObservacoesGerais = propostaOriginal.ObservacoesGerais,
+                StatusProposta = StatusProposta.Rascunho,
+                LinkPublicoAtivo = false,
+                DataCriacao = DateTime.Now
+            };
+
+            _context.Propostas.Add(novaProposta);
+
+            // Duplicar destinos
+            foreach (var destinoOriginal in propostaOriginal.Destinos.OrderBy(d => d.Ordem))
+            {
+                var novoDestino = new Destino
+                {
+                    Id = Guid.NewGuid(),
+                    PropostaId = novaProposta.Id,
+                    Nome = destinoOriginal.Nome,
+                    Descricao = destinoOriginal.Descricao,
+                    DataChegada = destinoOriginal.DataChegada,
+                    DataSaida = destinoOriginal.DataSaida,
+                    Ordem = destinoOriginal.Ordem,
+                    Pais = destinoOriginal.Pais,
+                    Cidade = destinoOriginal.Cidade,
+                    DataCriacao = DateTime.Now
+                };
+
+                _context.Destinos.Add(novoDestino);
+
+                // Duplicar fotos (mantendo referências aos mesmos arquivos)
+                foreach (var fotoOriginal in destinoOriginal.Fotos.OrderBy(f => f.Ordem))
+                {
+                    var novaFoto = new DestinoFoto
+                    {
+                        Id = Guid.NewGuid(),
+                        DestinoId = novoDestino.Id,
+                        CaminhoFoto = fotoOriginal.CaminhoFoto,
+                        Descricao = fotoOriginal.Descricao,
+                        Ordem = fotoOriginal.Ordem,
+                        Principal = fotoOriginal.Principal,
+                        DataCriacao = DateTime.Now
+                    };
+
+                    _context.DestinoFotos.Add(novaFoto);
+                }
+            }
+
+            await _context.SaveChangesAsync();
+
+            return Json(new
+            {
+                success = true,
+                message = "Proposta duplicada com sucesso!",
+                novaPropostaId = novaProposta.Id,
+                redirect = Url.Action("Editar", new { id = novaProposta.Id })
+            });
+        }
+
+        // Endpoint para preview da proposta
+        [HttpGet("api/proposta/{propostaId}/preview")]
+        public async Task<IActionResult> GetPreview(Guid propostaId)
+        {
+            var proposta = await _context.Propostas
+                .Include(p => p.Usuario)
+                .Include(p => p.Destinos.OrderBy(d => d.Ordem))
+                    .ThenInclude(d => d.Fotos.Where(f => f.Principal).OrderBy(f => f.Ordem))
+                .FirstOrDefaultAsync(p => p.Id == propostaId);
+
+            if (proposta == null)
+                return NotFound();
+
+            // Verificar se é pública ou se o usuário tem acesso
+            if (!proposta.LinkPublicoAtivo && !UsuarioLogado())
+                return Unauthorized();
+
+            if (!proposta.LinkPublicoAtivo && UsuarioLogado())
+            {
+                var usuarioId = ObterUsuarioLogadoId();
+                if (proposta.UsuarioId != usuarioId)
+                    return Forbid();
+            }
+
+            var preview = new
+            {
+                id = proposta.Id,
+                titulo = proposta.Titulo,
+                periodo = new
+                {
+                    inicio = proposta.DataInicio?.ToString("dd/MM/yyyy"),
+                    fim = proposta.DataFim?.ToString("dd/MM/yyyy"),
+                    dias = proposta.DataInicio.HasValue && proposta.DataFim.HasValue ?
+                        (proposta.DataFim.Value - proposta.DataInicio.Value).Days + 1 : (int?)null
+                },
+                passageiros = new
+                {
+                    adultos = proposta.NumeroPassageiros,
+                    criancas = proposta.NumeroCriancas,
+                    total = proposta.NumeroPassageiros + proposta.NumeroCriancas
+                },
+                fotoCapa = proposta.FotoCapa,
+                observacoes = proposta.ObservacoesGerais,
+                destinos = proposta.Destinos.Select(d => new
+                {
+                    id = d.Id,
+                    nome = d.Nome,
+                    cidade = d.Cidade,
+                    pais = d.Pais,
+                    fotoPrincipal = d.Fotos.FirstOrDefault()?.CaminhoFoto,
+                    totalFotos = d.Fotos.Count,
+                    ordem = d.Ordem
+                }).ToList(),
+                organizador = new
+                {
+                    nome = proposta.Usuario.Nome,
+                    email = proposta.Usuario.Email,
+                    telefone = proposta.Usuario.Telefone
+                },
+                status = new
+                {
+                    proposta = proposta.StatusProposta.ToString(),
+                    linkPublico = proposta.LinkPublicoAtivo,
+                    dataExpiracao = proposta.DataExpiracaoLink?.ToString("dd/MM/yyyy HH:mm")
+                }
+            };
+
+            return Json(preview);
+        }
+    }
+
+    // DTOs para as requisições AJAX
+    public class AlterarStatusRequest
+    {
+        public StatusProposta Status { get; set; }
+    }
+
+    public class AlterarLinkRequest
+    {
+        public bool Ativo { get; set; }
+        public DateTime? DataExpiracao { get; set; }
     }
 }
