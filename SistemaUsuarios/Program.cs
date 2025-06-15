@@ -50,6 +50,17 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
+// Adicionar rota específica para landing page
+app.MapControllerRoute(
+    name: "landing",
+    pattern: "cadastro-agentes",
+    defaults: new { controller = "Landing", action = "Index" });
+
+app.MapControllerRoute(
+    name: "landing_default",
+    pattern: "landing/{action=Index}/{id?}",
+    defaults: new { controller = "Landing" });
+
 // Garantir que o banco seja criado e populado
 using (var scope = app.Services.CreateScope())
 {

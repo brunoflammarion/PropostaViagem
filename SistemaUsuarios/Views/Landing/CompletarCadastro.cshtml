@@ -1,0 +1,439 @@
+﻿@model SistemaUsuarios.Models.ViewModels.CompletarCadastroViewModel
+@{
+    ViewData["Title"] = "Complete seu Cadastro";
+    Layout = "_Layout";
+}
+
+<div class="container-fluid">
+    <div class="row justify-content-center min-vh-100 align-items-center" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+        <div class="col-lg-6 col-md-8">
+            <div class="card shadow-lg border-0" style="border-radius: 20px; overflow: hidden;">
+                <!-- Header -->
+                <div class="card-header text-center py-4" style="background: linear-gradient(135deg, #3A7CA5 0%, #2E6A8E 100%); color: white;">
+                    <div class="mb-3">
+                        <div style="width: 80px; height: 80px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto;">
+                            <i class="fas fa-user-plus fa-2x"></i>
+                        </div>
+                    </div>
+                    <h2 class="mb-2">Quase pronto!</h2>
+                    <p class="mb-0 opacity-90">Complete seus dados para acessar a plataforma</p>
+                </div>
+
+                <!-- Progress Steps -->
+                <div class="px-4 py-3" style="background: #f8f9fa;">
+                    <div class="d-flex justify-content-center">
+                        <div class="step-progress">
+                            <div class="step completed">
+                                <div class="step-circle">
+                                    <i class="fas fa-check"></i>
+                                </div>
+                                <div class="step-label">Dados Básicos</div>
+                            </div>
+                            <div class="step-line"></div>
+                            <div class="step active">
+                                <div class="step-circle">
+                                    <i class="fas fa-user-cog"></i>
+                                </div>
+                                <div class="step-label">Completar Perfil</div>
+                            </div>
+                            <div class="step-line"></div>
+                            <div class="step">
+                                <div class="step-circle">
+                                    <i class="fas fa-rocket"></i>
+                                </div>
+                                <div class="step-label">Primeira Proposta</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form -->
+                <div class="card-body p-4">
+                    <form asp-action="CompletarCadastro" method="post" id="formCompletarCadastro">
+                        <input asp-for="Id" type="hidden" />
+
+                        <div asp-validation-summary="All" class="alert alert-danger d-none" id="validationSummary"></div>
+
+                        <!-- Nome e Email (readonly) -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label asp-for="Nome" class="form-label fw-bold">
+                                    <i class="fas fa-user me-1 text-primary"></i>Nome Completo
+                                </label>
+                                <input asp-for="Nome" class="form-control form-control-lg" style="border-radius: 10px;" />
+                                <span asp-validation-for="Nome" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Email" class="form-label fw-bold">
+                                    <i class="fas fa-envelope me-1 text-primary"></i>E-mail
+                                </label>
+                                <input asp-for="Email" class="form-control form-control-lg" readonly style="border-radius: 10px; background: #f8f9fa;" />
+                                <span asp-validation-for="Email" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <!-- WhatsApp e CPF -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label asp-for="Telefone" class="form-label fw-bold">
+                                    <i class="fab fa-whatsapp me-1 text-success"></i>WhatsApp
+                                </label>
+                                <input asp-for="Telefone" class="form-control form-control-lg"
+                                       placeholder="(11) 99999-9999" style="border-radius: 10px;" />
+                                <span asp-validation-for="Telefone" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="CPF" class="form-label fw-bold">
+                                    <i class="fas fa-id-card me-1 text-primary"></i>CPF
+                                </label>
+                                <input asp-for="CPF" class="form-control form-control-lg"
+                                       placeholder="000.000.000-00" style="border-radius: 10px;" />
+                                <span asp-validation-for="CPF" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <!-- Senhas -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label asp-for="Senha" class="form-label fw-bold">
+                                    <i class="fas fa-lock me-1 text-primary"></i>Senha
+                                </label>
+                                <div class="input-group">
+                                    <input asp-for="Senha" class="form-control form-control-lg" type="password"
+                                           style="border-radius: 10px 0 0 10px;" />
+                                    <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('Senha')"
+                                            style="border-radius: 0 10px 10px 0;">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                                <small class="text-muted">Mínimo 6 caracteres</small>
+                                <span asp-validation-for="Senha" class="text-danger d-block"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="ConfirmarSenha" class="form-label fw-bold">
+                                    <i class="fas fa-lock me-1 text-primary"></i>Confirmar Senha
+                                </label>
+                                <div class="input-group">
+                                    <input asp-for="ConfirmarSenha" class="form-control form-control-lg" type="password"
+                                           style="border-radius: 10px 0 0 10px;" />
+                                    <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('ConfirmarSenha')"
+                                            style="border-radius: 0 10px 10px 0;">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                                <span asp-validation-for="ConfirmarSenha" class="text-danger d-block"></span>
+                            </div>
+                        </div>
+
+                        <!-- Termos e Aceites -->
+                        <div class="mb-4">
+                            <div class="form-check mb-3">
+                                <input asp-for="AceitaTermos" class="form-check-input" style="transform: scale(1.2);" />
+                                <label asp-for="AceitaTermos" class="form-check-label">
+                                    Aceito os <a href="#" data-bs-toggle="modal" data-bs-target="#termosModal">Termos de Uso</a>
+                                    e <a href="#" data-bs-toggle="modal" data-bs-target="#privacidadeModal">Política de Privacidade</a>
+                                </label>
+                                <span asp-validation-for="AceitaTermos" class="text-danger d-block"></span>
+                            </div>
+
+                            <div class="form-check">
+                                <input asp-for="AceitaEmails" class="form-check-input" style="transform: scale(1.2);" />
+                                <label asp-for="AceitaEmails" class="form-check-label">
+                                    Quero receber emails com dicas, novidades e ofertas especiais
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Botões -->
+                        <div class="d-grid gap-3">
+                            <button type="submit" class="btn btn-lg text-white fw-bold"
+                                    style="background: linear-gradient(135deg, #16DB93 0%, #13C87F 100%); border: none; border-radius: 15px; padding: 1rem;">
+                                <i class="fas fa-rocket me-2"></i>
+                                <span class="btn-text">Completar Cadastro e Começar</span>
+                            </button>
+
+                            <div class="text-center">
+                                <small class="text-muted">
+                                    <i class="fas fa-shield-alt me-1"></i>
+                                    Seus dados estão seguros e protegidos
+                                </small>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Footer com benefícios -->
+                <div class="card-footer text-center py-4" style="background: #f8f9fa;">
+                    <h6 class="mb-3 text-primary">O que você ganha ao completar o cadastro:</h6>
+                    <div class="row">
+                        <div class="col-4">
+                            <i class="fas fa-gift fa-2x text-success mb-2"></i>
+                            <div class="small fw-bold">5 Propostas Grátis</div>
+                        </div>
+                        <div class="col-4">
+                            <i class="fas fa-chart-line fa-2x text-info mb-2"></i>
+                            <div class="small fw-bold">Analytics Básico</div>
+                        </div>
+                        <div class="col-4">
+                            <i class="fas fa-headset fa-2x text-warning mb-2"></i>
+                            <div class="small fw-bold">Suporte Completo</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Seção de ajuda -->
+            <div class="text-center mt-4">
+                <p class="text-muted">
+                    Precisa de ajuda?
+                    <a href="https://wa.me/5511999999999" target="_blank" class="text-decoration-none">
+                        <i class="fab fa-whatsapp text-success"></i> Fale conosco no WhatsApp
+                    </a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Termos de Uso -->
+<div class="modal fade" id="termosModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Termos de Uso</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <h6>1. Aceitação dos Termos</h6>
+                <p>Ao utilizar nossa plataforma, você concorda com estes termos de uso...</p>
+
+                <h6>2. Uso da Plataforma</h6>
+                <p>Nossa plataforma destina-se exclusivamente a profissionais do setor de turismo...</p>
+
+                <!-- Adicionar conteúdo completo dos termos -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Política de Privacidade -->
+<div class="modal fade" id="privacidadeModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Política de Privacidade</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <h6>Coleta de Dados</h6>
+                <p>Coletamos apenas os dados necessários para prestação do serviço...</p>
+
+                <!-- Adicionar conteúdo completo da política -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Form submission handler
+        document.getElementById('formCompletarCadastro').addEventListener('submit', function(e) {
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const btnText = submitBtn.querySelector('.btn-text');
+
+            // Loading state
+            submitBtn.disabled = true;
+            btnText.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Finalizando cadastro...';
+
+            // Reset após timeout (caso haja erro)
+            setTimeout(() => {
+                if (submitBtn.disabled) {
+                    submitBtn.disabled = false;
+                    btnText.innerHTML = 'Completar Cadastro e Começar';
+                }
+            }, 10000);
+        });
+
+        // Toggle password visibility
+        function togglePassword(inputName) {
+            const input = document.querySelector(`input[name="${inputName}"]`);
+            const icon = event.target.closest('button').querySelector('i');
+
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'fas fa-eye-slash';
+            } else {
+                input.type = 'password';
+                icon.className = 'fas fa-eye';
+            }
+        }
+
+        // CPF Mask
+        document.querySelector('input[name="CPF"]').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length <= 11) {
+                value = value.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+                e.target.value = value;
+            }
+        });
+
+        // Phone Mask
+        document.querySelector('input[name="Telefone"]').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length <= 11) {
+                if (value.length <= 10) {
+                    value = value.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
+                } else {
+                    value = value.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+                }
+                e.target.value = value;
+            }
+        });
+
+        // Real-time validation feedback
+        function validateField(input) {
+            const isValid = input.checkValidity();
+            if (isValid) {
+                input.classList.remove('is-invalid');
+                input.classList.add('is-valid');
+            } else {
+                input.classList.remove('is-valid');
+                input.classList.add('is-invalid');
+            }
+            return isValid;
+        }
+
+        // Add validation listeners
+        document.querySelectorAll('input[required]').forEach(input => {
+            input.addEventListener('blur', () => validateField(input));
+        });
+
+        // Password strength indicator
+        document.querySelector('input[name="Senha"]').addEventListener('input', function(e) {
+            const password = e.target.value;
+            let strength = 0;
+
+            if (password.length >= 6) strength++;
+            if (password.match(/[a-z]/)) strength++;
+            if (password.match(/[A-Z]/)) strength++;
+            if (password.match(/[0-9]/)) strength++;
+            if (password.match(/[^a-zA-Z0-9]/)) strength++;
+
+            // Visual feedback would go here
+        });
+    </script>
+
+    <style>
+        /* Step Progress Styles */
+        .step-progress {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            position: relative;
+        }
+
+        .step-circle {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            transition: all 0.3s ease;
+            border: 2px solid #e9ecef;
+            background: white;
+            color: #6c757d;
+        }
+
+        .step.completed .step-circle {
+            background-color: #28a745;
+            border-color: #28a745;
+            color: white;
+        }
+
+        .step.active .step-circle {
+            background-color: #007bff;
+            border-color: #007bff;
+            color: white;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.3);
+        }
+
+        .step-label {
+            font-size: 11px;
+            font-weight: 500;
+            color: #6c757d;
+            max-width: 80px;
+        }
+
+        .step.active .step-label {
+            color: #007bff;
+            font-weight: 600;
+        }
+
+        .step.completed .step-label {
+            color: #28a745;
+            font-weight: 600;
+        }
+
+        .step-line {
+            width: 60px;
+            height: 2px;
+            background-color: #e9ecef;
+            margin: 0 10px;
+            margin-top: -22px;
+        }
+
+        /* Form Styles */
+        .form-control:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+
+        .form-control.is-valid {
+            border-color: #28a745;
+        }
+
+        .form-control.is-invalid {
+            border-color: #dc3545;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        /* Responsive */
+        @@media (max-width: 768px) {
+            .step-progress {
+                max-width: 300px;
+            }
+
+            .step-line {
+                width: 40px;
+            }
+
+            .step-label {
+                font-size: 10px;
+                max-width: 60px;
+            }
+        }
+    </style>
+}

@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@(ViewData["Title"] ?? "Sistema de Propostas") - Sistema de Viagens</title>
+    <title>@(ViewData["Title"] ?? "Agent Toor") - Sistema de Viagens</title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
 
     <!-- Bootstrap CSS -->
@@ -19,6 +19,7 @@
             --color-fundo: #FFFFFF;
             --color-destaque: #E8E2D0;
             --color-principal: #3A7CA5;
+            --color-secundario: #28a745; /* Verde para Agent Toor */
             --color-texto: #2E2E2E;
             --color-texto-secundario: #8D99AE;
             
@@ -210,12 +211,12 @@
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, var(--color-principal) 0%, #2E6A8E 100%);
+            background: linear-gradient(135deg, var(--color-secundario) 0%, #20c997 100%);
             color: white;
         }
 
         .btn-primary:hover {
-            background: linear-gradient(135deg, #2E6A8E 0%, var(--color-principal) 100%);
+            background: linear-gradient(135deg, #218838 0%, #1aa179 100%);
             color: white;
         }
 
@@ -442,9 +443,9 @@
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg">
         <div class="container">
-            <a class="navbar-brand" href="@Url.Action("Index", "Proposta")">
-                <i class="fas fa-plane-departure me-2"></i>
-                Sistema de Viagens
+            <a class="navbar-brand" href="@Url.Action("Index", "Home")">
+                <i class="fas fa-screwdriver-wrench me-2"></i>
+                Agent Tools
             </a>
 
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -557,7 +558,7 @@
         <div class="container">
             <div class="row">
                 <div class="col-md-6">
-                    <h6><i class="fas fa-plane me-2"></i>Sistema de Propostas de Viagem</h6>
+                    <h6><i class="fas fa-route me-2"></i>Agent Toor</h6>
                     <p class="mb-0 text-light">Criando experiências inesquecíveis, uma proposta por vez.</p>
                 </div>
                 <div class="col-md-6 text-md-end">

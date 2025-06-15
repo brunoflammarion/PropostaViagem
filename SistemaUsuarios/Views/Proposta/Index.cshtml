@@ -5,21 +5,56 @@
 }
 
 <!-- Page Header -->
-<div class="page-header">
-    <div class="row align-items-center">
-        <div class="col-md-8">
-            <h1 class="page-title">Propostas de Viagem</h1>
-            <p class="page-subtitle">Gerencie suas propostas de forma intuitiva e organizada</p>
-        </div>
-        <div class="col-md-4 text-md-end">
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-chart-line me-2"></i>Propostas de Viagem</h2>
+    <div>
             <a href="/Proposta/Criar" class="btn btn-primary btn-lg">
                 <i class="fas fa-plus me-2"></i>Nova Proposta
             </a>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-success text-white h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-file-alt fa-2x mb-2"></i>
+                <h3 id="totalVisualizacoes">@Model.TotalPropostas</h3>
+                <small>Total de Propostas</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-pen-ruler fa-2x mb-2"></i>
+                <h3 id="tempoMedio">@Model.TotalRascunhos</h3>
+                <small>Tempo Rascunhos</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-share-from-square fa-2x mb-2"></i>
+                <h3 id="taxaInteracao">@Model.TotalEnviadas</h3>
+                <small>Total Enviados</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-file-check fa-2x mb-2"></i>
+                <h3 id="taxaInteracao">@Model.TotalAprovadas</h3>
+                <small>Total Aprovadas</small>
+            </div>
         </div>
     </div>
 </div>
 
-<!-- Estatísticas -->
+
+<!-- Estatísticas 
 <div class="stats-grid mb-4">
     <div class="stat-card">
         <div class="stat-number">@Model.TotalPropostas</div>
@@ -37,7 +72,7 @@
         <div class="stat-number">@Model.TotalAprovadas</div>
         <div class="stat-label">Aprovadas</div>
     </div>
-</div>
+</div>-->
 
 <!-- Filtros -->
 <div class="filters-section">
