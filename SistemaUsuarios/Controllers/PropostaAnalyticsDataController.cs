@@ -4,6 +4,8 @@ using SistemaUsuarios.Data;
 using SistemaUsuarios.Models;
 using SistemaUsuarios.Models.ViewModels.Analytics;
 using System.Text.Json;
+using Microsoft.AspNetCore.Http;
+using Newtonsoft.Json;
 
 namespace SistemaUsuarios.Controllers
 {
@@ -455,6 +457,67 @@ namespace SistemaUsuarios.Controllers
                 })
                 .OrderByDescending(x => x.Visualizacoes)
                 .ToListAsync();
+        }
+
+        [HttpPost]
+        public IActionResult SalvarDestino(DestinoViewModel destino)
+        {
+            // Recupera a lista da sessão (ou do banco, se preferir)
+            var destinos = HttpContext.Session.GetObjectFromJson<List<DestinoViewModel>>("Destinos") ?? new List<DestinoViewModel>();
+
+            if (destino.Id == null || destino.Id == Guid.Empty)
+            {
+                destino.Id = Guid.NewGuid();
+                destinos.Add(destino);
+            }
+            else
+            {
+                var existente = destinos.FirstOrDefault(d => d.Id == destino.Id);
+                if (existente != null)
+                {
+                    existente.Nome = destino.Nome;
+                    // Atualize outros campos
+                }
+            }
+
+            HttpContext.Session.SetObjectAsJson("Destinos", destinos);
+            return PartialView("_DestinosLista", destinos);
+        }
+
+        [HttpPost]
+        public IActionResult RemoverDestino(Guid id)
+        {
+            var destinos = HttpContext.Session.GetObjectFromJson<List<DestinoViewModel>>("Destinos") ?? new List<DestinoViewModel>();
+            destinos = destinos.Where(d => d.Id != id).ToList();
+            HttpContext.Session.SetObjectAsJson("Destinos", destinos);
+            return PartialView("_DestinosLista", destinos);
+        }
+    }
+
+    public class DestinoViewModel
+    {
+        public Guid? Id { get; set; }
+        public string Nome { get; set; }
+        // Adicione outros campos necessários
+    }
+
+    public class PropostaWizardViewModel
+    {
+        // ... outros campos
+        public List<DestinoViewModel> Destinos { get; set; } = new List<DestinoViewModel>();
+    }
+
+    public static class SessionExtensions
+    {
+        public static void SetObjectAsJson(this ISession session, string key, object value)
+        {
+            session.SetString(key, JsonConvert.SerializeObject(value));
+        }
+
+        public static T GetObjectFromJson<T>(this ISession session, string key)
+        {
+            var value = session.GetString(key);
+            return value == null ? default(T) : JsonConvert.DeserializeObject<T>(value);
         }
     }
 }
