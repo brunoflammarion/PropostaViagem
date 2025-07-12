@@ -30,18 +30,18 @@ namespace SistemaUsuarios.Models.ViewModels
         [Display(Name = "Número de Crianças")]
         public int NumeroCriancas { get; set; } = 0;
 
-        // UPLOAD DE FOTO - SEM VALIDAÇÕES
+        // UPLOAD DE FOTO - Agora opcional
         [Display(Name = "Foto de Capa")]
-        public IFormFile FotoCapaUpload { get; set; }
+        public IFormFile? FotoCapaUpload { get; set; } // ALTERADO: Agora nullable
 
-        // CAMINHO DA FOTO SALVA - SEM VALIDAÇÕES
-        public string FotoCapa { get; set; }
+        // CAMINHO DA FOTO SALVA - Agora opcional
+        public string? FotoCapa { get; set; } // ALTERADO: Agora nullable
 
         [Display(Name = "Layout")]
         public int? LayoutId { get; set; }
 
         [Display(Name = "Observações Gerais")]
-        public string ObservacoesGerais { get; set; }
+        public string? ObservacoesGerais { get; set; } // ALTERADO: Agora nullable
 
         [Display(Name = "Status")]
         public StatusProposta StatusProposta { get; set; } = StatusProposta.Rascunho;
@@ -70,7 +70,7 @@ namespace SistemaUsuarios.Models.ViewModels
         public string NomeUsuario { get; set; }
         public Guid UsuarioId { get; set; }
         public bool LinkPublicoAtivo { get; set; }
-        public string FotoCapa { get; set; }
+        public string? FotoCapa { get; set; } // ALTERADO: Agora nullable
         public DateTime? DataModificacao { get; set; }
 
         // Para link de compartilhamento
@@ -98,6 +98,7 @@ namespace SistemaUsuarios.Models.ViewModels
             }
         }
     }
+
     public class PropostaFiltroViewModel
     {
         [Display(Name = "Buscar por título")]

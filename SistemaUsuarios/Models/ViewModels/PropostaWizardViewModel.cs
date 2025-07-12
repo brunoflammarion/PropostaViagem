@@ -1,26 +1,24 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
-namespace SistemaUsuarios.Models
+namespace SistemaUsuarios.Models.ViewModels
 {
-    public class Proposta
+    public class PropostaWizardViewModel
     {
-        public Guid Id { get; set; } = Guid.NewGuid();
+        public Guid? Id { get; set; }
 
         [Required(ErrorMessage = "Título é obrigatório")]
         [StringLength(500, ErrorMessage = "Título deve ter no máximo 500 caracteres")]
+        [Display(Name = "Título da Proposta")]
         public string Titulo { get; set; }
 
-        public DateTime DataCriacao { get; set; } = DateTime.Now;
-
-        public DateTime? DataModificacao { get; set; }
-
-        [Required(ErrorMessage = "Usuário é obrigatório")]
-        public Guid UsuarioId { get; set; }
+        public Guid? UsuarioId { get; set; }
 
         [Display(Name = "Data de Início")]
+        [DataType(DataType.Date)]
         public DateTime? DataInicio { get; set; }
 
         [Display(Name = "Data de Fim")]
+        [DataType(DataType.Date)]
         public DateTime? DataFim { get; set; }
 
         [Required(ErrorMessage = "Número de passageiros é obrigatório")]
@@ -32,15 +30,16 @@ namespace SistemaUsuarios.Models
         [Display(Name = "Número de Crianças")]
         public int NumeroCriancas { get; set; } = 0;
 
-        [StringLength(1000, ErrorMessage = "URL da foto deve ter no máximo 1000 caracteres")]
         [Display(Name = "Foto de Capa")]
-        public string? FotoCapa { get; set; } // ALTERADO: Agora nullable
+        public IFormFile FotoCapaUpload { get; set; }
+
+        public string FotoCapa { get; set; }
 
         [Display(Name = "Layout")]
         public int? LayoutId { get; set; }
 
         [Display(Name = "Observações Gerais")]
-        public string? ObservacoesGerais { get; set; } // ALTERADO: Agora nullable
+        public string ObservacoesGerais { get; set; }
 
         [Display(Name = "Status")]
         public StatusProposta StatusProposta { get; set; } = StatusProposta.Rascunho;
@@ -51,23 +50,10 @@ namespace SistemaUsuarios.Models
         [Display(Name = "Data de Expiração do Link")]
         public DateTime? DataExpiracaoLink { get; set; }
 
-        // Navigation Properties
-        public virtual Usuario Usuario { get; set; }
-        public virtual Layout Layout { get; set; }
+        public DateTime? DataCriacao { get; set; }
+        public DateTime? DataModificacao { get; set; }
 
-        // ✅ RELACIONAMENTO COM DESTINOS (1:N)
-        public virtual ICollection<Destino> Destinos { get; set; } = new List<Destino>();
-
-        // ✅ RELACIONAMENTO COM VISUALIZAÇÕES (1:N)
-        public virtual ICollection<PropostaVisualizacao> PropostaVisualizacoes { get; set; } = new List<PropostaVisualizacao>();
+        // Lista de destinos para a aba
+        public List<DestinoViewModel> Destinos { get; set; } = new List<DestinoViewModel>();
     }
-
-    public enum StatusProposta
-    {
-        Rascunho = 1,
-        Enviada = 2,
-        Aprovada = 3,
-        Rejeitada = 4,
-        Cancelada = 5
-    }
-}
+} 

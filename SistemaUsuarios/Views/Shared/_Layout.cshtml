@@ -15,20 +15,47 @@
 
     <style>
         :root {
-            /* === CORES DO SISTEMA === */
+            /* === NOVA PALETA DE CORES - AGENT TOOR === */
+            --color-principal: #0A1128;           /* Azul Marinho/Profundo */
+            --color-secundario: #65a3d4;          /* Azul Céu/Turquesa */
+            --color-destaque: #2ec4b6;            /* Verde Esmeralda/Água */
+            --color-alerta: #fca311;              /* Amarelo Ouro/Laranja Suave */
+
+            /* === TONS DE CINZA === */
             --color-fundo: #FFFFFF;
-            --color-destaque: #E8E2D0;
-            --color-principal: #3A7CA5;
-            --color-secundario: #28a745; /* Verde para Agent Toor */
-            --color-texto: #2E2E2E;
-            --color-texto-secundario: #8D99AE;
-            
+            --color-fundo-secundario: #f8f9fa;
+            --color-neutro-claro: #e0e0e0;
+            --color-neutro-medio: #9ca3af;
+            --color-neutro-escuro: #6b7074;
+
+            /* === TEXTOS === */
+            --color-texto: #0A1128;
+            --color-texto-secundario: #6b7074;
+            --color-texto-claro: #9ca3af;
+
+            /* === GRADIENTES === */
+            --gradient-principal: linear-gradient(135deg, #0A1128 0%, #1a2845 100%);
+            --gradient-secundario: linear-gradient(135deg, #65a3d4 0%, #4a90c2 100%);
+            --gradient-destaque: linear-gradient(135deg, #2ec4b6 0%, #26a69a 100%);
+            --gradient-hero: linear-gradient(135deg, rgba(10, 17, 40, 0.95) 0%, rgba(26, 40, 69, 0.95) 100%);
+
+            /* === STATUS === */
+            --color-sucesso: #2ec4b6;
+            --color-sucesso-claro: rgba(46, 196, 182, 0.15);
+            --color-aviso: #fca311;
+            --color-aviso-claro: rgba(252, 163, 17, 0.15);
+            --color-erro: #ef4444;
+            --color-erro-claro: rgba(239, 68, 68, 0.15);
+            --color-info: #65a3d4;
+            --color-info-claro: rgba(101, 163, 212, 0.15);
+
             /* === UTILITÁRIOS === */
             --border-radius: 12px;
             --border-radius-sm: 8px;
-            --shadow-light: 0 2px 8px rgba(46, 46, 46, 0.08);
-            --shadow-medium: 0 4px 16px rgba(46, 46, 46, 0.12);
-            --shadow-strong: 0 8px 24px rgba(46, 46, 46, 0.16);
+            --border-radius-lg: 16px;
+            --shadow-light: 0 2px 8px rgba(10, 17, 40, 0.08);
+            --shadow-medium: 0 4px 16px rgba(10, 17, 40, 0.12);
+            --shadow-strong: 0 8px 24px rgba(10, 17, 40, 0.16);
             --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
@@ -41,7 +68,7 @@
 
         /* === NAVBAR === */
         .navbar {
-            background: linear-gradient(135deg, var(--color-principal) 0%, #2E6A8E 100%);
+            background: var(--gradient-principal);
             box-shadow: var(--shadow-medium);
             border: none;
             padding: 1rem 0;
@@ -56,6 +83,7 @@
 
         .navbar-brand:hover {
             transform: scale(1.05);
+            color: var(--color-destaque) !important;
         }
 
         .nav-link {
@@ -68,8 +96,8 @@
         }
 
         .nav-link:hover, .nav-link.active {
-            background-color: rgba(255, 255, 255, 0.15);
-            color: white !important;
+            background-color: rgba(46, 196, 182, 0.15);
+            color: var(--color-destaque) !important;
             transform: translateY(-1px);
         }
 
@@ -81,7 +109,7 @@
             transform: translateX(-50%);
             width: 30px;
             height: 3px;
-            background: white;
+            background: var(--color-destaque);
             border-radius: 2px;
         }
 
@@ -91,6 +119,7 @@
             box-shadow: var(--shadow-strong);
             padding: 0.5rem 0;
             background: var(--color-fundo);
+            border: 1px solid var(--color-neutro-claro);
         }
 
         .dropdown-item {
@@ -100,7 +129,7 @@
         }
 
         .dropdown-item:hover {
-            background: var(--color-destaque);
+            background: var(--color-sucesso-claro);
             color: var(--color-principal);
         }
 
@@ -133,27 +162,27 @@
         }
 
         .alert-success {
-            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
-            color: #155724;
-            border-left: 4px solid #28a745;
+            background: var(--color-sucesso-claro);
+            color: #0f5132;
+            border-left: 4px solid var(--color-destaque);
         }
 
         .alert-danger {
-            background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+            background: var(--color-erro-claro);
             color: #721c24;
-            border-left: 4px solid #dc3545;
+            border-left: 4px solid var(--color-erro);
         }
 
         .alert-warning {
-            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            background: var(--color-aviso-claro);
             color: #856404;
-            border-left: 4px solid #ffc107;
+            border-left: 4px solid var(--color-alerta);
         }
 
         .alert-info {
-            background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+            background: var(--color-info-claro);
             color: #0c5460;
-            border-left: 4px solid var(--color-principal);
+            border-left: 4px solid var(--color-secundario);
         }
 
         /* === CARDS MODERNOS === */
@@ -164,19 +193,27 @@
             transition: var(--transition);
             overflow: hidden;
             background: var(--color-fundo);
+            border: 1px solid var(--color-neutro-claro);
         }
 
         .card:hover {
             transform: translateY(-4px);
             box-shadow: var(--shadow-strong);
+            border-color: var(--color-secundario);
         }
 
         .card-header {
-            background: linear-gradient(135deg, var(--color-destaque) 0%, #F2EDE0 100%);
-            border-bottom: 1px solid rgba(46, 46, 46, 0.1);
+            background: linear-gradient(135deg, var(--color-neutro-claro) 0%, #f0f0f0 100%);
+            border-bottom: 1px solid var(--color-neutro-claro);
             font-weight: 600;
             color: var(--color-texto);
             padding: 1.25rem;
+        }
+
+        .card-header.bg-primary {
+            background: var(--gradient-principal) !important;
+            color: white;
+            border-color: var(--color-principal);
         }
 
         /* === BOTÕES MODERNOS === */
@@ -211,13 +248,15 @@
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, var(--color-secundario) 0%, #20c997 100%);
+            background: var(--gradient-destaque);
             color: white;
+            border-color: var(--color-destaque);
         }
 
         .btn-primary:hover {
-            background: linear-gradient(135deg, #218838 0%, #1aa179 100%);
+            background: linear-gradient(135deg, #26a69a 0%, #2ec4b6 100%);
             color: white;
+            border-color: #26a69a;
         }
 
         .btn-outline-primary {
@@ -233,23 +272,43 @@
         }
 
         .btn-success {
-            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            background: var(--gradient-destaque);
+            border-color: var(--color-destaque);
+        }
+
+        .btn-success:hover {
+            background: linear-gradient(135deg, #26a69a 0%, #2ec4b6 100%);
+            border-color: #26a69a;
         }
 
         .btn-warning {
-            background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+            background: linear-gradient(135deg, var(--color-alerta) 0%, #e09900 100%);
+            border-color: var(--color-alerta);
         }
 
         .btn-danger {
-            background: linear-gradient(135deg, #dc3545 0%, #e83e8c 100%);
+            background: linear-gradient(135deg, var(--color-erro) 0%, #dc2626 100%);
+            border-color: var(--color-erro);
         }
 
         .btn-info {
-            background: linear-gradient(135deg, var(--color-principal) 0%, #17a2b8 100%);
+            background: var(--gradient-secundario);
+            border-color: var(--color-secundario);
         }
 
         .btn-secondary {
-            background: linear-gradient(135deg, var(--color-texto-secundario) 0%, #6c757d 100%);
+            background: linear-gradient(135deg, var(--color-neutro-escuro) 0%, #6c757d 100%);
+            border-color: var(--color-neutro-escuro);
+        }
+
+        .btn-outline-secondary {
+            border-color: var(--color-neutro-medio);
+            color: var(--color-neutro-escuro);
+        }
+
+        .btn-outline-secondary:hover {
+            background: var(--color-neutro-escuro);
+            border-color: var(--color-neutro-escuro);
         }
 
         .btn-sm {
@@ -264,7 +323,7 @@
 
         /* === FORM CONTROLS === */
         .form-control, .form-select {
-            border: 2px solid var(--color-destaque);
+            border: 2px solid var(--color-neutro-claro);
             border-radius: var(--border-radius-sm);
             padding: 0.75rem 1rem;
             transition: var(--transition);
@@ -273,14 +332,14 @@
         }
 
         .form-control:focus, .form-select:focus {
-            border-color: var(--color-principal);
-            box-shadow: 0 0 0 0.2rem rgba(58, 124, 165, 0.25);
+            border-color: var(--color-secundario);
+            box-shadow: 0 0 0 0.2rem rgba(101, 163, 212, 0.25);
             background: var(--color-fundo);
             color: var(--color-texto);
         }
 
         .form-control::placeholder {
-            color: var(--color-texto-secundario);
+            color: var(--color-texto-claro);
         }
 
         .form-label {
@@ -298,7 +357,7 @@
         }
 
         .table thead th {
-            background: linear-gradient(135deg, var(--color-principal) 0%, #2E6A8E 100%);
+            background: var(--gradient-principal);
             color: white;
             border: none;
             font-weight: 600;
@@ -310,11 +369,11 @@
 
         .table tbody tr {
             transition: var(--transition);
-            border-bottom: 1px solid var(--color-destaque);
+            border-bottom: 1px solid var(--color-neutro-claro);
         }
 
         .table tbody tr:hover {
-            background: linear-gradient(135deg, var(--color-destaque) 0%, #F2EDE0 100%);
+            background: linear-gradient(135deg, var(--color-neutro-claro) 0%, #f0f0f0 100%);
             transform: scale(1.01);
         }
 
@@ -332,12 +391,15 @@
         }
 
         .bg-primary { background-color: var(--color-principal) !important; }
-        .bg-secondary { background-color: var(--color-texto-secundario) !important; }
-        .bg-info { background-color: var(--color-principal) !important; }
+        .bg-secondary { background-color: var(--color-neutro-escuro) !important; }
+        .bg-success { background-color: var(--color-destaque) !important; }
+        .bg-warning { background-color: var(--color-alerta) !important; }
+        .bg-info { background-color: var(--color-secundario) !important; }
+        .bg-danger { background-color: var(--color-erro) !important; }
 
         /* === BREADCRUMBS === */
         .breadcrumb {
-            background: var(--color-destaque);
+            background: var(--color-neutro-claro);
             border-radius: var(--border-radius);
             padding: 1rem 1.5rem;
             margin-bottom: 1.5rem;
@@ -360,7 +422,7 @@
 
         /* === FOOTER === */
         .footer {
-            background: linear-gradient(135deg, var(--color-texto) 0%, #1a1a1a 100%);
+            background: var(--gradient-principal);
             color: white;
             padding: 2rem 0;
             margin-top: auto;
@@ -368,27 +430,31 @@
 
         /* === LOADING E UTILITÁRIOS === */
         .spinner-border {
-            color: var(--color-principal);
+            color: var(--color-secundario);
         }
 
         .text-primary { color: var(--color-principal) !important; }
         .text-secondary { color: var(--color-texto-secundario) !important; }
-        .text-muted { color: var(--color-texto-secundario) !important; }
+        .text-muted { color: var(--color-texto-claro) !important; }
+        .text-success { color: var(--color-destaque) !important; }
+        .text-warning { color: var(--color-alerta) !important; }
+        .text-info { color: var(--color-secundario) !important; }
+        .text-danger { color: var(--color-erro) !important; }
 
         /* === RESPONSIVO === */
         @@media (max-width: 768px) {
             .main-content {
                 padding-top: 1rem;
             }
-            
+
             .card:hover {
                 transform: none;
             }
-            
+
             .table tbody tr:hover {
                 transform: none;
             }
-            
+
             .btn:hover {
                 transform: none;
             }
@@ -424,16 +490,16 @@
         }
 
         ::-webkit-scrollbar-track {
-            background: var(--color-destaque);
+            background: var(--color-neutro-claro);
         }
 
         ::-webkit-scrollbar-thumb {
-            background: var(--color-texto-secundario);
+            background: var(--color-neutro-medio);
             border-radius: 4px;
         }
 
         ::-webkit-scrollbar-thumb:hover {
-            background: var(--color-principal);
+            background: var(--color-secundario);
         }
     </style>
 
@@ -444,8 +510,8 @@
     <nav class="navbar navbar-expand-lg">
         <div class="container">
             <a class="navbar-brand" href="@Url.Action("Index", "Home")">
-                <i class="fas fa-screwdriver-wrench me-2"></i>
-                Agent Tools
+                <i class="fas fa-route me-2"></i>
+                Agent Toor
             </a>
 
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -455,19 +521,19 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Index" && ViewContext.RouteData.Values["controller"]?.ToString() == "Proposta" ? "active" : "")" 
+                        <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Index" && ViewContext.RouteData.Values["controller"]?.ToString() == "Proposta" ? "active" : "")"
                            href="@Url.Action("Index", "Proposta")">
                             <i class="fas fa-list me-1"></i>Propostas
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Criar" && ViewContext.RouteData.Values["controller"]?.ToString() == "Proposta" ? "active" : "")" 
+                        <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Criar" && ViewContext.RouteData.Values["controller"]?.ToString() == "Proposta" ? "active" : "")"
                            href="@Url.Action("Criar", "Proposta")">
                             <i class="fas fa-plus me-1"></i>Nova Proposta
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "PropostaAnalyticsData" ? "active" : "")" 
+                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "PropostaAnalyticsData" ? "active" : "")"
                            href="/PropostaAnalyticsData/Dashboard">
                             <i class="fas fa-chart-bar me-1"></i>Analytics
                         </a>

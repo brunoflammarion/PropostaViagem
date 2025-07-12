@@ -164,10 +164,15 @@ namespace SistemaUsuarios.Controllers
 
             try
             {
-                // PROCESSAR UPLOAD DE FOTO
-                if (model.FotoCapaUpload != null)
+                // PROCESSAR UPLOAD DE FOTO APENAS SE FORNECIDA
+                if (model.FotoCapaUpload != null && model.FotoCapaUpload.Length > 0)
                 {
                     model.FotoCapa = await SalvarFotoAsync(model.FotoCapaUpload);
+                }
+                else
+                {
+                    // Se não há upload, FotoCapa permanece null
+                    model.FotoCapa = null;
                 }
             }
             catch (InvalidOperationException ex)
@@ -199,9 +204,9 @@ namespace SistemaUsuarios.Controllers
                 DataFim = model.DataFim,
                 NumeroPassageiros = model.NumeroPassageiros,
                 NumeroCriancas = model.NumeroCriancas,
-                FotoCapa = model.FotoCapa,
+                FotoCapa = model.FotoCapa, // Pode ser null
                 LayoutId = model.LayoutId,
-                ObservacoesGerais = model.ObservacoesGerais,
+                ObservacoesGerais = string.IsNullOrWhiteSpace(model.ObservacoesGerais) ? null : model.ObservacoesGerais.Trim(), // Limpar string vazia para null
                 StatusProposta = StatusProposta.Rascunho,
                 LinkPublicoAtivo = model.LinkPublicoAtivo,
                 DataExpiracaoLink = model.DataExpiracaoLink,
@@ -299,9 +304,15 @@ namespace SistemaUsuarios.Controllers
             proposta.DataFim = model.DataFim;
             proposta.NumeroPassageiros = model.NumeroPassageiros;
             proposta.NumeroCriancas = model.NumeroCriancas;
-            proposta.FotoCapa = model.FotoCapa;
+
+            // Tratar FotoCapa - se vier vazia/null, manter como null
+            proposta.FotoCapa = string.IsNullOrWhiteSpace(model.FotoCapa) ? null : model.FotoCapa;
+
             proposta.LayoutId = model.LayoutId;
-            proposta.ObservacoesGerais = model.ObservacoesGerais;
+
+            // Tratar ObservacoesGerais - se vier vazia/null, manter como null
+            proposta.ObservacoesGerais = string.IsNullOrWhiteSpace(model.ObservacoesGerais) ? null : model.ObservacoesGerais.Trim();
+
             proposta.StatusProposta = model.StatusProposta;
             proposta.LinkPublicoAtivo = model.LinkPublicoAtivo;
             proposta.DataExpiracaoLink = model.DataExpiracaoLink;
