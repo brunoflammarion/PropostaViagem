@@ -4,90 +4,67 @@
     ViewData["Title"] = "Propostas de Viagem";
 }
 
-<!-- Page Header -->
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2><i class="fas fa-chart-line me-2"></i>Propostas de Viagem</h2>
-    <div>
-            <a href="/Proposta/Criar" class="btn btn-primary btn-lg">
-                <i class="fas fa-plus me-2"></i>Nova Proposta
-            </a>
+<!-- Header Executivo Compacto -->
+<div class="executive-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2 class="exec-title"><i class="fas fa-chart-line me-2"></i>Propostas de Viagem</h2>
+            <span class="exec-subtitle">@Model.TotalPropostas proposta(s) • @Model.TotalAprovadas aprovada(s)</span>
+        </div>
+        <a href="/Proposta/Criar" class="btn btn-primary exec-btn-create">
+            <i class="fas fa-plus me-1"></i>Nova Proposta
+        </a>
     </div>
 </div>
 
-<div class="row mb-4">
-    <div class="col-md-3">
-        <div class="card bg-success text-white h-100">
-            <div class="card-body text-center">
-                <i class="fas fa-file-alt fa-2x mb-2"></i>
-                <h3 id="totalVisualizacoes">@Model.TotalPropostas</h3>
-                <small>Total de Propostas</small>
+<!-- Dashboard Executivo Compacto -->
+<div class="exec-dashboard">
+    <div class="exec-stats-row">
+        <div class="exec-stat-item primary">
+            <div class="exec-stat-content">
+                <span class="exec-stat-number">@Model.TotalPropostas</span>
+                <span class="exec-stat-label">Total</span>
             </div>
+            <i class="fas fa-file-alt exec-stat-icon"></i>
         </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card bg-info text-white h-100">
-            <div class="card-body text-center">
-                <i class="fas fa-pen-ruler fa-2x mb-2"></i>
-                <h3 id="tempoMedio">@Model.TotalRascunhos</h3>
-                <small>Tempo Rascunhos</small>
+        
+        <div class="exec-stat-item secondary">
+            <div class="exec-stat-content">
+                <span class="exec-stat-number">@Model.TotalRascunhos</span>
+                <span class="exec-stat-label">Rascunhos</span>
             </div>
+            <i class="fas fa-edit exec-stat-icon"></i>
         </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card bg-warning text-white h-100">
-            <div class="card-body text-center">
-                <i class="fas fa-share-from-square fa-2x mb-2"></i>
-                <h3 id="taxaInteracao">@Model.TotalEnviadas</h3>
-                <small>Total Enviados</small>
+        
+        <div class="exec-stat-item warning">
+            <div class="exec-stat-content">
+                <span class="exec-stat-number">@Model.TotalEnviadas</span>
+                <span class="exec-stat-label">Enviadas</span>
             </div>
+            <i class="fas fa-paper-plane exec-stat-icon"></i>
         </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card bg-warning text-white h-100">
-            <div class="card-body text-center">
-                <i class="fas fa-file-check fa-2x mb-2"></i>
-                <h3 id="taxaInteracao">@Model.TotalAprovadas</h3>
-                <small>Total Aprovadas</small>
+        
+        <div class="exec-stat-item success">
+            <div class="exec-stat-content">
+                <span class="exec-stat-number">@Model.TotalAprovadas</span>
+                <span class="exec-stat-label">Aprovadas</span>
             </div>
+            <i class="fas fa-check-circle exec-stat-icon"></i>
         </div>
     </div>
 </div>
 
-
-<!-- Estatísticas 
-<div class="stats-grid mb-4">
-    <div class="stat-card">
-        <div class="stat-number">@Model.TotalPropostas</div>
-        <div class="stat-label">Total de Propostas</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-number">@Model.TotalRascunhos</div>
-        <div class="stat-label">Rascunhos</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-number">@Model.TotalEnviadas</div>
-        <div class="stat-label">Enviadas</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-number">@Model.TotalAprovadas</div>
-        <div class="stat-label">Aprovadas</div>
-    </div>
-</div>-->
-
-<!-- Filtros -->
-<div class="filters-section">
+<!-- Filtros Compactos -->
+<div class="exec-filters">
     <form method="get" asp-action="Index">
-        <div class="row g-3">
-            <div class="col-md-4">
-                <div class="input-group">
-                    <span class="input-group-text bg-destaque border-0">
-                        <i class="fas fa-search text-primary"></i>
-                    </span>
-                    <input asp-for="TermoBusca" class="form-control" placeholder="Buscar por título..." />
-                </div>
+        <div class="filters-row">
+            <div class="filter-compact">
+                <input asp-for="TermoBusca" class="form-control exec-search" 
+                       placeholder="🔍 Buscar propostas..." />
             </div>
-            <div class="col-md-2">
-                <select asp-for="FiltroStatus" class="form-select">
+            
+            <div class="filter-compact">
+                <select asp-for="FiltroStatus" class="form-select exec-select">
                     <option value="">Todos os Status</option>
                     <option value="1">Rascunho</option>
                     <option value="2">Enviada</option>
@@ -96,193 +73,148 @@
                     <option value="5">Cancelada</option>
                 </select>
             </div>
-            <div class="col-md-2">
-                <input asp-for="DataInicioFiltro" class="form-control" type="date" />
+            
+            <div class="filter-compact">
+                <input asp-for="DataInicioFiltro" class="form-control exec-date" 
+                       type="date" title="Data início" />
             </div>
-            <div class="col-md-2">
-                <input asp-for="DataFimFiltro" class="form-control" type="date" />
+            
+            <div class="filter-compact">
+                <input asp-for="DataFimFiltro" class="form-control exec-date" 
+                       type="date" title="Data fim" />
             </div>
-            <div class="col-md-2">
-                <button type="submit" class="btn btn-outline-primary w-100">
-                    <i class="fas fa-filter me-1"></i>Filtrar
+            
+            <div class="filter-actions">
+                <button type="submit" class="btn btn-outline-primary exec-btn-filter">
+                    <i class="fas fa-filter"></i>
                 </button>
-                <a href="/Proposta" class="btn btn-outline-secondary w-100 mt-2">
-                    <i class="fas fa-times me-1"></i>Limpar
+                <a href="/Proposta" class="btn btn-outline-secondary exec-btn-clear">
+                    <i class="fas fa-times"></i>
                 </a>
             </div>
         </div>
     </form>
 </div>
 
-<!-- Grid de Propostas -->
+<!-- Grid Executivo de Propostas -->
 @if (Model.Propostas.Any())
 {
-    <div class="propostas-grid">
+    <div class="exec-propostas-grid">
         @foreach (var proposta in Model.Propostas)
         {
-            <div class="proposta-card fade-in-up">
-                <div class="proposta-status status-@(proposta.StatusProposta.ToString().ToLower())">
+            <div class="exec-proposta-card">
+                <!-- Status Badge -->
+                <div class="exec-status status-@(proposta.StatusProposta.ToString().ToLower())">
                     @proposta.StatusProposta
                 </div>
                 
-                @if (!string.IsNullOrEmpty(proposta.FotoCapa))
-                {
-                    <img src="@proposta.FotoCapa" alt="@proposta.Titulo" class="proposta-image">
-                }
-                else
-                {
-                    <div class="proposta-image d-flex align-items-center justify-content-center bg-destaque">
-                        <i class="fas fa-image fa-3x text-secondary"></i>
-                    </div>
-                }
+                <!-- Imagem Compacta -->
+                <div class="exec-image-container">
+                    @if (!string.IsNullOrEmpty(proposta.FotoCapa))
+                    {
+                        <img src="@proposta.FotoCapa" alt="@proposta.Titulo" class="exec-image">
+                    }
+                    else
+                    {
+                        <div class="exec-image-placeholder">
+                            <i class="fas fa-image"></i>
+                        </div>
+                    }
+                </div>
 
-                <div class="proposta-content">
-                    <h3 class="proposta-title">@proposta.Titulo</h3>
+                <!-- Conteúdo Compacto -->
+                <div class="exec-content">
+                    <h4 class="exec-title-card">@proposta.Titulo</h4>
                     
-                    <div class="proposta-meta">
-                        <div class="meta-item">
-                            <i class="fas fa-calendar"></i>
-                            <span>
-                                @if (proposta.DataInicio.HasValue && proposta.DataFim.HasValue)
-                                {
-                                    @proposta.DataInicio.Value.ToString("dd/MM") <text> - </text> @proposta.DataFim.Value.ToString("dd/MM")
-                                }
-                                else
-                                {
-                                    <text>A definir</text>
-                                }
-                            </span>
-                        </div>
-                        <div class="meta-item">
-                            <i class="fas fa-users"></i>
-                            <span>@(proposta.NumeroPassageiros + proposta.NumeroCriancas) pessoa@(proposta.NumeroPassageiros + proposta.NumeroCriancas != 1 ? "s" : "")</span>
-                        </div>
-                        @if (proposta.DuracaoDias.HasValue)
+                    <div class="exec-meta">
+                        @if (proposta.DataInicio.HasValue && proposta.DataFim.HasValue)
                         {
-                            <div class="meta-item">
-                                <i class="fas fa-clock"></i>
-                                <span>@proposta.DuracaoDias dia@(proposta.DuracaoDias != 1 ? "s" : "")</span>
-                            </div>
-                        }
-                    </div>
-
-                    <div class="d-flex align-items-center justify-content-between">
-                        @if (proposta.LinkPublicoAtivo)
-                        {
-                            <span class="badge badge-link-ativo">
-                                <i class="fas fa-link me-1"></i>Link Ativo
-                            </span>
-                        }
-                        else
-                        {
-                            <span class="badge badge-link-inativo">
-                                <i class="fas fa-link-slash me-1"></i>Link Inativo
+                            <span class="exec-meta-item">
+                                <i class="fas fa-calendar"></i>
+                                @proposta.DataInicio.Value.ToString("dd/MM") - @proposta.DataFim.Value.ToString("dd/MM")
                             </span>
                         }
                         
-                        <small class="text-secondary">
-                            @if (proposta.DataModificacao.HasValue)
-                            {
-                                <text>Editada @proposta.DataModificacao.Value.ToString("dd/MM/yyyy")</text>
-                            }
-                            else
-                            {
-                                <text>Criada @proposta.DataCriacao.ToString("dd/MM/yyyy")</text>
-                            }
-                        </small>
+                        <span class="exec-meta-item">
+                            <i class="fas fa-users"></i>
+                            @(proposta.NumeroPassageiros + proposta.NumeroCriancas)
+                        </span>
+                        
+                        @if (proposta.DuracaoDias.HasValue)
+                        {
+                            <span class="exec-meta-item">
+                                <i class="fas fa-clock"></i>
+                                @proposta.DuracaoDias dias
+                            </span>
+                        }
                     </div>
-                </div>
-
-                <div class="proposta-footer">
-                    <div class="actions-group">
-                        <!-- Grupo Principal -->
-                        <div class="d-flex gap-2">
-                            <a href="/Proposta/Detalhes/@proposta.Id" class="action-btn btn-primary" title="Visualizar Proposta">
-                                <i class="fas fa-eye"></i>
-                            </a>
-                            <a href="/Proposta/Editar/@proposta.Id" class="action-btn btn-outline-primary" title="Editar Proposta">
-                                <i class="fas fa-edit"></i>
-                            </a>
-                            <a href="/PropostaAnalyticsData/PropostaDetalhada/@proposta.Id" class="action-btn btn-success" title="Ver Estatísticas">
-                                <i class="fas fa-chart-bar"></i>
-                            </a>
-                        </div>
-
-                        <!-- Grupo Secundário -->
-                        <div class="d-flex gap-2">
+                    
+                    <div class="exec-footer">
+                        <div class="exec-link-status">
                             @if (proposta.LinkPublicoAtivo)
                             {
-                                <button class="action-btn btn-warning" title="Compartilhar" onclick="copiarLink('@proposta.LinkCompartilhamento')">
-                                    <i class="fas fa-share"></i>
-                                </button>
+                                <span class="exec-badge active">
+                                    <i class="fas fa-link"></i> Ativo
+                                </span>
                             }
                             else
                             {
-                                <button class="action-btn btn-outline-secondary" title="Link Inativo" disabled>
-                                    <i class="fas fa-share"></i>
-                                </button>
+                                <span class="exec-badge inactive">
+                                    <i class="fas fa-link-slash"></i> Inativo
+                                </span>
                             }
+                        </div>
+                        
+                        <div class="exec-actions">
+                            <a href="/Proposta/Detalhes/@proposta.Id" 
+                               class="exec-action-btn primary" title="Visualizar">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="/Proposta/Editar/@proposta.Id" 
+                               class="exec-action-btn secondary" title="Editar">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a href="/PropostaAnalyticsData/PropostaDetalhada/@proposta.Id" 
+                               class="exec-action-btn success" title="Analytics">
+                                <i class="fas fa-chart-bar"></i>
+                            </a>
                             
-                            <!-- Dropdown Menu -->
                             <div class="dropdown">
-                                <button class="action-btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" title="Mais opções">
-                                    <i class="fas fa-ellipsis-v"></i>
+                                <button class="exec-action-btn outline dropdown-toggle" 
+                                        data-bs-toggle="dropdown" title="Mais">
+                                    <i class="fas fa-ellipsis-h"></i>
                                 </button>
-                                <ul class="dropdown-menu dropdown-menu-end">
+                                <ul class="dropdown-menu dropdown-menu-end exec-dropdown">
                                     <li>
                                         <a class="dropdown-item" href="/Destino/Gerenciar/@proposta.Id">
-                                            <i class="fas fa-map-marked-alt me-2"></i>Gerenciar Destinos
+                                            <i class="fas fa-map-marked-alt me-2"></i>Destinos
                                         </a>
-                                    </li>
-                                    <li>
-                                        <button class="dropdown-item" onclick="duplicarProposta('@proposta.Id')">
-                                            <i class="fas fa-copy me-2"></i>Duplicar Proposta
-                                        </button>
                                     </li>
                                     @if (proposta.LinkPublicoAtivo)
                                     {
                                         <li>
+                                            <button class="dropdown-item" onclick="copiarLink('@proposta.LinkCompartilhamento')">
+                                                <i class="fas fa-share me-2"></i>Compartilhar
+                                            </button>
+                                        </li>
+                                        <li>
                                             <a class="dropdown-item" href="/Proposta/Publico/@proposta.Id" target="_blank">
-                                                <i class="fas fa-external-link-alt me-2"></i>Ver Link Público
+                                                <i class="fas fa-external-link-alt me-2"></i>Ver Público
                                             </a>
                                         </li>
                                     }
                                     <li><hr class="dropdown-divider"></li>
-                                    
-                                    <!-- Ações de Status -->
-                                    @if (proposta.StatusProposta != StatusProposta.Cancelada)
-                                    {
-                                        <li>
-                                            <form method="post" action="/Proposta/AlterarStatus" style="display:inline;" class="w-100">
-                                                <input type="hidden" name="id" value="@proposta.Id" />
-                                                <input type="hidden" name="status" value="5" />
-                                                <button type="submit" class="dropdown-item text-warning" 
-                                                        onclick="return confirm('Deseja cancelar esta proposta?')">
-                                                    <i class="fas fa-ban me-2"></i>Cancelar Proposta
-                                                </button>
-                                            </form>
-                                        </li>
-                                    }
-                                    else
-                                    {
-                                        <li>
-                                            <form method="post" action="/Proposta/AlterarStatus" style="display:inline;" class="w-100">
-                                                <input type="hidden" name="id" value="@proposta.Id" />
-                                                <input type="hidden" name="status" value="1" />
-                                                <button type="submit" class="dropdown-item text-success" 
-                                                        onclick="return confirm('Deseja reativar esta proposta?')">
-                                                    <i class="fas fa-check me-2"></i>Reativar Proposta
-                                                </button>
-                                            </form>
-                                        </li>
-                                    }
-                                    
+                                    <li>
+                                        <button class="dropdown-item" onclick="duplicarProposta('@proposta.Id')">
+                                            <i class="fas fa-copy me-2"></i>Duplicar
+                                        </button>
+                                    </li>
                                     <li>
                                         <form method="post" action="/Proposta/Excluir" style="display:inline;" class="w-100">
                                             <input type="hidden" name="id" value="@proposta.Id" />
                                             <button type="submit" class="dropdown-item text-danger" 
-                                                    onclick="return confirm('Tem certeza que deseja excluir esta proposta? Esta ação não pode ser desfeita.')">
-                                                <i class="fas fa-trash me-2"></i>Excluir Proposta
+                                                    onclick="return confirm('Excluir esta proposta?')">
+                                                <i class="fas fa-trash me-2"></i>Excluir
                                             </button>
                                         </form>
                                     </li>
@@ -294,494 +226,528 @@
             </div>
         }
     </div>
-
-    <!-- Paginação (se necessário) -->
-    @if (Model.Propostas.Count > 12)
-    {
-        <div class="d-flex justify-content-center mt-4">
-            <nav>
-                <ul class="pagination">
-                    <li class="page-item disabled">
-                        <span class="page-link">Anterior</span>
-                    </li>
-                    <li class="page-item active">
-                        <span class="page-link">1</span>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="#">2</a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="#">Próximo</a>
-                    </li>
-                </ul>
-            </nav>
-        </div>
-    }
 }
 else
 {
-    <!-- Empty State -->
-    <div class="empty-state">
-        <div class="empty-icon">
-            <i class="fas fa-suitcase-rolling"></i>
-        </div>
-        <h3 class="empty-title">Nenhuma proposta encontrada</h3>
-        <p class="empty-description">
+    <!-- Empty State Compacto -->
+    <div class="exec-empty-state">
+        <i class="fas fa-suitcase-rolling exec-empty-icon"></i>
+        <h4>Nenhuma proposta encontrada</h4>
+        <p class="exec-empty-text">
             @if (!string.IsNullOrEmpty(Model.TermoBusca) || Model.FiltroStatus.HasValue)
             {
-                <text>Nenhuma proposta corresponde aos filtros aplicados. Tente ajustar os critérios de busca.</text>
+                <text>Ajuste os filtros ou </text>
             }
-            else
-            {
-                <text>Comece criando sua primeira proposta de viagem e organize experiências incríveis para seus clientes.</text>
-            }
+            <a href="/Proposta/Criar" class="exec-empty-link">crie sua primeira proposta</a>
         </p>
-        <div class="mt-3">
-            @if (!string.IsNullOrEmpty(Model.TermoBusca) || Model.FiltroStatus.HasValue)
-            {
-                <a href="/Proposta" class="btn btn-outline-primary me-2">
-                    <i class="fas fa-times me-1"></i>Limpar Filtros
-                </a>
-            }
-            <a href="/Proposta/Criar" class="btn btn-primary btn-lg">
-                <i class="fas fa-plus me-2"></i>@(Model.TotalPropostas > 0 ? "Nova Proposta" : "Criar Primeira Proposta")
-            </a>
-        </div>
     </div>
 }
 
 @section Styles {
     <style>
-        /* === PAGE HEADER === */
-        .page-header {
-            background: linear-gradient(135deg, var(--color-destaque) 0%, #F2EDE0 100%);
-            padding: 2rem 0;
-            margin: -2rem -15px 2rem -15px;
-            border-radius: 0 0 var(--border-radius) var(--border-radius);
+        /* === EXECUTIVE LAYOUT STYLES === */
+        :root {
+            --exec-primary: #0A1128;
+            --exec-primary-light: #1a2845;
+            --exec-secondary: #65a3d4;
+            --exec-accent: #2ec4b6;
+            --exec-success: #28a745;
+            --exec-warning: #ffc107;
+            --exec-danger: #dc3545;
+            --exec-light: #f8f9fa;
+            --exec-dark: #343a40;
+            --exec-border: #e9ecef;
+            --exec-shadow: 0 2px 4px rgba(0,0,0,0.08);
+            --exec-shadow-hover: 0 4px 12px rgba(0,0,0,0.15);
+            --exec-radius: 8px;
+            --exec-radius-lg: 12px;
         }
 
-        .page-title {
-            font-size: 2.25rem;
+        /* === HEADER EXECUTIVO === */
+        .executive-header {
+            padding: 1.5rem 0;
+            border-bottom: 1px solid var(--exec-border);
+            margin-bottom: 1.5rem;
+        }
+
+        .exec-title {
+            font-size: 1.75rem;
             font-weight: 700;
-            color: var(--color-texto);
-            margin-bottom: 0.5rem;
+            color: var(--exec-primary);
+            margin: 0;
         }
 
-        .page-subtitle {
-            color: var(--color-texto-secundario);
-            font-size: 1.125rem;
-            margin-bottom: 0;
+        .exec-subtitle {
+            color: #6c757d;
+            font-size: 0.875rem;
+            font-weight: 500;
         }
 
-        /* === ESTATÍSTICAS === */
-        .stats-grid {
+        .exec-btn-create {
+            padding: 0.5rem 1.25rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            border-radius: var(--exec-radius);
+        }
+
+        /* === DASHBOARD EXECUTIVO === */
+        .exec-dashboard {
+            margin-bottom: 1.5rem;
+        }
+
+        .exec-stats-row {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1.5rem;
+            gap: 1rem;
         }
 
-        .stat-card {
-            background: var(--color-fundo);
-            border-radius: var(--border-radius);
-            padding: 1.5rem;
-            text-align: center;
-            box-shadow: var(--shadow-light);
-            transition: var(--transition);
-            border-left: 4px solid var(--color-principal);
+        .exec-stat-item {
+            background: white;
+            border: 1px solid var(--exec-border);
+            border-radius: var(--exec-radius);
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.2s ease;
             position: relative;
             overflow: hidden;
         }
 
-        .stat-card::before {
+        .exec-stat-item::before {
             content: '';
             position: absolute;
             top: 0;
-            right: 0;
-            width: 60px;
-            height: 60px;
-            background: linear-gradient(45deg, var(--color-principal), transparent);
-            opacity: 0.1;
-            border-radius: 50%;
-            transform: translate(20px, -20px);
+            left: 0;
+            width: 3px;
+            height: 100%;
+            background: var(--exec-primary);
         }
 
-        .stat-card:hover {
-            transform: translateY(-4px);
-            box-shadow: var(--shadow-medium);
+        .exec-stat-item.primary::before { background: var(--exec-primary); }
+        .exec-stat-item.secondary::before { background: var(--exec-dark); }
+        .exec-stat-item.warning::before { background: var(--exec-warning); }
+        .exec-stat-item.success::before { background: var(--exec-success); }
+
+        .exec-stat-item:hover {
+            box-shadow: var(--exec-shadow-hover);
+            transform: translateY(-1px);
         }
 
-        .stat-number {
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: var(--color-principal);
-            margin-bottom: 0.5rem;
-            position: relative;
-            z-index: 1;
-        }
-
-        .stat-label {
-            color: var(--color-texto-secundario);
-            font-weight: 500;
-            text-transform: uppercase;
-            font-size: 0.875rem;
-            letter-spacing: 0.5px;
-            position: relative;
-            z-index: 1;
-        }
-
-        /* === FILTROS === */
-        .filters-section {
-            background: var(--color-fundo);
-            border-radius: var(--border-radius);
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-            box-shadow: var(--shadow-light);
-            border: 1px solid var(--color-destaque);
-        }
-
-        .input-group-text {
-            background: var(--color-destaque);
-            border: 2px solid var(--color-destaque);
-            color: var(--color-principal);
-        }
-
-        /* === GRID DE PROPOSTAS === */
-        .propostas-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
-            gap: 1.5rem;
-        }
-
-        .proposta-card {
-            background: var(--color-fundo);
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow-light);
-            transition: var(--transition);
-            overflow: hidden;
-            position: relative;
-            border: 1px solid rgba(46, 46, 46, 0.08);
-        }
-
-        .proposta-card:hover {
-            transform: translateY(-6px);
-            box-shadow: var(--shadow-strong);
-            border-color: var(--color-principal);
-        }
-
-        .proposta-image {
-            width: 100%;
-            height: 200px;
-            object-fit: cover;
-            background: linear-gradient(135deg, var(--color-destaque) 0%, #F2EDE0 100%);
-        }
-
-        .proposta-content {
-            padding: 1.5rem;
-        }
-
-        .proposta-title {
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: var(--color-texto);
-            margin-bottom: 1rem;
-            line-height: 1.3;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-
-        .proposta-meta {
+        .exec-stat-content {
             display: flex;
-            align-items: center;
-            gap: 1rem;
-            margin-bottom: 1rem;
-            flex-wrap: wrap;
+            flex-direction: column;
         }
 
-        .meta-item {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            color: var(--color-texto-secundario);
-            font-size: 0.875rem;
-            font-weight: 500;
+        .exec-stat-number {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--exec-primary);
+            line-height: 1;
         }
 
-        .meta-item i {
-            color: var(--color-principal);
-            width: 14px;
-            text-align: center;
-        }
-
-        .proposta-status {
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
-            padding: 0.5rem 1rem;
-            border-radius: 20px;
+        .exec-stat-label {
             font-size: 0.75rem;
+            color: #6c757d;
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .exec-stat-icon {
+            font-size: 1.5rem;
+            color: #dee2e6;
+        }
+
+        /* === FILTROS EXECUTIVOS === */
+        .exec-filters {
+            margin-bottom: 1.5rem;
+        }
+
+        .filters-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr auto;
+            gap: 0.75rem;
+            align-items: end;
+        }
+
+        .filter-compact {
+            position: relative;
+        }
+
+        .exec-search, .exec-select, .exec-date {
+            height: 38px;
+            border: 1px solid var(--exec-border);
+            border-radius: var(--exec-radius);
+            font-size: 0.875rem;
+            transition: border-color 0.2s ease;
+        }
+
+        .exec-search:focus, .exec-select:focus, .exec-date:focus {
+            border-color: var(--exec-primary);
+            box-shadow: 0 0 0 2px rgba(10, 17, 40, 0.1);
+        }
+
+        .filter-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .exec-btn-filter, .exec-btn-clear {
+            width: 38px;
+            height: 38px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: var(--exec-radius);
+        }
+
+        /* === GRID EXECUTIVO === */
+        .exec-propostas-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1rem;
+        }
+
+        .exec-proposta-card {
+            background: white;
+            border: 1px solid var(--exec-border);
+            border-radius: var(--exec-radius-lg);
+            overflow: hidden;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .exec-proposta-card:hover {
+            box-shadow: var(--exec-shadow-hover);
+            transform: translateY(-2px);
+            border-color: var(--exec-primary);
+        }
+
+        /* === STATUS BADGE === */
+        .exec-status {
+            position: absolute;
+            top: 0.75rem;
+            right: 0.75rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.6875rem;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            backdrop-filter: blur(10px);
             z-index: 2;
         }
 
-        .status-rascunho { 
-            background: rgba(248, 249, 250, 0.9); 
-            color: var(--color-texto-secundario); 
-            border: 1px solid rgba(141, 153, 174, 0.3);
-        }
-        .status-enviada { 
-            background: rgba(255, 243, 205, 0.9); 
-            color: #856404; 
-            border: 1px solid rgba(255, 193, 7, 0.3);
-        }
-        .status-aprovada { 
-            background: rgba(209, 231, 221, 0.9); 
-            color: #0f5132; 
-            border: 1px solid rgba(40, 167, 69, 0.3);
-        }
-        .status-rejeitada { 
-            background: rgba(248, 215, 218, 0.9); 
-            color: #721c24; 
-            border: 1px solid rgba(220, 53, 69, 0.3);
-        }
-        .status-cancelada { 
-            background: rgba(226, 227, 229, 0.9); 
-            color: #383d41; 
-            border: 1px solid rgba(108, 117, 125, 0.3);
+        .status-rascunho { background: #f8f9fa; color: #6c757d; }
+        .status-enviada { background: #fff3cd; color: #856404; }
+        .status-aprovada { background: #d4edda; color: #155724; }
+        .status-rejeitada { background: #f8d7da; color: #721c24; }
+        .status-cancelada { background: #e2e3e5; color: #383d41; }
+
+        /* === IMAGEM === */
+        .exec-image-container {
+            height: 120px;
+            overflow: hidden;
         }
 
-        .proposta-footer {
-            padding: 1rem 1.5rem;
-            background: var(--color-destaque);
-            border-top: 1px solid rgba(46, 46, 46, 0.1);
+        .exec-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
         }
 
-        .actions-group {
+        .exec-proposta-card:hover .exec-image {
+            transform: scale(1.05);
+        }
+
+        .exec-image-placeholder {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
             display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #adb5bd;
+            font-size: 1.5rem;
+        }
+
+        /* === CONTEÚDO === */
+        .exec-content {
+            padding: 1rem;
+        }
+
+        .exec-title-card {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--exec-primary);
+            margin: 0 0 0.75rem 0;
+            line-height: 1.3;
+            height: 2.6rem;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+
+        .exec-meta {
+            display: flex;
+            flex-wrap: wrap;
             gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .exec-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+            color: #6c757d;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .exec-meta-item i {
+            color: var(--exec-primary);
+            width: 12px;
+            text-align: center;
+        }
+
+        /* === FOOTER DO CARD === */
+        .exec-footer {
+            display: flex;
             align-items: center;
             justify-content: space-between;
         }
 
-        .action-btn {
-            width: 36px;
-            height: 36px;
-            border-radius: var(--border-radius-sm);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: none;
-            transition: var(--transition);
-            font-size: 0.875rem;
-            text-decoration: none;
-        }
-
-        .action-btn:hover {
-            transform: translateY(-2px);
-            text-decoration: none;
-        }
-
-        .action-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .action-btn:disabled:hover {
-            transform: none;
-        }
-
-        /* === BADGES === */
-        .badge-link-ativo {
-            background: rgba(209, 231, 221, 0.9);
-            color: #0f5132;
-            padding: 0.5rem 1rem;
-            border-radius: 12px;
+        .exec-badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            font-size: 0.6875rem;
             font-weight: 500;
-            font-size: 0.75rem;
-            border: 1px solid rgba(40, 167, 69, 0.2);
         }
 
-        .badge-link-inativo {
-            background: rgba(248, 215, 218, 0.9);
-            color: #721c24;
-            padding: 0.5rem 1rem;
-            border-radius: 12px;
-            font-weight: 500;
-            font-size: 0.75rem;
-            border: 1px solid rgba(220, 53, 69, 0.2);
+        .exec-badge.active {
+            background: #d4edda;
+            color: #155724;
         }
 
-        /* === EMPTY STATE === */
-        .empty-state {
-            text-align: center;
-            padding: 4rem 2rem;
-            background: var(--color-fundo);
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow-light);
-            border: 2px dashed var(--color-destaque);
-        }
-
-        .empty-icon {
-            font-size: 4rem;
-            color: var(--color-texto-secundario);
-            margin-bottom: 1.5rem;
-        }
-
-        .empty-title {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: var(--color-texto);
-            margin-bottom: 1rem;
-        }
-
-        .empty-description {
-            color: var(--color-texto-secundario);
-            font-size: 1.1rem;
-            margin-bottom: 0;
-            max-width: 500px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        /* === DROPDOWN CUSTOMIZADO === */
-        .dropdown-menu {
-            border: none;
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow-strong);
-            padding: 0.5rem 0;
-            background: var(--color-fundo);
-            border: 1px solid var(--color-destaque);
-        }
-
-        .dropdown-item {
-            padding: 0.75rem 1.5rem;
-            transition: var(--transition);
-            color: var(--color-texto);
-            border: none;
-            background: none;
-            width: 100%;
-            text-align: left;
-        }
-
-        .dropdown-item:hover {
-            background: var(--color-destaque);
-            color: var(--color-principal);
-        }
-
-        .dropdown-item.text-danger:hover {
+        .exec-badge.inactive {
             background: #f8d7da;
             color: #721c24;
         }
 
-        .dropdown-item.text-warning:hover {
-            background: #fff3cd;
-            color: #856404;
+        .exec-actions {
+            display: flex;
+            gap: 0.375rem;
+            align-items: center;
         }
 
-        .dropdown-item.text-success:hover {
-            background: #d1e7dd;
-            color: #0f5132;
+        .exec-action-btn {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid transparent;
+            text-decoration: none;
+            font-size: 0.75rem;
+            transition: all 0.2s ease;
         }
 
-        /* === PAGINAÇÃO === */
-        .pagination .page-link {
-            color: var(--color-principal);
-            background: var(--color-fundo);
-            border: 1px solid var(--color-destaque);
-            padding: 0.75rem 1rem;
-            margin: 0 0.125rem;
-            border-radius: var(--border-radius-sm);
+        .exec-action-btn.primary {
+            background: var(--exec-primary);
+            color: white;
         }
 
-        .pagination .page-link:hover {
-            background: var(--color-destaque);
-            border-color: var(--color-principal);
+        .exec-action-btn.secondary {
+            background: #f8f9fa;
+            color: var(--exec-primary);
+            border-color: var(--exec-border);
         }
 
-        .pagination .page-item.active .page-link {
-            background: var(--color-principal);
-            border-color: var(--color-principal);
+        .exec-action-btn.success {
+            background: var(--exec-success);
+            color: white;
+        }
+
+        .exec-action-btn.outline {
+            background: white;
+            color: #6c757d;
+            border-color: var(--exec-border);
+        }
+
+        .exec-action-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-decoration: none;
+            color: inherit;
+        }
+
+        /* === DROPDOWN === */
+        .exec-dropdown {
+            border: none;
+            border-radius: var(--exec-radius);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            padding: 0.5rem 0;
+            min-width: 160px;
+        }
+
+        .exec-dropdown .dropdown-item {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            transition: background-color 0.2s ease;
+        }
+
+        .exec-dropdown .dropdown-item:hover {
+            background: #f8f9fa;
+        }
+
+        .exec-dropdown .dropdown-item.text-danger:hover {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        /* === EMPTY STATE === */
+        .exec-empty-state {
+            text-align: center;
+            padding: 3rem 2rem;
+            background: white;
+            border: 1px solid var(--exec-border);
+            border-radius: var(--exec-radius-lg);
+        }
+
+        .exec-empty-icon {
+            font-size: 3rem;
+            color: #adb5bd;
+            margin-bottom: 1rem;
+        }
+
+        .exec-empty-state h4 {
+            color: var(--exec-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .exec-empty-text {
+            color: #6c757d;
+            margin: 0;
+        }
+
+        .exec-empty-link {
+            color: var(--exec-primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .exec-empty-link:hover {
+            text-decoration: underline;
         }
 
         /* === RESPONSIVO === */
         @@media (max-width: 768px) {
-            .page-header {
-                padding: 1.5rem 0;
-                margin: -1rem -15px 1.5rem -15px;
+            .executive-header {
+                padding: 1rem 0;
             }
 
-            .page-title {
-                font-size: 1.75rem;
-            }
-
-            .propostas-grid {
-                grid-template-columns: 1fr;
-                gap: 1rem;
-            }
-
-            .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 1rem;
-            }
-
-            .stat-number {
-                font-size: 2rem;
-            }
-
-            .proposta-meta {
+            .executive-header .d-flex {
                 flex-direction: column;
+                gap: 1rem;
+                align-items: stretch !important;
+            }
+
+            .exec-btn-create {
+                justify-self: stretch;
+            }
+
+            .exec-stats-row {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.75rem;
+            }
+
+            .exec-stat-item {
+                padding: 0.75rem;
+            }
+
+            .exec-stat-number {
+                font-size: 1.5rem;
+            }
+
+            .filters-row {
+                grid-template-columns: 1fr;
+                gap: 0.75rem;
+            }
+
+            .filter-actions {
+                justify-content: center;
+            }
+
+            .exec-propostas-grid {
+                grid-template-columns: 1fr;
+                gap: 0.75rem;
+            }
+
+            .exec-meta {
+                flex-direction: column;
+                gap: 0.5rem;
                 align-items: flex-start;
-                gap: 0.5rem;
             }
 
-            .actions-group {
-                flex-wrap: wrap;
-                gap: 0.5rem;
+            .exec-actions {
+                gap: 0.25rem;
             }
 
-            .action-btn {
+            .exec-action-btn {
                 width: 32px;
                 height: 32px;
-                font-size: 0.75rem;
+            }
+        }
+
+        @@media (max-width: 576px) {
+            .exec-stats-row {
+                grid-template-columns: 1fr;
+            }
+
+            .exec-title {
+                font-size: 1.5rem;
+            }
+
+            .exec-empty-state {
+                padding: 2rem 1rem;
             }
         }
 
         /* === ANIMAÇÕES === */
+        .exec-proposta-card {
+            animation: fadeInUp 0.4s ease-out;
+        }
+
+        .exec-proposta-card:nth-child(1) { animation-delay: 0.05s; }
+        .exec-proposta-card:nth-child(2) { animation-delay: 0.1s; }
+        .exec-proposta-card:nth-child(3) { animation-delay: 0.15s; }
+        .exec-proposta-card:nth-child(4) { animation-delay: 0.2s; }
+        .exec-proposta-card:nth-child(5) { animation-delay: 0.25s; }
+        .exec-proposta-card:nth-child(6) { animation-delay: 0.3s; }
+
         @@keyframes fadeInUp {
             from {
                 opacity: 0;
-                transform: translateY(20px);
+                transform: translateY(15px);
             }
             to {
                 opacity: 1;
                 transform: translateY(0);
             }
         }
-
-        .fade-in-up {
-            animation: fadeInUp 0.6s ease-out;
-        }
-
-        .fade-in-up:nth-child(1) { animation-delay: 0.1s; }
-        .fade-in-up:nth-child(2) { animation-delay: 0.2s; }
-        .fade-in-up:nth-child(3) { animation-delay: 0.3s; }
-        .fade-in-up:nth-child(4) { animation-delay: 0.4s; }
-        .fade-in-up:nth-child(5) { animation-delay: 0.5s; }
-        .fade-in-up:nth-child(6) { animation-delay: 0.6s; }
     </style>
 }
 
 @section Scripts {
     <script>
-        // Funções JavaScript
+        // Funções JavaScript mantidas do original
         function copiarLink(link) {
             const linkCompleto = window.location.origin + link;
             navigator.clipboard.writeText(linkCompleto).then(function() {
-                // Mostrar notificação de sucesso
                 showNotification('Link copiado para a área de transferência!', 'success');
             }, function(err) {
                 console.error('Erro ao copiar link: ', err);
@@ -793,18 +759,14 @@ else
             if (confirm('Deseja duplicar esta proposta?')) {
                 fetch(`/api/proposta/${propostaId}/duplicar`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    }
+                    headers: { 'Content-Type': 'application/json' }
                 })
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
                         showNotification(data.message, 'success');
                         if (data.redirect) {
-                            setTimeout(() => {
-                                window.location.href = data.redirect;
-                            }, 2000);
+                            setTimeout(() => window.location.href = data.redirect, 2000);
                         }
                     } else {
                         showNotification('Erro ao duplicar proposta', 'error');
@@ -818,10 +780,9 @@ else
         }
 
         function showNotification(message, type) {
-            // Criar elemento de notificação
             const notification = document.createElement('div');
             notification.className = `alert alert-${type === 'success' ? 'success' : 'danger'} position-fixed`;
-            notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px; animation: slideInRight 0.5s ease-out;';
+            notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px; animation: slideInRight 0.3s ease-out;';
             notification.innerHTML = `
                 <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>
                 ${message}
@@ -830,31 +791,41 @@ else
             
             document.body.appendChild(notification);
             
-            // Auto-remover após 5 segundos
             setTimeout(() => {
                 if (notification.parentNode) {
-                    notification.style.animation = 'slideOutRight 0.5s ease-out';
-                    setTimeout(() => notification.remove(), 500);
+                    notification.style.animation = 'slideOutRight 0.3s ease-out';
+                    setTimeout(() => notification.remove(), 300);
                 }
-            }, 5000);
+            }, 4000);
         }
 
-        // Animações de entrada
+        // Inicialização
         document.addEventListener('DOMContentLoaded', function() {
-            const cards = document.querySelectorAll('.proposta-card');
+            // Aplicar animações nos cards
+            const cards = document.querySelectorAll('.exec-proposta-card');
             cards.forEach((card, index) => {
                 card.style.opacity = '0';
-                card.style.transform = 'translateY(20px)';
+                card.style.transform = 'translateY(15px)';
                 
                 setTimeout(() => {
-                    card.style.transition = 'all 0.6s ease-out';
+                    card.style.transition = 'all 0.4s ease-out';
                     card.style.opacity = '1';
                     card.style.transform = 'translateY(0)';
-                }, index * 100);
+                }, index * 50);
             });
+
+            // Auto-clear search quando vazio
+            const searchInput = document.querySelector('.exec-search');
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
+                    if (this.value === '') {
+                        // Opcional: limpar automaticamente quando vazio
+                    }
+                });
+            }
         });
 
-        // CSS para animações
+        // CSS para animações de notificação
         const style = document.createElement('style');
         style.textContent = `
             @@keyframes slideInRight {
