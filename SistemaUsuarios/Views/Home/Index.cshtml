@@ -2,24 +2,24 @@
     ViewData["Title"] = "Agent Tools - Dashboard";
 }
 
-<!-- Hero Section Compacto -->
-<section class="hero-section-compact">
+<!-- Hero Section Executivo Compacto -->
+<section class="hero-section-exec">
     <div class="container">
         <div class="row align-items-center">
             <div class="col-lg-8">
-                <div class="hero-content">
-                    <h1 class="hero-title">
-                        Bem-vindo ao <span class="text-success">Agent Tools</span>
+                <div class="hero-content-exec">
+                    <h1 class="hero-title-exec">
+                        Bem-vindo ao <span class="text-accent">Agent Tools</span>
                     </h1>
-                    <p class="hero-subtitle">
-                        A plataforma definitiva para agentes de viagem criarem propostas impactantes e acompanharem o sucesso de cada projeto.
+                    <p class="hero-subtitle-exec">
+                        Gerencie suas propostas, acompanhe métricas e otimize seu trabalho com nossa plataforma executiva.
                     </p>
-                    <div class="cta-buttons">
-                        <a href="/Proposta/Criar" class="btn btn-success btn-lg me-3">
+                    <div class="cta-buttons-exec">
+                        <a href="/Proposta/Criar" class="btn-primary-exec">
                             <i class="fas fa-plus me-2"></i>
                             Criar Nova Proposta
                         </a>
-                        <a href="/Proposta" class="btn btn-outline-primary btn-lg">
+                        <a href="/Proposta" class="btn-secondary-exec">
                             <i class="fas fa-list me-2"></i>
                             Ver Minhas Propostas
                         </a>
@@ -28,134 +28,235 @@
             </div>
             <div class="col-lg-4">
                 <div class="text-center">
-                    <div class="hero-graphic">
-                        <i class="fas fa-globe-americas"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- Features Section -->
-<section class="features-section">
-    <div class="container">
-        <div class="row text-center mb-5">
-            <div class="col-lg-8 mx-auto">
-                <h2 class="section-title">Por que escolher o Agent Tools?</h2>
-                <p class="section-subtitle">Transforme a forma como você cria e gerencia propostas de viagem</p>
-            </div>
-        </div>
-
-        <div class="row g-4">
-            <div class="col-lg-4 col-md-6">
-                <div class="feature-card text-center">
-                    <div class="feature-icon">
-                        <i class="fas fa-magic"></i>
-                    </div>
-                    <h4>Criação Intuitiva</h4>
-                    <p>Interface moderna e fácil de usar. Crie propostas profissionais em minutos.</p>
-                </div>
-            </div>
-
-            <div class="col-lg-4 col-md-6">
-                <div class="feature-card text-center">
-                    <div class="feature-icon">
+                    <div class="hero-graphic-exec">
                         <i class="fas fa-chart-line"></i>
                     </div>
-                    <h4>Analytics Avançado</h4>
-                    <p>Acompanhe em tempo real como seus clientes interagem com as propostas.</p>
-                </div>
-            </div>
-
-            <div class="col-lg-4 col-md-6">
-                <div class="feature-card text-center">
-                    <div class="feature-icon">
-                        <i class="fas fa-share-alt"></i>
-                    </div>
-                    <h4>Compartilhamento Fácil</h4>
-                    <p>Links públicos seguros e compartilhamento direto por WhatsApp e email.</p>
-                </div>
-            </div>
-
-            <div class="col-lg-4 col-md-6">
-                <div class="feature-card text-center">
-                    <div class="feature-icon">
-                        <i class="fas fa-images"></i>
-                    </div>
-                    <h4>Galeria Rica</h4>
-                    <p>Adicione fotos incríveis dos destinos e crie uma experiência visual impactante.</p>
-                </div>
-            </div>
-
-            <div class="col-lg-4 col-md-6">
-                <div class="feature-card text-center">
-                    <div class="feature-icon">
-                        <i class="fas fa-mobile-alt"></i>
-                    </div>
-                    <h4>Totalmente Responsivo</h4>
-                    <p>Funciona perfeitamente em desktop, tablet e smartphone.</p>
-                </div>
-            </div>
-
-            <div class="col-lg-4 col-md-6">
-                <div class="feature-card text-center">
-                    <div class="feature-icon">
-                        <i class="fas fa-shield-alt"></i>
-                    </div>
-                    <h4>Seguro e Confiável</h4>
-                    <p>Controle total sobre a privacidade das propostas com links seguros.</p>
                 </div>
             </div>
         </div>
     </div>
 </section>
 
-<!-- Quick Actions -->
-<section class="quick-actions-section">
+<!-- KPI Dashboard Executivo 
+<section class="kpi-dashboard-exec">
     <div class="container">
-        <div class="row text-center mb-4">
-            <div class="col-12">
-                <h2>Ações Rápidas</h2>
-                <p>Acesse rapidamente as principais funcionalidades</p>
+        <div class="kpi-grid-exec">
+            <div class="kpi-card-exec primary">
+                <div class="kpi-icon-exec">
+                    <i class="fas fa-file-alt"></i>
+                </div>
+                <div class="kpi-content-exec">
+                    <div class="kpi-number-exec" id="totalPropostas">0</div>
+                    <div class="kpi-label-exec">Total de Propostas</div>
+                    <div class="kpi-trend-exec positive">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>Crescimento mensal</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="kpi-card-exec success">
+                <div class="kpi-icon-exec">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="kpi-content-exec">
+                    <div class="kpi-number-exec" id="propostasAprovadas">0</div>
+                    <div class="kpi-label-exec">Aprovadas</div>
+                    <div class="kpi-trend-exec positive">
+                        <i class="fas fa-trophy"></i>
+                        <span>Taxa de sucesso</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="kpi-card-exec info">
+                <div class="kpi-icon-exec">
+                    <i class="fas fa-eye"></i>
+                </div>
+                <div class="kpi-content-exec">
+                    <div class="kpi-number-exec" id="totalVisualizacoes">0</div>
+                    <div class="kpi-label-exec">Visualizações</div>
+                    <div class="kpi-trend-exec">
+                        <i class="fas fa-chart-bar"></i>
+                        <span>Engagement total</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="kpi-card-exec warning">
+                <div class="kpi-icon-exec">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="kpi-content-exec">
+                    <div class="kpi-number-exec" id="tempoMedio">0s</div>
+                    <div class="kpi-label-exec">Tempo Médio</div>
+                    <div class="kpi-trend-exec">
+                        <i class="fas fa-stopwatch"></i>
+                        <span>Engajamento</span>
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="row g-4">
-            <div class="col-lg-3 col-md-6">
-                <a href="/Proposta/Criar" class="quick-action-card">
-                    <div class="quick-action-icon bg-success">
-                        <i class="fas fa-plus"></i>
-                    </div>
-                    <h5>Nova Proposta</h5>
-                    <p>Criar uma nova proposta de viagem</p>
-                </a>
-            </div>
-            <div class="col-lg-3 col-md-6">
-                <a href="/Proposta" class="quick-action-card">
-                    <div class="quick-action-icon bg-primary">
-                        <i class="fas fa-list"></i>
-                    </div>
-                    <h5>Minhas Propostas</h5>
+    </div>
+</section>-->
+
+<!-- Ações Rápidas Executivas -->
+<section class="quick-actions-exec">
+    <div class="container">
+        <h2 class="section-title-exec">
+            <i class="fas fa-bolt me-2"></i>Ações Rápidas
+        </h2>
+        
+        <div class="actions-grid-exec">
+            <a href="/Proposta/Criar" class="action-card-exec primary">
+                <div class="action-icon-exec">
+                    <i class="fas fa-plus"></i>
+                </div>
+                <div class="action-content-exec">
+                    <h4>Nova Proposta</h4>
+                    <p>Criar proposta personalizada</p>
+                </div>
+                <div class="action-arrow-exec">
+                    <i class="fas fa-arrow-right"></i>
+                </div>
+            </a>
+
+            <a href="/Proposta" class="action-card-exec secondary">
+                <div class="action-icon-exec">
+                    <i class="fas fa-list"></i>
+                </div>
+                <div class="action-content-exec">
+                    <h4>Minhas Propostas</h4>
                     <p>Gerenciar propostas existentes</p>
-                </a>
-            </div>
-            <div class="col-lg-3 col-md-6">
-                <a href="/PropostaAnalyticsData/Dashboard" class="quick-action-card">
-                    <div class="quick-action-icon bg-info">
-                        <i class="fas fa-chart-bar"></i>
+                </div>
+                <div class="action-arrow-exec">
+                    <i class="fas fa-arrow-right"></i>
+                </div>
+            </a>
+
+            <a href="/PropostaAnalyticsData/Dashboard" class="action-card-exec accent">
+                <div class="action-icon-exec">
+                    <i class="fas fa-chart-bar"></i>
+                </div>
+                <div class="action-content-exec">
+                    <h4>Analytics</h4>
+                    <p>Relatórios e estatísticas</p>
+                </div>
+                <div class="action-arrow-exec">
+                    <i class="fas fa-arrow-right"></i>
+                </div>
+            </a>
+
+            <a href="/Usuario" class="action-card-exec outline">
+                <div class="action-icon-exec">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="action-content-exec">
+                    <h4>Usuários</h4>
+                    <p>Gerenciar equipe</p>
+                </div>
+                <div class="action-arrow-exec">
+                    <i class="fas fa-arrow-right"></i>
+                </div>
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- Performance e Insights -->
+<section class="insights-exec">
+    <div class="container">
+        <div class="row g-4">
+            <!-- Performance Card -->
+            <div class="col-lg-8">
+                <div class="performance-card-exec">
+                    <div class="card-header-exec">
+                        <h3>
+                            <i class="fas fa-trending-up me-2"></i>
+                            Resumo de Performance
+                        </h3>
+                        <button class="btn-refresh-exec" onclick="refreshData()">
+                            <i class="fas fa-sync"></i>
+                        </button>
                     </div>
-                    <h5>Analytics</h5>
-                    <p>Ver relatórios e estatísticas</p>
-                </a>
-            </div>
-            <div class="col-lg-3 col-md-6">
-                <a href="/Usuario" class="quick-action-card">
-                    <div class="quick-action-icon bg-warning">
-                        <i class="fas fa-users"></i>
+                    
+                    <div class="performance-metrics-exec">
+                        <div class="metric-exec">
+                            <div class="metric-label-exec">Taxa de Conversão</div>
+                            <div class="metric-value-exec" id="taxaConversao">0%</div>
+                            <div class="metric-change-exec positive">
+                                <i class="fas fa-arrow-up"></i> +2.3%
+                            </div>
+                        </div>
+                        
+                        <div class="metric-exec">
+                            <div class="metric-label-exec">Tempo Médio</div>
+                            <div class="metric-value-exec" id="tempoMedioView">0s</div>
+                            <div class="metric-change-exec positive">
+                                <i class="fas fa-arrow-up"></i> +15s
+                            </div>
+                        </div>
+                        
+                        <div class="metric-exec">
+                            <div class="metric-label-exec">Interações</div>
+                            <div class="metric-value-exec" id="totalInteracoes">0</div>
+                            <div class="metric-change-exec neutral">
+                                <i class="fas fa-minus"></i> Estável
+                            </div>
+                        </div>
                     </div>
-                    <h5>Usuários</h5>
-                    <p>Gerenciar usuários do sistema</p>
-                </a>
+                </div>
+            </div>
+
+            <!-- Activity Card -->
+            <div class="col-lg-4">
+                <div class="activity-card-exec">
+                    <div class="card-header-exec">
+                        <h3>
+                            <i class="fas fa-history me-2"></i>
+                            Atividade Recente
+                        </h3>
+                    </div>
+                    
+                    <div class="activity-list-exec">
+                        <div class="activity-item-exec">
+                            <div class="activity-icon-exec success">
+                                <i class="fas fa-check"></i>
+                            </div>
+                            <div class="activity-content-exec">
+                                <div class="activity-title-exec">Proposta aprovada</div>
+                                <div class="activity-time-exec">Há 2 horas</div>
+                            </div>
+                        </div>
+                        
+                        <div class="activity-item-exec">
+                            <div class="activity-icon-exec primary">
+                                <i class="fas fa-plus"></i>
+                            </div>
+                            <div class="activity-content-exec">
+                                <div class="activity-title-exec">Nova proposta criada</div>
+                                <div class="activity-time-exec">Há 4 horas</div>
+                            </div>
+                        </div>
+                        
+                        <div class="activity-item-exec">
+                            <div class="activity-icon-exec info">
+                                <i class="fas fa-eye"></i>
+                            </div>
+                            <div class="activity-content-exec">
+                                <div class="activity-title-exec">Proposta visualizada</div>
+                                <div class="activity-time-exec">Há 6 horas</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="activity-footer-exec">
+                        <a href="/Proposta" class="link-minimal-exec">
+                            Ver todas as atividades
+                            <i class="fas fa-arrow-right ms-1"></i>
+                        </a>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -163,245 +264,510 @@
 
 @section Styles {
     <style>
-        /* Hero Section Compacto */
-        .hero-section-compact {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        /* === HERO SECTION EXECUTIVO === */
+        .hero-section-exec {
+            background: var(--exec-gradient-primary);
             color: white;
-            padding: 3rem 0; /* REDUZIDO: era 80px (5rem), agora 48px (3rem) */
+            padding: 2rem 0; 
             position: relative;
             overflow: hidden;
-            margin: -2rem -15px 2rem -15px; /* REDUZIDO: margin bottom era 3rem, agora 2rem */
+            margin: -1.5rem -1.5rem 0 -1.5rem;
         }
 
-        .hero-section-compact::before {
+        .hero-section-exec::before {
             content: '';
             position: absolute;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 100" fill="white" opacity="0.1"><polygon points="1000,100 1000,0 0,100"/></svg>') no-repeat bottom;
-            background-size: cover;
+            background: 
+                radial-gradient(circle at 25% 25%, rgba(255,255,255,0.1) 0%, transparent 50%),
+                radial-gradient(circle at 75% 75%, rgba(255,255,255,0.05) 0%, transparent 50%);
+            animation: float 20s ease-in-out infinite;
         }
 
-        .hero-content {
+        @@keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-10px) rotate(1deg); }
+        }
+
+        .hero-content-exec {
             position: relative;
             z-index: 2;
         }
 
-        .hero-title {
-            font-size: 2.5rem; /* REDUZIDO: era 3.5rem, agora 2.5rem */
-            font-weight: 900;
-            margin-bottom: 1rem; /* REDUZIDO: era 1.5rem, agora 1rem */
+        .hero-title-exec {
+            font-size: 2.25rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
             line-height: 1.2;
         }
 
-        .hero-subtitle {
-            font-size: 1.1rem; /* REDUZIDO: era 1.25rem, agora 1.1rem */
-            opacity: 0.9;
-            margin-bottom: 1.5rem; /* REDUZIDO: era 2.5rem, agora 1.5rem */
-            font-weight: 300;
-            line-height: 1.6;
+        .text-accent {
+            color: var(--exec-accent);
         }
 
-        .cta-buttons {
+        .hero-subtitle-exec {
+            font-size: 1.125rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+            font-weight: 400;
+            max-width: 500px;
+            line-height: 1.5;
+        }
+
+        .cta-buttons-exec {
             display: flex;
             gap: 1rem;
             flex-wrap: wrap;
         }
 
-        .hero-graphic {
-            font-size: 6rem; /* REDUZIDO: era 12rem, agora 6rem */
+        .btn-primary-exec {
+            background: var(--exec-gradient-accent);
+            border: none;
+            padding: 0.875rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: var(--exec-radius);
+            color: white;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: var(--exec-transition);
+            box-shadow: var(--exec-shadow);
+        }
+
+        .btn-primary-exec:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--exec-shadow-hover);
+            color: white;
+            text-decoration: none;
+        }
+
+        .btn-secondary-exec {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            padding: 0.875rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 500;
+            border-radius: var(--exec-radius);
+            color: white;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: var(--exec-transition);
+            backdrop-filter: blur(10px);
+        }
+
+        .btn-secondary-exec:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+            color: white;
+            text-decoration: none;
+        }
+
+        .hero-graphic-exec {
+            font-size: 4rem;
             opacity: 0.3;
             animation: float 3s ease-in-out infinite;
         }
 
-        @@keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-15px); } /* REDUZIDO: era -20px, agora -15px */
+        /* === KPI DASHBOARD === */
+        .kpi-dashboard-exec {
+            padding: 2rem 0;
+            background: var(--exec-lighter);
+            margin: 0 -1.5rem;
         }
 
-        /* Features Section */
-        .features-section {
-            padding: 4rem 0; /* REDUZIDO: era 80px (5rem), agora 64px (4rem) */
-            background: #f8f9fa;
+        .kpi-grid-exec {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
         }
 
-        .section-title {
-            font-size: 2.25rem; /* REDUZIDO: era 2.5rem, agora 2.25rem */
+        .kpi-card-exec {
+            background: white;
+            border-radius: var(--exec-radius-lg);
+            padding: 1.5rem;
+            box-shadow: var(--exec-shadow);
+            border: 1px solid var(--exec-border);
+            transition: var(--exec-transition);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .kpi-card-exec::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+        }
+
+        .kpi-card-exec.primary::before { background: var(--exec-primary); }
+        .kpi-card-exec.success::before { background: var(--exec-success); }
+        .kpi-card-exec.info::before { background: var(--exec-info); }
+        .kpi-card-exec.warning::before { background: var(--exec-warning); }
+
+        .kpi-card-exec:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--exec-shadow-hover);
+        }
+
+        .kpi-icon-exec {
+            width: 50px;
+            height: 50px;
+            border-radius: var(--exec-radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .kpi-card-exec.primary .kpi-icon-exec { background: var(--exec-primary); }
+        .kpi-card-exec.success .kpi-icon-exec { background: var(--exec-success); }
+        .kpi-card-exec.info .kpi-icon-exec { background: var(--exec-info); }
+        .kpi-card-exec.warning .kpi-icon-exec { background: var(--exec-warning); }
+
+        .kpi-content-exec {
+            flex: 1;
+        }
+
+        .kpi-number-exec {
+            font-size: 2rem;
             font-weight: 700;
-            color: #2c3e50;
-            margin-bottom: 1rem;
+            color: var(--exec-primary);
+            line-height: 1;
+            margin-bottom: 0.25rem;
         }
 
-        .section-subtitle {
-            font-size: 1rem; /* REDUZIDO: era 1.1rem, agora 1rem */
-            color: #6c757d;
-            margin-bottom: 0;
-        }
-
-        .feature-card {
-            background: white;
-            padding: 2rem 1.5rem; /* REDUZIDO: era 2.5rem 2rem, agora 2rem 1.5rem */
-            border-radius: 15px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
-            transition: all 0.3s ease;
-            height: 100%;
-            border: 1px solid #e9ecef;
-        }
-
-        .feature-card:hover {
-            transform: translateY(-8px); /* REDUZIDO: era -10px, agora -8px */
-            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
-        }
-
-        .feature-icon {
-            width: 60px; /* REDUZIDO: era 80px, agora 60px */
-            height: 60px; /* REDUZIDO: era 80px, agora 60px */
-            border-radius: 50%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 1.25rem; /* REDUZIDO: era 1.5rem, agora 1.25rem */
-            color: white;
-            font-size: 1.5rem; /* REDUZIDO: era 2rem, agora 1.5rem */
-        }
-
-        .feature-card h4 {
-            font-size: 1.25rem; /* REDUZIDO: era 1.4rem, agora 1.25rem */
+        .kpi-label-exec {
+            color: var(--exec-text-muted);
+            font-size: 0.875rem;
             font-weight: 600;
-            color: #2c3e50;
-            margin-bottom: 0.75rem; /* REDUZIDO: era 1rem, agora 0.75rem */
-        }
-
-        .feature-card p {
-            color: #6c757d;
-            line-height: 1.6;
-            margin-bottom: 0;
-            font-size: 0.95rem; /* REDUZIDO: padrão era 1rem, agora 0.95rem */
-        }
-
-        /* Quick Actions */
-        .quick-actions-section {
-            padding: 4rem 0; /* REDUZIDO: era 80px (5rem), agora 64px (4rem) */
-            background: white;
-        }
-
-        .quick-action-card {
-            display: block;
-            background: white;
-            padding: 1.5rem; /* REDUZIDO: era 2rem, agora 1.5rem */
-            border-radius: 15px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
-            transition: all 0.3s ease;
-            text-decoration: none;
-            color: inherit;
-            text-align: center;
-            height: 100%;
-            border: 1px solid #e9ecef;
-        }
-
-        .quick-action-card:hover {
-            transform: translateY(-4px); /* REDUZIDO: era -5px, agora -4px */
-            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
-            text-decoration: none;
-            color: inherit;
-        }
-
-        .quick-action-icon {
-            width: 50px; /* REDUZIDO: era 60px, agora 50px */
-            height: 50px; /* REDUZIDO: era 60px, agora 50px */
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 1rem;
-            color: white;
-            font-size: 1.25rem; /* REDUZIDO: era 1.5rem, agora 1.25rem */
-        }
-
-        .quick-action-card h5 {
-            font-weight: 600;
-            color: #2c3e50;
             margin-bottom: 0.5rem;
-            font-size: 1.1rem; /* REDUZIDO: padrão era maior, agora 1.1rem */
         }
 
-        .quick-action-card p {
-            color: #6c757d;
-            font-size: 0.85rem; /* REDUZIDO: era 0.9rem, agora 0.85rem */
+        .kpi-trend-exec {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--exec-text-muted);
+        }
+
+        .kpi-trend-exec.positive {
+            color: var(--exec-success);
+        }
+
+        /* === AÇÕES RÁPIDAS === */
+        .quick-actions-exec {
+            padding: 2rem 0;
+        }
+
+        .section-title-exec {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--exec-primary);
+            margin-bottom: 1.5rem;
+        }
+
+        .actions-grid-exec {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1rem;
+        }
+
+        .action-card-exec {
+            background: white;
+            border: 1px solid var(--exec-border);
+            border-radius: var(--exec-radius);
+            padding: 1.5rem;
+            text-decoration: none;
+            transition: var(--exec-transition);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            box-shadow: var(--exec-shadow);
+        }
+
+        .action-card-exec:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--exec-shadow-hover);
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .action-card-exec.primary:hover { border-color: var(--exec-primary); }
+        .action-card-exec.secondary:hover { border-color: var(--exec-secondary); }
+        .action-card-exec.accent:hover { border-color: var(--exec-accent); }
+        .action-card-exec.outline { border: 2px dashed var(--exec-border); }
+        .action-card-exec.outline:hover { border-color: var(--exec-primary); border-style: solid; }
+
+        .action-icon-exec {
+            width: 40px;
+            height: 40px;
+            border-radius: var(--exec-radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .action-card-exec.primary .action-icon-exec { background: var(--exec-primary); }
+        .action-card-exec.secondary .action-icon-exec { background: var(--exec-secondary); }
+        .action-card-exec.accent .action-icon-exec { background: var(--exec-accent); }
+        .action-card-exec.outline .action-icon-exec { background: var(--exec-light); color: var(--exec-primary); }
+
+        .action-content-exec {
+            flex: 1;
+        }
+
+        .action-content-exec h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--exec-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .action-content-exec p {
+            font-size: 0.875rem;
+            color: var(--exec-text-muted);
             margin-bottom: 0;
         }
 
-        /* Responsivo */
+        .action-arrow-exec {
+            color: var(--exec-text-light);
+            transition: var(--exec-transition);
+        }
+
+        .action-card-exec:hover .action-arrow-exec {
+            color: var(--exec-primary);
+            transform: translateX(2px);
+        }
+
+        /* === INSIGHTS === */
+        .insights-exec {
+            padding: 2rem 0;
+            background: var(--exec-light);
+            margin: 0 -1.5rem;
+        }
+
+        .performance-card-exec,
+        .activity-card-exec {
+            background: white;
+            border: 1px solid var(--exec-border);
+            border-radius: var(--exec-radius);
+            box-shadow: var(--exec-shadow);
+            height: 100%;
+        }
+
+        .card-header-exec {
+            padding: 1.5rem 1.5rem 1rem 1.5rem;
+            border-bottom: 1px solid var(--exec-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .card-header-exec h3 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--exec-primary);
+            margin: 0;
+        }
+
+        .btn-refresh-exec {
+            background: none;
+            border: none;
+            color: var(--exec-text-muted);
+            padding: 0.25rem;
+            border-radius: var(--exec-radius-sm);
+            transition: var(--exec-transition);
+            cursor: pointer;
+        }
+
+        .btn-refresh-exec:hover {
+            background: var(--exec-light);
+            color: var(--exec-primary);
+        }
+
+        .performance-metrics-exec {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            padding: 1.5rem;
+        }
+
+        .metric-exec {
+            text-align: center;
+        }
+
+        .metric-label-exec {
+            font-size: 0.75rem;
+            color: var(--exec-text-muted);
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .metric-value-exec {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--exec-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .metric-change-exec {
+            font-size: 0.75rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.25rem;
+        }
+
+        .metric-change-exec.positive { color: var(--exec-success); }
+        .metric-change-exec.neutral { color: var(--exec-text-muted); }
+
+        /* === ATIVIDADE === */
+        .activity-list-exec {
+            padding: 1.5rem;
+        }
+
+        .activity-item-exec {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--exec-border);
+        }
+
+        .activity-item-exec:last-child {
+            border-bottom: none;
+        }
+
+        .activity-icon-exec {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .activity-icon-exec.primary { background: var(--exec-primary); }
+        .activity-icon-exec.success { background: var(--exec-success); }
+        .activity-icon-exec.info { background: var(--exec-info); }
+
+        .activity-content-exec {
+            flex: 1;
+        }
+
+        .activity-title-exec {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--exec-text);
+            margin-bottom: 0.125rem;
+        }
+
+        .activity-time-exec {
+            font-size: 0.75rem;
+            color: var(--exec-text-muted);
+        }
+
+        .activity-footer-exec {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--exec-border);
+            text-align: center;
+        }
+
+        .link-minimal-exec {
+            color: var(--exec-primary);
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: var(--exec-transition);
+        }
+
+        .link-minimal-exec:hover {
+            color: var(--exec-primary-light);
+            text-decoration: none;
+        }
+
+        /* === RESPONSIVO === */
         @@media (max-width: 768px) {
-            .hero-section-compact {
-                padding: 2rem 0; /* REDUZIDO: era 60px, agora 32px */
-                margin: -1rem -15px 1.5rem -15px; /* REDUZIDO: margin bottom */
+            .hero-section-exec {
+                padding: 1.5rem 0;
+                margin: -1rem -1rem 0 -1rem;
             }
 
-            .hero-title {
-                font-size: 2rem; /* REDUZIDO: era 2.5rem, agora 2rem */
+            .hero-title-exec {
+                font-size: 1.75rem;
             }
 
-            .hero-subtitle {
-                font-size: 1rem; /* REDUZIDO: era 1.1rem, agora 1rem */
+            .hero-subtitle-exec {
+                font-size: 1rem;
             }
 
-            .hero-graphic {
-                font-size: 4rem; /* REDUZIDO: era 8rem, agora 4rem */
+            .hero-graphic-exec {
+                font-size: 3rem;
                 margin-top: 1rem;
             }
 
-            .cta-buttons {
-                justify-content: center;
+            .cta-buttons-exec {
                 flex-direction: column;
-                align-items: center;
+                align-items: stretch;
             }
 
-            .cta-buttons .btn {
-                width: 100%;
-                max-width: 300px;
+            .kpi-dashboard-exec {
+                margin: 0 -1rem;
+                padding: 1.5rem 0;
             }
 
-            .features-section,
-            .quick-actions-section {
-                padding: 3rem 0; /* REDUZIDO: era 60px, agora 48px */
+            .kpi-grid-exec {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+                padding: 0 1rem;
             }
 
-            .section-title {
-                font-size: 1.75rem; /* REDUZIDO: era 2rem, agora 1.75rem */
+            .kpi-card-exec {
+                padding: 1rem;
             }
 
-            .feature-card {
-                margin-bottom: 1.5rem; /* REDUZIDO: era 2rem, agora 1.5rem */
-                padding: 1.5rem 1rem; /* REDUZIDO padding mobile */
+            .kpi-number-exec {
+                font-size: 1.75rem;
             }
-        }
 
-        /* Animações mais suaves */
-        .hero-content,
-        .feature-card,
-        .quick-action-card {
-            animation: fadeInUp 0.6s ease-out; /* REDUZIDO: era 0.8s, agora 0.6s */
-        }
-
-        .feature-card:nth-child(1) { animation-delay: 0.1s; }
-        .feature-card:nth-child(2) { animation-delay: 0.15s; } /* REDUZIDO delays */
-        .feature-card:nth-child(3) { animation-delay: 0.2s; }
-        .feature-card:nth-child(4) { animation-delay: 0.25s; }
-        .feature-card:nth-child(5) { animation-delay: 0.3s; }
-        .feature-card:nth-child(6) { animation-delay: 0.35s; }
-
-        @@keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px); /* REDUZIDO: era 30px, agora 20px */
+            .actions-grid-exec {
+                grid-template-columns: 1fr;
             }
-            to {
-                opacity: 1;
-                transform: translateY(0);
+
+            .performance-metrics-exec {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+
+            .insights-exec {
+                margin: 0 -1rem;
+                padding: 1.5rem 0;
             }
         }
     </style>
@@ -409,39 +775,43 @@
 
 @section Scripts {
     <script>
+        // Carregar dados reais via AJAX
         document.addEventListener('DOMContentLoaded', function() {
-            // Contador animado (se você quiser adicionar estatísticas)
-            function animateNumbers() {
-                const numbers = document.querySelectorAll('.stat-number');
-                numbers.forEach(number => {
-                    const finalNumber = parseInt(number.textContent);
-                    let currentNumber = 0;
-                    const increment = finalNumber / 20; // REDUZIDO: era 30, agora 20
-
-                    const timer = setInterval(() => {
-                        currentNumber += increment;
-                        if (currentNumber >= finalNumber) {
-                            currentNumber = finalNumber;
-                            clearInterval(timer);
-                        }
-                        number.textContent = Math.floor(currentNumber);
-                    }, 40); // REDUZIDO: era 50ms, agora 40ms
-                });
-            }
-
-            // Smooth scroll para links internos
-            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-                anchor.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    const target = document.querySelector(this.getAttribute('href'));
-                    if (target) {
-                        target.scrollIntoView({
-                            behavior: 'smooth',
-                            block: 'start'
-                        });
-                    }
-                });
-            });
+            loadDashboardData();
+            
+            // Atualizar a cada 30 segundos
+            setInterval(loadDashboardData, 30000);
         });
+
+        function loadDashboardData() {
+            // Simular carregamento de dados (substituir por chamadas reais à API)
+            document.getElementById('totalPropostas').textContent = '12';
+            document.getElementById('propostasAprovadas').textContent = '8';
+            document.getElementById('totalVisualizacoes').textContent = '245';
+            document.getElementById('tempoMedio').textContent = '3m 24s';
+            document.getElementById('taxaConversao').textContent = '67%';
+            document.getElementById('tempoMedioView').textContent = '2m 15s';
+            document.getElementById('totalInteracoes').textContent = '89';
+        }
+
+        function refreshData() {
+            const btn = document.querySelector('.btn-refresh-exec');
+            btn.style.animation = 'spin 1s linear';
+            
+            setTimeout(() => {
+                btn.style.animation = '';
+                loadDashboardData();
+            }, 1000);
+        }
+
+        // CSS para animação de refresh
+        const style = document.createElement('style');
+        style.textContent = `
+            @@keyframes spin {
+                from { transform: rotate(0deg); }
+                to { transform: rotate(360deg); }
+            }
+        `;
+        document.head.appendChild(style);
     </script>
 }

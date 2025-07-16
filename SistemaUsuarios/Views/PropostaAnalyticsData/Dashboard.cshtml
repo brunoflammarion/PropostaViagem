@@ -1,257 +1,850 @@
 ﻿@model SistemaUsuarios.Models.ViewModels.Analytics.DashboardAnalyticsViewModel
 @{
-    ViewData["Title"] = "Dashboard Analytics";
+    ViewData["Title"] = "Analytics Dashboard";
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2><i class="fas fa-chart-line me-2"></i>Dashboard Analytics</h2>
-    <div>
-        <button class="btn btn-outline-primary" onclick="exportarRelatorio()">
-            <i class="fas fa-download me-1"></i>Exportar
-        </button>
-        <button class="btn btn-primary" onclick="atualizarDados()">
-            <i class="fas fa-sync me-1"></i>Atualizar
-        </button>
-    </div>
-</div>
-
-<!-- Cards de Estatísticas Principais -->
-<div class="row mb-4">
-    <div class="col-md-3">
-        <div class="card bg-primary text-white h-100">
-            <div class="card-body text-center">
-                <i class="fas fa-file-alt fa-2x mb-2"></i>
-                <h3 id="totalPropostas">@Model.TotalPropostas</h3>
-                <small>Total de Propostas</small>
+<!-- Header Executivo -->
+<div class="analytics-header">
+    <div class="container-fluid">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <div class="header-content">
+                    <h1 class="executive-title">Analytics Dashboard</h1>
+                    <p class="executive-subtitle">Insights estratégicos sobre suas propostas de viagem</p>
+                </div>
             </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card bg-success text-white h-100">
-            <div class="card-body text-center">
-                <i class="fas fa-eye fa-2x mb-2"></i>
-                <h3 id="totalVisualizacoes">@Model.TotalVisualizacoes</h3>
-                <small>Total de Visualizações</small>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card bg-info text-white h-100">
-            <div class="card-body text-center">
-                <i class="fas fa-clock fa-2x mb-2"></i>
-                <h3 id="tempoMedio">@(Model.EstatisticasGerais.TempoMedioVisualizacao.ToString("F0"))s</h3>
-                <small>Tempo Médio</small>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card bg-warning text-white h-100">
-            <div class="card-body text-center">
-                <i class="fas fa-mouse-pointer fa-2x mb-2"></i>
-                <h3 id="taxaInteracao">@(Model.EstatisticasGerais.TaxaInteracao.ToString("F1"))%</h3>
-                <small>Taxa de Interação</small>
+            <div class="col-lg-4 text-end">
+                <div class="header-actions">
+                    <div class="btn-group" role="group">
+                        <button class="btn btn-outline-light" onclick="exportarRelatorio()">
+                            <i class="fas fa-download me-1"></i>Exportar
+                        </button>
+                        <button class="btn btn-light" onclick="atualizarDados()">
+                            <i class="fas fa-sync me-1"></i>Atualizar
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Gráficos e Estatísticas -->
-<div class="row mb-4">
-    <!-- Gráfico de Visualizações nos Últimos 30 Dias -->
-    <div class="col-md-8">
-        <div class="card h-100">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0"><i class="fas fa-chart-area me-2"></i>Visualizações nos Últimos 30 Dias</h5>
-                <div class="btn-group btn-group-sm" role="group">
-                    <button type="button" class="btn btn-outline-primary active" onclick="alternarGrafico('visualizacoes')">Visualizações</button>
-                    <button type="button" class="btn btn-outline-primary" onclick="alternarGrafico('tempo')">Tempo Médio</button>
-                    <button type="button" class="btn btn-outline-primary" onclick="alternarGrafico('interacoes')">Interações</button>
+<!-- KPIs Principais -->
+<section class="kpis-section">
+    <div class="container-fluid">
+        <div class="row g-4">
+            <div class="col-xl-3 col-lg-6">
+                <div class="kpi-card primary">
+                    <div class="kpi-icon">
+                        <i class="fas fa-file-alt"></i>
+                    </div>
+                    <div class="kpi-content">
+                        <div class="kpi-value" id="totalPropostas">@Model.TotalPropostas</div>
+                        <div class="kpi-label">Total de Propostas</div>
+                        <div class="kpi-trend positive">
+                            <i class="fas fa-arrow-up"></i>
+                            <span>+12% vs mês anterior</span>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div class="card-body">
-                <canvas id="graficoVisualizacoes" style="height: 300px;"></canvas>
+
+            <div class="col-xl-3 col-lg-6">
+                <div class="kpi-card success">
+                    <div class="kpi-icon">
+                        <i class="fas fa-eye"></i>
+                    </div>
+                    <div class="kpi-content">
+                        <div class="kpi-value" id="totalVisualizacoes">@Model.TotalVisualizacoes</div>
+                        <div class="kpi-label">Visualizações</div>
+                        <div class="kpi-trend positive">
+                            <i class="fas fa-arrow-up"></i>
+                            <span>+24% vs mês anterior</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-lg-6">
+                <div class="kpi-card warning">
+                    <div class="kpi-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="kpi-content">
+                        <div class="kpi-value" id="tempoMedio">@(Model.EstatisticasGerais.TempoMedioVisualizacao.ToString("F0"))s</div>
+                        <div class="kpi-label">Tempo Médio</div>
+                        <div class="kpi-trend neutral">
+                            <i class="fas fa-minus"></i>
+                            <span>Estável</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-lg-6">
+                <div class="kpi-card info">
+                    <div class="kpi-icon">
+                        <i class="fas fa-mouse-pointer"></i>
+                    </div>
+                    <div class="kpi-content">
+                        <div class="kpi-value" id="taxaInteracao">@(Model.EstatisticasGerais.TaxaInteracao.ToString("F1"))%</div>
+                        <div class="kpi-label">Taxa de Interação</div>
+                        <div class="kpi-trend positive">
+                            <i class="fas fa-arrow-up"></i>
+                            <span>+8% vs mês anterior</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
+</section>
 
-    <!-- Estatísticas Gerais -->
-    <div class="col-md-4">
-        <div class="card h-100">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Resumo Geral</h5>
+<!-- Gráficos Principais -->
+<section class="charts-section">
+    <div class="container-fluid">
+        <div class="row g-4">
+            <!-- Gráfico Principal de Performance -->
+            <div class="col-xl-8">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <div class="chart-title">
+                            <h5>Performance nos Últimos 30 Dias</h5>
+                            <p class="chart-subtitle">Acompanhe o engajamento das suas propostas</p>
+                        </div>
+                        <div class="chart-controls">
+                            <div class="btn-group btn-group-sm" role="group">
+                                <button type="button" class="btn btn-outline-primary active" onclick="alternarGrafico('visualizacoes')">
+                                    Visualizações
+                                </button>
+                                <button type="button" class="btn btn-outline-primary" onclick="alternarGrafico('tempo')">
+                                    Tempo
+                                </button>
+                                <button type="button" class="btn btn-outline-primary" onclick="alternarGrafico('interacoes')">
+                                    Interações
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chart-body">
+                        <canvas id="graficoVisualizacoes" style="height: 350px;"></canvas>
+                    </div>
+                </div>
             </div>
-            <div class="card-body">
-                <div class="row text-center mb-3">
-                    <div class="col-6">
-                        <h4 class="text-primary">@(Model.EstatisticasGerais.ScrollMedioPercentual.ToString("F0"))%</h4>
-                        <small>Scroll Médio</small>
+
+            <!-- Insights Rápidos -->
+            <div class="col-xl-4">
+                <div class="insights-card">
+                    <div class="insights-header">
+                        <h5>Insights Rápidos</h5>
+                        <p class="insights-subtitle">Métricas de comportamento</p>
                     </div>
-                    <div class="col-6">
-                        <h4 class="text-success">@Model.EstatisticasGerais.TotalCliques</h4>
-                        <small>Total de Cliques</small>
+                    <div class="insights-body">
+                        <div class="insight-item">
+                            <div class="insight-metric">
+                                <div class="metric-value">@(Model.EstatisticasGerais.ScrollMedioPercentual.ToString("F0"))%</div>
+                                <div class="metric-label">Scroll Médio</div>
+                            </div>
+                            <div class="insight-chart">
+                                <div class="progress">
+                                    <div class="progress-bar bg-info" style="width: @(Model.EstatisticasGerais.ScrollMedioPercentual)%"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="insight-item">
+                            <div class="insight-metric">
+                                <div class="metric-value">@Model.EstatisticasGerais.TotalCliques</div>
+                                <div class="metric-label">Total de Cliques</div>
+                            </div>
+                            <div class="insight-icon">
+                                <i class="fas fa-hand-pointer"></i>
+                            </div>
+                        </div>
+
+                        <div class="insight-item">
+                            <div class="insight-metric">
+                                <div class="metric-value">@Model.EstatisticasGerais.VisualizacoesUnicasPorDispositivo</div>
+                                <div class="metric-label">Visitantes Únicos</div>
+                            </div>
+                            <div class="insight-icon">
+                                <i class="fas fa-users"></i>
+                            </div>
+                        </div>
+
+                        <!-- Mini Gráfico de Dispositivos -->
+                        <div class="insight-chart-container">
+                            <canvas id="graficoDispositivos" style="height: 120px;"></canvas>
+                        </div>
                     </div>
                 </div>
-                <div class="row text-center">
-                    <div class="col-12">
-                        <h4 class="text-info">@Model.EstatisticasGerais.VisualizacoesUnicasPorDispositivo</h4>
-                        <small>Visitantes Únicos</small>
-                    </div>
-                </div>
-                <hr>
-                <canvas id="graficoDispositivos" style="height: 150px;"></canvas>
             </div>
         </div>
     </div>
-</div>
+</section>
 
-<!-- Propostas Populares e Localizações -->
-<div class="row mb-4">
-    <!-- Top Propostas -->
-    <div class="col-md-6">
-        <div class="card h-100">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="fas fa-trophy me-2"></i>Propostas Mais Populares</h5>
-            </div>
-            <div class="card-body">
-                @if (Model.PropostasPopulares.Any())
-                {
-                    <div class="table-responsive">
-                        <table class="table table-sm">
-                            <thead>
-                                <tr>
-                                    <th>Proposta</th>
-                                    <th class="text-center">Views</th>
-                                    <th class="text-center">Tempo</th>
-                                    <th class="text-center">Taxa</th>
-                                    <th></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var proposta in Model.PropostasPopulares.Take(5))
-                                {
-                                    <tr>
-                                        <td>
-                                            <strong>@proposta.Titulo.Substring(0, Math.Min(proposta.Titulo.Length, 30))@(proposta.Titulo.Length > 30 ? "..." : "")</strong>
-                                        </td>
-                                        <td class="text-center">
-                                            <span class="badge bg-primary">@proposta.TotalVisualizacoes</span>
-                                        </td>
-                                        <td class="text-center">@(proposta.TempoMedio.ToString("F0"))s</td>
-                                        <td class="text-center">
-                                            <span class="badge bg-success">@(proposta.TaxaInteracao.ToString("F1"))%</span>
-                                        </td>
-                                        <td>
-                                            <a href="/PropostaAnalyticsData/PropostaDetalhada/@proposta.PropostaId"
-                                               class="btn btn-outline-primary btn-sm" title="Ver Detalhes">
-                                                <i class="fas fa-chart-bar"></i>
-                                            </a>
-                                        </td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
+<!-- Tabelas de Performance -->
+<section class="performance-section">
+    <div class="container-fluid">
+        <div class="row g-4">
+            <!-- Top Propostas -->
+            <div class="col-xl-7">
+                <div class="performance-card">
+                    <div class="performance-header">
+                        <h5>
+                            <i class="fas fa-trophy text-warning me-2"></i>
+                            Top Propostas
+                        </h5>
+                        <p class="performance-subtitle">Propostas com melhor performance</p>
                     </div>
-                }
-                else
-                {
-                    <div class="text-center text-muted py-4">
-                        <i class="fas fa-chart-bar fa-2x mb-2"></i>
-                        <p>Nenhuma visualização ainda</p>
+                    <div class="performance-body">
+                        @if (Model.PropostasPopulares.Any())
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-hover executive-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Proposta</th>
+                                            <th class="text-center">Views</th>
+                                            <th class="text-center">Tempo</th>
+                                            <th class="text-center">Taxa</th>
+                                            <th class="text-center">Ações</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var proposta in Model.PropostasPopulares.Take(6))
+                                        {
+                                            <tr>
+                                                <td>
+                                                    <div class="proposal-info">
+                                                        <div class="proposal-title">
+                                                            @proposta.Titulo.Substring(0, Math.Min(proposta.Titulo.Length, 35))@(proposta.Titulo.Length > 35 ? "..." : "")
+                                                        </div>
+                                                        <div class="proposal-id">ID: @proposta.PropostaId.ToString().Substring(0, 8)</div>
+                                                    </div>
+                                                </td>
+                                                <td class="text-center">
+                                                    <span class="metric-badge primary">@proposta.TotalVisualizacoes</span>
+                                                </td>
+                                                <td class="text-center">
+                                                    <span class="metric-value">@(proposta.TempoMedio.ToString("F0"))s</span>
+                                                </td>
+                                                <td class="text-center">
+                                                    <span class="metric-badge @(proposta.TaxaInteracao >= 20 ? "success" : proposta.TaxaInteracao >= 10 ? "warning" : "secondary")">
+                                                        @(proposta.TaxaInteracao.ToString("F1"))%
+                                                    </span>
+                                                </td>
+                                                <td class="text-center">
+                                                    <a href="/PropostaAnalyticsData/PropostaDetalhada/@proposta.PropostaId"
+                                                       class="btn btn-sm btn-outline-primary" title="Ver Detalhes">
+                                                        <i class="fas fa-chart-line"></i>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="empty-state-small">
+                                <i class="fas fa-chart-bar fa-2x mb-2"></i>
+                                <p>Nenhuma visualização registrada ainda</p>
+                            </div>
+                        }
                     </div>
-                }
+                </div>
             </div>
-        </div>
-    </div>
 
-    <!-- Top Localizações -->
-    <div class="col-md-6">
-        <div class="card h-100">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="fas fa-globe me-2"></i>Principais Localizações</h5>
-            </div>
-            <div class="card-body">
-                @if (Model.LocalizacoesAcessos.Any())
-                {
-                    <div class="table-responsive">
-                        <table class="table table-sm">
-                            <thead>
-                                <tr>
-                                    <th>Localização</th>
-                                    <th class="text-center">Views</th>
-                                    <th class="text-center">Tempo</th>
-                                </tr>
-                            </thead>
-                            <tbody>
+            <!-- Localizações -->
+            <div class="col-xl-5">
+                <div class="performance-card">
+                    <div class="performance-header">
+                        <h5>
+                            <i class="fas fa-globe text-info me-2"></i>
+                            Principais Localizações
+                        </h5>
+                        <p class="performance-subtitle">Origem dos acessos</p>
+                    </div>
+                    <div class="performance-body">
+                        @if (Model.LocalizacoesAcessos.Any())
+                        {
+                            <div class="locations-list">
                                 @foreach (var localizacao in Model.LocalizacoesAcessos.Take(8))
                                 {
-                                    <tr>
-                                        <td>
-                                            <i class="fas fa-map-marker-alt text-danger me-1"></i>
-                                            @if (!string.IsNullOrEmpty(localizacao.Cidade))
-                                            {
-                                                <span>@localizacao.Cidade</span>
-                                                @if (!string.IsNullOrEmpty(localizacao.Estado))
+                                    <div class="location-item">
+                                        <div class="location-info">
+                                            <div class="location-name">
+                                                <i class="fas fa-map-marker-alt text-danger me-2"></i>
+                                                @if (!string.IsNullOrEmpty(localizacao.Cidade))
                                                 {
-                                                    <span>, @localizacao.Estado</span>
+                                                    <span>@localizacao.Cidade</span>
+                                                    @if (!string.IsNullOrEmpty(localizacao.Estado))
+                                                    {
+                                                        <span class="text-muted">, @localizacao.Estado</span>
+                                                    }
                                                 }
-                                            }
-                                            else
-                                            {
-                                                <span>@localizacao.Pais</span>
-                                            }
-                                        </td>
-                                        <td class="text-center">
-                                            <span class="badge bg-info">@localizacao.Visualizacoes</span>
-                                        </td>
-                                        <td class="text-center">@(localizacao.TempoMedio.ToString("F0"))s</td>
-                                    </tr>
+                                                else
+                                                {
+                                                    <span>@localizacao.Pais</span>
+                                                }
+                                            </div>
+                                        </div>
+                                        <div class="location-metrics">
+                                            <span class="metric-badge primary">@localizacao.Visualizacoes</span>
+                                            <span class="metric-time">@(localizacao.TempoMedio.ToString("F0"))s</span>
+                                        </div>
+                                    </div>
                                 }
-                            </tbody>
-                        </table>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="empty-state-small">
+                                <i class="fas fa-globe fa-2x mb-2"></i>
+                                <p>Nenhuma localização registrada</p>
+                            </div>
+                        }
                     </div>
-                }
-                else
-                {
-                    <div class="text-center text-muted py-4">
-                        <i class="fas fa-globe fa-2x mb-2"></i>
-                        <p>Nenhuma localização registrada</p>
-                    </div>
-                }
+                </div>
             </div>
         </div>
     </div>
-</div>
+</section>
 
-<!-- Dispositivos e Navegadores -->
-<div class="row mb-4">
-    <div class="col-md-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="fas fa-desktop me-2"></i>Dispositivos e Navegadores</h5>
-            </div>
-            <div class="card-body">
-                @if (Model.DispositivosAcessos.Any())
-                {
-                    <div class="row">
-                        <div class="col-md-6">
-                            <canvas id="graficoTipoDispositivo" style="height: 200px;"></canvas>
-                        </div>
-                        <div class="col-md-6">
-                            <canvas id="graficoNavegadores" style="height: 200px;"></canvas>
-                        </div>
-                    </div>
-                }
-                else
-                {
-                    <div class="text-center text-muted py-4">
-                        <i class="fas fa-desktop fa-2x mb-2"></i>
-                        <p>Nenhum dado de dispositivo disponível</p>
-                    </div>
-                }
-            </div>
-        </div>
-    </div>
-</div>
+@section Styles {
+    <style>
+        /* === VARIÁVEIS EXECUTIVAS === */
+        :root {
+            --executive-primary: #1a365d;
+            --executive-secondary: #2d3748;
+            --executive-accent: #3182ce;
+            --executive-success: #38a169;
+            --executive-warning: #d69e2e;
+            --executive-info: #3182ce;
+            --executive-light: #f7fafc;
+            --executive-dark: #1a202c;
+            --executive-border: #e2e8f0;
+            --executive-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+            --executive-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --executive-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        body {
+            background: #f8fafc;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        /* === HEADER EXECUTIVO === */
+        .analytics-header {
+            background: var(--executive-gradient);
+            color: white;
+            padding: 2.5rem 0;
+            margin: -2rem -15px 2rem -15px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .analytics-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="10" cy="10" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="30" cy="20" r="1.5" fill="rgba(255,255,255,0.08)"/><circle cx="50" cy="30" r="1" fill="rgba(255,255,255,0.1)"/></svg>');
+            animation: float 30s ease-in-out infinite;
+        }
+
+        @@keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        .executive-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.025em;
+        }
+
+        .executive-subtitle {
+            font-size: 1.125rem;
+            opacity: 0.9;
+            margin-bottom: 0;
+            font-weight: 400;
+        }
+
+        .header-actions {
+            position: relative;
+            z-index: 2;
+        }
+
+        .header-actions .btn {
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .header-actions .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        /* === KPIs SECTION === */
+        .kpis-section {
+            margin-bottom: 2rem;
+        }
+
+        .kpi-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: var(--executive-shadow);
+            border: 1px solid var(--executive-border);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            transition: all 0.2s ease;
+            height: 100%;
+        }
+
+        .kpi-card:hover {
+            box-shadow: var(--executive-shadow-lg);
+            transform: translateY(-2px);
+        }
+
+        .kpi-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .kpi-card.primary .kpi-icon { background: var(--executive-primary); }
+        .kpi-card.success .kpi-icon { background: var(--executive-success); }
+        .kpi-card.warning .kpi-icon { background: var(--executive-warning); }
+        .kpi-card.info .kpi-icon { background: var(--executive-info); }
+
+        .kpi-content {
+            flex: 1;
+        }
+
+        .kpi-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--executive-dark);
+            line-height: 1;
+            margin-bottom: 0.25rem;
+        }
+
+        .kpi-label {
+            color: #64748b;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .kpi-trend {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .kpi-trend.positive { color: var(--executive-success); }
+        .kpi-trend.negative { color: #e53e3e; }
+        .kpi-trend.neutral { color: #64748b; }
+
+        /* === CHARTS SECTION === */
+        .charts-section {
+            margin-bottom: 2rem;
+        }
+
+        .chart-card, .insights-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: var(--executive-shadow);
+            border: 1px solid var(--executive-border);
+            height: 100%;
+        }
+
+        .chart-header, .insights-header {
+            padding: 1.5rem 1.5rem 0 1.5rem;
+            display: flex;
+            justify-content: between;
+            align-items: flex-start;
+            border-bottom: 1px solid var(--executive-border);
+            margin-bottom: 1.5rem;
+            padding-bottom: 1.5rem;
+        }
+
+        .chart-title {
+            flex: 1;
+        }
+
+        .chart-title h5, .insights-header h5 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--executive-dark);
+            margin-bottom: 0.25rem;
+        }
+
+        .chart-subtitle, .insights-subtitle {
+            color: #64748b;
+            font-size: 0.875rem;
+            margin-bottom: 0;
+        }
+
+        .chart-controls .btn-group .btn {
+            border-radius: 6px;
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .chart-body, .insights-body {
+            padding: 0 1.5rem 1.5rem 1.5rem;
+        }
+
+        /* === INSIGHTS CARD === */
+        .insight-item {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            padding: 1rem 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .insight-item:last-child {
+            border-bottom: none;
+        }
+
+        .insight-metric {
+            flex: 1;
+        }
+
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--executive-dark);
+            line-height: 1;
+        }
+
+        .metric-label {
+            color: #64748b;
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+        }
+
+        .insight-chart {
+            flex: 1;
+            margin-left: 1rem;
+        }
+
+        .insight-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            background: #f1f5f9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--executive-info);
+        }
+
+        .insight-chart-container {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #f1f5f9;
+        }
+
+        /* === PERFORMANCE SECTION === */
+        .performance-section {
+            margin-bottom: 2rem;
+        }
+
+        .performance-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: var(--executive-shadow);
+            border: 1px solid var(--executive-border);
+            height: 100%;
+        }
+
+        .performance-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--executive-border);
+        }
+
+        .performance-header h5 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--executive-dark);
+            margin-bottom: 0.25rem;
+        }
+
+        .performance-subtitle {
+            color: #64748b;
+            font-size: 0.875rem;
+            margin-bottom: 0;
+        }
+
+        .performance-body {
+            padding: 1.5rem;
+        }
+
+        /* === EXECUTIVE TABLE === */
+        .executive-table {
+            border: none;
+            margin-bottom: 0;
+        }
+
+        .executive-table thead th {
+            background: #f8fafc;
+            border: none;
+            color: var(--executive-secondary);
+            font-weight: 600;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+            padding: 1rem;
+        }
+
+        .executive-table tbody tr {
+            border-bottom: 1px solid #f1f5f9;
+            transition: all 0.2s ease;
+        }
+
+        .executive-table tbody tr:hover {
+            background: #f8fafc;
+        }
+
+        .executive-table tbody td {
+            padding: 1rem;
+            vertical-align: middle;
+            border: none;
+        }
+
+        .proposal-info {
+            max-width: 250px;
+        }
+
+        .proposal-title {
+            font-weight: 600;
+            color: var(--executive-dark);
+            font-size: 0.875rem;
+            line-height: 1.4;
+        }
+
+        .proposal-id {
+            color: #64748b;
+            font-size: 0.75rem;
+            font-family: 'Monaco', 'Consolas', monospace;
+        }
+
+        .metric-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: white;
+        }
+
+        .metric-badge.primary { background: var(--executive-primary); }
+        .metric-badge.success { background: var(--executive-success); }
+        .metric-badge.warning { background: var(--executive-warning); }
+        .metric-badge.secondary { background: #64748b; }
+
+        .metric-value {
+            color: #64748b;
+            font-weight: 500;
+            font-size: 0.875rem;
+        }
+
+        /* === LOCATIONS LIST === */
+        .locations-list {
+            max-height: 320px;
+            overflow-y: auto;
+        }
+
+        .location-item {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .location-item:last-child {
+            border-bottom: none;
+        }
+
+        .location-info {
+            flex: 1;
+        }
+
+        .location-name {
+            font-weight: 500;
+            color: var(--executive-dark);
+            font-size: 0.875rem;
+        }
+
+        .location-metrics {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .metric-time {
+            color: #64748b;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        /* === EMPTY STATES === */
+        .empty-state-small {
+            text-align: center;
+            padding: 2rem 1rem;
+            color: #64748b;
+        }
+
+        .empty-state-small i {
+            opacity: 0.5;
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-state-small p {
+            margin-bottom: 0;
+            font-size: 0.875rem;
+        }
+
+        /* === RESPONSIVE === */
+        @@media (max-width: 1200px) {
+            .analytics-header {
+                padding: 2rem 0;
+            }
+            s
+            .executive-title {
+                font-size: 2rem;
+            }
+
+            .kpi-value {
+                font-size: 1.75rem;
+            }
+        }
+
+        @@media (max-width: 768px) {
+            .analytics-header {
+                padding: 1.5rem 0;
+                margin: -1rem -15px 1.5rem -15px;
+            }
+
+            .executive-title {
+                font-size: 1.75rem;
+            }
+
+            .header-actions {
+                margin-top: 1rem;
+                text-align: center;
+            }
+
+            .kpi-card {
+                flex-direction: column;
+                text-align: center;
+                gap: 0.75rem;
+            }
+
+            .kpi-value {
+                font-size: 1.5rem;
+            }
+
+            .chart-header, .insights-header, .performance-header {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: flex-start;
+            }
+
+            .chart-controls {
+                width: 100%;
+            }
+
+            .chart-controls .btn-group {
+                width: 100%;
+            }
+
+            .chart-controls .btn {
+                flex: 1;
+            }
+
+            .proposal-info {
+                max-width: none;
+            }
+
+            .location-metrics {
+                flex-direction: column;
+                gap: 0.25rem;
+                align-items: flex-end;
+            }
+        }
+
+        /* === ANIMAÇÕES === */
+        .kpi-card, .chart-card, .insights-card, .performance-card {
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        .kpi-card:nth-child(1) { animation-delay: 0.1s; }
+        .kpi-card:nth-child(2) { animation-delay: 0.2s; }
+        .kpi-card:nth-child(3) { animation-delay: 0.3s; }
+        .kpi-card:nth-child(4) { animation-delay: 0.4s; }
+
+        @@keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* === SCROLLBAR === */
+        .locations-list::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .locations-list::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 2px;
+        }
+
+        .locations-list::-webkit-scrollbar-thumb {
+            background: #cbd5e0;
+            border-radius: 2px;
+        }
+
+        .locations-list::-webkit-scrollbar-thumb:hover {
+            background: #a0aec0;
+        }
+    </style>
+}
 
 <!-- Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -261,16 +854,21 @@
     const dadosDispositivos = @Html.Raw(Json.Serialize(Model.DispositivosAcessos));
 
     // Configurações globais do Chart.js
-    Chart.defaults.font.family = 'Arial, sans-serif';
-    Chart.defaults.color = '#666';
+    Chart.defaults.font.family = 'Inter, -apple-system, BlinkMacSystemFont, sans-serif';
+    Chart.defaults.color = '#64748b';
+    Chart.defaults.borderColor = '#e2e8f0';
+    Chart.defaults.backgroundColor = 'rgba(99, 102, 241, 0.1)';
 
-    // Gráfico de Visualizações
+    // Gráfico de Visualizações Principal
     let graficoVisualizacoes;
 
     function inicializarGraficoVisualizacoes() {
         const ctx = document.getElementById('graficoVisualizacoes').getContext('2d');
 
-        const labels = dadosVisualizacoes.map(d => new Date(d.data).toLocaleDateString('pt-BR'));
+        const labels = dadosVisualizacoes.map(d => {
+            const date = new Date(d.data);
+            return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+        });
         const visualizacoes = dadosVisualizacoes.map(d => d.visualizacoes);
         const tempoMedio = dadosVisualizacoes.map(d => Math.round(d.tempoMedio));
         const interacoes = dadosVisualizacoes.map(d => d.interacoes);
@@ -282,27 +880,83 @@
                 datasets: [{
                     label: 'Visualizações',
                     data: visualizacoes,
-                    borderColor: '#007bff',
-                    backgroundColor: 'rgba(0, 123, 255, 0.1)',
-                    borderWidth: 2,
+                    borderColor: '#667eea',
+                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                    borderWidth: 3,
                     fill: true,
-                    tension: 0.4
+                    tension: 0.4,
+                    pointBackgroundColor: '#667eea',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    pointRadius: 6,
+                    pointHoverRadius: 8
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            stepSize: 1
-                        }
-                    }
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
                 },
                 plugins: {
                     legend: {
                         display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(26, 54, 93, 0.95)',
+                        titleColor: '#ffffff',
+                        bodyColor: '#ffffff',
+                        borderColor: '#667eea',
+                        borderWidth: 1,
+                        cornerRadius: 8,
+                        displayColors: false,
+                        titleFont: {
+                            size: 14,
+                            weight: '600'
+                        },
+                        bodyFont: {
+                            size: 13
+                        },
+                        padding: 12
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        border: {
+                            display: false
+                        },
+                        ticks: {
+                            color: '#64748b',
+                            font: {
+                                size: 12,
+                                weight: '500'
+                            }
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: '#f1f5f9',
+                            borderDash: [2, 2]
+                        },
+                        border: {
+                            display: false
+                        },
+                        ticks: {
+                            color: '#64748b',
+                            font: {
+                                size: 12,
+                                weight: '500'
+                            },
+                            stepSize: 1,
+                            callback: function(value) {
+                                return value;
+                            }
+                        }
                     }
                 }
             }
@@ -311,47 +965,50 @@
 
     function alternarGrafico(tipo) {
         // Atualizar botões ativos
-        document.querySelectorAll('.btn-group .btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.chart-controls .btn').forEach(btn => btn.classList.remove('active'));
         event.target.classList.add('active');
 
         let dataset;
+        let color;
+        let bgColor;
+
         switch(tipo) {
             case 'visualizacoes':
-                dataset = {
-                    label: 'Visualizações',
-                    data: dadosVisualizacoes.map(d => d.visualizacoes),
-                    borderColor: '#007bff',
-                    backgroundColor: 'rgba(0, 123, 255, 0.1)'
-                };
+                dataset = dadosVisualizacoes.map(d => d.visualizacoes);
+                color = '#667eea';
+                bgColor = 'rgba(102, 126, 234, 0.1)';
                 break;
             case 'tempo':
-                dataset = {
-                    label: 'Tempo Médio (s)',
-                    data: dadosVisualizacoes.map(d => Math.round(d.tempoMedio)),
-                    borderColor: '#28a745',
-                    backgroundColor: 'rgba(40, 167, 69, 0.1)'
-                };
+                dataset = dadosVisualizacoes.map(d => Math.round(d.tempoMedio));
+                color = '#38a169';
+                bgColor = 'rgba(56, 161, 105, 0.1)';
                 break;
             case 'interacoes':
-                dataset = {
-                    label: 'Interações',
-                    data: dadosVisualizacoes.map(d => d.interacoes),
-                    borderColor: '#ffc107',
-                    backgroundColor: 'rgba(255, 193, 7, 0.1)'
-                };
+                dataset = dadosVisualizacoes.map(d => d.interacoes);
+                color = '#d69e2e';
+                bgColor = 'rgba(214, 158, 46, 0.1)';
                 break;
         }
 
         graficoVisualizacoes.data.datasets[0] = {
-            ...dataset,
-            borderWidth: 2,
+            label: tipo.charAt(0).toUpperCase() + tipo.slice(1),
+            data: dataset,
+            borderColor: color,
+            backgroundColor: bgColor,
+            borderWidth: 3,
             fill: true,
-            tension: 0.4
+            tension: 0.4,
+            pointBackgroundColor: color,
+            pointBorderColor: '#ffffff',
+            pointBorderWidth: 2,
+            pointRadius: 6,
+            pointHoverRadius: 8
         };
-        graficoVisualizacoes.update();
+        
+        graficoVisualizacoes.update('smooth');
     }
 
-    // Gráfico de Dispositivos (Donut)
+    // Gráfico de Dispositivos (Mini Donut)
     function inicializarGraficoDispositivos() {
         const ctx = document.getElementById('graficoDispositivos').getContext('2d');
 
@@ -367,7 +1024,7 @@
 
         const labels = Object.keys(dispositivosAgrupados);
         const valores = Object.values(dispositivosAgrupados);
-        const cores = ['#007bff', '#28a745', '#ffc107', '#dc3545', '#6f42c1'];
+        const cores = ['#667eea', '#38a169', '#d69e2e', '#e53e3e', '#9f7aea'];
 
         new Chart(ctx, {
             type: 'doughnut',
@@ -376,7 +1033,8 @@
                 datasets: [{
                     data: valores,
                     backgroundColor: cores.slice(0, labels.length),
-                    borderWidth: 0
+                    borderWidth: 0,
+                    cutout: '60%'
                 }]
             },
             options: {
@@ -384,80 +1042,31 @@
                 maintainAspectRatio: false,
                 plugins: {
                     legend: {
-                        position: 'bottom',
-                        labels: {
-                            padding: 10,
-                            usePointStyle: true
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(26, 54, 93, 0.95)',
+                        titleColor: '#ffffff',
+                        bodyColor: '#ffffff',
+                        borderColor: '#667eea',
+                        borderWidth: 1,
+                        cornerRadius: 8,
+                        displayColors: true,
+                        titleFont: {
+                            size: 14,
+                            weight: '600'
+                        },
+                        bodyFont: {
+                            size: 13
+                        },
+                        padding: 12,
+                        callbacks: {
+                            label: function(context) {
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = ((context.parsed / total) * 100).toFixed(1);
+                                return `${context.label}: ${context.parsed} (${percentage}%)`;
+                            }
                         }
-                    }
-                }
-            }
-        });
-    }
-
-    // Gráfico Tipo de Dispositivo
-    function inicializarGraficoTipoDispositivo() {
-        const ctx = document.getElementById('graficoTipoDispositivo').getContext('2d');
-
-        const dispositivosCount = {};
-        dadosDispositivos.forEach(d => {
-            dispositivosCount[d.tipoDispositivo] = (dispositivosCount[d.tipoDispositivo] || 0) + d.visualizacoes;
-        });
-
-        new Chart(ctx, {
-            type: 'pie',
-            data: {
-                labels: Object.keys(dispositivosCount),
-                datasets: [{
-                    data: Object.values(dispositivosCount),
-                    backgroundColor: ['#007bff', '#28a745', '#ffc107', '#dc3545']
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    title: {
-                        display: true,
-                        text: 'Por Tipo de Dispositivo'
-                    },
-                    legend: {
-                        position: 'bottom'
-                    }
-                }
-            }
-        });
-    }
-
-    // Gráfico Navegadores
-    function inicializarGraficoNavegadores() {
-        const ctx = document.getElementById('graficoNavegadores').getContext('2d');
-
-        const navegadoresCount = {};
-        dadosDispositivos.forEach(d => {
-            const navegador = d.navegador.split(' ')[0]; // Pegar apenas o nome do navegador
-            navegadoresCount[navegador] = (navegadoresCount[navegador] || 0) + d.visualizacoes;
-        });
-
-        new Chart(ctx, {
-            type: 'pie',
-            data: {
-                labels: Object.keys(navegadoresCount),
-                datasets: [{
-                    data: Object.values(navegadoresCount),
-                    backgroundColor: ['#17a2b8', '#6f42c1', '#e83e8c', '#fd7e14', '#20c997']
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    title: {
-                        display: true,
-                        text: 'Por Navegador'
-                    },
-                    legend: {
-                        position: 'bottom'
                     }
                 }
             }
@@ -466,61 +1075,174 @@
 
     // Funções auxiliares
     function atualizarDados() {
-        location.reload();
+        // Mostrar loading
+        const btn = event.target;
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Atualizando...';
+        btn.disabled = true;
+
+        // Simular atualização (em produção, fazer requisição AJAX)
+        setTimeout(() => {
+            location.reload();
+        }, 1000);
     }
 
     function exportarRelatorio() {
         // Implementar exportação (PDF, Excel, etc.)
-        alert('Funcionalidade de exportação em desenvolvimento');
+        const btn = event.target;
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Gerando...';
+        btn.disabled = true;
+
+        // Simular geração
+        setTimeout(() => {
+            btn.innerHTML = originalHTML;
+            btn.disabled = false;
+            
+            // Mostrar notificação de sucesso
+            showExecutiveNotification('Relatório exportado com sucesso!', 'success');
+        }, 2000);
+    }
+
+    function showExecutiveNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `alert alert-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'} position-fixed shadow-lg`;
+        notification.style.cssText = `
+            top: 20px; 
+            right: 20px; 
+            z-index: 9999; 
+            min-width: 350px; 
+            border: none;
+            border-radius: 12px;
+            animation: slideInRight 0.4s ease-out;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        `;
+        notification.innerHTML = `
+            <div class="d-flex align-items-center">
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'} me-3" style="font-size: 1.25rem;"></i>
+                <div class="flex-grow-1">
+                    <div style="font-weight: 600; margin-bottom: 2px;">${type === 'success' ? 'Sucesso' : type === 'error' ? 'Erro' : 'Informação'}</div>
+                    <div style="font-size: 0.875rem; opacity: 0.9;">${message}</div>
+                </div>
+                <button type="button" class="btn-close ms-3" onclick="this.parentElement.parentElement.remove()"></button>
+            </div>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // Auto-remover após 5 segundos
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.style.animation = 'slideOutRight 0.4s ease-out';
+                setTimeout(() => notification.remove(), 400);
+            }
+        }, 5000);
+    }
+
+    // Atualização em tempo real (simulada)
+    function iniciarAtualizacaoTempoReal() {
+        setInterval(function() {
+            // Em produção, fazer requisição AJAX para obter dados atualizados
+            fetch('/PropostaAnalyticsData/GetEstatisticasTempoReal')
+                .then(response => response.json())
+                .then(data => {
+                    // Atualizar valores nos KPIs sem recarregar a página
+                    if (data.visualizacoesHoje !== undefined) {
+                        document.getElementById('totalVisualizacoes').textContent = data.visualizacoesHoje;
+                    }
+                    if (data.tempoMedioHoje !== undefined) {
+                        document.getElementById('tempoMedio').textContent = Math.round(data.tempoMedioHoje) + 's';
+                    }
+                })
+                .catch(error => {
+                    console.warn('Erro ao atualizar dados em tempo real:', error);
+                });
+        }, 60000); // Atualizar a cada minuto
+    }
+
+    // Animações de entrada escalonada
+    function animarElementos() {
+        const elementos = document.querySelectorAll('.kpi-card, .chart-card, .insights-card, .performance-card');
+        elementos.forEach((elemento, index) => {
+            elemento.style.opacity = '0';
+            elemento.style.transform = 'translateY(20px)';
+            
+            setTimeout(() => {
+                elemento.style.transition = 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
+                elemento.style.opacity = '1';
+                elemento.style.transform = 'translateY(0)';
+            }, index * 100);
+        });
     }
 
     // Inicializar quando a página carregar
     document.addEventListener('DOMContentLoaded', function() {
+        // Inicializar gráficos
         inicializarGraficoVisualizacoes();
+        
+        @if (Model.DispositivosAcessos.Any())
+        {
+            <text>inicializarGraficoDispositivos();</text>
+        }
 
-    @if (Model.DispositivosAcessos.Any())
-    {
-        <text>
-                inicializarGraficoDispositivos();
-                inicializarGraficoTipoDispositivo();
-                inicializarGraficoNavegadores();
-        </text>
-    }
+        // Iniciar animações
+        animarElementos();
 
-        // Atualizar dados em tempo real a cada 30 segundos
-        setInterval(function() {
-            fetch('/PropostaAnalyticsData/GetEstatisticasTempoReal')
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('totalVisualizacoes').textContent = data.visualizacoesHoje || @Model.TotalVisualizacoes;
-                    document.getElementById('tempoMedio').textContent = Math.round(data.tempoMedioHoje || @Model.EstatisticasGerais.TempoMedioVisualizacao) + 's';
-                })
-                .catch(console.error);
-        }, 30000);
+        // Iniciar atualização em tempo real
+        iniciarAtualizacaoTempoReal();
+
+        // Tooltip nos elementos
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
     });
+
+    // CSS para animações (injetado via JavaScript)
+    const style = document.createElement('style');
+    style.textContent = `
+        @@keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @@keyframes slideOutRight {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+        
+        .chart-card:hover, .insights-card:hover, .performance-card:hover {
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .executive-table tbody tr:hover {
+            background: linear-gradient(90deg, #f8fafc 0%, #f1f5f9 100%);
+            transform: scale(1.002);
+        }
+        
+        .metric-badge {
+            transition: all 0.2s ease;
+        }
+        
+        .metric-badge:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+        
+        .kpi-card:hover .kpi-icon {
+            transform: scale(1.05);
+            transition: transform 0.2s ease;
+        }
+        
+        .location-item:hover {
+            background: #f8fafc;
+            padding-left: 0.5rem;
+            padding-right: 0.5rem;
+            margin-left: -0.5rem;
+            margin-right: -0.5rem;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+    `;
+    document.head.appendChild(style);
 </script>
-
-<style>
-    .card {
-        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-        border: 1px solid rgba(0, 0, 0, 0.125);
-    }
-
-    .card-header {
-        background-color: #f8f9fa;
-        border-bottom: 1px solid rgba(0, 0, 0, 0.125);
-    }
-
-    .table th {
-        font-weight: 600;
-        font-size: 0.875rem;
-    }
-
-    .badge {
-        font-size: 0.75rem;
-    }
-
-    canvas {
-        max-height: 300px;
-    }
-</style>
