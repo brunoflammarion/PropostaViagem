@@ -222,6 +222,7 @@ namespace SistemaUsuarios.Controllers
             return RedirectToAction("Gerenciar", "Destino", new { propostaId = proposta.Id });
         }
 
+        // Método Editar GET - Corrigido para usar o mesmo formato da criação
         [HttpGet]
         public async Task<IActionResult> Editar(Guid id)
         {
@@ -237,6 +238,14 @@ namespace SistemaUsuarios.Controllers
             if (proposta == null)
             {
                 return NotFound();
+            }
+
+            // Verificar se o usuário logado é o dono da proposta
+            var usuarioLogadoId = ObterUsuarioLogadoId();
+            if (proposta.UsuarioId != usuarioLogadoId)
+            {
+                TempData["Erro"] = "Você não tem permissão para editar esta proposta.";
+                return RedirectToAction("Index");
             }
 
             var model = new PropostaViewModel
@@ -262,18 +271,86 @@ namespace SistemaUsuarios.Controllers
             return View(model);
         }
 
+        // Método Editar POST - Corrigido para tratar upload de foto
         [HttpPost]
         public async Task<IActionResult> Editar(PropostaViewModel model, string acao = "salvar")
         {
             if (!UsuarioLogado())
                 return RedirectToAction("Login", "Auth");
 
+            // Verificar se a proposta existe e pertence ao usuário
+            var proposta = await _context.Propostas.FindAsync(model.Id);
+            if (proposta == null)
+            {
+                TempData["Erro"] = "Proposta não encontrada.";
+                return RedirectToAction("Index");
+            }
+
+            var usuarioLogadoId = ObterUsuarioLogadoId();
+            if (proposta.UsuarioId != usuarioLogadoId)
+            {
+                TempData["Erro"] = "Você não tem permissão para editar esta proposta.";
+                return RedirectToAction("Index");
+            }
+
             // SE A AÇÃO FOR "gerenciar_destinos", REDIRECIONAR DIRETO
             if (acao == "gerenciar_destinos")
             {
-                // Salvar primeiro se houver mudanças
-                await SalvarAlteracoesProposta(model);
-                return RedirectToAction("Gerenciar", "Destino", new { propostaId = model.Id });
+                // Salvar primeiro se houver mudanças básicas
+                try
+                {
+                    await SalvarAlteracoesProposta(model);
+                    return RedirectToAction("Gerenciar", "Destino", new { propostaId = model.Id });
+                }
+                catch (Exception ex)
+                {
+                    TempData["Erro"] = ex.Message;
+                    await CarregarDadosParaView();
+                    return View(model);
+                }
+            }
+
+            // REMOVER VALIDAÇÕES PROBLEMÁTICAS
+            ModelState.Remove("UsuarioId");
+            ModelState.Remove("FotoCapa");
+            ModelState.Remove("FotoCapaUpload");
+
+            try
+            {
+                // PROCESSAR UPLOAD DE NOVA FOTO SE FORNECIDA
+                if (model.FotoCapaUpload != null && model.FotoCapaUpload.Length > 0)
+                {
+                    // Excluir foto anterior se existir
+                    if (!string.IsNullOrEmpty(proposta.FotoCapa))
+                    {
+                        try
+                        {
+                            var caminhoAnterior = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", proposta.FotoCapa.TrimStart('/'));
+                            if (System.IO.File.Exists(caminhoAnterior))
+                            {
+                                System.IO.File.Delete(caminhoAnterior);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Erro ao excluir foto anterior: {ex.Message}");
+                        }
+                    }
+
+                    // Salvar nova foto
+                    model.FotoCapa = await SalvarFotoAsync(model.FotoCapaUpload);
+                }
+                else if (string.IsNullOrEmpty(model.FotoCapa))
+                {
+                    // Se não há upload e o campo está vazio, manter a foto atual
+                    model.FotoCapa = proposta.FotoCapa;
+                }
+            }
+            catch (InvalidOperationException ex)
+            {
+                ModelState.AddModelError("FotoCapaUpload", ex.Message);
+                await CarregarDadosParaView();
+                return View(model);
             }
 
             if (!ModelState.IsValid)
@@ -282,16 +359,26 @@ namespace SistemaUsuarios.Controllers
                 return View(model);
             }
 
-            await SalvarAlteracoesProposta(model);
-
-            TempData["Sucesso"] = "Proposta atualizada com sucesso!";
-            return RedirectToAction("Index");
+            try
+            {
+                await SalvarAlteracoesProposta(model);
+                TempData["Sucesso"] = "Proposta atualizada com sucesso!";
+                return RedirectToAction("Index");
+            }
+            catch (Exception ex)
+            {
+                TempData["Erro"] = ex.Message;
+                await CarregarDadosParaView();
+                return View(model);
+            }
         }
 
+        // Método auxiliar corrigido
         private async Task SalvarAlteracoesProposta(PropostaViewModel model)
         {
             var proposta = await _context.Propostas.FindAsync(model.Id);
-            if (proposta == null) return;
+            if (proposta == null)
+                throw new InvalidOperationException("Proposta não encontrada");
 
             // Validação customizada de datas
             if (model.DataInicio.HasValue && model.DataFim.HasValue && model.DataInicio > model.DataFim)
@@ -304,15 +391,9 @@ namespace SistemaUsuarios.Controllers
             proposta.DataFim = model.DataFim;
             proposta.NumeroPassageiros = model.NumeroPassageiros;
             proposta.NumeroCriancas = model.NumeroCriancas;
-
-            // Tratar FotoCapa - se vier vazia/null, manter como null
-            proposta.FotoCapa = string.IsNullOrWhiteSpace(model.FotoCapa) ? null : model.FotoCapa;
-
+            proposta.FotoCapa = model.FotoCapa;
             proposta.LayoutId = model.LayoutId;
-
-            // Tratar ObservacoesGerais - se vier vazia/null, manter como null
             proposta.ObservacoesGerais = string.IsNullOrWhiteSpace(model.ObservacoesGerais) ? null : model.ObservacoesGerais.Trim();
-
             proposta.StatusProposta = model.StatusProposta;
             proposta.LinkPublicoAtivo = model.LinkPublicoAtivo;
             proposta.DataExpiracaoLink = model.DataExpiracaoLink;
@@ -835,6 +916,93 @@ namespace SistemaUsuarios.Controllers
             };
 
             return Json(preview);
+        }
+        // Método para processar a remoção de foto atual via AJAX
+        [HttpPost]
+        public async Task<IActionResult> RemoverFotoAtual(Guid id)
+        {
+            if (!UsuarioLogado())
+                return Json(new { success = false, message = "Usuário não logado" });
+
+            var usuarioId = ObterUsuarioLogadoId();
+            var proposta = await _context.Propostas
+                .FirstOrDefaultAsync(p => p.Id == id && p.UsuarioId == usuarioId);
+
+            if (proposta == null)
+                return Json(new { success = false, message = "Proposta não encontrada" });
+
+            // Remover arquivo físico se existir
+            if (!string.IsNullOrEmpty(proposta.FotoCapa))
+            {
+                try
+                {
+                    var caminhoCompleto = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", proposta.FotoCapa.TrimStart('/'));
+                    if (System.IO.File.Exists(caminhoCompleto))
+                    {
+                        System.IO.File.Delete(caminhoCompleto);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Erro ao excluir arquivo de foto: {ex.Message}");
+                }
+            }
+
+            // Atualizar no banco
+            proposta.FotoCapa = null;
+            proposta.DataModificacao = DateTime.Now;
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true, message = "Foto removida com sucesso" });
+        }
+
+        
+        // Método para validar permissões do usuário
+        private async Task<bool> UsuarioTemPermissao(Guid propostaId)
+        {
+            if (!UsuarioLogado())
+                return false;
+
+            var usuarioId = ObterUsuarioLogadoId();
+            var proposta = await _context.Propostas
+                .AsNoTracking()
+                .FirstOrDefaultAsync(p => p.Id == propostaId);
+
+            return proposta != null && proposta.UsuarioId == usuarioId;
+        }
+
+       
+        // Método para obter estatísticas da proposta (para o preview)
+        [HttpGet]
+        public async Task<IActionResult> ObterEstatisticasProposta(Guid id)
+        {
+            if (!UsuarioLogado())
+                return Json(new { success = false, message = "Não autorizado" });
+
+            if (!await UsuarioTemPermissao(id))
+                return Json(new { success = false, message = "Sem permissão" });
+
+            var proposta = await _context.Propostas
+                .Include(p => p.Destinos)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            if (proposta == null)
+                return Json(new { success = false, message = "Proposta não encontrada" });
+
+            var estatisticas = new
+            {
+                totalDestinos = proposta.Destinos.Count,
+                temFotoCapa = !string.IsNullOrEmpty(proposta.FotoCapa),
+                temObservacoes = !string.IsNullOrEmpty(proposta.ObservacoesGerais),
+                linkPublicoAtivo = proposta.LinkPublicoAtivo,
+                status = proposta.StatusProposta.ToString(),
+                duracaoDias = proposta.DataInicio.HasValue && proposta.DataFim.HasValue
+                    ? (proposta.DataFim.Value - proposta.DataInicio.Value).Days + 1
+                    : (int?)null
+            };
+
+            return Json(new { success = true, data = estatisticas });
         }
     }
 

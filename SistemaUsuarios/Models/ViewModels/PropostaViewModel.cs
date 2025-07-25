@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Http;
 
 namespace SistemaUsuarios.Models.ViewModels
 {
@@ -8,8 +9,8 @@ namespace SistemaUsuarios.Models.ViewModels
 
         [Required(ErrorMessage = "Título é obrigatório")]
         [StringLength(500, ErrorMessage = "Título deve ter no máximo 500 caracteres")]
-        [Display(Name = "Título da Proposta")]
-        public string Titulo { get; set; }
+        [Display(Name = "Título")]
+        public string Titulo { get; set; } = string.Empty;
 
         public Guid? UsuarioId { get; set; }
 
@@ -30,18 +31,19 @@ namespace SistemaUsuarios.Models.ViewModels
         [Display(Name = "Número de Crianças")]
         public int NumeroCriancas { get; set; } = 0;
 
-        // UPLOAD DE FOTO - Agora opcional
-        [Display(Name = "Foto de Capa")]
-        public IFormFile? FotoCapaUpload { get; set; } // ALTERADO: Agora nullable
+        [StringLength(1000, ErrorMessage = "URL da foto deve ter no máximo 1000 caracteres")]
+        [Display(Name = "Foto de Capa (URL)")]
+        public string? FotoCapa { get; set; }
 
-        // CAMINHO DA FOTO SALVA - Agora opcional
-        public string? FotoCapa { get; set; } // ALTERADO: Agora nullable
+        [Display(Name = "Upload de Foto de Capa")]
+        public IFormFile? FotoCapaUpload { get; set; }
 
         [Display(Name = "Layout")]
         public int? LayoutId { get; set; }
 
         [Display(Name = "Observações Gerais")]
-        public string? ObservacoesGerais { get; set; } // ALTERADO: Agora nullable
+        [StringLength(2000, ErrorMessage = "Observações devem ter no máximo 2000 caracteres")]
+        public string? ObservacoesGerais { get; set; }
 
         [Display(Name = "Status")]
         public StatusProposta StatusProposta { get; set; } = StatusProposta.Rascunho;
@@ -53,41 +55,20 @@ namespace SistemaUsuarios.Models.ViewModels
         [DataType(DataType.DateTime)]
         public DateTime? DataExpiracaoLink { get; set; }
 
+        // Campos somente leitura para informações do sistema
         public DateTime? DataCriacao { get; set; }
         public DateTime? DataModificacao { get; set; }
-    }
 
-    public class PropostaListViewModel
-    {
-        public Guid Id { get; set; }
-        public string Titulo { get; set; }
-        public DateTime DataCriacao { get; set; }
-        public DateTime? DataInicio { get; set; }
-        public DateTime? DataFim { get; set; }
-        public int NumeroPassageiros { get; set; }
-        public int NumeroCriancas { get; set; }
-        public StatusProposta StatusProposta { get; set; }
-        public string NomeUsuario { get; set; }
-        public Guid UsuarioId { get; set; }
-        public bool LinkPublicoAtivo { get; set; }
-        public string? FotoCapa { get; set; } // ALTERADO: Agora nullable
-        public DateTime? DataModificacao { get; set; }
+        // === PROPRIEDADES CALCULADAS ===
 
-        // Para link de compartilhamento
-        public string LinkCompartilhamento => $"/Proposta/Publico/{Id}";
+        /// <summary>
+        /// Total de pessoas (adultos + crianças)
+        /// </summary>
+        public int TotalPessoas => NumeroPassageiros + NumeroCriancas;
 
-        // Para exibir status com cor
-        public string StatusCssClass => StatusProposta switch
-        {
-            StatusProposta.Rascunho => "bg-secondary",
-            StatusProposta.Enviada => "bg-warning",
-            StatusProposta.Aprovada => "bg-success",
-            StatusProposta.Rejeitada => "bg-danger",
-            StatusProposta.Cancelada => "bg-dark",
-            _ => "bg-info"
-        };
-
-        // Para calcular duração da viagem
+        /// <summary>
+        /// Duração da viagem em dias
+        /// </summary>
         public int? DuracaoDias
         {
             get
@@ -97,40 +78,415 @@ namespace SistemaUsuarios.Models.ViewModels
                 return null;
             }
         }
-    }
 
-    public class PropostaFiltroViewModel
-    {
-        [Display(Name = "Buscar por título")]
-        public string TermoBusca { get; set; }
+        /// <summary>
+        /// Texto do status da proposta
+        /// </summary>
+        public string StatusPropostaTexto
+        {
+            get
+            {
+                return StatusProposta switch
+                {
+                    StatusProposta.Rascunho => "Rascunho",
+                    StatusProposta.Enviada => "Enviada",
+                    StatusProposta.Aprovada => "Aprovada",
+                    StatusProposta.Rejeitada => "Rejeitada",
+                    StatusProposta.Cancelada => "Cancelada",
+                    _ => "Desconhecido"
+                };
+            }
+        }
 
-        [Display(Name = "Status")]
-        public StatusProposta? FiltroStatus { get; set; }
+        /// <summary>
+        /// Classe CSS para cor do badge de status
+        /// </summary>
+        public string StatusPropostaCor
+        {
+            get
+            {
+                return StatusProposta switch
+                {
+                    StatusProposta.Rascunho => "secondary",
+                    StatusProposta.Enviada => "warning",
+                    StatusProposta.Aprovada => "success",
+                    StatusProposta.Rejeitada => "danger",
+                    StatusProposta.Cancelada => "dark",
+                    _ => "secondary"
+                };
+            }
+        }
 
-        [Display(Name = "Data de início")]
-        [DataType(DataType.Date)]
-        public DateTime? DataInicioFiltro { get; set; }
+        /// <summary>
+        /// Indica se a proposta tem foto de capa
+        /// </summary>
+        public bool TemFotoCapa => !string.IsNullOrEmpty(FotoCapa);
 
-        [Display(Name = "Data de fim")]
-        [DataType(DataType.Date)]
-        public DateTime? DataFimFiltro { get; set; }
+        /// <summary>
+        /// Indica se a proposta tem observações
+        /// </summary>
+        public bool TemObservacoes => !string.IsNullOrEmpty(ObservacoesGerais);
 
-        [Display(Name = "Usuário")]
-        public Guid? FiltroUsuario { get; set; }
+        /// <summary>
+        /// Período formatado da viagem
+        /// </summary>
+        public string PeriodoFormatado
+        {
+            get
+            {
+                if (DataInicio.HasValue && DataFim.HasValue)
+                {
+                    var dias = DuracaoDias ?? 0;
+                    return $"{DataInicio.Value:dd/MM} - {DataFim.Value:dd/MM/yyyy} ({dias} {(dias == 1 ? "dia" : "dias")})";
+                }
+                else if (DataInicio.HasValue)
+                {
+                    return $"A partir de {DataInicio.Value:dd/MM/yyyy}";
+                }
+                else if (DataFim.HasValue)
+                {
+                    return $"Até {DataFim.Value:dd/MM/yyyy}";
+                }
+                return "Período não definido";
+            }
+        }
 
-        [Display(Name = "Link ativo")]
-        public bool? FiltroLinkAtivo { get; set; }
+        /// <summary>
+        /// Passageiros formatado
+        /// </summary>
+        public string PassageirosFormatado
+        {
+            get
+            {
+                var total = TotalPessoas;
+                var texto = $"{total} pessoa{(total != 1 ? "s" : "")}";
 
-        // Lista de propostas filtradas
-        public List<PropostaListViewModel> Propostas { get; set; } = new();
+                if (NumeroCriancas > 0)
+                {
+                    texto += $" ({NumeroPassageiros} adulto{(NumeroPassageiros != 1 ? "s" : "")} + {NumeroCriancas} criança{(NumeroCriancas != 1 ? "s" : "")})";
+                }
 
-        // Para dropdown de usuários
-        public List<Usuario> Usuarios { get; set; } = new();
+                return texto;
+            }
+        }
 
-        // Para estatísticas
-        public int TotalPropostas { get; set; }
-        public int TotalRascunhos { get; set; }
-        public int TotalEnviadas { get; set; }
-        public int TotalAprovadas { get; set; }
+        /// <summary>
+        /// URL do link público da proposta
+        /// </summary>
+        public string? LinkPublico { get; set; }
+
+        /// <summary>
+        /// URL do link de compartilhamento
+        /// </summary>
+        public string? LinkCompartilhamento => Id.HasValue ? $"/Proposta/Publico/{Id}" : null;
+
+        /// <summary>
+        /// Indica se é uma nova proposta (criação)
+        /// </summary>
+        public bool IsNovaProposta => !Id.HasValue;
+
+        /// <summary>
+        /// Indica se é edição de proposta existente
+        /// </summary>
+        public bool IsEdicao => Id.HasValue;
+
+        /// <summary>
+        /// Título da página baseado no contexto
+        /// </summary>
+        public string TituloPagina => IsNovaProposta ? "Nova Proposta de Viagem" : "Editar Proposta de Viagem";
+
+        /// <summary>
+        /// Subtítulo da página baseado no contexto
+        /// </summary>
+        public string SubtituloPagina => IsNovaProposta
+            ? "Crie uma proposta personalizada em duas etapas simples"
+            : "Atualize as informações da sua proposta personalizada";
+
+        /// <summary>
+        /// Texto do botão principal baseado no contexto
+        /// </summary>
+        public string TextoBotaoPrincipal => IsNovaProposta ? "Criar Proposta" : "Salvar Alterações";
+
+        /// <summary>
+        /// Ícone do botão principal baseado no contexto
+        /// </summary>
+        public string IconeBotaoPrincipal => IsNovaProposta ? "fas fa-plus" : "fas fa-save";
+
+        /// <summary>
+        /// Indica se o link público está expirado
+        /// </summary>
+        public bool LinkPublicoExpirado
+        {
+            get
+            {
+                if (!LinkPublicoAtivo || !DataExpiracaoLink.HasValue)
+                    return false;
+
+                return DataExpiracaoLink.Value < DateTime.Now;
+            }
+        }
+
+        /// <summary>
+        /// Status do link público formatado
+        /// </summary>
+        public string StatusLinkPublico
+        {
+            get
+            {
+                if (!LinkPublicoAtivo)
+                    return "Inativo";
+
+                if (LinkPublicoExpirado)
+                    return "Expirado";
+
+                if (DataExpiracaoLink.HasValue)
+                    return $"Ativo até {DataExpiracaoLink.Value:dd/MM/yyyy HH:mm}";
+
+                return "Ativo";
+            }
+        }
+
+        /// <summary>
+        /// Classe CSS para status do link público
+        /// </summary>
+        public string ClasseStatusLinkPublico
+        {
+            get
+            {
+                if (!LinkPublicoAtivo || LinkPublicoExpirado)
+                    return "text-danger";
+
+                return "text-success";
+            }
+        }
+
+        /// <summary>
+        /// Ícone para status do link público
+        /// </summary>
+        public string IconeStatusLinkPublico
+        {
+            get
+            {
+                if (!LinkPublicoAtivo)
+                    return "fas fa-link-slash";
+
+                if (LinkPublicoExpirado)
+                    return "fas fa-clock";
+
+                return "fas fa-check-circle";
+            }
+        }
+
+        // === MÉTODOS DE VALIDAÇÃO CUSTOMIZADA ===
+
+        /// <summary>
+        /// Valida se as datas estão em ordem cronológica
+        /// </summary>
+        /// <returns>True se válidas, False caso contrário</returns>
+        public bool ValidarDatas()
+        {
+            if (DataInicio.HasValue && DataFim.HasValue)
+            {
+                return DataInicio.Value <= DataFim.Value;
+            }
+            return true; // Datas opcionais são sempre válidas
+        }
+
+        /// <summary>
+        /// Obtém mensagem de erro para datas inválidas
+        /// </summary>
+        /// <returns>Mensagem de erro ou null se válidas</returns>
+        public string? ObterErroValidacaoDatas()
+        {
+            if (!ValidarDatas())
+            {
+                return "Data de fim deve ser posterior ou igual à data de início";
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Indica se a proposta pode ser editada
+        /// </summary>
+        public bool PodeSerEditada
+        {
+            get
+            {
+                // Propostas aprovadas ou rejeitadas podem ter restrições
+                return StatusProposta != StatusProposta.Cancelada;
+            }
+        }
+
+        /// <summary>
+        /// Indica se a proposta pode ter o status alterado
+        /// </summary>
+        public bool PodeAlterarStatus => IsEdicao;
+
+        /// <summary>
+        /// Lista de status disponíveis para seleção
+        /// </summary>
+        public Dictionary<int, string> StatusDisponiveis
+        {
+            get
+            {
+                var status = new Dictionary<int, string>
+                {
+                    { (int)StatusProposta.Rascunho, "Rascunho" },
+                    { (int)StatusProposta.Enviada, "Enviada" },
+                    { (int)StatusProposta.Aprovada, "Aprovada" },
+                    { (int)StatusProposta.Rejeitada, "Rejeitada" },
+                    { (int)StatusProposta.Cancelada, "Cancelada" }
+                };
+
+                // Se for nova proposta, só mostrar Rascunho
+                if (IsNovaProposta)
+                {
+                    return new Dictionary<int, string>
+                    {
+                        { (int)StatusProposta.Rascunho, "Rascunho" }
+                    };
+                }
+
+                return status;
+            }
+        }
+
+        /// <summary>
+        /// Progresso de preenchimento da proposta (0-100)
+        /// </summary>
+        public int ProgressoPreenchimento
+        {
+            get
+            {
+                var pontos = 0;
+                var totalPontos = 7;
+
+                if (!string.IsNullOrEmpty(Titulo)) pontos++;
+                if (NumeroPassageiros > 0) pontos++;
+                if (DataInicio.HasValue) pontos++;
+                if (DataFim.HasValue) pontos++;
+                if (TemFotoCapa) pontos++;
+                if (TemObservacoes) pontos++;
+                if (LinkPublicoAtivo) pontos++;
+
+                return (int)Math.Round((double)pontos / totalPontos * 100);
+            }
+        }
+
+        /// <summary>
+        /// Descrição textual do progresso
+        /// </summary>
+        public string DescricaoProgresso
+        {
+            get
+            {
+                var progresso = ProgressoPreenchimento;
+                return progresso switch
+                {
+                    >= 90 => "Proposta quase completa",
+                    >= 70 => "Boa quantidade de informações",
+                    >= 50 => "Informações básicas preenchidas",
+                    >= 30 => "Poucas informações preenchidas",
+                    _ => "Proposta incompleta"
+                };
+            }
+        }
+
+        /// <summary>
+        /// Classe CSS para barra de progresso
+        /// </summary>
+        public string ClasseProgresso
+        {
+            get
+            {
+                var progresso = ProgressoPreenchimento;
+                return progresso switch
+                {
+                    >= 80 => "bg-success",
+                    >= 60 => "bg-info",
+                    >= 40 => "bg-warning",
+                    _ => "bg-danger"
+                };
+            }
+        }
+
+        // === MÉTODOS AUXILIARES ===
+
+        /// <summary>
+        /// Limpa campos opcionais vazios
+        /// </summary>
+        public void LimparCamposVazios()
+        {
+            if (string.IsNullOrWhiteSpace(ObservacoesGerais))
+                ObservacoesGerais = null;
+
+            if (string.IsNullOrWhiteSpace(FotoCapa))
+                FotoCapa = null;
+        }
+
+        /// <summary>
+        /// Aplica valores padrão para nova proposta
+        /// </summary>
+        public void AplicarValoresPadrao()
+        {
+            if (IsNovaProposta)
+            {
+                StatusProposta = StatusProposta.Rascunho;
+                LinkPublicoAtivo = true;
+                NumeroPassageiros = 1;
+                NumeroCriancas = 0;
+                DataCriacao = DateTime.Now;
+            }
+        }
+
+        /// <summary>
+        /// Valida se upload de arquivo é permitido
+        /// </summary>
+        /// <returns>True se permitido, False caso contrário</returns>
+        public bool ValidarUploadFoto()
+        {
+            if (FotoCapaUpload == null)
+                return true;
+
+            // Validar tamanho (5MB)
+            if (FotoCapaUpload.Length > 5 * 1024 * 1024)
+                return false;
+
+            // Validar extensão
+            var extensao = Path.GetExtension(FotoCapaUpload.FileName).ToLowerInvariant();
+            var extensoesPermitidas = new[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp" };
+
+            return extensoesPermitidas.Contains(extensao);
+        }
+
+        /// <summary>
+        /// Obtém mensagem de erro para upload inválido
+        /// </summary>
+        /// <returns>Mensagem de erro ou null se válido</returns>
+        public string? ObterErroUploadFoto()
+        {
+            if (FotoCapaUpload == null)
+                return null;
+
+            if (FotoCapaUpload.Length > 5 * 1024 * 1024)
+                return "Arquivo muito grande. Máximo 5MB permitido";
+
+            var extensao = Path.GetExtension(FotoCapaUpload.FileName).ToLowerInvariant();
+            var extensoesPermitidas = new[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp" };
+
+            if (!extensoesPermitidas.Contains(extensao))
+                return "Formato não permitido. Use JPG, PNG, GIF, BMP ou WebP";
+
+            return null;
+        }
+
+        /// <summary>
+        /// Converte para string para debug
+        /// </summary>
+        /// <returns>Representação string do objeto</returns>
+        public override string ToString()
+        {
+            return $"Proposta: {Titulo} - Status: {StatusPropostaTexto} - Passageiros: {TotalPessoas}";
+        }
     }
 }

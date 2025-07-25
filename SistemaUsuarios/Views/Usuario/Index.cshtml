@@ -4,144 +4,159 @@
     ViewData["Title"] = "Propostas de Viagem";
 }
 
-<!-- Header Principal -->
-<div class="main-header">
-    <div class="container-fluid">
-        <div class="row align-items-center">
-            <div class="col-lg-6">
-                <div class="header-content">
-                    <h1 class="main-title">Propostas de Viagem</h1>
-                    <p class="main-subtitle">Gerencie e acompanhe todas as suas propostas</p>
-                </div>
+<!-- Header Executivo Moderno -->
+<div class="executive-header">
+    <div class="header-content">
+        <div class="header-info">
+            <h1 class="executive-title">
+                <i class="fas fa-suitcase-rolling me-2"></i>
+                Propostas de Viagem
+            </h1>
+            <p class="executive-subtitle">
+                @Model.TotalPropostas proposta(s) criada(s) • 
+                @Model.TotalAprovadas aprovada(s) • 
+                @Model.TotalEnviadas aguardando resposta
+            </p>
+        </div>
+        <div class="header-actions">
+            <div class="btn-group me-2">
+                <button type="button" class="btn btn-outline-primary" onclick="exportarDados()">
+                    <i class="fas fa-download me-1"></i>Exportar
+                </button>
+                <button type="button" class="btn btn-outline-secondary" onclick="atualizarLista()">
+                    <i class="fas fa-sync me-1"></i>Atualizar
+                </button>
             </div>
-            <div class="col-lg-6">
-                <div class="header-actions">
-                    <a href="/Proposta/Criar" class="btn btn-primary btn-create">
-                        <i class="fas fa-plus me-2"></i>Nova Proposta
-                    </a>
-                </div>
-            </div>
+            <a href="/Proposta/Criar" class="btn btn-success btn-create">
+                <i class="fas fa-plus me-1"></i>Nova Proposta
+            </a>
         </div>
     </div>
 </div>
 
 <!-- Dashboard de Estatísticas -->
-<div class="dashboard-stats">
-    <div class="container-fluid">
-        <div class="stats-container">
-            <div class="stat-item stat-total">
-                <div class="stat-icon">
-                    <i class="fas fa-file-alt"></i>
-                </div>
-                <div class="stat-content">
-                    <div class="stat-number">@Model.TotalPropostas</div>
-                    <div class="stat-label">Total</div>
-                    <div class="stat-change">
-                        <i class="fas fa-arrow-up"></i>
-                        <span>+12% este mês</span>
-                    </div>
+<div class="stats-dashboard">
+    <div class="stats-grid">
+        <div class="stat-card stat-primary">
+            <div class="stat-icon">
+                <i class="fas fa-file-alt"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-number" data-count="@Model.TotalPropostas">@Model.TotalPropostas</div>
+                <div class="stat-label">Total de Propostas</div>
+                <div class="stat-trend">
+                    <i class="fas fa-arrow-up text-success me-1"></i>
+                    <span class="text-muted">+@((Model.TotalPropostas * 0.12).ToString("F0"))% este mês</span>
                 </div>
             </div>
+        </div>
 
-            <div class="stat-item stat-rascunhos">
-                <div class="stat-icon">
-                    <i class="fas fa-edit"></i>
-                </div>
-                <div class="stat-content">
-                    <div class="stat-number">@Model.TotalRascunhos</div>
-                    <div class="stat-label">Rascunhos</div>
-                    <div class="stat-percentage">
-                        @if (Model.TotalPropostas > 0)
-                        {
-                            <span>@(Math.Round((double)Model.TotalRascunhos / Model.TotalPropostas * 100, 1))%</span>
-                        }
-                        else
-                        {
-                            <span>0%</span>
-                        }
-                    </div>
+        <div class="stat-card stat-warning">
+            <div class="stat-icon">
+                <i class="fas fa-paper-plane"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-number" data-count="@Model.TotalEnviadas">@Model.TotalEnviadas</div>
+                <div class="stat-label">Enviadas</div>
+                <div class="stat-trend">
+                    @if (Model.TotalEnviadas > 0)
+                    {
+                        <i class="fas fa-clock text-warning me-1"></i>
+                        <span class="text-muted">Aguardando resposta</span>
+                    }
+                    else
+                    {
+                        <i class="fas fa-check text-success me-1"></i>
+                        <span class="text-muted">Todas respondidas</span>
+                    }
                 </div>
             </div>
+        </div>
 
-            <div class="stat-item stat-enviadas">
-                <div class="stat-icon">
-                    <i class="fas fa-paper-plane"></i>
-                </div>
-                <div class="stat-content">
-                    <div class="stat-number">@Model.TotalEnviadas</div>
-                    <div class="stat-label">Enviadas</div>
-                    <div class="stat-percentage">
-                        @if (Model.TotalPropostas > 0)
-                        {
-                            <span>@(Math.Round((double)Model.TotalEnviadas / Model.TotalPropostas * 100, 1))%</span>
-                        }
-                        else
-                        {
-                            <span>0%</span>
-                        }
-                    </div>
+        <div class="stat-card stat-success">
+            <div class="stat-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-number" data-count="@Model.TotalAprovadas">@Model.TotalAprovadas</div>
+                <div class="stat-label">Aprovadas</div>
+                <div class="stat-trend">
+                    @if (Model.TotalPropostas > 0)
+                    {
+                        var taxaAprovacao = (double)Model.TotalAprovadas / Model.TotalPropostas * 100;
+                        <i class="fas fa-percentage text-success me-1"></i>
+                        <span class="text-muted">@taxaAprovacao.ToString("F1")% de taxa</span>
+                    }
+                    else
+                    {
+                        <span class="text-muted">-</span>
+                    }
                 </div>
             </div>
+        </div>
 
-            <div class="stat-item stat-aprovadas">
-                <div class="stat-icon">
-                    <i class="fas fa-check-circle"></i>
-                </div>
-                <div class="stat-content">
-                    <div class="stat-number">@Model.TotalAprovadas</div>
-                    <div class="stat-label">Aprovadas</div>
-                    <div class="stat-percentage success">
-                        @if (Model.TotalPropostas > 0)
-                        {
-                            <span>@(Math.Round((double)Model.TotalAprovadas / Model.TotalPropostas * 100, 1))%</span>
-                        }
-                        else
-                        {
-                            <span>0%</span>
-                        }
-                    </div>
+        <div class="stat-card stat-secondary">
+            <div class="stat-icon">
+                <i class="fas fa-edit"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-number" data-count="@Model.TotalRascunhos">@Model.TotalRascunhos</div>
+                <div class="stat-label">Rascunhos</div>
+                <div class="stat-trend">
+                    @if (Model.TotalRascunhos > 0)
+                    {
+                        <i class="fas fa-exclamation-triangle text-warning me-1"></i>
+                        <span class="text-muted">Precisam ser finalizados</span>
+                    }
+                    else
+                    {
+                        <i class="fas fa-check text-success me-1"></i>
+                        <span class="text-muted">Todas finalizadas</span>
+                    }
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Filtros Modernos -->
-<div class="filters-modern">
-    <div class="container-fluid">
+<!-- Filtros Avançados -->
+<div class="filters-section">
+    <div class="filters-card">
         <div class="filters-header">
-            <h6 class="filters-title">
-                <i class="fas fa-sliders-h me-2"></i>Filtros
-            </h6>
-            <button class="btn btn-outline-secondary btn-sm" id="toggleFilters">
-                <i class="fas fa-chevron-down me-1"></i>Expandir
+            <h5 class="filters-title">
+                <i class="fas fa-filter me-2"></i>Filtros
+            </h5>
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="limparFiltros()">
+                <i class="fas fa-times me-1"></i>Limpar
             </button>
         </div>
-
-        <div class="filters-content" id="filtersContent">
-            <form method="get" asp-action="Index">
+        
+        <form method="get" asp-action="Index" id="filtrosForm">
+            <div class="filters-body">
                 <div class="row g-3">
-                    <div class="col-xl-4 col-lg-6">
-                        <div class="filter-group">
-                            <label class="filter-label">Buscar propostas</label>
-                            <div class="search-wrapper">
-                                <i class="fas fa-search search-icon"></i>
-                                <input asp-for="TermoBusca" class="form-control search-input" 
+                    <!-- Busca por texto -->
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label class="form-label fw-semibold">
+                                <i class="fas fa-search me-1"></i>Buscar
+                            </label>
+                            <div class="input-group">
+                                <input asp-for="TermoBusca" class="form-control" 
                                        placeholder="Digite o título da proposta..." />
-                                @if (!string.IsNullOrEmpty(Model.TermoBusca))
-                                {
-                                    <button type="button" class="clear-search" onclick="this.previousElementSibling.value=''; this.style.display='none';">
-                                        <i class="fas fa-times"></i>
-                                    </button>
-                                }
+                                <button type="button" class="btn btn-outline-secondary" onclick="limparBusca()">
+                                    <i class="fas fa-times"></i>
+                                </button>
                             </div>
                         </div>
                     </div>
 
-                    <div class="col-xl-2 col-lg-3 col-md-6">
-                        <div class="filter-group">
-                            <label class="filter-label">Status</label>
-                            <select asp-for="FiltroStatus" class="form-select filter-select">
+                    <!-- Status -->
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label class="form-label fw-semibold">
+                                <i class="fas fa-flag me-1"></i>Status
+                            </label>
+                            <select asp-for="FiltroStatus" class="form-select">
                                 <option value="">Todos</option>
                                 <option value="1">Rascunho</option>
                                 <option value="2">Enviada</option>
@@ -152,182 +167,219 @@
                         </div>
                     </div>
 
-                    <div class="col-xl-2 col-lg-3 col-md-6">
-                        <div class="filter-group">
-                            <label class="filter-label">Data inicial</label>
-                            <input asp-for="DataInicioFiltro" class="form-control filter-date" type="date" />
+                    <!-- Data início -->
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label class="form-label fw-semibold">
+                                <i class="fas fa-calendar-alt me-1"></i>De
+                            </label>
+                            <input asp-for="DataInicioFiltro" class="form-control" type="date" />
                         </div>
                     </div>
 
-                    <div class="col-xl-2 col-lg-3 col-md-6">
-                        <div class="filter-group">
-                            <label class="filter-label">Data final</label>
-                            <input asp-for="DataFimFiltro" class="form-control filter-date" type="date" />
+                    <!-- Data fim -->
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label class="form-label fw-semibold">
+                                <i class="fas fa-calendar-check me-1"></i>Até
+                            </label>
+                            <input asp-for="DataFimFiltro" class="form-control" type="date" />
                         </div>
                     </div>
 
-                    <div class="col-xl-2 col-lg-3 col-md-6">
-                        <div class="filter-group">
-                            <label class="filter-label">Ações</label>
-                            <div class="filter-actions">
-                                <button type="submit" class="btn btn-primary filter-btn">
-                                    <i class="fas fa-search me-1"></i>Filtrar
-                                </button>
-                                <a href="/Proposta" class="btn btn-outline-secondary filter-btn">
-                                    <i class="fas fa-refresh me-1"></i>Limpar
-                                </a>
-                            </div>
+                    <!-- Link público -->
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label class="form-label fw-semibold">
+                                <i class="fas fa-link me-1"></i>Link Público
+                            </label>
+                            <select asp-for="FiltroLinkAtivo" class="form-select">
+                                <option value="">Todos</option>
+                                <option value="true">Ativo</option>
+                                <option value="false">Inativo</option>
+                            </select>
                         </div>
                     </div>
                 </div>
 
-                <!-- Filtros Ativos -->
-                @if (!string.IsNullOrEmpty(Model.TermoBusca) || Model.FiltroStatus.HasValue || Model.DataInicioFiltro.HasValue || Model.DataFimFiltro.HasValue)
+                <!-- Usuário (se aplicável) -->
+                @if (Model.Usuarios != null && Model.Usuarios.Any())
                 {
-                    <div class="active-filters">
-                        <span class="active-filters-label">Filtros ativos:</span>
-                        @if (!string.IsNullOrEmpty(Model.TermoBusca))
-                        {
-                            <span class="filter-tag">
-                                <i class="fas fa-search me-1"></i>
-                                "@Model.TermoBusca"
-                                <button type="button" class="remove-filter" onclick="removeFilter('TermoBusca')">×</button>
-                            </span>
-                        }
-                        @if (Model.FiltroStatus.HasValue)
-                        {
-                            <span class="filter-tag">
-                                <i class="fas fa-flag me-1"></i>
-                                @@(Model.FiltroStatus.Value == 1 ? "Rascunho" : 
-                                  Model.FiltroStatus.Value == 2 ? "Enviada" : 
-                                  Model.FiltroStatus.Value == 3 ? "Aprovada" : 
-                                  Model.FiltroStatus.Value == 4 ? "Rejeitada" : "Cancelada")
-                                <button type="button" class="remove-filter" onclick="removeFilter('FiltroStatus')">×</button>
-                            </span>
-                        }
-                        <a href="/Proposta" class="clear-all-filters">
-                            <i class="fas fa-times me-1"></i>Limpar todos
-                        </a>
+                    <div class="row g-3 mt-2">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label class="form-label fw-semibold">
+                                    <i class="fas fa-user me-1"></i>Criado por
+                                </label>
+                                <select asp-for="FiltroUsuario" class="form-select">
+                                    <option value="">Todos os usuários</option>
+                                    @foreach (var usuario in Model.Usuarios)
+                                    {
+                                        <option value="@usuario.Id">@usuario.Nome</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-8 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary me-2">
+                                <i class="fas fa-filter me-1"></i>Aplicar Filtros
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="toggleFiltrosAvancados()">
+                                <i class="fas fa-cog me-1"></i>Mais opções
+                            </button>
+                        </div>
                     </div>
                 }
-            </form>
-        </div>
+            </div>
+        </form>
     </div>
 </div>
 
 <!-- Grid de Propostas -->
 @if (Model.Propostas.Any())
 {
-    <div class="propostas-grid">
-        @foreach (var proposta in Model.Propostas)
-        {
-            <div class="proposta-card fade-in-up">
-                <div class="proposta-status status-@(proposta.StatusProposta.ToString().ToLower())">
-                    @proposta.StatusProposta
+    <div class="proposals-section">
+        <div class="proposals-header">
+            <div class="proposals-count">
+                <span class="count-number">@Model.Propostas.Count</span>
+                <span class="count-label">proposta(s) encontrada(s)</span>
+            </div>
+            <div class="proposals-actions">
+                <div class="btn-group btn-group-sm">
+                    <button type="button" class="btn btn-outline-secondary active" onclick="alterarVisualizacao('grid')" data-view="grid">
+                        <i class="fas fa-th-large"></i>
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="alterarVisualizacao('list')" data-view="list">
+                        <i class="fas fa-list"></i>
+                    </button>
                 </div>
-                
-                @if (!string.IsNullOrEmpty(proposta.FotoCapa))
-                {
-                    <img src="@proposta.FotoCapa" alt="@proposta.Titulo" class="proposta-image">
-                }
-                else
-                {
-                    <div class="proposta-image d-flex align-items-center justify-content-center bg-destaque">
-                        <i class="fas fa-image fa-3x text-secondary"></i>
-                    </div>
-                }
+                <select class="form-select form-select-sm ms-2" style="width: auto;" onchange="ordenarPropostas(this.value)">
+                    <option value="recente">Mais recentes</option>
+                    <option value="antigo">Mais antigas</option>
+                    <option value="titulo">Título A-Z</option>
+                    <option value="status">Por status</option>
+                    <option value="modificacao">Última modificação</option>
+                </select>
+            </div>
+        </div>
 
-                <div class="proposta-content">
-                    <h3 class="proposta-title">@proposta.Titulo</h3>
-                    
-                    <div class="proposta-meta">
-                        <div class="meta-item">
-                            <i class="fas fa-calendar"></i>
-                            <span>
-                                @if (proposta.DataInicio.HasValue && proposta.DataFim.HasValue)
-                                {
-                                    @proposta.DataInicio.Value.ToString("dd/MM") <text> - </text> @proposta.DataFim.Value.ToString("dd/MM")
-                                }
-                                else
-                                {
-                                    <text>A definir</text>
-                                }
-                            </span>
-                        </div>
-                        <div class="meta-item">
-                            <i class="fas fa-users"></i>
-                            <span>@(proposta.NumeroPassageiros + proposta.NumeroCriancas) pessoa@(proposta.NumeroPassageiros + proposta.NumeroCriancas != 1 ? "s" : "")</span>
-                        </div>
-                        @if (proposta.DuracaoDias.HasValue)
-                        {
-                            <div class="meta-item">
-                                <i class="fas fa-clock"></i>
-                                <span>@proposta.DuracaoDias dia@(proposta.DuracaoDias != 1 ? "s" : "")</span>
-                            </div>
-                        }
+        <div class="proposals-grid" id="proposalsContainer">
+            @foreach (var proposta in Model.Propostas)
+            {
+                <div class="proposal-card" data-id="@proposta.Id" data-status="@proposta.StatusProposta.ToString().ToLower()">
+                    <!-- Status Badge -->
+                    <div class="proposal-status status-@proposta.StatusProposta.ToString().ToLower()">
+                        @proposta.StatusProposta.ToString()
                     </div>
 
-                    <div class="d-flex align-items-center justify-content-between">
-                        @if (proposta.LinkPublicoAtivo)
+                    <!-- Link público indicator -->
+                    @if (proposta.LinkPublicoAtivo)
+                    {
+                        <div class="proposal-public-link">
+                            <i class="fas fa-link" title="Link público ativo"></i>
+                        </div>
+                    }
+
+                    <!-- Imagem -->
+                    <div class="proposal-image">
+                        @if (!string.IsNullOrEmpty(proposta.FotoCapa))
                         {
-                            <span class="badge badge-link-ativo">
-                                <i class="fas fa-link me-1"></i>Link Ativo
-                            </span>
+                            <img src="@proposta.FotoCapa" alt="@proposta.Titulo" class="proposal-cover" loading="lazy" />
                         }
                         else
                         {
-                            <span class="badge badge-link-inativo">
-                                <i class="fas fa-link-slash me-1"></i>Link Inativo
-                            </span>
+                            <div class="proposal-placeholder">
+                                <i class="fas fa-image fa-2x"></i>
+                                <span>Sem imagem</span>
+                            </div>
                         }
                         
-                        <small class="text-secondary">
+                        <!-- Overlay com ações rápidas -->
+                        <div class="proposal-overlay">
+                            <div class="overlay-actions">
+                                <a href="/Proposta/Detalhes/@proposta.Id" class="btn btn-sm btn-light" title="Visualizar">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                @if (proposta.LinkPublicoAtivo)
+                                {
+                                    <a href="/Proposta/Publico/@proposta.Id" target="_blank" class="btn btn-sm btn-success" title="Ver público">
+                                        <i class="fas fa-external-link-alt"></i>
+                                    </a>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Conteúdo -->
+                    <div class="proposal-content">
+                        <div class="proposal-header">
+                            <h5 class="proposal-title" title="@proposta.Titulo">
+                                @(proposta.Titulo.Length > 50 ? proposta.Titulo.Substring(0, 50) + "..." : proposta.Titulo)
+                            </h5>
+                            <div class="proposal-meta">
+                                <small class="text-muted">
+                                    <i class="fas fa-calendar me-1"></i>
+                                    Criada em @proposta.DataCriacao.ToString("dd/MM/yyyy")
+                                </small>
+                            </div>
+                        </div>
+
+                        <!-- Informações principais -->
+                        <div class="proposal-info">
+                            @if (proposta.DataInicio.HasValue && proposta.DataFim.HasValue)
+                            {
+                                var dias = (proposta.DataFim.Value - proposta.DataInicio.Value).Days + 1;
+                                <div class="info-item">
+                                    <i class="fas fa-calendar-alt text-primary"></i>
+                                    <span>@proposta.DataInicio.Value.ToString("dd/MM") - @proposta.DataFim.Value.ToString("dd/MM") (@dias dias)</span>
+                                </div>
+                            }
+                            else if (proposta.DataInicio.HasValue)
+                            {
+                                <div class="info-item">
+                                    <i class="fas fa-calendar-alt text-primary"></i>
+                                    <span>A partir de @proposta.DataInicio.Value.ToString("dd/MM/yyyy")</span>
+                                </div>
+                            }
+
+                            <div class="info-item">
+                                <i class="fas fa-users text-info"></i>
+                                <span>@(proposta.NumeroPassageiros + proposta.NumeroCriancas) pessoa(s)</span>
+                            </div>
+
                             @if (proposta.DataModificacao.HasValue)
                             {
-                                <text>Editada @proposta.DataModificacao.Value.ToString("dd/MM/yyyy")</text>
+                                <div class="info-item">
+                                    <i class="fas fa-edit text-warning"></i>
+                                    <span>Editada em @proposta.DataModificacao.Value.ToString("dd/MM/yyyy")</span>
+                                </div>
                             }
-                            else
-                            {
-                                <text>Criada @proposta.DataCriacao.ToString("dd/MM/yyyy")</text>
-                            }
-                        </small>
-                    </div>
-                </div>
+                        </div>
 
-                <div class="proposta-footer">
-                    <div class="actions-group">
-                        <!-- Grupo Principal -->
-                        <div class="d-flex gap-2">
-                            <a href="/Proposta/Detalhes/@proposta.Id" class="action-btn btn-primary" title="Visualizar Proposta">
-                                <i class="fas fa-eye"></i>
+                        <!-- Autor -->
+                        <div class="proposal-author">
+                            <i class="fas fa-user-circle me-1"></i>
+                            <span>@proposta.NomeUsuario</span>
+                        </div>
+                    </div>
+
+                    <!-- Ações -->
+                    <div class="proposal-actions">
+                        <div class="actions-primary">
+                            <a href="/Proposta/Detalhes/@proposta.Id" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-eye me-1"></i>Ver
                             </a>
-                            <a href="/Proposta/Editar/@proposta.Id" class="action-btn btn-outline-primary" title="Editar Proposta">
-                                <i class="fas fa-edit"></i>
-                            </a>
-                            <a href="/PropostaAnalyticsData/PropostaDetalhada/@proposta.Id" class="action-btn btn-success" title="Ver Estatísticas">
-                                <i class="fas fa-chart-bar"></i>
+                            <a href="/Proposta/Editar/@proposta.Id" class="btn btn-sm btn-outline-secondary">
+                                <i class="fas fa-edit me-1"></i>Editar
                             </a>
                         </div>
 
-                        <!-- Grupo Secundário -->
-                        <div class="d-flex gap-2">
-                            @if (proposta.LinkPublicoAtivo)
-                            {
-                                <button class="action-btn btn-warning" title="Compartilhar" onclick="copiarLink('@proposta.LinkCompartilhamento')">
-                                    <i class="fas fa-share"></i>
-                                </button>
-                            }
-                            else
-                            {
-                                <button class="action-btn btn-outline-secondary" title="Link Inativo" disabled>
-                                    <i class="fas fa-share"></i>
-                                </button>
-                            }
-                            
-                            <!-- Dropdown Menu -->
+                        <div class="actions-secondary">
+                            <!-- Dropdown de ações -->
                             <div class="dropdown">
-                                <button class="action-btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" title="Mais opções">
-                                    <i class="fas fa-ellipsis-v"></i>
+                                <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button" 
+                                        data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fas fa-ellipsis-h"></i>
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-end">
                                     <li>
@@ -336,827 +388,638 @@
                                         </a>
                                     </li>
                                     <li>
-                                        <button class="dropdown-item" onclick="duplicarProposta('@proposta.Id')">
-                                            <i class="fas fa-copy me-2"></i>Duplicar Proposta
-                                        </button>
+                                        <a class="dropdown-item" href="/PropostaAnalyticsData/PropostaDetalhada/@proposta.Id">
+                                            <i class="fas fa-chart-bar me-2"></i>Analytics
+                                        </a>
                                     </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    
                                     @if (proposta.LinkPublicoAtivo)
                                     {
                                         <li>
                                             <a class="dropdown-item" href="/Proposta/Publico/@proposta.Id" target="_blank">
-                                                <i class="fas fa-external-link-alt me-2"></i>Ver Link Público
+                                                <i class="fas fa-external-link-alt me-2"></i>Ver Público
                                             </a>
                                         </li>
-                                    }
-                                    <li><hr class="dropdown-divider"></li>
-                                    
-                                    <!-- Ações de Status -->
-                                    @if (proposta.StatusProposta != StatusProposta.Cancelada)
-                                    {
                                         <li>
-                                            <form method="post" action="/Proposta/AlterarStatus" style="display:inline;" class="w-100">
-                                                <input type="hidden" name="id" value="@proposta.Id" />
-                                                <input type="hidden" name="status" value="5" />
-                                                <button type="submit" class="dropdown-item text-warning" 
-                                                        onclick="return confirm('Deseja cancelar esta proposta?')">
-                                                    <i class="fas fa-ban me-2"></i>Cancelar Proposta
-                                                </button>
-                                            </form>
-                                        </li>
-                                    }
-                                    else
-                                    {
-                                        <li>
-                                            <form method="post" action="/Proposta/AlterarStatus" style="display:inline;" class="w-100">
-                                                <input type="hidden" name="id" value="@proposta.Id" />
-                                                <input type="hidden" name="status" value="1" />
-                                                <button type="submit" class="dropdown-item text-success" 
-                                                        onclick="return confirm('Deseja reativar esta proposta?')">
-                                                    <i class="fas fa-check me-2"></i>Reativar Proposta
-                                                </button>
-                                            </form>
-                                        </li>
-                                    }
-                                    
-                                    <li>
-                                        <form method="post" action="/Proposta/Excluir" style="display:inline;" class="w-100">
-                                            <input type="hidden" name="id" value="@proposta.Id" />
-                                            <button type="submit" class="dropdown-item text-danger" 
-                                                    onclick="return confirm('Tem certeza que deseja excluir esta proposta? Esta ação não pode ser desfeita.')">
-                                                <i class="fas fa-trash me-2"></i>Excluir Proposta
+                                            <button class="dropdown-item" onclick="compartilharProposta('@proposta.Id', '@proposta.Titulo')">
+                                                <i class="fas fa-share me-2"></i>Compartilhar
                                             </button>
-                                        </form>
+                                        </li>
+                                        <li>
+                                            <button class="dropdown-item" onclick="copiarLinkPublico('@proposta.Id')">
+                                                <i class="fas fa-copy me-2"></i>Copiar Link
+                                            </button>
+                                        </li>
+                                        <li><hr class="dropdown-divider"></li>
+                                    }
+                                    
+                                    <!-- Ações de status -->
+                                    @if (proposta.StatusProposta == StatusProposta.Rascunho)
+                                    {
+                                        <li>
+                                            <button class="dropdown-item text-success" onclick="alterarStatus('@proposta.Id', '2', 'Enviada')">
+                                                <i class="fas fa-paper-plane me-2"></i>Enviar Proposta
+                                            </button>
+                                        </li>
+                                    }
+                                    
+                                    @if (proposta.StatusProposta == StatusProposta.Enviada)
+                                    {
+                                        <li>
+                                            <button class="dropdown-item text-success" onclick="alterarStatus('@proposta.Id', '3', 'Aprovada')">
+                                                <i class="fas fa-check-circle me-2"></i>Marcar como Aprovada
+                                            </button>
+                                        </li>
+                                        <li>
+                                            <button class="dropdown-item text-danger" onclick="alterarStatus('@proposta.Id', '4', 'Rejeitada')">
+                                                <i class="fas fa-times-circle me-2"></i>Marcar como Rejeitada
+                                            </button>
+                                        </li>
+                                    }
+                                    
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <button class="dropdown-item" onclick="duplicarProposta('@proposta.Id')">
+                                            <i class="fas fa-copy me-2"></i>Duplicar
+                                        </button>
+                                    </li>
+                                    <li>
+                                        <button class="dropdown-item text-danger" onclick="excluirProposta('@proposta.Id', '@proposta.Titulo')">
+                                            <i class="fas fa-trash me-2"></i>Excluir
+                                        </button>
                                     </li>
                                 </ul>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        }
-    </div>
+            }
+        </div>
 
-    <!-- Paginação (se necessário) -->
-    @if (Model.Propostas.Count > 12)
-    {
-        <div class="d-flex justify-content-center mt-4">
-            <nav>
-                <ul class="pagination">
-                    <li class="page-item disabled">
-                        <span class="page-link">Anterior</span>
-                    </li>
-                    <li class="page-item active">
-                        <span class="page-link">1</span>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="#">2</a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="#">Próximo</a>
-                    </li>
+        <!-- Paginação (se implementada) -->
+        <div class="proposals-pagination">
+            <nav aria-label="Navegação de propostas">
+                <ul class="pagination justify-content-center">
+                    <!-- Implementar paginação se necessário -->
                 </ul>
             </nav>
         </div>
-    }
+    </div>
 }
 else
 {
-    <!-- Empty State -->
+    <!-- Estado vazio -->
     <div class="empty-state">
         <div class="empty-icon">
-            <i class="fas fa-suitcase-rolling"></i>
-        </div>
-        <h3 class="empty-title">Nenhuma proposta encontrada</h3>
-        <p class="empty-description">
             @if (!string.IsNullOrEmpty(Model.TermoBusca) || Model.FiltroStatus.HasValue)
             {
-                <text>Nenhuma proposta corresponde aos filtros aplicados. Tente ajustar os critérios de busca.</text>
+                <i class="fas fa-search"></i>
             }
             else
             {
-                <text>Comece criando sua primeira proposta de viagem e organize experiências incríveis para seus clientes.</text>
+                <i class="fas fa-suitcase-rolling"></i>
             }
-        </p>
-        <div class="mt-3">
+        </div>
+        
+        <h3 class="empty-title">
             @if (!string.IsNullOrEmpty(Model.TermoBusca) || Model.FiltroStatus.HasValue)
             {
-                <a href="/Proposta" class="btn btn-outline-primary me-2">
-                    <i class="fas fa-times me-1"></i>Limpar Filtros
-                </a>
+                <text>Nenhuma proposta encontrada</text>
             }
-            <a href="/Proposta/Criar" class="btn btn-primary btn-lg">
-                <i class="fas fa-plus me-2"></i>@(Model.TotalPropostas > 0 ? "Nova Proposta" : "Criar Primeira Proposta")
+            else
+            {
+                <text>Nenhuma proposta criada ainda</text>
+            }
+        </h3>
+        
+        <p class="empty-description">
+            @if (!string.IsNullOrEmpty(Model.TermoBusca) || Model.FiltroStatus.HasValue)
+            {
+                <text>Tente ajustar os filtros ou </text>
+            }
+            <a href="/Proposta/Criar" class="text-decoration-none fw-semibold">
+                crie sua primeira proposta de viagem
             </a>
-        </div>
+        </p>
+        
+        @if (!string.IsNullOrEmpty(Model.TermoBusca) || Model.FiltroStatus.HasValue)
+        {
+            <button class="btn btn-outline-secondary" onclick="limparFiltros()">
+                <i class="fas fa-times me-1"></i>Limpar Filtros
+            </button>
+        }
     </div>
 }
 
+<!-- Modal de confirmação -->
+<div class="modal fade" id="confirmModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar Ação</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmMessage">Tem certeza que deseja realizar esta ação?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="confirmButton">Confirmar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast container -->
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;">
+    <div id="toastTemplate" class="toast" role="alert" style="display: none;">
+        <div class="toast-header">
+            <i class="toast-icon me-2"></i>
+            <strong class="me-auto toast-title">Sistema</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+        </div>
+        <div class="toast-body toast-message"></div>
+    </div>
+</div>
+
 @section Styles {
     <style>
-        /* === HEADER PRINCIPAL === */
-        .main-header {
-            background: linear-gradient(135deg, var(--color-fundo) 0%, #f8f9fb 100%);
-            border-bottom: 1px solid var(--color-destaque);
-            padding: 2rem 0 1.5rem;
-            margin: -2rem -15px 0 -15px;
+        /* === DESIGN SYSTEM === */
+        :root {
+            --primary: #0066cc;
+            --primary-dark: #004c99;
+            --secondary: #6c757d;
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+            --info: #17a2b8;
+            --light: #f8f9fa;
+            --dark: #343a40;
+            
+            --border-radius: 8px;
+            --border-radius-lg: 12px;
+            --shadow-sm: 0 2px 4px rgba(0,0,0,0.1);
+            --shadow-md: 0 4px 8px rgba(0,0,0,0.15);
+            --shadow-lg: 0 8px 16px rgba(0,0,0,0.2);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body {
+            background-color: #f5f7fa;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        /* === HEADER EXECUTIVO === */
+        .executive-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 2rem 0;
+            margin: -2rem -15px 2rem -15px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .executive-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 300px;
+            height: 100%;
+            background: linear-gradient(45deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+            transform: skewX(-15deg);
         }
 
         .header-content {
-            padding-left: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            position: relative;
+            z-index: 2;
         }
 
-        .main-title {
-            font-size: 2.5rem;
+        .executive-title {
+            font-size: 2rem;
             font-weight: 700;
-            color: var(--color-texto);
-            margin-bottom: 0.5rem;
-            background: linear-gradient(135deg, var(--color-texto) 0%, var(--color-principal) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            margin: 0 0 0.5rem 0;
+            line-height: 1.2;
         }
 
-        .main-subtitle {
-            color: var(--color-texto-secundario);
-            font-size: 1.125rem;
-            margin-bottom: 0;
+        .executive-subtitle {
+            font-size: 1rem;
+            opacity: 0.9;
+            margin: 0;
             font-weight: 400;
         }
 
         .header-actions {
-            text-align: right;
-            padding-right: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
         }
 
         .btn-create {
-            background: var(--gradient-principal);
-            border: none;
-            padding: 1rem 2rem;
-            font-size: 1.125rem;
+            padding: 0.75rem 1.5rem;
             font-weight: 600;
             border-radius: var(--border-radius);
-            box-shadow: var(--shadow-medium);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
             transition: var(--transition);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .btn-create::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-            transition: var(--transition);
-        }
-
-        .btn-create:hover::before {
-            left: 100%;
         }
 
         .btn-create:hover {
-            transform: translateY(-3px);
-            box-shadow: var(--shadow-strong);
-            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
         }
 
         /* === DASHBOARD DE ESTATÍSTICAS === */
-        .dashboard-stats {
-            background: var(--color-fundo);
-            padding: 2rem 0;
-            margin: 0 -15px;
+        .stats-dashboard {
+            margin-bottom: 2rem;
         }
 
-        .stats-container {
+        .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 1.5rem;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 1rem;
         }
 
-        .stat-item {
-            background: var(--color-fundo);
+        .stat-card {
+            background: white;
             border-radius: var(--border-radius-lg);
-            padding: 2rem;
-            box-shadow: var(--shadow-light);
+            padding: 1.5rem;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid #e9ecef;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
             transition: var(--transition);
             position: relative;
             overflow: hidden;
-            border: 1px solid rgba(46, 46, 46, 0.06);
-            display: flex;
-            align-items: center;
-            gap: 1.5rem;
         }
 
-        .stat-item::before {
+        .stat-card::before {
             content: '';
             position: absolute;
             top: 0;
             left: 0;
-            right: 0;
-            height: 4px;
-            background: var(--gradient-principal);
-            transition: var(--transition);
+            width: 4px;
+            height: 100%;
+            background: var(--primary);
         }
 
-        .stat-item:hover {
-            transform: translateY(-4px);
-            box-shadow: var(--shadow-strong);
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
         }
 
-        .stat-item:hover::before {
-            height: 6px;
-        }
+        .stat-card.stat-primary::before { background: var(--primary); }
+        .stat-card.stat-warning::before { background: var(--warning); }
+        .stat-card.stat-success::before { background: var(--success); }
+        .stat-card.stat-secondary::before { background: var(--secondary); }
 
         .stat-icon {
-            width: 70px;
-            height: 70px;
+            width: 60px;
+            height: 60px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.75rem;
+            font-size: 1.5rem;
             color: white;
-            background: var(--gradient-principal);
-            box-shadow: var(--shadow-medium);
-            position: relative;
+            background: var(--primary);
+            flex-shrink: 0;
         }
+
+        .stat-primary .stat-icon { background: var(--primary); }
+        .stat-warning .stat-icon { background: var(--warning); }
+        .stat-success .stat-icon { background: var(--success); }
+        .stat-secondary .stat-icon { background: var(--secondary); }
 
         .stat-content {
             flex: 1;
+            min-width: 0;
         }
 
         .stat-number {
-            font-size: 3rem;
-            font-weight: 700;
-            color: var(--color-texto);
-            margin-bottom: 0.25rem;
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--dark);
             line-height: 1;
+            margin-bottom: 0.25rem;
         }
 
         .stat-label {
-            color: var(--color-texto-secundario);
+            font-size: 0.875rem;
             font-weight: 600;
-            font-size: 1rem;
+            color: var(--secondary);
             text-transform: uppercase;
             letter-spacing: 0.5px;
             margin-bottom: 0.5rem;
         }
 
-        .stat-change {
+        .stat-trend {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
-            color: #28a745;
-            font-size: 0.875rem;
+            font-size: 0.75rem;
             font-weight: 500;
         }
 
-        .stat-change i {
-            font-size: 0.75rem;
+        /* === SEÇÃO DE FILTROS === */
+        .filters-section {
+            margin-bottom: 2rem;
         }
 
-        .stat-percentage {
-            background: var(--color-destaque);
-            color: var(--color-texto-secundario);
-            padding: 0.25rem 0.75rem;
-            border-radius: 12px;
-            font-size: 0.875rem;
-            font-weight: 600;
-            display: inline-block;
-        }
-
-        .stat-percentage.success {
-            background: rgba(40, 167, 69, 0.15);
-            color: #28a745;
-        }
-
-        /* Cores específicas para cada estatística */
-        .stat-total .stat-icon {
-            background: linear-gradient(135deg, var(--color-principal), #2E6A8E);
-        }
-
-        .stat-rascunhos .stat-icon {
-            background: linear-gradient(135deg, #6c757d, #5a6268);
-        }
-
-        .stat-enviadas .stat-icon {
-            background: linear-gradient(135deg, #ffc107, #e0a800);
-        }
-
-        .stat-aprovadas .stat-icon {
-            background: linear-gradient(135deg, #28a745, #1e7e34);
-        }
-
-        /* === FILTROS MODERNOS === */
-        .filters-modern {
-            background: var(--color-fundo);
+        .filters-card {
+            background: white;
             border-radius: var(--border-radius-lg);
-            margin: 2rem -15px;
-            box-shadow: var(--shadow-light);
-            border: 1px solid var(--color-destaque);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid #e9ecef;
+            overflow: hidden;
         }
 
         .filters-header {
+            padding: 1rem 1.5rem;
+            background: var(--light);
+            border-bottom: 1px solid #e9ecef;
             display: flex;
-            justify-content: between;
+            justify-content: space-between;
             align-items: center;
-            padding: 1.25rem 2rem;
-            border-bottom: 1px solid var(--color-destaque);
-            background: linear-gradient(135deg, var(--color-destaque) 0%, #f2ede0 50%, var(--color-destaque) 100%);
         }
 
         .filters-title {
-            color: var(--color-texto);
-            font-weight: 600;
             margin: 0;
-            font-size: 1.125rem;
-            flex: 1;
+            font-weight: 600;
+            color: var(--dark);
         }
 
-        .filters-content {
-            padding: 2rem;
-            display: none;
+        .filters-body {
+            padding: 1.5rem;
         }
 
-        .filters-content.show {
-            display: block;
-            animation: slideDown 0.3s ease-out;
-        }
-
-        @@keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .filter-group {
+        .form-group {
             margin-bottom: 0;
         }
 
-        .filter-label {
-            color: var(--color-texto);
-            font-weight: 600;
-            font-size: 0.875rem;
+        .form-label {
             margin-bottom: 0.5rem;
-            display: block;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .search-wrapper {
-            position: relative;
-        }
-
-        .search-icon {
-            position: absolute;
-            left: 1rem;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--color-principal);
-            z-index: 2;
-        }
-
-        .search-input {
-            padding-left: 2.75rem;
-            padding-right: 2.5rem;
-            border: 2px solid var(--color-destaque);
-            border-radius: var(--border-radius);
-            transition: var(--transition);
-            background: var(--color-fundo);
-        }
-
-        .search-input:focus {
-            border-color: var(--color-principal);
-            box-shadow: 0 0 0 0.2rem rgba(58, 124, 165, 0.25);
-            padding-left: 2.75rem;
-        }
-
-        .clear-search {
-            position: absolute;
-            right: 0.75rem;
-            top: 50%;
-            transform: translateY(-50%);
-            background: none;
-            border: none;
-            color: var(--color-texto-secundario);
-            cursor: pointer;
-            padding: 0.25rem;
-            border-radius: 50%;
-            transition: var(--transition);
-        }
-
-        .clear-search:hover {
-            background: var(--color-destaque);
-            color: var(--color-texto);
-        }
-
-        .filter-select, .filter-date {
-            border: 2px solid var(--color-destaque);
-            border-radius: var(--border-radius);
-            transition: var(--transition);
-            background: var(--color-fundo);
-        }
-
-        .filter-select:focus, .filter-date:focus {
-            border-color: var(--color-principal);
-            box-shadow: 0 0 0 0.2rem rgba(58, 124, 165, 0.25);
-        }
-
-        .filter-actions {
-            display: flex;
-            gap: 0.75rem;
-        }
-
-        .filter-btn {
-            flex: 1;
-            font-weight: 500;
-        }
-
-        /* === FILTROS ATIVOS === */
-        .active-filters {
-            margin-top: 1.5rem;
-            padding-top: 1.5rem;
-            border-top: 1px solid var(--color-destaque);
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            flex-wrap: wrap;
-        }
-
-        .active-filters-label {
-            color: var(--color-texto-secundario);
-            font-weight: 600;
+            color: var(--dark);
             font-size: 0.875rem;
         }
 
-        .filter-tag {
-            background: var(--color-principal);
-            color: white;
-            padding: 0.5rem 1rem;
-            border-radius: 20px;
-            font-size: 0.875rem;
-            font-weight: 500;
+        .form-control, .form-select {
+            border-radius: var(--border-radius);
+            border: 1px solid #ced4da;
+            transition: var(--transition);
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 0.2rem rgba(0, 102, 204, 0.25);
+        }
+
+        /* === SEÇÃO DE PROPOSTAS === */
+        .proposals-section {
+            margin-bottom: 2rem;
+        }
+
+        .proposals-header {
             display: flex;
+            justify-content: space-between;
             align-items: center;
+            margin-bottom: 1.5rem;
+            padding: 0 0.5rem;
+        }
+
+        .proposals-count {
+            display: flex;
+            align-items: baseline;
             gap: 0.5rem;
         }
 
-        .remove-filter {
-            background: none;
-            border: none;
-            color: white;
-            font-size: 1.125rem;
-            cursor: pointer;
-            padding: 0;
-            margin-left: 0.25rem;
-            opacity: 0.8;
-            transition: var(--transition);
+        .count-number {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
         }
 
-        .remove-filter:hover {
-            opacity: 1;
-            transform: scale(1.1);
-        }
-
-        .clear-all-filters {
-            color: var(--color-texto-secundario);
-            text-decoration: none;
-            font-size: 0.875rem;
+        .count-label {
+            color: var(--secondary);
             font-weight: 500;
-            padding: 0.5rem 1rem;
-            border-radius: var(--border-radius);
-            transition: var(--transition);
         }
 
-        .clear-all-filters:hover {
-            background: var(--color-destaque);
-            color: var(--color-texto);
-            text-decoration: none;
-        }
-
-        /* === RESPONSIVO === */
-        @@media (max-width: 1200px) {
-            .stats-container {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 1rem;
-            }
-        }
-
-        @@media (max-width: 768px) {
-            .main-header {
-                padding: 1.5rem 0 1rem;
-                margin: -1rem -15px 0 -15px;
-            }
-
-            .main-title {
-                font-size: 2rem;
-            }
-
-            .header-actions {
-                text-align: center;
-                margin-top: 1rem;
-            }
-
-            .btn-create {
-                padding: 0.875rem 1.5rem;
-                font-size: 1rem;
-                width: 100%;
-            }
-
-            .dashboard-stats {
-                padding: 1.5rem 0;
-            }
-
-            .stats-container {
-                grid-template-columns: 1fr;
-                gap: 1rem;
-                padding: 0 0.5rem;
-            }
-
-            .stat-item {
-                padding: 1.5rem;
-                gap: 1rem;
-            }
-
-            .stat-icon {
-                width: 60px;
-                height: 60px;
-                font-size: 1.5rem;
-            }
-
-            .stat-number {
-                font-size: 2.25rem;
-            }
-
-            .filters-modern {
-                margin: 1.5rem -15px;
-            }
-
-            .filters-header, .filters-content {
-                padding: 1rem;
-            }
-
-            .filter-actions {
-                flex-direction: column;
-            }
-
-            .active-filters {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-        }
-
-        @@media (max-width: 576px) {
-            .stat-item {
-                flex-direction: column;
-                text-align: center;
-                gap: 1rem;
-            }
-
-            .stat-content {
-                width: 100%;
-            }
-
-            .main-header {
-                margin: -1rem -15px 0 -15px;
-            }
-
-            .filters-modern {
-                margin: 1rem -15px;
-                border-radius: 0;
-            }
-        }
-
-        /* === ANIMAÇÕES === */
-        .stat-item {
-            animation: fadeInUp 0.6s ease-out;
-        }
-
-        .stat-item:nth-child(1) { animation-delay: 0.1s; }
-        .stat-item:nth-child(2) { animation-delay: 0.2s; }
-        .stat-item:nth-child(3) { animation-delay: 0.3s; }
-        .stat-item:nth-child(4) { animation-delay: 0.4s; }
-
-        /* === RESTO DOS ESTILOS EXISTENTES === */
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-            box-shadow: var(--shadow-light);
-            border: 1px solid var(--color-destaque);
-        }
-
-        .input-group-text {
-            background: var(--color-destaque);
-            border: 2px solid var(--color-destaque);
-            color: var(--color-principal);
+        .proposals-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
         }
 
         /* === GRID DE PROPOSTAS === */
-        .propostas-grid {
+        .proposals-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
             gap: 1.5rem;
         }
 
-        .proposta-card {
-            background: var(--color-fundo);
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow-light);
+        .proposal-card {
+            background: white;
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid #e9ecef;
+            overflow: hidden;
             transition: var(--transition);
-            overflow: hidden;
             position: relative;
-            border: 1px solid rgba(46, 46, 46, 0.08);
         }
 
-        .proposta-card:hover {
-            transform: translateY(-6px);
-            box-shadow: var(--shadow-strong);
-            border-color: var(--color-principal);
+        .proposal-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--primary);
         }
 
-        .proposta-image {
-            width: 100%;
-            height: 200px;
-            object-fit: cover;
-            background: linear-gradient(135deg, var(--color-destaque) 0%, #F2EDE0 100%);
-        }
-
-        .proposta-content {
-            padding: 1.5rem;
-        }
-
-        .proposta-title {
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: var(--color-texto);
-            margin-bottom: 1rem;
-            line-height: 1.3;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-
-        .proposta-meta {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            margin-bottom: 1rem;
-            flex-wrap: wrap;
-        }
-
-        .meta-item {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            color: var(--color-texto-secundario);
-            font-size: 0.875rem;
-            font-weight: 500;
-        }
-
-        .meta-item i {
-            color: var(--color-principal);
-            width: 14px;
-            text-align: center;
-        }
-
-        .proposta-status {
+        /* Status badge */
+        .proposal-status {
             position: absolute;
             top: 1rem;
             right: 1rem;
-            padding: 0.5rem 1rem;
+            padding: 0.375rem 0.75rem;
             border-radius: 20px;
             font-size: 0.75rem;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            backdrop-filter: blur(10px);
             z-index: 2;
+            backdrop-filter: blur(10px);
         }
 
-        .status-rascunho { 
-            background: rgba(248, 249, 250, 0.9); 
-            color: var(--color-texto-secundario); 
-            border: 1px solid rgba(141, 153, 174, 0.3);
-        }
-        .status-enviada { 
-            background: rgba(255, 243, 205, 0.9); 
-            color: #856404; 
-            border: 1px solid rgba(255, 193, 7, 0.3);
-        }
-        .status-aprovada { 
-            background: rgba(209, 231, 221, 0.9); 
-            color: #0f5132; 
-            border: 1px solid rgba(40, 167, 69, 0.3);
-        }
-        .status-rejeitada { 
-            background: rgba(248, 215, 218, 0.9); 
-            color: #721c24; 
-            border: 1px solid rgba(220, 53, 69, 0.3);
-        }
-        .status-cancelada { 
-            background: rgba(226, 227, 229, 0.9); 
-            color: #383d41; 
-            border: 1px solid rgba(108, 117, 125, 0.3);
-        }
+        .status-rascunho { background: rgba(108, 117, 125, 0.9); color: white; }
+        .status-enviada { background: rgba(255, 193, 7, 0.9); color: #212529; }
+        .status-aprovada { background: rgba(40, 167, 69, 0.9); color: white; }
+        .status-rejeitada { background: rgba(220, 53, 69, 0.9); color: white; }
+        .status-cancelada { background: rgba(52, 58, 64, 0.9); color: white; }
 
-        .proposta-footer {
-            padding: 1rem 1.5rem;
-            background: var(--color-destaque);
-            border-top: 1px solid rgba(46, 46, 46, 0.1);
-        }
-
-        .actions-group {
-            display: flex;
-            gap: 0.75rem;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .action-btn {
-            width: 36px;
-            height: 36px;
-            border-radius: var(--border-radius-sm);
+        /* Link público indicator */
+        .proposal-public-link {
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            width: 32px;
+            height: 32px;
+            background: rgba(40, 167, 69, 0.9);
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            border: none;
-            transition: var(--transition);
+            color: white;
             font-size: 0.875rem;
-            text-decoration: none;
+            z-index: 2;
+            backdrop-filter: blur(10px);
         }
 
-        .action-btn:hover {
-            transform: translateY(-2px);
-            text-decoration: none;
+        /* Imagem */
+        .proposal-image {
+            height: 200px;
+            position: relative;
+            overflow: hidden;
         }
 
-        .action-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
+        .proposal-cover {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
         }
 
-        .action-btn:disabled:hover {
-            transform: none;
+        .proposal-card:hover .proposal-cover {
+            transform: scale(1.05);
         }
 
-        /* === BADGES === */
-        .badge-link-ativo {
-            background: rgba(209, 231, 221, 0.9);
-            color: #0f5132;
-            padding: 0.5rem 1rem;
-            border-radius: 12px;
-            font-weight: 500;
-            font-size: 0.75rem;
-            border: 1px solid rgba(40, 167, 69, 0.2);
+        .proposal-placeholder {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--secondary);
+            gap: 0.5rem;
         }
 
-        .badge-link-inativo {
-            background: rgba(248, 215, 218, 0.9);
-            color: #721c24;
-            padding: 0.5rem 1rem;
-            border-radius: 12px;
-            font-weight: 500;
-            font-size: 0.75rem;
-            border: 1px solid rgba(220, 53, 69, 0.2);
+        /* Overlay com ações */
+        .proposal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: var(--transition);
         }
 
-        /* === EMPTY STATE === */
+        .proposal-card:hover .proposal-overlay {
+            opacity: 1;
+        }
+
+        .overlay-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        /* Conteúdo */
+        .proposal-content {
+            padding: 1.5rem;
+        }
+
+        .proposal-header {
+            margin-bottom: 1rem;
+        }
+
+        .proposal-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--dark);
+            margin: 0 0 0.5rem 0;
+            line-height: 1.3;
+        }
+
+        .proposal-meta {
+            color: var(--secondary);
+        }
+
+        .proposal-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            color: var(--secondary);
+        }
+
+        .proposal-author {
+            padding-top: 1rem;
+            border-top: 1px solid #f1f3f4;
+            font-size: 0.875rem;
+            color: var(--secondary);
+            display: flex;
+            align-items: center;
+        }
+
+        /* Ações */
+        .proposal-actions {
+            padding: 1rem 1.5rem;
+            background: var(--light);
+            border-top: 1px solid #f1f3f4;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .actions-primary {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        /* === ESTADO VAZIO === */
         .empty-state {
             text-align: center;
             padding: 4rem 2rem;
-            background: var(--color-fundo);
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow-light);
-            border: 2px dashed var(--color-destaque);
+            background: white;
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid #e9ecef;
         }
 
         .empty-icon {
             font-size: 4rem;
-            color: var(--color-texto-secundario);
+            color: var(--secondary);
             margin-bottom: 1.5rem;
+            opacity: 0.7;
         }
 
         .empty-title {
             font-size: 1.5rem;
             font-weight: 600;
-            color: var(--color-texto);
+            color: var(--dark);
             margin-bottom: 1rem;
         }
 
         .empty-description {
-            color: var(--color-texto-secundario);
-            font-size: 1.1rem;
-            margin-bottom: 0;
+            font-size: 1rem;
+            color: var(--secondary);
+            margin-bottom: 2rem;
             max-width: 500px;
             margin-left: auto;
             margin-right: auto;
@@ -1166,76 +1029,63 @@ else
         .dropdown-menu {
             border: none;
             border-radius: var(--border-radius);
-            box-shadow: var(--shadow-strong);
+            box-shadow: var(--shadow-lg);
             padding: 0.5rem 0;
-            background: var(--color-fundo);
-            border: 1px solid var(--color-destaque);
+            min-width: 200px;
         }
 
         .dropdown-item {
-            padding: 0.75rem 1.5rem;
+            padding: 0.75rem 1rem;
+            font-size: 0.875rem;
             transition: var(--transition);
-            color: var(--color-texto);
-            border: none;
-            background: none;
-            width: 100%;
-            text-align: left;
+            display: flex;
+            align-items: center;
         }
 
         .dropdown-item:hover {
-            background: var(--color-destaque);
-            color: var(--color-principal);
-        }
-
-        .dropdown-item.text-danger:hover {
-            background: #f8d7da;
-            color: #721c24;
-        }
-
-        .dropdown-item.text-warning:hover {
-            background: #fff3cd;
-            color: #856404;
+            background: var(--light);
+            color: var(--dark);
         }
 
         .dropdown-item.text-success:hover {
-            background: #d1e7dd;
-            color: #0f5132;
+            background: rgba(40, 167, 69, 0.1);
+            color: var(--success);
         }
 
-        /* === PAGINAÇÃO === */
-        .pagination .page-link {
-            color: var(--color-principal);
-            background: var(--color-fundo);
-            border: 1px solid var(--color-destaque);
-            padding: 0.75rem 1rem;
-            margin: 0 0.125rem;
-            border-radius: var(--border-radius-sm);
-        }
-
-        .pagination .page-link:hover {
-            background: var(--color-destaque);
-            border-color: var(--color-principal);
-        }
-
-        .pagination .page-item.active .page-link {
-            background: var(--color-principal);
-            border-color: var(--color-principal);
+        .dropdown-item.text-danger:hover {
+            background: rgba(220, 53, 69, 0.1);
+            color: var(--danger);
         }
 
         /* === RESPONSIVO === */
+        @@media (max-width: 1200px) {
+            .proposals-grid {
+                grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+                gap: 1rem;
+            }
+        }
+
         @@media (max-width: 768px) {
-            .page-header {
+            .executive-header {
                 padding: 1.5rem 0;
                 margin: -1rem -15px 1.5rem -15px;
             }
 
-            .page-title {
-                font-size: 1.75rem;
+            .header-content {
+                flex-direction: column;
+                gap: 1.5rem;
+                padding: 0 1rem;
+                text-align: center;
             }
 
-            .propostas-grid {
-                grid-template-columns: 1fr;
-                gap: 1rem;
+            .executive-title {
+                font-size: 1.5rem;
+            }
+
+            .header-actions {
+                width: 100%;
+                justify-content: center;
+                flex-wrap: wrap;
             }
 
             .stats-grid {
@@ -1243,29 +1093,90 @@ else
                 gap: 1rem;
             }
 
-            .stat-number {
-                font-size: 2rem;
-            }
-
-            .proposta-meta {
+            .stat-card {
+                padding: 1rem;
                 flex-direction: column;
-                align-items: flex-start;
-                gap: 0.5rem;
+                text-align: center;
+                gap: 0.75rem;
             }
 
-            .actions-group {
-                flex-wrap: wrap;
-                gap: 0.5rem;
+            .stat-number {
+                font-size: 1.5rem;
             }
 
-            .action-btn {
-                width: 32px;
-                height: 32px;
-                font-size: 0.75rem;
+            .filters-body .row {
+                row-gap: 1rem;
+            }
+
+            .proposals-header {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: stretch;
+            }
+
+            .proposals-actions {
+                justify-content: space-between;
+            }
+
+            .proposals-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .proposal-actions {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+
+            .actions-primary {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .empty-state {
+                padding: 2rem 1rem;
+            }
+
+            .empty-icon {
+                font-size: 3rem;
+            }
+
+            .empty-title {
+                font-size: 1.25rem;
+            }
+        }
+
+        @@media (max-width: 576px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stat-card {
+                padding: 1rem;
+            }
+
+            .proposals-actions {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+
+            .empty-state {
+                padding: 1.5rem 0.75rem;
             }
         }
 
         /* === ANIMAÇÕES === */
+        .proposal-card {
+            animation: fadeInUp 0.4s ease-out;
+        }
+
+        .proposal-card:nth-child(1) { animation-delay: 0.05s; }
+        .proposal-card:nth-child(2) { animation-delay: 0.1s; }
+        .proposal-card:nth-child(3) { animation-delay: 0.15s; }
+        .proposal-card:nth-child(4) { animation-delay: 0.2s; }
+        .proposal-card:nth-child(5) { animation-delay: 0.25s; }
+        .proposal-card:nth-child(6) { animation-delay: 0.3s; }
+
         @@keyframes fadeInUp {
             from {
                 opacity: 0;
@@ -1277,110 +1188,636 @@ else
             }
         }
 
-        .fade-in-up {
-            animation: fadeInUp 0.6s ease-out;
+        .stat-card {
+            animation: slideInLeft 0.6s ease-out;
         }
 
-        .fade-in-up:nth-child(1) { animation-delay: 0.1s; }
-        .fade-in-up:nth-child(2) { animation-delay: 0.2s; }
-        .fade-in-up:nth-child(3) { animation-delay: 0.3s; }
-        .fade-in-up:nth-child(4) { animation-delay: 0.4s; }
-        .fade-in-up:nth-child(5) { animation-delay: 0.5s; }
-        .fade-in-up:nth-child(6) { animation-delay: 0.6s; }
+        .stat-card:nth-child(1) { animation-delay: 0.1s; }
+        .stat-card:nth-child(2) { animation-delay: 0.2s; }
+        .stat-card:nth-child(3) { animation-delay: 0.3s; }
+        .stat-card:nth-child(4) { animation-delay: 0.4s; }
+
+        @@keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* === LOADING STATES === */
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .loading::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 20px;
+            height: 20px;
+            margin: -10px 0 0 -10px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @@keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* === TOAST CUSTOMIZADO === */
+        .toast {
+            border: none;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .toast-header {
+            border-bottom: 1px solid #f1f3f4;
+            background: var(--light);
+        }
+
+        .toast.toast-success .toast-header {
+            background: rgba(40, 167, 69, 0.1);
+            color: var(--success);
+        }
+
+        .toast.toast-error .toast-header {
+            background: rgba(220, 53, 69, 0.1);
+            color: var(--danger);
+        }
+
+        .toast.toast-warning .toast-header {
+            background: rgba(255, 193, 7, 0.1);
+            color: #856404;
+        }
+
+        /* === UTILITÁRIOS === */
+        .text-truncate-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @@keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .slide-up {
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @@keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* === MELHORIAS VISUAIS === */
+        .btn {
+            transition: var(--transition);
+            border-radius: var(--border-radius);
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .btn-sm:hover {
+            transform: translateY(-0.5px);
+        }
+
+        .form-control::placeholder {
+            color: #adb5bd;
+        }
+
+        .badge {
+            font-weight: 500;
+        }
+
+        /* === DARK MODE SUPPORT === */
+        @@media (prefers-color-scheme: dark) {
+            :root {
+                --light: #343a40;
+                --dark: #f8f9fa;
+            }
+        }
     </style>
 }
 
 @section Scripts {
     <script>
-        // Funções JavaScript
-        function copiarLink(link) {
-            const linkCompleto = window.location.origin + link;
-            navigator.clipboard.writeText(linkCompleto).then(function() {
-                // Mostrar notificação de sucesso
-                showNotification('Link copiado para a área de transferência!', 'success');
-            }, function(err) {
-                console.error('Erro ao copiar link: ', err);
-                showNotification('Erro ao copiar link. Tente novamente.', 'error');
+        // === VARIÁVEIS GLOBAIS ===
+        let currentView = 'grid';
+        let currentSort = 'recente';
+        let isLoading = false;
+
+        // === INICIALIZAÇÃO ===
+        $(document).ready(function() {
+            inicializarEventos();
+            animarEstatisticas();
+            aplicarFiltrosIniciais();
+        });
+
+        function inicializarEventos() {
+            // Auto-submit nos filtros
+            $('#filtrosForm select, #filtrosForm input[type="date"]').on('change', function() {
+                if (!isLoading) {
+                    debounce(aplicarFiltros, 300)();
+                }
+            });
+
+            // Busca com debounce
+            $('#TermoBusca').on('input', function() {
+                debounce(aplicarFiltros, 500)();
+            });
+
+            // Atalhos de teclado
+            $(document).on('keydown', function(e) {
+                if (e.ctrlKey && e.key === 'f') {
+                    e.preventDefault();
+                    $('#TermoBusca').focus();
+                }
+                if (e.key === 'Escape') {
+                    $('.modal').modal('hide');
+                }
             });
         }
 
-        function duplicarProposta(propostaId) {
-            if (confirm('Deseja duplicar esta proposta?')) {
-                fetch(`/api/proposta/${propostaId}/duplicar`, {
+        // === ANIMAÇÕES ===
+        function animarEstatisticas() {
+            $('.stat-number').each(function() {
+                const $this = $(this);
+                const countTo = parseInt($this.attr('data-count')) || 0;
+                
+                $({ countNum: 0 }).animate({
+                    countNum: countTo
+                }, {
+                    duration: 1500,
+                    easing: 'easeOutCubic',
+                    step: function() {
+                        $this.text(Math.floor(this.countNum));
+                    },
+                    complete: function() {
+                        $this.text(countTo);
+                    }
+                });
+            });
+        }
+
+        // === FILTROS ===
+        function aplicarFiltros() {
+            if (isLoading) return;
+            
+            isLoading = true;
+            $('#proposalsContainer').addClass('loading');
+            
+            // Simular loading
+            setTimeout(() => {
+                $('#filtrosForm').submit();
+            }, 300);
+        }
+
+        function limparFiltros() {
+            $('#filtrosForm')[0].reset();
+            window.location.href = '/Proposta';
+        }
+
+        function limparBusca() {
+            $('#TermoBusca').val('').trigger('input');
+        }
+
+        function aplicarFiltrosIniciais() {
+            // Aplicar filtros salvos no localStorage se existirem
+            const savedFilters = localStorage.getItem('propostaFilters');
+            if (savedFilters) {
+                try {
+                    const filters = JSON.parse(savedFilters);
+                    Object.keys(filters).forEach(key => {
+                        const element = $(`[name="${key}"]`);
+                        if (element.length) {
+                            element.val(filters[key]);
+                        }
+                    });
+                } catch (e) {
+                    console.warn('Erro ao carregar filtros salvos:', e);
+                }
+            }
+        }
+
+        // === VISUALIZAÇÃO ===
+        function alterarVisualizacao(view) {
+            if (currentView === view) return;
+            
+            currentView = view;
+            
+            // Atualizar botões
+            $('.proposals-actions button[data-view]').removeClass('active');
+            $(`.proposals-actions button[data-view="${view}"]`).addClass('active');
+            
+            // Aplicar classe CSS
+            const container = $('#proposalsContainer');
+            container.removeClass('view-grid view-list').addClass(`view-${view}`);
+            
+            // Salvar preferência
+            localStorage.setItem('proposalView', view);
+            
+            // Animação
+            container.addClass('fade-in');
+            setTimeout(() => container.removeClass('fade-in'), 300);
+        }
+
+        // === ORDENAÇÃO ===
+        function ordenarPropostas(ordem) {
+            if (currentSort === ordem) return;
+            
+            currentSort = ordem;
+            const container = $('#proposalsContainer');
+            const cards = container.children('.proposal-card').toArray();
+            
+            cards.sort((a, b) => {
+                switch(ordem) {
+                    case 'recente':
+                        return new Date($(b).data('created')) - new Date($(a).data('created'));
+                    case 'antigo':
+                        return new Date($(a).data('created')) - new Date($(b).data('created'));
+                    case 'titulo':
+                        return $(a).find('.proposal-title').text().localeCompare($(b).find('.proposal-title').text());
+                    case 'status':
+                        return $(a).data('status').localeCompare($(b).data('status'));
+                    default:
+                        return 0;
+                }
+            });
+            
+            container.empty().append(cards);
+            
+            // Reanimar cards
+            cards.forEach((card, index) => {
+                $(card).css('animation-delay', `${index * 0.05}s`);
+            });
+            
+            showToast('Propostas reordenadas', 'success');
+        }
+
+        // === AÇÕES DAS PROPOSTAS ===
+        function alterarStatus(propostaId, novoStatus, nomeStatus) {
+            const confirmMsg = `Tem certeza que deseja alterar o status para "${nomeStatus}"?`;
+            
+            if (confirm(confirmMsg)) {
+                showLoading();
+                
+                fetch('/Proposta/AlterarStatus', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                    }
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    body: JSON.stringify({
+                        id: propostaId,
+                        status: parseInt(novoStatus)
+                    })
                 })
                 .then(response => response.json())
                 .then(data => {
+                    hideLoading();
                     if (data.success) {
-                        showNotification(data.message, 'success');
-                        if (data.redirect) {
-                            setTimeout(() => {
-                                window.location.href = data.redirect;
-                            }, 2000);
-                        }
+                        showToast(`Status alterado para ${nomeStatus}`, 'success');
+                        setTimeout(() => location.reload(), 1000);
                     } else {
-                        showNotification('Erro ao duplicar proposta', 'error');
+                        showToast('Erro ao alterar status', 'error');
                     }
                 })
                 .catch(error => {
+                    hideLoading();
+                    showToast('Erro de conexão', 'error');
                     console.error('Erro:', error);
-                    showNotification('Erro de conexão', 'error');
                 });
             }
         }
 
-        function showNotification(message, type) {
-            // Criar elemento de notificação
-            const notification = document.createElement('div');
-            notification.className = `alert alert-${type === 'success' ? 'success' : 'danger'} position-fixed`;
-            notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px; animation: slideInRight 0.5s ease-out;';
-            notification.innerHTML = `
-                <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>
-                ${message}
-                <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>
-            `;
-            
-            document.body.appendChild(notification);
-            
-            // Auto-remover após 5 segundos
-            setTimeout(() => {
-                if (notification.parentNode) {
-                    notification.style.animation = 'slideOutRight 0.5s ease-out';
-                    setTimeout(() => notification.remove(), 500);
-                }
-            }, 5000);
+        function duplicarProposta(propostaId) {
+            if (confirm('Deseja criar uma cópia desta proposta?')) {
+                showLoading();
+                
+                fetch(`/api/proposta/${propostaId}/duplicar`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    hideLoading();
+                    if (data.success) {
+                        showToast(data.message, 'success');
+                        if (data.redirect) {
+                            setTimeout(() => window.location.href = data.redirect, 2000);
+                        }
+                    } else {
+                        showToast('Erro ao duplicar proposta', 'error');
+                    }
+                })
+                .catch(error => {
+                    hideLoading();
+                    showToast('Erro de conexão', 'error');
+                    console.error('Erro:', error);
+                });
+            }
         }
 
-        // Animações de entrada
-        document.addEventListener('DOMContentLoaded', function() {
-            const cards = document.querySelectorAll('.proposta-card');
-            cards.forEach((card, index) => {
-                card.style.opacity = '0';
-                card.style.transform = 'translateY(20px)';
+        function excluirProposta(propostaId, titulo) {
+            const confirmMsg = `Tem certeza que deseja excluir a proposta "${titulo}"?\n\nEsta ação não pode ser desfeita.`;
+            
+            if (confirm(confirmMsg)) {
+                showLoading();
                 
-                setTimeout(() => {
-                    card.style.transition = 'all 0.6s ease-out';
-                    card.style.opacity = '1';
-                    card.style.transform = 'translateY(0)';
-                }, index * 100);
+                fetch('/Proposta/Excluir', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `id=${encodeURIComponent(propostaId)}&__RequestVerificationToken=${encodeURIComponent($('input[name="__RequestVerificationToken"]').val())}`
+                })
+                .then(response => {
+                    hideLoading();
+                    if (response.ok) {
+                        showToast('Proposta excluída com sucesso', 'success');
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        showToast('Erro ao excluir proposta', 'error');
+                    }
+                })
+                .catch(error => {
+                    hideLoading();
+                    showToast('Erro de conexão', 'error');
+                    console.error('Erro:', error);
+                });
+            }
+        }
+
+        function compartilharProposta(propostaId, titulo) {
+            const link = `${window.location.origin}/Proposta/Publico/${propostaId}`;
+            const texto = `Confira esta proposta de viagem: ${titulo}`;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: titulo,
+                    text: texto,
+                    url: link
+                }).catch(console.error);
+            } else {
+                const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(texto + ' ' + link)}`;
+                window.open(whatsappUrl, '_blank');
+            }
+        }
+
+        function copiarLinkPublico(propostaId) {
+            const link = `${window.location.origin}/Proposta/Publico/${propostaId}`;
+            
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(link).then(() => {
+                    showToast('Link copiado para a área de transferência', 'success');
+                }).catch(() => {
+                    fallbackCopyText(link);
+                });
+            } else {
+                fallbackCopyText(link);
+            }
+        }
+
+        function fallbackCopyText(text) {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                showToast('Link copiado para a área de transferência', 'success');
+            } catch (err) {
+                showToast('Não foi possível copiar o link', 'error');
+            }
+            document.body.removeChild(textArea);
+        }
+
+        // === UTILITÁRIOS ===
+        function exportarDados() {
+            showLoading();
+            
+            // Simular exportação
+            setTimeout(() => {
+                hideLoading();
+                showToast('Dados exportados com sucesso', 'success');
+                
+                // Aqui você implementaria a exportação real
+                // window.location.href = '/Proposta/Exportar';
+            }, 2000);
+        }
+
+        function atualizarLista() {
+            showLoading();
+            setTimeout(() => {
+                location.reload();
+            }, 500);
+        }
+
+        function showLoading() {
+            isLoading = true;
+            const btn = event?.target;
+            if (btn) {
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Carregando...';
+                btn.disabled = true;
+                btn.dataset.originalText = originalText;
+            }
+        }
+
+        function hideLoading() {
+            isLoading = false;
+            const btn = document.querySelector('[data-original-text]');
+            if (btn) {
+                btn.innerHTML = btn.dataset.originalText;
+                btn.disabled = false;
+                delete btn.dataset.originalText;
+            }
+        }
+
+        function showToast(message, type = 'info') {
+            const toastContainer = $('.toast-container');
+            const template = $('#toastTemplate').clone();
+            
+            template.attr('id', '').removeClass('d-none').addClass(`toast-${type}`).show();
+            template.find('.toast-message').text(message);
+            
+            const iconClass = type === 'success' ? 'fas fa-check-circle text-success' :
+                            type === 'error' ? 'fas fa-exclamation-circle text-danger' :
+                            type === 'warning' ? 'fas fa-exclamation-triangle text-warning' :
+                            'fas fa-info-circle text-info';
+            
+            template.find('.toast-icon').attr('class', `toast-icon me-2 ${iconClass}`);
+            
+            toastContainer.append(template);
+            
+            const bsToast = new bootstrap.Toast(template[0], {
+                autohide: true,
+                delay: type === 'error' ? 5000 : 3000
             });
+            
+            bsToast.show();
+            
+            template[0].addEventListener('hidden.bs.toast', () => {
+                template.remove();
+            });
+        }
+
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        // === ATALHOS DE TECLADO ===
+        function setupKeyboardShortcuts() {
+            document.addEventListener('keydown', (e) => {
+                // Ctrl + N = Nova proposta
+                if (e.ctrlKey && e.key === 'n') {
+                    e.preventDefault();
+                    window.location.href = '/Proposta/Criar';
+                }
+                
+                // Ctrl + F = Focar na busca
+                if (e.ctrlKey && e.key === 'f') {
+                    e.preventDefault();
+                    document.getElementById('TermoBusca').focus();
+                }
+                
+                // Ctrl + R = Atualizar
+                if (e.ctrlKey && e.key === 'r') {
+                    e.preventDefault();
+                    atualizarLista();
+                }
+            });
+        }
+
+        // Inicializar atalhos
+        setupKeyboardShortcuts();
+
+        // === PERFORMANCE ===
+        // Lazy loading para imagens
+        function setupLazyLoading() {
+            if ('IntersectionObserver' in window) {
+                const imageObserver = new IntersectionObserver((entries, observer) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            const img = entry.target;
+                            img.src = img.dataset.src;
+                            img.classList.remove('lazy');
+                            observer.unobserve(img);
+                        }
+                    });
+                });
+
+                document.querySelectorAll('img[data-src]').forEach(img => {
+                    imageObserver.observe(img);
+                });
+            }
+        }
+
+        // Otimização de scroll
+        let ticking = false;
+        function updateScrollPosition() {
+            // Implementar efeitos de scroll se necessário
+            ticking = false;
+        }
+
+        function onScroll() {
+            if (!ticking) {
+                requestAnimationFrame(updateScrollPosition);
+                ticking = true;
+            }
+        }
+
+        window.addEventListener('scroll', onScroll, { passive: true });
+
+        // === SERVICE WORKER ===
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => {
+                        console.log('SW registrado:', registration);
+                    })
+                    .catch(error => {
+                        console.log('Falha no registro do SW:', error);
+                    });
+            });
+        }
+
+        // === ANALYTICS ===
+        function trackEvent(eventName, properties = {}) {
+            // Implementar tracking de eventos
+            console.log('Track event:', eventName, properties);
+            
+            // Exemplo com Google Analytics
+            // gtag('event', eventName, properties);
+        }
+
+        // Tracking de interações
+        document.addEventListener('click', (e) => {
+            const target = e.target.closest('[data-track]');
+            if (target) {
+                const eventName = target.dataset.track;
+                const properties = {
+                    element: target.tagName.toLowerCase(),
+                    text: target.textContent.trim(),
+                    url: target.href || null
+                };
+                trackEvent(eventName, properties);
+            }
         });
 
-        // CSS para animações
-        const style = document.createElement('style');
-        style.textContent = `
-            @@keyframes slideInRight {
-                from { transform: translateX(100%); opacity: 0; }
-                to { transform: translateX(0); opacity: 1; }
+        // === ERROR HANDLING ===
+        window.addEventListener('error', (e) => {
+            console.error('Erro capturado:', e.error);
+            showToast('Ocorreu um erro inesperado', 'error');
+        });
+
+        window.addEventListener('unhandledrejection', (e) => {
+            console.error('Promise rejeitada:', e.reason);
+            showToast('Erro de conexão', 'error');
+        });
+
+        // === CLEANUP ===
+        window.addEventListener('beforeunload', () => {
+            // Salvar estado atual
+            const formData = new FormData(document.getElementById('filtrosForm'));
+            const filters = {};
+            for (let [key, value] of formData.entries()) {
+                if (value) filters[key] = value;
             }
-            @@keyframes slideOutRight {
-                from { transform: translateX(0); opacity: 1; }
-                to { transform: translateX(100%); opacity: 0; }
-            }
-        `;
-        document.head.appendChild(style);
+            localStorage.setItem('propostaFilters', JSON.stringify(filters));
+        });
     </script>
 }

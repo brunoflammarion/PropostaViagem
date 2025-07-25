@@ -10,253 +10,278 @@
         </ol>
     </nav>
 
-    <!-- Header com Ações Rápidas -->
+    <!-- Header com Progress -->
     <div class="row mb-4">
         <div class="col-md-12">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <h2><i class="fas fa-edit me-2 text-primary"></i>Editar Proposta</h2>
-                    <p class="text-muted mb-0">@Model.Titulo</p>
+                    <h2><i class="fas fa-edit me-2 text-primary"></i>Editar Proposta de Viagem</h2>
+                    <p class="text-muted mb-0">Atualize as informações da sua proposta personalizada</p>
                 </div>
                 <div class="btn-group">
                     <a href="/Proposta/Detalhes/@Model.Id" class="btn btn-outline-info">
                         <i class="fas fa-eye me-1"></i>Visualizar
                     </a>
-                    <a href="/Destino/Gerenciar/@Model.Id" class="btn btn-outline-success">
-                        <i class="fas fa-map-marked-alt me-1"></i>Gerenciar Destinos
-                    </a>
+                    @if (Model.LinkPublicoAtivo)
+                    {
+                        <a href="/Proposta/Publico/@Model.Id" target="_blank" class="btn btn-outline-success">
+                            <i class="fas fa-external-link-alt me-1"></i>Ver Público
+                        </a>
+                    }
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Abas de Navegação -->
+    <!-- Progress Steps -->
     <div class="row mb-4">
         <div class="col-md-12">
             <div class="card">
-                <div class="card-body p-0">
-                    <nav class="nav nav-pills nav-fill">
-                        <a class="nav-link active" id="info-tab" data-bs-toggle="pill" href="#info-content">
-                            <i class="fas fa-info-circle me-2"></i>Informações Básicas
-                        </a>
-                        <a class="nav-link" id="destinos-tab" data-bs-toggle="pill" href="#destinos-content">
-                            <i class="fas fa-map-marked-alt me-2"></i>Destinos <span class="badge bg-secondary ms-1" id="destinosCount">0</span>
-                        </a>
-                        <a class="nav-link" id="config-tab" data-bs-toggle="pill" href="#config-content">
-                            <i class="fas fa-cog me-2"></i>Configurações
-                        </a>
-                    </nav>
+                <div class="card-body py-2">
+                    <div class="d-flex justify-content-center align-items-center">
+                        <div class="step-progress">
+                            <div class="step active">
+                                <div class="step-circle">
+                                    <i class="fas fa-file-alt"></i>
+                                </div>
+                                <div class="step-label">Informações Básicas</div>
+                            </div>
+                            <div class="step-line"></div>
+                            <div class="step active">
+                                <div class="step-circle">
+                                    <i class="fas fa-map-marked-alt"></i>
+                                </div>
+                                <div class="step-label">Destinos & Fotos</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <form asp-action="Editar" method="post" id="formEditarProposta">
+    <form asp-action="Editar" method="post" enctype="multipart/form-data" id="formEditarProposta">
         <input asp-for="Id" type="hidden" />
         <input asp-for="UsuarioId" type="hidden" />
         <input asp-for="DataCriacao" type="hidden" />
-
-        <div asp-validation-summary="All" class="text-danger mb-4"></div>
+        <input asp-for="DataModificacao" type="hidden" />
+        
+        <div asp-validation-summary="ModelOnly" class="text-danger mb-4"></div>
 
         <div class="row">
-            <!-- Conteúdo Principal -->
+            <!-- Formulário Principal -->
             <div class="col-md-8">
-                <div class="tab-content">
-                    <!-- Aba: Informações Básicas -->
-                    <div class="tab-pane fade show active" id="info-content">
-                        <div class="card mb-4">
-                            <div class="card-header d-flex justify-content-between align-items-center">
-                                <h5 class="mb-0">
-                                    <i class="fas fa-info-circle me-2"></i>Informações da Viagem
-                                </h5>
-                                <span class="badge bg-@(Model.StatusProposta.ToString().ToLower())">
-                                    @Model.StatusProposta
-                                </span>
+                <!-- Informações Básicas -->
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Informações da Viagem
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label asp-for="Titulo" class="form-label fw-bold">
+                                    <span class="text-danger">*</span> @Html.DisplayNameFor(m => m.Titulo)
+                                </label>
+                                <input asp-for="Titulo" class="form-control form-control-lg"
+                                       placeholder="Ex: Viagem dos Sonhos - Europa 2024"
+                                       maxlength="500" required />
+                                <div class="form-text">
+                                    <i class="fas fa-lightbulb me-1"></i>
+                                    Dica: Use um título descritivo que ajude a identificar a proposta
+                                </div>
+                                <span asp-validation-for="Titulo" class="text-danger"></span>
                             </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-12 mb-3">
-                                        <label asp-for="Titulo" class="form-label fw-bold"></label>
-                                        <input asp-for="Titulo" class="form-control form-control-lg" maxlength="500" />
-                                        <span asp-validation-for="Titulo" class="text-danger"></span>
-                                    </div>
-                                </div>
+                        </div>
 
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label asp-for="DataInicio" class="form-label fw-bold">
-                                            <i class="fas fa-calendar-alt me-1"></i>Data de Início
-                                        </label>
-                                        <input asp-for="DataInicio" class="form-control" type="date" />
-                                        <span asp-validation-for="DataInicio" class="text-danger"></span>
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label asp-for="DataFim" class="form-label fw-bold">
-                                            <i class="fas fa-calendar-check me-1"></i>Data de Fim
-                                        </label>
-                                        <input asp-for="DataFim" class="form-control" type="date" />
-                                        <span asp-validation-for="DataFim" class="text-danger"></span>
-                                    </div>
-                                </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="DataInicio" class="form-label fw-bold">
+                                    <i class="fas fa-calendar-alt me-1"></i>Data de Início
+                                </label>
+                                <input asp-for="DataInicio" class="form-control" type="date" />
+                                <div class="form-text">Campo opcional - pode ser definido posteriormente</div>
+                                <span asp-validation-for="DataInicio" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="DataFim" class="form-label fw-bold">
+                                    <i class="fas fa-calendar-check me-1"></i>Data de Fim
+                                </label>
+                                <input asp-for="DataFim" class="form-control" type="date" />
+                                <div class="form-text">Campo opcional - pode ser definido posteriormente</div>
+                                <span asp-validation-for="DataFim" class="text-danger"></span>
+                            </div>
+                        </div>
 
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label asp-for="NumeroPassageiros" class="form-label fw-bold">
-                                            <i class="fas fa-users me-1"></i>Número de Passageiros
-                                        </label>
-                                        <input asp-for="NumeroPassageiros" class="form-control" type="number" min="1" max="50" />
-                                        <span asp-validation-for="NumeroPassageiros" class="text-danger"></span>
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label asp-for="NumeroCriancas" class="form-label fw-bold">
-                                            <i class="fas fa-child me-1"></i>Número de Crianças
-                                        </label>
-                                        <input asp-for="NumeroCriancas" class="form-control" type="number" min="0" max="20" />
-                                        <span asp-validation-for="NumeroCriancas" class="text-danger"></span>
-                                    </div>
-                                </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="NumeroPassageiros" class="form-label fw-bold">
+                                    <span class="text-danger">*</span> <i class="fas fa-users me-1"></i>Número de Passageiros
+                                </label>
+                                <input asp-for="NumeroPassageiros" class="form-control" type="number"
+                                       min="1" max="50" required />
+                                <span asp-validation-for="NumeroPassageiros" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="NumeroCriancas" class="form-label fw-bold">
+                                    <i class="fas fa-child me-1"></i>Número de Crianças
+                                </label>
+                                <input asp-for="NumeroCriancas" class="form-control" type="number"
+                                       min="0" max="20" />
+                                <div class="form-text">Campo opcional - padrão é 0</div>
+                                <span asp-validation-for="NumeroCriancas" class="text-danger"></span>
+                            </div>
+                        </div>
 
+                        <!-- Foto de Capa - Nova e Atual -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">
+                                <i class="fas fa-camera me-1"></i>Foto de Capa
+                            </label>
+                            
+                            <!-- Foto Atual -->
+                            @if (!string.IsNullOrEmpty(Model.FotoCapa))
+                            {
                                 <div class="mb-3">
-                                    <label asp-for="FotoCapa" class="form-label fw-bold">
-                                        <i class="fas fa-image me-1"></i>Foto de Capa (URL)
-                                    </label>
-                                    <input asp-for="FotoCapa" class="form-control" placeholder="https://exemplo.com/foto.jpg" />
-                                    <span asp-validation-for="FotoCapa" class="text-danger"></span>
-                                    
+                                    <h6 class="text-muted">Foto Atual:</h6>
+                                    <div class="current-photo-container">
+                                        <img src="@Model.FotoCapa" alt="Foto atual" class="img-thumbnail current-photo" />
+                                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removerFotoAtual()">
+                                            <i class="fas fa-trash me-1"></i>Remover Foto Atual
+                                        </button>
+                                    </div>
+                                </div>
+                            }
+                            
+                            <!-- Upload Nova Foto -->
+                            <div class="mb-3">
+                                <label asp-for="FotoCapaUpload" class="form-label">
+                                    <i class="fas fa-upload me-1"></i>@(!string.IsNullOrEmpty(Model.FotoCapa) ? "Substituir por Nova Foto" : "Adicionar Nova Foto") <span class="text-muted">(Opcional)</span>
+                                </label>
+                                <input asp-for="FotoCapaUpload" class="form-control" type="file"
+                                       accept="image/*" id="fotoCapa" />
+                                <div class="form-text">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Formatos aceitos: JPG, PNG, GIF (máx: 5MB). 
                                     @if (!string.IsNullOrEmpty(Model.FotoCapa))
                                     {
-                                        <div class="mt-2">
-                                            <img src="@Model.FotoCapa" alt="Foto Atual" class="img-thumbnail" style="max-height: 150px;" />
-                                        </div>
+                                        <strong>Se você fizer upload de uma nova foto, ela substituirá a atual.</strong>
                                     }
                                 </div>
+                                <span asp-validation-for="FotoCapaUpload" class="text-danger"></span>
 
-                                <div class="mb-3">
-                                    <label asp-for="ObservacoesGerais" class="form-label fw-bold">
-                                        <i class="fas fa-sticky-note me-1"></i>Observações Gerais
-                                    </label>
-                                    <textarea asp-for="ObservacoesGerais" class="form-control" rows="4" 
-                                              placeholder="Detalhes importantes sobre a viagem..."></textarea>
+                                <!-- Preview da nova foto -->
+                                <div id="previewNovaFoto" class="mt-2" style="display: none;">
+                                    <h6 class="text-success">Nova foto selecionada:</h6>
+                                    <img id="imagemPreviewNova" class="img-thumbnail" style="max-height: 150px;" />
+                                    <button type="button" class="btn btn-sm btn-outline-danger mt-2" onclick="cancelarNovaFoto()">
+                                        <i class="fas fa-times me-1"></i>Cancelar Nova Foto
+                                    </button>
                                 </div>
                             </div>
+
+                            <!-- Campo oculto para manter a foto atual -->
+                            <input asp-for="FotoCapa" type="hidden" id="fotoCapaAtual" />
                         </div>
-                    </div>
 
-                    <!-- Aba: Destinos -->
-                    <div class="tab-pane fade" id="destinos-content">
-                        <div class="card">
-                            <div class="card-header d-flex justify-content-between align-items-center">
-                                <h5 class="mb-0">
-                                    <i class="fas fa-map-marked-alt me-2"></i>Destinos da Viagem
-                                </h5>
-                                <a href="/Destino/Gerenciar/@Model.Id" class="btn btn-primary btn-sm">
-                                    <i class="fas fa-plus me-1"></i>Gerenciar Destinos
-                                </a>
-                            </div>
-                            <div class="card-body">
-                                <div id="destinosPreview">
-                                    <div class="text-center py-4" id="loadingDestinos">
-                                        <div class="spinner-border text-primary me-2"></div>
-                                        <span>Carregando destinos...</span>
-                                    </div>
-                                    <div class="text-center py-4 d-none" id="semDestinos">
-                                        <i class="fas fa-map-marked-alt fa-3x text-muted mb-3"></i>
-                                        <h6 class="text-muted">Nenhum destino adicionado</h6>
-                                        <p class="text-muted mb-3">Adicione destinos para enriquecer sua proposta</p>
-                                        <a href="/Destino/Gerenciar/@Model.Id" class="btn btn-success">
-                                            <i class="fas fa-plus me-1"></i>Adicionar Primeiro Destino
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Aba: Configurações -->
-                    <div class="tab-pane fade" id="config-content">
-                        <div class="card mb-4">
-                            <div class="card-header">
-                                <h5 class="mb-0">
-                                    <i class="fas fa-cog me-2"></i>Status e Configurações
-                                </h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label asp-for="StatusProposta" class="form-label fw-bold">
-                                            <i class="fas fa-flag me-1"></i>Status da Proposta
-                                        </label>
-                                        <select asp-for="StatusProposta" class="form-control">
-                                            <option value="1">Rascunho</option>
-                                            <option value="2">Enviada</option>
-                                            <option value="3">Aprovada</option>
-                                            <option value="4">Rejeitada</option>
-                                            <option value="5">Cancelada</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label asp-for="LayoutId" class="form-label fw-bold">
-                                            <i class="fas fa-palette me-1"></i>Layout
-                                        </label>
-                                        <select asp-for="LayoutId" class="form-control">
-                                            <option value="">Layout Padrão</option>
-                                            @if (ViewBag.Layouts != null)
-                                            {
-                                                @foreach (var layout in (List<SistemaUsuarios.Models.Layout>)ViewBag.Layouts)
-                                                {
-                                                    <option value="@layout.Id">@layout.Nome</option>
-                                                }
-                                            }
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <div class="form-check form-switch">
-                                            <input asp-for="LinkPublicoAtivo" class="form-check-input" />
-                                            <label asp-for="LinkPublicoAtivo" class="form-check-label fw-bold">
-                                                <i class="fas fa-link me-1"></i>Link Público Ativo
-                                            </label>
-                                            <div class="form-text">Permite acesso público à proposta</div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label asp-for="DataExpiracaoLink" class="form-label fw-bold">
-                                            <i class="fas fa-clock me-1"></i>Data de Expiração
-                                        </label>
-                                        <input asp-for="DataExpiracaoLink" class="form-control" type="datetime-local" />
-                                        <div class="form-text">Deixe em branco para nunca expirar</div>
-                                    </div>
-                                </div>
-
-                                @if (Model.LinkPublicoAtivo)
-                                {
-                                    <div class="alert alert-info">
-                                        <h6><i class="fas fa-link me-2"></i>Link Público</h6>
-                                        <div class="input-group">
-                                            <input type="text" class="form-control" 
-                                                   value="@(Context.Request.Scheme)://@(Context.Request.Host)/Proposta/Publico/@Model.Id" 
-                                                   id="linkPublico" readonly />
-                                            <button class="btn btn-outline-primary" type="button" onclick="copiarLinkPublico()">
-                                                <i class="fas fa-copy"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                }
+                        <div class="mb-3">
+                            <label asp-for="ObservacoesGerais" class="form-label fw-bold">
+                                <i class="fas fa-sticky-note me-1"></i>Observações Gerais <span class="text-muted">(Opcional)</span>
+                            </label>
+                            <textarea asp-for="ObservacoesGerais" class="form-control" rows="4"
+                                      placeholder="Descreva detalhes importantes sobre a viagem: preferências, requisitos especiais, observações para o cliente... (Campo opcional)"></textarea>
+                            <div class="form-text">
+                                <i class="fas fa-lightbulb me-1"></i>
+                                Estas informações aparecerão na proposta pública para o cliente. <strong>Campo opcional</strong>.
                             </div>
                         </div>
                     </div>
                 </div>
+
+                <!-- Status e Configurações -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-cog me-2"></i>Status e Configurações
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="StatusProposta" class="form-label fw-bold">
+                                    <i class="fas fa-flag me-1"></i>Status da Proposta
+                                </label>
+                                <select asp-for="StatusProposta" class="form-control">
+                                    <option value="1">Rascunho</option>
+                                    <option value="2">Enviada</option>
+                                    <option value="3">Aprovada</option>
+                                    <option value="4">Rejeitada</option>
+                                    <option value="5">Cancelada</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="LayoutId" class="form-label fw-bold">
+                                    <i class="fas fa-palette me-1"></i>Layout
+                                </label>
+                                <select asp-for="LayoutId" class="form-control">
+                                    <option value="">Layout Padrão</option>
+                                    @if (ViewBag.Layouts != null)
+                                    {
+                                        @foreach (var layout in (List<SistemaUsuarios.Models.Layout>)ViewBag.Layouts)
+                                        {
+                                            <option value="@layout.Id">@layout.Nome</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check form-switch">
+                                    <input asp-for="LinkPublicoAtivo" class="form-check-input" />
+                                    <label asp-for="LinkPublicoAtivo" class="form-check-label fw-bold">
+                                        <i class="fas fa-link me-1"></i>Link Público Ativo
+                                    </label>
+                                    <div class="form-text">Permite acesso público à proposta</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="DataExpiracaoLink" class="form-label fw-bold">
+                                    <i class="fas fa-clock me-1"></i>Data de Expiração
+                                </label>
+                                <input asp-for="DataExpiracaoLink" class="form-control" type="datetime-local" />
+                                <div class="form-text">Deixe em branco para nunca expirar</div>
+                            </div>
+                        </div>
+
+                        @if (Model.LinkPublicoAtivo)
+                        {
+                            <div class="alert alert-info">
+                                <h6><i class="fas fa-link me-2"></i>Link Público</h6>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" 
+                                           value="@(Context.Request.Scheme)://@(Context.Request.Host)/Proposta/Publico/@Model.Id" 
+                                           id="linkPublico" readonly />
+                                    <button class="btn btn-outline-primary" type="button" onclick="copiarLinkPublico()">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
             </div>
 
-            <!-- Sidebar -->
+            <!-- Sidebar com Preview e Ações -->
             <div class="col-md-4">
                 <!-- Informações da Proposta -->
                 <div class="card mb-4 sticky-top" style="top: 20px;">
                     <div class="card-header bg-light">
                         <h6 class="mb-0">
-                            <i class="fas fa-info me-2"></i>Informações
+                            <i class="fas fa-info me-2"></i>Informações da Proposta
                         </h6>
                     </div>
                     <div class="card-body">
@@ -276,15 +301,15 @@
                         <div class="mb-3">
                             <small class="text-muted">Status atual</small>
                             <p class="mb-0">
-                                <span class="badge bg-@(Model.StatusProposta.ToString().ToLower())">
-                                    @Model.StatusProposta
+                                <span class="badge bg-@Model.StatusPropostaCor" id="statusBadge">
+                                    @Model.StatusPropostaTexto
                                 </span>
                             </p>
                         </div>
 
                         <div class="mb-3">
                             <small class="text-muted">Link público</small>
-                            <p class="mb-0">
+                            <p class="mb-0" id="linkStatusInfo">
                                 @if (Model.LinkPublicoAtivo)
                                 {
                                     <span class="text-success">
@@ -300,11 +325,36 @@
                             </p>
                         </div>
 
-                        <div id="estatisticasDestinos" class="mb-3">
-                            <small class="text-muted">Destinos</small>
-                            <p class="mb-0" id="totalDestinos">
-                                <i class="fas fa-map-marker-alt me-1"></i>
-                                <span id="numeroDestinos">Carregando...</span>
+                        <!-- Preview dinâmico -->
+                        <div id="previewTitulo" class="mb-2">
+                            <h6 class="text-muted mb-2">Título da Proposta</h6>
+                            <p class="mb-0" id="previewTituloTexto">@Model.Titulo</p>
+                        </div>
+
+                        <div id="previewDatas" class="mb-2">
+                            <h6 class="text-muted mb-2">Período</h6>
+                            <p class="mb-0" id="previewDatasTexto">
+                            </p>
+                        </div>
+
+                        <div id="previewPassageiros" class="mb-2">
+                            <h6 class="text-muted mb-2">Passageiros</h6>
+                            <p class="mb-0" id="previewPassageirosTexto">
+                                <i class="fas fa-users me-1"></i><span id="totalPassageiros">@Model.TotalPessoas</span> pessoa(s)
+                            </p>
+                        </div>
+
+                        <div id="previewFoto" class="mb-2" @(string.IsNullOrEmpty(Model.FotoCapa) ? "style=display:none;" : "")>
+                            <h6 class="text-muted mb-2">Foto de Capa</h6>
+                            <p class="mb-0 text-success">
+                                <i class="fas fa-check me-1"></i>Foto disponível
+                            </p>
+                        </div>
+
+                        <div id="previewObservacoes" class="mb-2" @(string.IsNullOrEmpty(Model.ObservacoesGerais) ? "style=display:none;" : "")>
+                            <h6 class="text-muted mb-2">Observações</h6>
+                            <p class="mb-0 text-success">
+                                <i class="fas fa-check me-1"></i>Observações adicionadas
                             </p>
                         </div>
                     </div>
@@ -351,6 +401,13 @@
                                 </div>
                             </div>
                         </div>
+
+                        <div class="mt-3 p-2 bg-light rounded">
+                            <small class="text-muted">
+                                <i class="fas fa-lightbulb me-1"></i>
+                                <strong>Dica:</strong> Use "Salvar e Gerenciar Destinos" para ir direto à configuração dos destinos da viagem.
+                            </small>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -361,28 +418,166 @@
 @section Scripts {
     <script>
         $(document).ready(function() {
-            // Carregar destinos via AJAX
-            carregarDestinos();
+            // Preview em tempo real do título
+            $('#Titulo').on('input', function() {
+                const titulo = $(this).val() || 'Digite um título...';
+                $('#previewTituloTexto').text(titulo);
+            });
+
+            // Preview das datas
+            function atualizarPreviewDatas() {
+                const dataInicio = $('#DataInicio').val();
+                const dataFim = $('#DataFim').val();
+
+                let texto = '<i class="fas fa-calendar me-1"></i>';
+
+                if (dataInicio && dataFim) {
+                    const inicio = new Date(dataInicio);
+                    const fim = new Date(dataFim);
+                    const dias = Math.ceil((fim - inicio) / (1000 * 60 * 60 * 24)) + 1;
+
+                    texto += `${inicio.toLocaleDateString('pt-BR')} - ${fim.toLocaleDateString('pt-BR')} (${dias} dias)`;
+                } else if (dataInicio) {
+                    texto += `A partir de ${new Date(dataInicio).toLocaleDateString('pt-BR')}`;
+                } else {
+                    texto += 'Selecione as datas';
+                }
+
+                $('#previewDatasTexto').html(texto);
+            }
+
+            $('#DataInicio, #DataFim').on('change', atualizarPreviewDatas);
+
+            // Preview dos passageiros
+            function atualizarPreviewPassageiros() {
+                const adultos = parseInt($('#NumeroPassageiros').val()) || 0;
+                const criancas = parseInt($('#NumeroCriancas').val()) || 0;
+                const total = adultos + criancas;
+
+                let texto = `<i class="fas fa-users me-1"></i>${total} pessoa`;
+                if (total !== 1) texto += 's';
+
+                if (criancas > 0) {
+                    texto += ` (${adultos} adulto${adultos !== 1 ? 's' : ''} + ${criancas} criança${criancas !== 1 ? 's' : ''})`;
+                }
+
+                $('#previewPassageirosTexto').html(texto);
+                $('#totalPassageiros').text(total);
+            }
+
+            $('#NumeroPassageiros, #NumeroCriancas').on('input change', atualizarPreviewPassageiros);
+
+            // Preview da nova foto
+            $('#fotoCapa').on('change', function() {
+                const file = this.files[0];
+                if (file) {
+                    // Validar tamanho
+                    if (file.size > 5 * 1024 * 1024) {
+                        alert('Arquivo muito grande. Máximo 5MB permitido.');
+                        $(this).val('');
+                        $('#previewNovaFoto').hide();
+                        return;
+                    }
+
+                    // Validar tipo
+                    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+                    if (!allowedTypes.includes(file.type)) {
+                        alert('Tipo de arquivo não permitido. Use JPG, PNG ou GIF.');
+                        $(this).val('');
+                        $('#previewNovaFoto').hide();
+                        return;
+                    }
+
+                    // Mostrar preview
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        $('#imagemPreviewNova').attr('src', e.target.result);
+                        $('#previewNovaFoto').show();
+                        $('#previewFoto').show();
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    $('#previewNovaFoto').hide();
+                }
+            });
+
+            // Preview das observações
+            $('#ObservacoesGerais').on('input', function() {
+                const texto = $(this).val();
+                if (texto && texto.trim().length > 0) {
+                    $('#previewObservacoes').show();
+                } else {
+                    $('#previewObservacoes').hide();
+                }
+            });
+
+            // Preview do status
+            $('#StatusProposta').on('change', function() {
+                const statusValue = $(this).val();
+                const statusText = $(this).find('option:selected').text();
+                
+                let statusClass = 'secondary';
+                switch(statusValue) {
+                    case '1': statusClass = 'secondary'; break;
+                    case '2': statusClass = 'warning'; break;
+                    case '3': statusClass = 'success'; break;
+                    case '4': statusClass = 'danger'; break;
+                    case '5': statusClass = 'dark'; break;
+                }
+                
+                $('#statusBadge').removeClass('bg-secondary bg-warning bg-success bg-danger bg-dark')
+                                .addClass('bg-' + statusClass)
+                                .text(statusText);
+            });
+
+            // Preview do link público
+            $('#LinkPublicoAtivo').on('change', function() {
+                const isActive = $(this).prop('checked');
+                const linkStatus = $('#linkStatusInfo');
+                
+                if (isActive) {
+                    linkStatus.html('<span class="text-success"><i class="fas fa-check-circle me-1"></i>Ativo</span>');
+                } else {
+                    linkStatus.html('<span class="text-muted"><i class="fas fa-times-circle me-1"></i>Inativo</span>');
+                }
+            });
+
+            // Função para remover foto atual
+            window.removerFotoAtual = function() {
+                if (confirm('Tem certeza que deseja remover a foto atual?')) {
+                    $('#fotoCapaAtual').val('');
+                    $('.current-photo-container').hide();
+                    $('#previewFoto').hide();
+                }
+            };
+
+            // Função para cancelar nova foto
+            window.cancelarNovaFoto = function() {
+                $('#fotoCapa').val('');
+                $('#previewNovaFoto').hide();
+            };
 
             // Validação de datas
             $('#DataInicio, #DataFim').on('change', function() {
                 const dataInicio = $('#DataInicio').val();
                 const dataFim = $('#DataFim').val();
-                
+
                 if (dataInicio && dataFim && new Date(dataInicio) > new Date(dataFim)) {
                     alert('Data de fim deve ser posterior à data de início');
                     $('#DataFim').val('');
+                    atualizarPreviewDatas();
                 }
             });
 
-            // Animação no envio do formulário
+            // Animação no botão de salvar
             $('#formEditarProposta').on('submit', function() {
                 const btn = $('#btnSalvar, #btnGerenciarDestinos').filter(':focus');
                 if (btn.length) {
                     btn.prop('disabled', true);
                     const originalText = btn.html();
                     btn.html('<span class="spinner-border spinner-border-sm me-2"></span>Salvando...');
-                    
+
+                    // Timeout de segurança
                     setTimeout(function() {
                         btn.prop('disabled', false);
                         btn.html(originalText);
@@ -409,154 +604,100 @@
                     btn.classList.add('btn-outline-primary');
                 }, 2000);
                 
-                // Toast notification
                 showToast('Link copiado para a área de transferência!', 'success');
             };
 
-            // Atualizar contadores em tempo real
-            atualizarContadores();
-        });
-
-        function carregarDestinos() {
-            const propostaId = '@Model.Id';
-            
-            fetch(`/api/proposta/${propostaId}/destinos`)
-                .then(response => response.json())
-                .then(data => {
-                    exibirDestinos(data);
-                    atualizarContadorDestinos(data.length);
-                })
-                .catch(error => {
-                    console.error('Erro ao carregar destinos:', error);
-                    $('#loadingDestinos').addClass('d-none');
-                    $('#destinosPreview').html(`
-                        <div class="alert alert-warning">
-                            <i class="fas fa-exclamation-triangle me-2"></i>
-                            Erro ao carregar destinos. 
-                            <a href="/Destino/Gerenciar/@Model.Id" class="alert-link">Clique aqui para gerenciar</a>
-                        </div>
-                    `);
-                });
-        }
-
-        function exibirDestinos(destinos) {
-            $('#loadingDestinos').addClass('d-none');
-            
-            if (!destinos || destinos.length === 0) {
-                $('#semDestinos').removeClass('d-none');
-                return;
-            }
-
-            let html = '<div class="row g-3">';
-            
-            destinos.forEach((destino, index) => {
-                const fotoPrincipal = destino.fotos?.find(f => f.principal) || destino.fotos?.[0];
-                
-                html += `
-                    <div class="col-md-6">
-                        <div class="card h-100">
-                            <div class="card-body p-3">
-                                <div class="d-flex">
-                                    <div class="me-3">
-                                        ${fotoPrincipal ? 
-                                            `<img src="${fotoPrincipal.caminhoFoto}" class="rounded" style="width: 60px; height: 60px; object-fit: cover;" />` :
-                                            `<div class="bg-light rounded d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;"><i class="fas fa-map-marker-alt text-muted"></i></div>`
-                                        }
-                                    </div>
-                                    <div class="flex-grow-1">
-                                        <h6 class="mb-1">${destino.nome}</h6>
-                                        <small class="text-muted">
-                                            ${destino.cidade ? destino.cidade + ', ' : ''}${destino.pais || ''}
-                                        </small>
-                                        <div class="mt-1">
-                                            <small class="badge bg-light text-dark">
-                                                <i class="fas fa-images me-1"></i>${destino.fotos?.length || 0} foto(s)
-                                            </small>
-                                        </div>
-                                    </div>
-                                </div>
+            function showToast(message, type = 'info') {
+                const toast = $(`
+                    <div class="position-fixed top-0 end-0 p-3" style="z-index: 9999;">
+                        <div class="toast show" role="alert">
+                            <div class="toast-header">
+                                <i class="fas fa-${type === 'success' ? 'check-circle text-success' : 'info-circle text-info'} me-2"></i>
+                                <strong class="me-auto">Sistema</strong>
+                                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
                             </div>
+                            <div class="toast-body">${message}</div>
                         </div>
                     </div>
-                `;
-            });
-            
-            html += '</div>';
-            html += `
-                <div class="text-center mt-3">
-                    <a href="/Destino/Gerenciar/@Model.Id" class="btn btn-primary">
-                        <i class="fas fa-edit me-1"></i>Gerenciar Todos os Destinos
-                    </a>
-                </div>
-            `;
-            
-            $('#destinosPreview').html(html);
-        }
-
-        function atualizarContadorDestinos(count) {
-            $('#destinosCount').text(count);
-            $('#numeroDestinos').text(`${count} destino${count !== 1 ? 's' : ''}`);
-            
-            // Atualizar cor da aba baseado na quantidade
-            const tab = $('#destinos-tab');
-            if (count > 0) {
-                tab.removeClass('text-muted').addClass('text-success');
-                $('#destinosCount').removeClass('bg-secondary').addClass('bg-success');
-            } else {
-                tab.removeClass('text-success').addClass('text-muted');
-                $('#destinosCount').removeClass('bg-success').addClass('bg-secondary');
+                `);
+                
+                $('body').append(toast);
+                
+                setTimeout(() => {
+                    toast.find('.toast').removeClass('show');
+                    setTimeout(() => toast.remove(), 300);
+                }, 3000);
             }
-        }
 
-        function atualizarContadores() {
-            // Atualizar outros contadores se necessário
-        }
-
-        function showToast(message, type = 'info') {
-            // Implementação simples de toast
-            const toast = $(`
-                <div class="position-fixed top-0 end-0 p-3" style="z-index: 9999;">
-                    <div class="toast show" role="alert">
-                        <div class="toast-header">
-                            <i class="fas fa-${type === 'success' ? 'check-circle text-success' : 'info-circle text-info'} me-2"></i>
-                            <strong class="me-auto">Sistema</strong>
-                            <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
-                        </div>
-                        <div class="toast-body">${message}</div>
-                    </div>
-                </div>
-            `);
-            
-            $('body').append(toast);
-            
-            setTimeout(() => {
-                toast.find('.toast').removeClass('show');
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
-        }
+            // Inicializar previews
+            atualizarPreviewDatas();
+            atualizarPreviewPassageiros();
+        });
     </script>
 }
 
 <style>
-    /* Abas customizadas */
-    .nav-pills .nav-link {
-        border-radius: 0;
-        border-bottom: 3px solid transparent;
-        background: none;
-        color: #6c757d;
+    /* Reutilizar os mesmos estilos da tela de criação */
+    
+    /* Progress Steps */
+    .step-progress {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        max-width: 400px;
+        margin: 0 auto;
+    }
+
+    .step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        position: relative;
+    }
+
+    .step-circle {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        font-weight: bold;
+        margin-bottom: 8px;
         transition: all 0.3s ease;
     }
 
-    .nav-pills .nav-link:hover {
-        background-color: #f8f9fa;
-        color: #007bff;
+    .step.active .step-circle {
+        background-color: #007bff;
+        color: white;
+        box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.3);
     }
 
-    .nav-pills .nav-link.active {
-        background-color: #fff;
+    .step:not(.active) .step-circle {
+        background-color: #e9ecef;
+        color: #6c757d;
+    }
+
+    .step-label {
+        font-size: 12px;
+        font-weight: 500;
+        color: #6c757d;
+        max-width: 80px;
+    }
+
+    .step.active .step-label {
         color: #007bff;
-        border-bottom-color: #007bff;
-        box-shadow: none;
+        font-weight: 600;
+    }
+
+    .step-line {
+        width: 80px;
+        height: 2px;
+        background-color: #007bff;
+        margin: 0 10px;
+        margin-top: -25px;
     }
 
     /* Cards */
@@ -564,70 +705,113 @@
         border: none;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         border-radius: 8px;
-        transition: all 0.2s ease;
     }
 
-    .card:hover {
-        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    .card-header {
+        border-bottom: 1px solid #e9ecef;
+        background-color: #f8f9fa;
     }
 
-    /* Form controls */
+    .card-header.bg-primary {
+        background-color: #007bff !important;
+        border-color: #007bff;
+    }
+
+    /* Form Controls */
     .form-control:focus {
         border-color: #007bff;
         box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
     }
 
-    /* Badges para status */
-    .badge.bg-rascunho { background-color: #6c757d !important; }
-    .badge.bg-enviada { background-color: #ffc107 !important; }
-    .badge.bg-aprovada { background-color: #198754 !important; }
-    .badge.bg-rejeitada { background-color: #dc3545 !important; }
-    .badge.bg-cancelada { background-color: #343a40 !important; }
+    .form-control-lg {
+        font-size: 1.1rem;
+        font-weight: 500;
+    }
 
-    /* Sticky sidebar */
-    @@media (min-width: 768px) {
-        .sticky-top {
-            top: 20px !important;
-        }
+    /* Foto atual */
+    .current-photo-container {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        background: #f8f9fa;
+        border-radius: 8px;
+        border: 1px solid #e9ecef;
+    }
+
+    .current-photo {
+        max-height: 100px;
+        max-width: 150px;
+    }
+
+    /* Preview */
+    .sticky-top {
+        top: 20px !important;
+    }
+
+    /* Campos obrigatórios */
+    .text-danger {
+        color: #dc3545 !important;
     }
 
     /* Responsive */
     @@media (max-width: 768px) {
+        .step-progress {
+            max-width: 300px;
+        }
+
+        .step-line {
+            width: 60px;
+        }
+
+        .step-label {
+            font-size: 11px;
+            max-width: 60px;
+        }
+
         .sticky-top {
             position: relative !important;
             top: auto !important;
         }
-        
-        .btn-group {
+
+        .current-photo-container {
             flex-direction: column;
+            text-align: center;
         }
-        
-        .btn-group .btn {
-            margin-bottom: 0.5rem;
-        }
+    }
+
+    /* Animações */
+    .card {
+        transition: transform 0.2s ease-in-out;
+    }
+
+    .card:hover {
+        transform: translateY(-2px);
+    }
+
+    .btn {
+        transition: all 0.2s ease-in-out;
+    }
+
+    .btn:hover {
+        transform: translateY(-1px);
+    }
+
+    /* Indicadores visuais para campos opcionais */
+    .text-muted {
+        font-weight: normal;
+        font-style: italic;
+    }
+
+    /* Preview melhorado */
+    #previewFoto, #previewObservacoes {
+        border-left: 3px solid #28a745;
+        padding-left: 10px;
     }
 
     /* Toast personalizado */
     .toast {
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         border: none;
-    }
-
-    /* Loading animation */
-    .spinner-border {
-        animation: spinner-border 0.75s linear infinite;
-    }
-
-    /* Tab content animation */
-    .tab-pane {
-        transition: opacity 0.3s ease-in-out;
-    }
-
-    .tab-pane.fade:not(.show) {
-        opacity: 0;
-    }
-
-    .tab-pane.fade.show {
-        opacity: 1;
     }
 </style>
