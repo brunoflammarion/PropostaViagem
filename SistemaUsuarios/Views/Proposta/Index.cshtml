@@ -1,23 +1,61 @@
-﻿@model SistemaUsuarios.Models.ViewModels.PropostaFiltroViewModel
+@model SistemaUsuarios.Models.ViewModels.PropostaFiltroViewModel
 @using SistemaUsuarios.Models
 @{
     ViewData["Title"] = "Propostas de Viagem";
+    ViewData["IsMaster"] = Model.IsMaster;
+
+    // Mapa status → (label, cssClass, colorHex)
+    var statusMeta = new Dictionary<StatusProposta,(string Label, string Css, string Color)>
+    {
+        [StatusProposta.Rascunho]  = ("Rascunho",  "status-rascunho",  "#6c757d"),
+        [StatusProposta.Enviada]   = ("Enviada",   "status-enviada",   "#e0a800"),
+        [StatusProposta.Aprovada]  = ("Aprovada",  "status-aprovada",  "#28a745"),
+        [StatusProposta.Rejeitada] = ("Rejeitada", "status-rejeitada", "#dc3545"),
+        [StatusProposta.Cancelada] = ("Cancelada", "status-cancelada", "#495057"),
+    };
+
+    // Ordem das colunas kanban
+    var kanbanColunas = new[]
+    {
+        StatusProposta.Rascunho,
+        StatusProposta.Enviada,
+        StatusProposta.Aprovada,
+        StatusProposta.Rejeitada,
+        StatusProposta.Cancelada,
+    };
 }
 
-<!-- Header Executivo Compacto -->
+<!-- ═══════════════════════════════════════════════════════
+     HEADER
+═══════════════════════════════════════════════════════ -->
 <div class="executive-header">
-    <div class="d-flex justify-content-between align-items-center">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
         <div>
             <h2 class="exec-title"><i class="fas fa-chart-line me-2"></i>Propostas de Viagem</h2>
-            <span class="exec-subtitle">@Model.TotalPropostas proposta(s) • @Model.TotalAprovadas aprovada(s)</span>
+            <span class="exec-subtitle">@Model.TotalPropostas proposta(s) &bull; @Model.TotalAprovadas aprovada(s)</span>
         </div>
-        <a href="/Proposta/Criar" class="btn btn-primary exec-btn-create">
-            <i class="fas fa-plus me-1"></i>Nova Proposta
-        </a>
+
+        <div class="d-flex align-items-center gap-2">
+            <!-- Seletor de visualização -->
+            <div class="view-toggle" id="viewToggle" role="group" aria-label="Visualização">
+                <button class="view-btn" id="btn-lista" onclick="setView('lista')" title="Visualização em lista">
+                    <i class="fas fa-list"></i><span>Lista</span>
+                </button>
+                <button class="view-btn" id="btn-kanban" onclick="setView('kanban')" title="Visualização em kanban">
+                    <i class="fas fa-columns"></i><span>Kanban</span>
+                </button>
+            </div>
+
+            <a href="/Proposta/Criar" class="btn btn-primary exec-btn-create">
+                <i class="fas fa-plus me-1"></i>Nova Proposta
+            </a>
+        </div>
     </div>
 </div>
 
-<!-- Dashboard Executivo Compacto -->
+<!-- ═══════════════════════════════════════════════════════
+     DASHBOARD (estatísticas)
+═══════════════════════════════════════════════════════ -->
 <div class="exec-dashboard">
     <div class="exec-stats-row">
         <div class="exec-stat-item primary">
@@ -27,7 +65,6 @@
             </div>
             <i class="fas fa-file-alt exec-stat-icon"></i>
         </div>
-        
         <div class="exec-stat-item secondary">
             <div class="exec-stat-content">
                 <span class="exec-stat-number">@Model.TotalRascunhos</span>
@@ -35,7 +72,6 @@
             </div>
             <i class="fas fa-edit exec-stat-icon"></i>
         </div>
-        
         <div class="exec-stat-item warning">
             <div class="exec-stat-content">
                 <span class="exec-stat-number">@Model.TotalEnviadas</span>
@@ -43,7 +79,6 @@
             </div>
             <i class="fas fa-paper-plane exec-stat-icon"></i>
         </div>
-        
         <div class="exec-stat-item success">
             <div class="exec-stat-content">
                 <span class="exec-stat-number">@Model.TotalAprovadas</span>
@@ -54,15 +89,16 @@
     </div>
 </div>
 
-<!-- Filtros Compactos -->
+<!-- ═══════════════════════════════════════════════════════
+     FILTROS  (compartilhados pelas duas visões)
+═══════════════════════════════════════════════════════ -->
 <div class="exec-filters">
     <form method="get" asp-action="Index">
         <div class="filters-row">
             <div class="filter-compact">
-                <input asp-for="TermoBusca" class="form-control exec-search" 
+                <input asp-for="TermoBusca" class="form-control exec-search"
                        placeholder="🔍 Buscar propostas..." />
             </div>
-            
             <div class="filter-compact">
                 <select asp-for="FiltroStatus" class="form-select exec-select">
                     <option value="">Todos os Status</option>
@@ -73,770 +109,709 @@
                     <option value="5">Cancelada</option>
                 </select>
             </div>
-            
             <div class="filter-compact">
-                <input asp-for="DataInicioFiltro" class="form-control exec-date" 
+                <input asp-for="DataInicioFiltro" class="form-control exec-date"
                        type="date" title="Data início" />
             </div>
-            
             <div class="filter-compact">
-                <input asp-for="DataFimFiltro" class="form-control exec-date" 
+                <input asp-for="DataFimFiltro" class="form-control exec-date"
                        type="date" title="Data fim" />
             </div>
-            
             <div class="filter-actions">
-                <button type="submit" class="btn btn-outline-primary exec-btn-filter">
+                <button type="submit" class="btn btn-outline-primary exec-btn-filter" title="Filtrar">
                     <i class="fas fa-filter"></i>
                 </button>
-                <a href="/Proposta" class="btn btn-outline-secondary exec-btn-clear">
+                <a href="/Proposta" class="btn btn-outline-secondary exec-btn-clear" title="Limpar filtros">
                     <i class="fas fa-times"></i>
                 </a>
             </div>
         </div>
+        @if (Model.TemFiltrosAplicados)
+        {
+            <div class="filter-active-hint mt-2">
+                <i class="fas fa-filter me-1"></i>@Model.DescricaoFiltros
+            </div>
+        }
     </form>
 </div>
 
-<!-- Grid Executivo de Propostas -->
-@if (Model.Propostas.Any())
-{
-    <div class="exec-propostas-grid">
-        @foreach (var proposta in Model.Propostas)
+@* ── VISÃO LISTA ─────────────────────────────────────────── *@
+<div id="view-lista" style="@(Model.VisualizacaoAtual == "kanban" ? "display:none;" : "")">
+    @if (Model.Propostas.Any())
+    {
+        <div class="exec-propostas-grid">
+            @foreach (var proposta in Model.Propostas)
+            {
+                @await Html.PartialAsync("_PropostaCard", proposta)
+            }
+        </div>
+    }
+    else
+    {
+        <div class="exec-empty-state">
+            <i class="fas fa-suitcase-rolling exec-empty-icon"></i>
+            <h4>Nenhuma proposta encontrada</h4>
+            <p class="exec-empty-text">
+                @if (Model.TemFiltrosAplicados) { <text>Ajuste os filtros ou </text> }
+                <a href="/Proposta/Criar" class="exec-empty-link">crie sua primeira proposta</a>
+            </p>
+        </div>
+    }
+</div>
+
+@* ── VISÃO KANBAN ─────────────────────────────────────────── *@
+<div id="view-kanban" style="@(Model.VisualizacaoAtual != "kanban" ? "display:none;" : "")">
+    <div class="kanban-board">
+        @foreach (var status in kanbanColunas)
         {
-            <div class="exec-proposta-card">
-                <!-- Status Badge -->
-                <div class="exec-status status-@(proposta.StatusProposta.ToString().ToLower())">
-                    @proposta.StatusProposta
+            var meta = statusMeta[status];
+            var colPropostas = Model.Propostas.Where(p => p.StatusProposta == status).ToList();
+            <div class="kanban-col" data-status="@((int)status)">
+                <div class="kanban-col-header" style="--col-color:@meta.Color;">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="kanban-col-dot" style="background:@meta.Color;"></span>
+                        <span class="kanban-col-title">@meta.Label</span>
+                    </div>
+                    <span class="kanban-col-count">@colPropostas.Count</span>
                 </div>
-                
-                <!-- Imagem Compacta -->
-                <div class="exec-image-container">
-                    @if (!string.IsNullOrEmpty(proposta.FotoCapa))
+                <div class="kanban-col-body" data-status="@((int)status)">
+                    @if (colPropostas.Any())
                     {
-                        <img src="@proposta.FotoCapa" alt="@proposta.Titulo" class="exec-image">
+                        @foreach (var proposta in colPropostas)
+                        {
+                            @await Html.PartialAsync("_PropostaCard", proposta)
+                        }
                     }
                     else
                     {
-                        <div class="exec-image-placeholder">
-                            <i class="fas fa-image"></i>
+                        <div class="kanban-empty-col">
+                            <i class="fas fa-inbox"></i>
+                            <span>Sem propostas</span>
                         </div>
                     }
-                </div>
-
-                <!-- Conteúdo Compacto -->
-                <div class="exec-content">
-                    <h4 class="exec-title-card">@proposta.Titulo</h4>
-                    
-                    <div class="exec-meta">
-                        @if (proposta.DataInicio.HasValue && proposta.DataFim.HasValue)
-                        {
-                            <span class="exec-meta-item">
-                                <i class="fas fa-calendar"></i>
-                                @proposta.DataInicio.Value.ToString("dd/MM") - @proposta.DataFim.Value.ToString("dd/MM")
-                            </span>
-                        }
-                        
-                        <span class="exec-meta-item">
-                            <i class="fas fa-users"></i>
-                            @(proposta.NumeroPassageiros + proposta.NumeroCriancas)
-                        </span>
-                        
-                        @if (proposta.DuracaoDias.HasValue)
-                        {
-                            <span class="exec-meta-item">
-                                <i class="fas fa-clock"></i>
-                                @proposta.DuracaoDias dias
-                            </span>
-                        }
-                    </div>
-                    
-                    <div class="exec-footer">
-                        <div class="exec-link-status">
-                            @if (proposta.LinkPublicoAtivo)
-                            {
-                                <span class="exec-badge active">
-                                    <i class="fas fa-link"></i> Ativo
-                                </span>
-                            }
-                            else
-                            {
-                                <span class="exec-badge inactive">
-                                    <i class="fas fa-link-slash"></i> Inativo
-                                </span>
-                            }
-                        </div>
-                        
-                        <div class="exec-actions">
-                            <a href="/Proposta/Detalhes/@proposta.Id" 
-                               class="exec-action-btn primary" title="Visualizar">
-                                <i class="fas fa-eye"></i>
-                            </a>
-                            <a href="/Proposta/Editar/@proposta.Id" 
-                               class="exec-action-btn secondary" title="Editar">
-                                <i class="fas fa-edit"></i>
-                            </a>
-                            <a href="/PropostaAnalyticsData/PropostaDetalhada/@proposta.Id" 
-                               class="exec-action-btn success" title="Analytics">
-                                <i class="fas fa-chart-bar"></i>
-                            </a>
-                            
-                            <div class="dropdown">
-                                <button class="exec-action-btn outline dropdown-toggle" 
-                                        data-bs-toggle="dropdown" title="Mais">
-                                    <i class="fas fa-ellipsis-h"></i>
-                                </button>
-                                <ul class="dropdown-menu dropdown-menu-end exec-dropdown">
-                                    <li>
-                                        <a class="dropdown-item" href="/Destino/Gerenciar/@proposta.Id">
-                                            <i class="fas fa-map-marked-alt me-2"></i>Destinos
-                                        </a>
-                                    </li>
-                                    @if (proposta.LinkPublicoAtivo)
-                                    {
-                                        <li>
-                                            <button class="dropdown-item" onclick="copiarLink('@proposta.LinkCompartilhamento')">
-                                                <i class="fas fa-share me-2"></i>Compartilhar
-                                            </button>
-                                        </li>
-                                        <li>
-                                            <a class="dropdown-item" href="/Proposta/Publico/@proposta.Id" target="_blank">
-                                                <i class="fas fa-external-link-alt me-2"></i>Ver Público
-                                            </a>
-                                        </li>
-                                    }
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li>
-                                        <button class="dropdown-item" onclick="duplicarProposta('@proposta.Id')">
-                                            <i class="fas fa-copy me-2"></i>Duplicar
-                                        </button>
-                                    </li>
-                                    <li>
-                                        <form method="post" action="/Proposta/Excluir" style="display:inline;" class="w-100">
-                                            <input type="hidden" name="id" value="@proposta.Id" />
-                                            <button type="submit" class="dropdown-item text-danger" 
-                                                    onclick="return confirm('Excluir esta proposta?')">
-                                                <i class="fas fa-trash me-2"></i>Excluir
-                                            </button>
-                                        </form>
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
         }
     </div>
-}
-else
-{
-    <!-- Empty State Compacto -->
-    <div class="exec-empty-state">
-        <i class="fas fa-suitcase-rolling exec-empty-icon"></i>
-        <h4>Nenhuma proposta encontrada</h4>
-        <p class="exec-empty-text">
-            @if (!string.IsNullOrEmpty(Model.TermoBusca) || Model.FiltroStatus.HasValue)
-            {
-                <text>Ajuste os filtros ou </text>
-            }
-            <a href="/Proposta/Criar" class="exec-empty-link">crie sua primeira proposta</a>
-        </p>
-    </div>
-}
+</div>
 
 @section Styles {
-    <style>
-        /* === EXECUTIVE LAYOUT STYLES === */
-        :root {
-            --exec-primary: #0A1128;
-            --exec-primary-light: #1a2845;
-            --exec-secondary: #65a3d4;
-            --exec-accent: #2ec4b6;
-            --exec-success: #28a745;
-            --exec-warning: #ffc107;
-            --exec-danger: #dc3545;
-            --exec-light: #f8f9fa;
-            --exec-dark: #343a40;
-            --exec-border: #e9ecef;
-            --exec-shadow: 0 2px 4px rgba(0,0,0,0.08);
-            --exec-shadow-hover: 0 4px 12px rgba(0,0,0,0.15);
-            --exec-radius: 8px;
-            --exec-radius-lg: 12px;
-        }
-
-        /* === HEADER EXECUTIVO === */
-        .executive-header {
-            padding: 1.5rem 0;
-            border-bottom: 1px solid var(--exec-border);
-            margin-bottom: 1.5rem;
-        }
-
-        .exec-title {
-            font-size: 1.75rem;
-            font-weight: 700;
-            color: var(--exec-primary);
-            margin: 0;
-        }
-
-        .exec-subtitle {
-            color: #6c757d;
-            font-size: 0.875rem;
-            font-weight: 500;
-        }
-
-        .exec-btn-create {
-            padding: 0.5rem 1.25rem;
-            font-size: 0.875rem;
-            font-weight: 600;
-            border-radius: var(--exec-radius);
-        }
-
-        /* === DASHBOARD EXECUTIVO === */
-        .exec-dashboard {
-            margin-bottom: 1.5rem;
-        }
-
-        .exec-stats-row {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-        }
-
-        .exec-stat-item {
-            background: white;
-            border: 1px solid var(--exec-border);
-            border-radius: var(--exec-radius);
-            padding: 1rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            transition: all 0.2s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .exec-stat-item::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 3px;
-            height: 100%;
-            background: var(--exec-primary);
-        }
-
-        .exec-stat-item.primary::before { background: var(--exec-primary); }
-        .exec-stat-item.secondary::before { background: var(--exec-dark); }
-        .exec-stat-item.warning::before { background: var(--exec-warning); }
-        .exec-stat-item.success::before { background: var(--exec-success); }
-
-        .exec-stat-item:hover {
-            box-shadow: var(--exec-shadow-hover);
-            transform: translateY(-1px);
-        }
-
-        .exec-stat-content {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .exec-stat-number {
-            font-size: 1.75rem;
-            font-weight: 700;
-            color: var(--exec-primary);
-            line-height: 1;
-        }
-
-        .exec-stat-label {
-            font-size: 0.75rem;
-            color: #6c757d;
-            text-transform: uppercase;
-            font-weight: 600;
-            letter-spacing: 0.5px;
-        }
-
-        .exec-stat-icon {
-            font-size: 1.5rem;
-            color: #dee2e6;
-        }
-
-        /* === FILTROS EXECUTIVOS === */
-        .exec-filters {
-            margin-bottom: 1.5rem;
-        }
-
-        .filters-row {
-            display: grid;
-            grid-template-columns: 2fr 1fr 1fr 1fr auto;
-            gap: 0.75rem;
-            align-items: end;
-        }
-
-        .filter-compact {
-            position: relative;
-        }
-
-        .exec-search, .exec-select, .exec-date {
-            height: 38px;
-            border: 1px solid var(--exec-border);
-            border-radius: var(--exec-radius);
-            font-size: 0.875rem;
-            transition: border-color 0.2s ease;
-        }
-
-        .exec-search:focus, .exec-select:focus, .exec-date:focus {
-            border-color: var(--exec-primary);
-            box-shadow: 0 0 0 2px rgba(10, 17, 40, 0.1);
-        }
-
-        .filter-actions {
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .exec-btn-filter, .exec-btn-clear {
-            width: 38px;
-            height: 38px;
-            padding: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: var(--exec-radius);
-        }
-
-        /* === GRID EXECUTIVO === */
-        .exec-propostas-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 1rem;
-        }
-
-        .exec-proposta-card {
-            background: white;
-            border: 1px solid var(--exec-border);
-            border-radius: var(--exec-radius-lg);
-            overflow: hidden;
-            transition: all 0.2s ease;
-            position: relative;
-        }
-
-        .exec-proposta-card:hover {
-            box-shadow: var(--exec-shadow-hover);
-            transform: translateY(-2px);
-            border-color: var(--exec-primary);
-        }
-
-        /* === STATUS BADGE === */
-        .exec-status {
-            position: absolute;
-            top: 0.75rem;
-            right: 0.75rem;
-            padding: 0.25rem 0.75rem;
-            border-radius: 12px;
-            font-size: 0.6875rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            z-index: 2;
-        }
-
-        .status-rascunho { background: #f8f9fa; color: #6c757d; }
-        .status-enviada { background: #fff3cd; color: #856404; }
-        .status-aprovada { background: #d4edda; color: #155724; }
-        .status-rejeitada { background: #f8d7da; color: #721c24; }
-        .status-cancelada { background: #e2e3e5; color: #383d41; }
-
-        /* === IMAGEM === */
-        .exec-image-container {
-            height: 120px;
-            overflow: hidden;
-        }
-
-        .exec-image {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 0.3s ease;
-        }
-
-        .exec-proposta-card:hover .exec-image {
-            transform: scale(1.05);
-        }
-
-        .exec-image-placeholder {
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #adb5bd;
-            font-size: 1.5rem;
-        }
-
-        /* === CONTEÚDO === */
-        .exec-content {
-            padding: 1rem;
-        }
-
-        .exec-title-card {
-            font-size: 1rem;
-            font-weight: 600;
-            color: var(--exec-primary);
-            margin: 0 0 0.75rem 0;
-            line-height: 1.3;
-            height: 2.6rem;
-            overflow: hidden;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-        }
-
-        .exec-meta {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.75rem;
-            margin-bottom: 1rem;
-        }
-
-        .exec-meta-item {
-            display: flex;
-            align-items: center;
-            gap: 0.375rem;
-            color: #6c757d;
-            font-size: 0.75rem;
-            font-weight: 500;
-        }
-
-        .exec-meta-item i {
-            color: var(--exec-primary);
-            width: 12px;
-            text-align: center;
-        }
-
-        /* === FOOTER DO CARD === */
-        .exec-footer {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .exec-badge {
-            padding: 0.25rem 0.5rem;
-            border-radius: 6px;
-            font-size: 0.6875rem;
-            font-weight: 500;
-        }
-
-        .exec-badge.active {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .exec-badge.inactive {
-            background: #f8d7da;
-            color: #721c24;
-        }
-
-        .exec-actions {
-            display: flex;
-            gap: 0.375rem;
-            align-items: center;
-        }
-
-        .exec-action-btn {
-            width: 28px;
-            height: 28px;
-            border-radius: 6px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid transparent;
-            text-decoration: none;
-            font-size: 0.75rem;
-            transition: all 0.2s ease;
-        }
-
-        .exec-action-btn.primary {
-            background: var(--exec-primary);
-            color: white;
-        }
-
-        .exec-action-btn.secondary {
-            background: #f8f9fa;
-            color: var(--exec-primary);
-            border-color: var(--exec-border);
-        }
-
-        .exec-action-btn.success {
-            background: var(--exec-success);
-            color: white;
-        }
-
-        .exec-action-btn.outline {
-            background: white;
-            color: #6c757d;
-            border-color: var(--exec-border);
-        }
-
-        .exec-action-btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            text-decoration: none;
-            color: inherit;
-        }
-
-        /* === DROPDOWN === */
-        .exec-dropdown {
-            border: none;
-            border-radius: var(--exec-radius);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            padding: 0.5rem 0;
-            min-width: 160px;
-        }
-
-        .exec-dropdown .dropdown-item {
-            padding: 0.5rem 1rem;
-            font-size: 0.875rem;
-            transition: background-color 0.2s ease;
-        }
-
-        .exec-dropdown .dropdown-item:hover {
-            background: #f8f9fa;
-        }
-
-        .exec-dropdown .dropdown-item.text-danger:hover {
-            background: #f8d7da;
-            color: #721c24;
-        }
-
-        /* === EMPTY STATE === */
-        .exec-empty-state {
-            text-align: center;
-            padding: 3rem 2rem;
-            background: white;
-            border: 1px solid var(--exec-border);
-            border-radius: var(--exec-radius-lg);
-        }
-
-        .exec-empty-icon {
-            font-size: 3rem;
-            color: #adb5bd;
-            margin-bottom: 1rem;
-        }
-
-        .exec-empty-state h4 {
-            color: var(--exec-primary);
-            margin-bottom: 0.5rem;
-        }
-
-        .exec-empty-text {
-            color: #6c757d;
-            margin: 0;
-        }
-
-        .exec-empty-link {
-            color: var(--exec-primary);
-            text-decoration: none;
-            font-weight: 600;
-        }
-
-        .exec-empty-link:hover {
-            text-decoration: underline;
-        }
-
-        /* === RESPONSIVO === */
-        @@media (max-width: 768px) {
-            .executive-header {
-                padding: 1rem 0;
-            }
-
-            .executive-header .d-flex {
-                flex-direction: column;
-                gap: 1rem;
-                align-items: stretch !important;
-            }
-
-            .exec-btn-create {
-                justify-self: stretch;
-            }
-
-            .exec-stats-row {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 0.75rem;
-            }
-
-            .exec-stat-item {
-                padding: 0.75rem;
-            }
-
-            .exec-stat-number {
-                font-size: 1.5rem;
-            }
-
-            .filters-row {
-                grid-template-columns: 1fr;
-                gap: 0.75rem;
-            }
-
-            .filter-actions {
-                justify-content: center;
-            }
-
-            .exec-propostas-grid {
-                grid-template-columns: 1fr;
-                gap: 0.75rem;
-            }
-
-            .exec-meta {
-                flex-direction: column;
-                gap: 0.5rem;
-                align-items: flex-start;
-            }
-
-            .exec-actions {
-                gap: 0.25rem;
-            }
-
-            .exec-action-btn {
-                width: 32px;
-                height: 32px;
-            }
-        }
-
-        @@media (max-width: 576px) {
-            .exec-stats-row {
-                grid-template-columns: 1fr;
-            }
-
-            .exec-title {
-                font-size: 1.5rem;
-            }
-
-            .exec-empty-state {
-                padding: 2rem 1rem;
-            }
-        }
-
-        /* === ANIMAÇÕES === */
-        .exec-proposta-card {
-            animation: fadeInUp 0.4s ease-out;
-        }
-
-        .exec-proposta-card:nth-child(1) { animation-delay: 0.05s; }
-        .exec-proposta-card:nth-child(2) { animation-delay: 0.1s; }
-        .exec-proposta-card:nth-child(3) { animation-delay: 0.15s; }
-        .exec-proposta-card:nth-child(4) { animation-delay: 0.2s; }
-        .exec-proposta-card:nth-child(5) { animation-delay: 0.25s; }
-        .exec-proposta-card:nth-child(6) { animation-delay: 0.3s; }
-
-        @@keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(15px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-    </style>
+<style>
+/* ════════════════════════════════════════
+   TOKENS
+════════════════════════════════════════ */
+:root {
+    /* Raios menores nesta tela — alinhados com o componente */
+    --exec-radius:    8px;
+    --exec-radius-lg: 12px;
+}
+
+/* ════════════════════════════════════════
+   HEADER
+════════════════════════════════════════ */
+.executive-header {
+    padding: 1.5rem 0;
+    border-bottom: 1px solid var(--exec-border);
+    margin-bottom: 1.5rem;
+}
+.exec-title {
+    font-size: 1.75rem; font-weight: 700;
+    color: var(--exec-primary); margin: 0;
+}
+.exec-subtitle { color: #6c757d; font-size: .875rem; font-weight: 500; }
+.exec-btn-create {
+    padding: .5rem 1.25rem; font-size: .875rem;
+    font-weight: 600; border-radius: var(--exec-radius);
+}
+
+/* ════════════════════════════════════════
+   SELETOR DE VISUALIZAÇÃO
+════════════════════════════════════════ */
+.view-toggle {
+    display: flex; border: 1px solid var(--exec-border);
+    border-radius: var(--exec-radius); overflow: hidden;
+    background: white;
+}
+.view-btn {
+    display: flex; align-items: center; gap: 6px;
+    padding: 6px 14px; font-size: .8rem; font-weight: 600;
+    border: none; background: transparent; color: #6c757d;
+    cursor: pointer; transition: all .2s ease; white-space: nowrap;
+}
+.view-btn:hover { background: var(--exec-light); color: var(--exec-primary); }
+.view-btn.active {
+    background: var(--exec-primary); color: white;
+}
+
+/* ════════════════════════════════════════
+   DASHBOARD
+════════════════════════════════════════ */
+.exec-dashboard { margin-bottom: 1.5rem; }
+.exec-stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+.exec-stat-item {
+    background: white; border: 1px solid var(--exec-border);
+    border-radius: var(--exec-radius); padding: 1rem;
+    display: flex; align-items: center; justify-content: space-between;
+    transition: all .2s ease; position: relative; overflow: hidden;
+}
+.exec-stat-item::before {
+    content: ''; position: absolute; top: 0; left: 0;
+    width: 3px; height: 100%; background: var(--exec-primary);
+}
+.exec-stat-item.primary::before  { background: var(--exec-primary); }
+.exec-stat-item.secondary::before{ background: var(--exec-dark); }
+.exec-stat-item.warning::before  { background: var(--exec-warning); }
+.exec-stat-item.success::before  { background: var(--exec-success); }
+.exec-stat-item:hover { box-shadow: var(--exec-shadow-hover); transform: translateY(-1px); }
+.exec-stat-content { display: flex; flex-direction: column; }
+.exec-stat-number { font-size: 1.75rem; font-weight: 700; color: var(--exec-primary); line-height: 1; }
+.exec-stat-label { font-size: .75rem; color: #6c757d; text-transform: uppercase; font-weight: 600; letter-spacing: .5px; }
+.exec-stat-icon { font-size: 1.5rem; color: #dee2e6; }
+
+/* ════════════════════════════════════════
+   FILTROS
+════════════════════════════════════════ */
+.exec-filters { margin-bottom: 1.5rem; }
+.filters-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr auto;
+    gap: .75rem; align-items: end;
+}
+.filter-compact { position: relative; }
+.exec-search, .exec-select, .exec-date {
+    height: 38px; border: 1px solid var(--exec-border);
+    border-radius: var(--exec-radius); font-size: .875rem;
+    transition: border-color .2s ease;
+}
+.exec-search:focus, .exec-select:focus, .exec-date:focus {
+    border-color: var(--exec-primary);
+    box-shadow: 0 0 0 2px rgba(10,17,40,.1);
+}
+.filter-actions { display: flex; gap: .5rem; }
+.exec-btn-filter, .exec-btn-clear {
+    width: 38px; height: 38px; padding: 0;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: var(--exec-radius);
+}
+.filter-active-hint {
+    font-size: .75rem; color: var(--exec-primary);
+    background: #eef3ff; border: 1px solid #c7d7f9;
+    border-radius: var(--exec-radius); padding: 4px 10px;
+    display: inline-block;
+}
+
+/* ════════════════════════════════════════
+   CARD  (compartilhado lista + kanban)
+════════════════════════════════════════ */
+.exec-proposta-card {
+    background: white; border: 1px solid var(--exec-border);
+    border-radius: var(--exec-radius-lg); overflow: hidden;
+    transition: all .2s ease; position: relative;
+}
+.exec-proposta-card:hover {
+    box-shadow: var(--exec-shadow-hover); transform: translateY(-2px);
+    border-color: var(--exec-primary);
+}
+/* Status badge */
+.exec-status {
+    position: absolute; top: .75rem; right: .75rem;
+    padding: .25rem .75rem; border-radius: 12px;
+    font-size: .6875rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .5px; z-index: 2;
+}
+.status-rascunho  { background: #f8f9fa; color: #6c757d; }
+.status-enviada   { background: #fff3cd; color: #856404; }
+.status-aprovada  { background: #d4edda; color: #155724; }
+.status-rejeitada { background: #f8d7da; color: #721c24; }
+.status-cancelada { background: #e2e3e5; color: #383d41; }
+/* Imagem */
+.exec-image-container { height: 120px; overflow: hidden; }
+.exec-image { width: 100%; height: 100%; object-fit: cover; transition: transform .3s ease; }
+.exec-proposta-card:hover .exec-image { transform: scale(1.05); }
+.exec-image-placeholder {
+    width: 100%; height: 100%;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    display: flex; align-items: center; justify-content: center;
+    color: #adb5bd; font-size: 1.5rem;
+}
+/* Conteúdo */
+.exec-content { padding: 1rem; }
+.exec-title-card {
+    font-size: 1rem; font-weight: 600; color: var(--exec-primary);
+    margin: 0 0 .75rem 0; line-height: 1.3;
+    height: 2.6rem; overflow: hidden;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+}
+.exec-meta { display: flex; flex-wrap: wrap; gap: .75rem; margin-bottom: 1rem; }
+.exec-meta-item {
+    display: flex; align-items: center; gap: .375rem;
+    color: #6c757d; font-size: .75rem; font-weight: 500;
+}
+.exec-meta-item i { color: var(--exec-primary); width: 12px; text-align: center; }
+.exec-footer { display: flex; align-items: center; justify-content: space-between; }
+.exec-badge {
+    padding: .25rem .5rem; border-radius: 6px;
+    font-size: .6875rem; font-weight: 500;
+}
+.exec-badge.active  { background: #d4edda; color: #155724; }
+.exec-badge.inactive{ background: #f8d7da; color: #721c24; }
+.exec-actions { display: flex; gap: .375rem; align-items: center; }
+.exec-action-btn {
+    width: 32px; height: 32px; border-radius: 8px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border: 1px solid transparent; text-decoration: none;
+    font-size: .78rem; transition: all .18s ease; cursor: pointer;
+}
+
+/* Visualizar — Azul Oceano */
+.exec-action-btn.primary {
+    background: #002B45 !important;
+    color: #FFFFFF !important;
+    border-color: #002B45 !important;
+}
+.exec-action-btn.primary i,
+.exec-action-btn.primary .fas,
+.exec-action-btn.primary .far,
+.exec-action-btn.primary .fab {
+    color: #FFFFFF !important;
+}
+.exec-action-btn.primary:hover {
+    background: #1E4E8C !important;
+    border-color: #1E4E8C !important;
+    color: #FFFFFF !important;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 10px rgba(0,43,69,.28);
+    text-decoration: none;
+}
+
+/* Editar — outline discreto */
+.exec-action-btn.secondary {
+    background: #FFFFFF !important;
+    color: #1E4E8C !important;
+    border: 1px solid rgba(30, 78, 140, 0.28) !important;
+}
+.exec-action-btn.secondary i,
+.exec-action-btn.secondary .fas,
+.exec-action-btn.secondary .far,
+.exec-action-btn.secondary .fab {
+    color: #1E4E8C !important;
+}
+.exec-action-btn.secondary:hover {
+    background: #E6F1FF !important;
+    color: #002B45 !important;
+    border-color: #5BA8FF !important;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(0,43,69,.10);
+    text-decoration: none;
+}
+.exec-action-btn.secondary:hover i,
+.exec-action-btn.secondary:hover .fas,
+.exec-action-btn.secondary:hover .far {
+    color: #002B45 !important;
+}
+
+/* Analytics — Azul Principal */
+.exec-action-btn.success {
+    background: #1E4E8C !important;
+    color: #FFFFFF !important;
+    border-color: #1E4E8C !important;
+}
+.exec-action-btn.success i,
+.exec-action-btn.success .fas,
+.exec-action-btn.success .far,
+.exec-action-btn.success .fab {
+    color: #FFFFFF !important;
+}
+.exec-action-btn.success:hover {
+    background: #002B45 !important;
+    border-color: #002B45 !important;
+    color: #FFFFFF !important;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 10px rgba(0,43,69,.28);
+    text-decoration: none;
+}
+
+/* Mais opções — outline neutro */
+.exec-action-btn.outline {
+    background: #FFFFFF !important;
+    color: #68728B !important;
+    border: 1px solid rgba(30, 78, 140, 0.22) !important;
+}
+.exec-action-btn.outline i,
+.exec-action-btn.outline .fas,
+.exec-action-btn.outline .far,
+.exec-action-btn.outline .fab {
+    color: #68728B !important;
+}
+.exec-action-btn.outline:hover {
+    background: #E6F1FF !important;
+    color: #002B45 !important;
+    border-color: #5BA8FF !important;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(0,43,69,.10);
+    text-decoration: none;
+}
+.exec-action-btn.outline:hover i,
+.exec-action-btn.outline:hover .fas,
+.exec-action-btn.outline:hover .far {
+    color: #002B45 !important;
+}
+.exec-dropdown {
+    border: none; border-radius: var(--exec-radius);
+    box-shadow: 0 4px 12px rgba(0,0,0,.15);
+    padding: .5rem 0; min-width: 160px;
+}
+.exec-dropdown .dropdown-item { padding: .5rem 1rem; font-size: .875rem; transition: background-color .2s ease; }
+.exec-dropdown .dropdown-item:hover { background: #f8f9fa; }
+.exec-dropdown .dropdown-item.text-danger:hover { background: #f8d7da; color: #721c24; }
+
+/* ════════════════════════════════════════
+   VISÃO LISTA — grid
+════════════════════════════════════════ */
+.exec-propostas-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1rem;
+}
+/* Empty state */
+.exec-empty-state {
+    text-align: center; padding: 3rem 2rem;
+    background: white; border: 1px solid var(--exec-border);
+    border-radius: var(--exec-radius-lg);
+}
+.exec-empty-icon { font-size: 3rem; color: #adb5bd; margin-bottom: 1rem; }
+.exec-empty-state h4 { color: var(--exec-primary); margin-bottom: .5rem; }
+.exec-empty-text { color: #6c757d; margin: 0; }
+.exec-empty-link { color: var(--exec-primary); text-decoration: none; font-weight: 600; }
+.exec-empty-link:hover { text-decoration: underline; }
+
+/* ════════════════════════════════════════
+   VISÃO KANBAN
+════════════════════════════════════════ */
+.kanban-board {
+    display: flex; gap: 14px;
+    overflow-x: auto; align-items: flex-start;
+    padding-bottom: 20px;
+    /* Scroll suave em desktop e mobile */
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+}
+
+.kanban-col {
+    flex: 0 0 300px; width: 300px;
+    background: #f5f6f8; border-radius: var(--exec-radius-lg);
+    display: flex; flex-direction: column;
+    scroll-snap-align: start;
+    max-height: calc(100vh - 320px);
+    min-height: 200px;
+}
+
+.kanban-col-header {
+    padding: 12px 14px;
+    background: white;
+    border-radius: var(--exec-radius-lg) var(--exec-radius-lg) 0 0;
+    border-bottom: 2px solid var(--col-color, #ccc);
+    display: flex; align-items: center; justify-content: space-between;
+    flex-shrink: 0;
+}
+.kanban-col-dot {
+    width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0;
+}
+.kanban-col-title { font-size: .875rem; font-weight: 700; color: var(--exec-primary); }
+.kanban-col-count {
+    font-size: .75rem; font-weight: 700;
+    background: #e9ecef; color: #495057;
+    border-radius: 10px; padding: 1px 8px; min-width: 22px; text-align: center;
+}
+
+.kanban-col-body {
+    flex: 1; overflow-y: auto; padding: 10px 8px;
+    display: flex; flex-direction: column; gap: 8px;
+    /* SortableJS drop target needs min-height */
+    min-height: 60px;
+}
+
+/* Card dentro do kanban: sem animação de entrada, cursor grab */
+.kanban-col-body .exec-proposta-card {
+    animation: none !important;
+    cursor: grab;
+    margin: 0;
+}
+.kanban-col-body .exec-proposta-card:active { cursor: grabbing; }
+
+/* Ghost durante drag */
+.kanban-ghost {
+    opacity: .4;
+    background: #e0e7ff !important;
+    border: 2px dashed var(--exec-primary) !important;
+}
+/* Chosen (being dragged) */
+.kanban-dragging {
+    opacity: .9;
+    box-shadow: 0 8px 24px rgba(0,0,0,.2) !important;
+    transform: rotate(1.5deg) !important;
+}
+
+/* Drop zone highlight quando hover */
+.kanban-col-body.sortable-over {
+    background: #eef2ff;
+    border-radius: 0 0 var(--exec-radius-lg) var(--exec-radius-lg);
+}
+
+.kanban-empty-col {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 6px; padding: 24px 0; color: #adb5bd; font-size: .8rem;
+    pointer-events: none;
+}
+.kanban-empty-col i { font-size: 1.25rem; }
+
+/* Toast de status atualizado */
+.kanban-status-toast {
+    position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+    background: var(--at-ocean, #0D2B45); color: white; padding: 10px 20px;
+    border-radius: 50px; font-size: .85rem; font-weight: 600;
+    box-shadow: 0 4px 16px rgba(0,0,0,.3);
+    z-index: 9999; white-space: nowrap;
+    animation: toastIn .25s ease-out;
+}
+@@keyframes toastIn {
+    from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+    to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* ════════════════════════════════════════
+   RESPONSIVO
+════════════════════════════════════════ */
+@@media (max-width: 768px) {
+    .executive-header { padding: 1rem 0; }
+    .executive-header > .d-flex { flex-direction: column; align-items: stretch !important; }
+    .exec-stats-row { grid-template-columns: repeat(2, 1fr); gap: .75rem; }
+    .exec-stat-number { font-size: 1.5rem; }
+    .filters-row { grid-template-columns: 1fr; gap: .75rem; }
+    .filter-actions { justify-content: center; }
+    .exec-propostas-grid { grid-template-columns: 1fr; gap: .75rem; }
+    .kanban-col { flex: 0 0 260px; width: 260px; max-height: unset; }
+    .view-btn span { display: none; }
+    .view-btn { padding: 6px 10px; }
+}
+@@media (max-width: 576px) {
+    .exec-stats-row { grid-template-columns: 1fr; }
+    .exec-title { font-size: 1.5rem; }
+}
+
+/* ════════════════════════════════════════
+   ANIMAÇÕES (lista)
+════════════════════════════════════════ */
+.exec-propostas-grid .exec-proposta-card { animation: fadeInUp .4s ease-out both; }
+.exec-propostas-grid .exec-proposta-card:nth-child(1) { animation-delay: .05s; }
+.exec-propostas-grid .exec-proposta-card:nth-child(2) { animation-delay: .10s; }
+.exec-propostas-grid .exec-proposta-card:nth-child(3) { animation-delay: .15s; }
+.exec-propostas-grid .exec-proposta-card:nth-child(4) { animation-delay: .20s; }
+.exec-propostas-grid .exec-proposta-card:nth-child(5) { animation-delay: .25s; }
+.exec-propostas-grid .exec-proposta-card:nth-child(6) { animation-delay: .30s; }
+@@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(15px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+</style>
 }
 
 @section Scripts {
-    <script>
-        // Funções JavaScript mantidas do original
-        function copiarLink(link) {
-            const linkCompleto = window.location.origin + link;
-            navigator.clipboard.writeText(linkCompleto).then(function() {
-                showNotification('Link copiado para a área de transferência!', 'success');
-            }, function(err) {
-                console.error('Erro ao copiar link: ', err);
-                showNotification('Erro ao copiar link. Tente novamente.', 'error');
-            });
-        }
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+<script>
+/* ────────────────────────────────────────────────
+   MAPA: int → { label, cssClass }
+──────────────────────────────────────────────── */
+const STATUS_MAP = {
+    1: { label: 'Rascunho',  css: 'status-rascunho'  },
+    2: { label: 'Enviada',   css: 'status-enviada'   },
+    3: { label: 'Aprovada',  css: 'status-aprovada'  },
+    4: { label: 'Rejeitada', css: 'status-rejeitada' },
+    5: { label: 'Cancelada', css: 'status-cancelada' },
+};
 
-        function duplicarProposta(propostaId) {
-            if (confirm('Deseja duplicar esta proposta?')) {
-                fetch(`/api/proposta/${propostaId}/duplicar`, {
+/* ────────────────────────────────────────────────
+   TOGGLE DE VISUALIZAÇÃO
+──────────────────────────────────────────────── */
+function setView(view) {
+    const lista  = document.getElementById('view-lista');
+    const kanban = document.getElementById('view-kanban');
+    const btnL   = document.getElementById('btn-lista');
+    const btnK   = document.getElementById('btn-kanban');
+
+    if (view === 'kanban') {
+        lista.style.display  = 'none';
+        kanban.style.display = '';
+        btnL.classList.remove('active');
+        btnK.classList.add('active');
+    } else {
+        kanban.style.display = 'none';
+        lista.style.display  = '';
+        btnL.classList.add('active');
+        btnK.classList.remove('active');
+    }
+
+    // Persiste sem bloquear o UI
+    fetch('/Proposta/SalvarVisualizacao', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ visualizacao: view })
+    }).catch(() => {}); // falha silenciosa — preferência será salva na próxima troca bem-sucedida
+}
+
+/* ────────────────────────────────────────────────
+   KANBAN — DRAG & DROP (SortableJS)
+──────────────────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', function () {
+
+    // Activar botão correto ao carregar (servidor já definiu display, só marca o botão)
+    const currentView = '@Model.VisualizacaoAtual';
+    document.getElementById(currentView === 'kanban' ? 'btn-kanban' : 'btn-lista').classList.add('active');
+
+    // Inicializar SortableJS em cada coluna
+    document.querySelectorAll('.kanban-col-body').forEach(function (col) {
+        Sortable.create(col, {
+            group: 'proposals',
+            animation: 180,
+            ghostClass: 'kanban-ghost',
+            dragClass: 'kanban-dragging',
+            // Highlight na drop-zone ao entrar
+            onDragEnter: function (evt) { evt.to.classList.add('sortable-over'); },
+            onDragLeave: function (evt) { evt.to.classList.remove('sortable-over'); },
+            onEnd: function (evt) {
+                evt.to.classList.remove('sortable-over');
+
+                const card      = evt.item;
+                const propostaId = card.dataset.id;
+                const novoStatus = parseInt(evt.to.dataset.status, 10);
+                const statusAnterior = parseInt(evt.from.dataset.status, 10);
+
+                // Nada mudou (mesma coluna)
+                if (novoStatus === statusAnterior && evt.oldIndex === evt.newIndex) return;
+
+                // Atualiza badge visualmente de imediato (otimista)
+                updateStatusBadge(card, novoStatus);
+
+                // Remove empty-col hint se existia
+                const emptyHint = evt.to.querySelector('.kanban-empty-col');
+                if (emptyHint) emptyHint.remove();
+
+                // Atualiza contagens das colunas
+                updateColCount(evt.from);
+                updateColCount(evt.to);
+
+                // Persiste no servidor
+                fetch('/api/proposta/' + propostaId + '/status', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: novoStatus })
                 })
-                .then(response => response.json())
+                .then(r => r.json())
                 .then(data => {
                     if (data.success) {
-                        showNotification(data.message, 'success');
-                        if (data.redirect) {
-                            setTimeout(() => window.location.href = data.redirect, 2000);
-                        }
+                        showKanbanToast('Status: ' + STATUS_MAP[novoStatus].label, '✓');
                     } else {
-                        showNotification('Erro ao duplicar proposta', 'error');
+                        revertDrag(card, evt.from, evt.oldIndex);
                     }
                 })
-                .catch(error => {
-                    console.error('Erro:', error);
-                    showNotification('Erro de conexão', 'error');
-                });
-            }
-        }
-
-        function showNotification(message, type) {
-            const notification = document.createElement('div');
-            notification.className = `alert alert-${type === 'success' ? 'success' : 'danger'} position-fixed`;
-            notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px; animation: slideInRight 0.3s ease-out;';
-            notification.innerHTML = `
-                <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>
-                ${message}
-                <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>
-            `;
-            
-            document.body.appendChild(notification);
-            
-            setTimeout(() => {
-                if (notification.parentNode) {
-                    notification.style.animation = 'slideOutRight 0.3s ease-out';
-                    setTimeout(() => notification.remove(), 300);
-                }
-            }, 4000);
-        }
-
-        // Inicialização
-        document.addEventListener('DOMContentLoaded', function() {
-            // Aplicar animações nos cards
-            const cards = document.querySelectorAll('.exec-proposta-card');
-            cards.forEach((card, index) => {
-                card.style.opacity = '0';
-                card.style.transform = 'translateY(15px)';
-                
-                setTimeout(() => {
-                    card.style.transition = 'all 0.4s ease-out';
-                    card.style.opacity = '1';
-                    card.style.transform = 'translateY(0)';
-                }, index * 50);
-            });
-
-            // Auto-clear search quando vazio
-            const searchInput = document.querySelector('.exec-search');
-            if (searchInput) {
-                searchInput.addEventListener('input', function() {
-                    if (this.value === '') {
-                        // Opcional: limpar automaticamente quando vazio
-                    }
+                .catch(function () {
+                    showKanbanToast('Erro de conexão — revertendo', '⚠');
+                    revertDrag(card, evt.from, evt.oldIndex);
                 });
             }
         });
+    });
+});
 
-        // CSS para animações de notificação
-        const style = document.createElement('style');
-        style.textContent = `
-            @@keyframes slideInRight {
-                from { transform: translateX(100%); opacity: 0; }
-                to { transform: translateX(0); opacity: 1; }
+/* ────────────────────────────────────────────────
+   HELPERS
+──────────────────────────────────────────────── */
+function updateStatusBadge(cardEl, statusInt) {
+    const badge = cardEl.querySelector('.exec-status');
+    if (!badge) return;
+    const info = STATUS_MAP[statusInt];
+    if (!info) return;
+    badge.className = 'exec-status ' + info.css;
+    badge.textContent = info.label;
+    cardEl.dataset.status = statusInt;
+}
+
+function updateColCount(colBody) {
+    const col = colBody.closest('.kanban-col');
+    if (!col) return;
+    const countEl = col.querySelector('.kanban-col-count');
+    if (!countEl) return;
+    const cards = colBody.querySelectorAll('.exec-proposta-card').length;
+    countEl.textContent = cards;
+}
+
+function revertDrag(card, originalCol, originalIndex) {
+    // Re-insere o card na posição original
+    const children = originalCol.children;
+    if (originalIndex >= children.length) {
+        originalCol.appendChild(card);
+    } else {
+        originalCol.insertBefore(card, children[originalIndex]);
+    }
+    updateStatusBadge(card, parseInt(originalCol.dataset.status, 10));
+    updateColCount(originalCol);
+}
+
+function showKanbanToast(msg, icon) {
+    // Remove toast anterior se ainda existir
+    document.querySelectorAll('.kanban-status-toast').forEach(t => t.remove());
+    const toast = document.createElement('div');
+    toast.className = 'kanban-status-toast';
+    toast.textContent = (icon ? icon + ' ' : '') + msg;
+    document.body.appendChild(toast);
+    setTimeout(() => {
+        toast.style.transition = 'opacity .3s';
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 320);
+    }, 2200);
+}
+
+/* ────────────────────────────────────────────────
+   FUNÇÕES ORIGINAIS (copiar link, duplicar, notif)
+──────────────────────────────────────────────── */
+function copiarLink(link) {
+    const linkCompleto = window.location.origin + link;
+    navigator.clipboard.writeText(linkCompleto)
+        .then(() => showNotification('Link copiado!', 'success'))
+        .catch(() => showNotification('Erro ao copiar link.', 'error'));
+}
+
+function duplicarProposta(propostaId) {
+    if (confirm('Deseja duplicar esta proposta?')) {
+        fetch('/api/proposta/' + propostaId + '/duplicar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                showNotification(data.message, 'success');
+                if (data.redirect) setTimeout(() => window.location.href = data.redirect, 2000);
+            } else {
+                showNotification('Erro ao duplicar proposta', 'error');
             }
-            @@keyframes slideOutRight {
-                from { transform: translateX(0); opacity: 1; }
-                to { transform: translateX(100%); opacity: 0; }
-            }
-        `;
-        document.head.appendChild(style);
-    </script>
+        })
+        .catch(() => showNotification('Erro de conexão', 'error'));
+    }
+}
+
+function showNotification(message, type) {
+    const n = document.createElement('div');
+    n.className = 'alert alert-' + (type === 'success' ? 'success' : 'danger') + ' position-fixed';
+    n.style.cssText = 'top:20px;right:20px;z-index:9999;min-width:300px;';
+    n.innerHTML = '<i class="fas fa-' + (type === 'success' ? 'check-circle' : 'exclamation-circle') + ' me-2"></i>' +
+        message + '<button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>';
+    document.body.appendChild(n);
+    setTimeout(() => { if (n.parentNode) n.remove(); }, 4000);
+}
+</script>
 }

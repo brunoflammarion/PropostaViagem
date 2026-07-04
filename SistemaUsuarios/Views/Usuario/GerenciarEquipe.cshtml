@@ -1,0 +1,408 @@
+@using SistemaUsuarios.Models
+@{
+    ViewData["Title"] = "Gerenciar Equipe";
+    var associados = ViewBag.Associados as List<Usuario> ?? new List<Usuario>();
+
+    string Fmt(string? s) => s ?? "";
+    string FmtTel(string? t)
+    {
+        if (string.IsNullOrEmpty(t)) return "";
+        if (t.Length == 11) return $"({t[..2]}) {t[2..7]}-{t[7..]}";
+        if (t.Length == 10) return $"({t[..2]}) {t[2..6]}-{t[6..]}";
+        return t;
+    }
+    string FmtCpf(string? c)
+    {
+        if (string.IsNullOrEmpty(c) || c.Length != 11) return c ?? "";
+        return $"{c[..3]}.{c[3..6]}.{c[6..9]}-{c[9..]}";
+    }
+}
+
+@* Serializa os dados dos associados em JSON para que o JS preencha os modais *@
+<script id="associados-data" type="application/json">
+[
+  @for (int i = 0; i < associados.Count; i++)
+  {
+      var a = associados[i];
+      @Html.Raw($@"{{
+    ""id"":""{a.Id}"",
+    ""nome"":""{System.Text.Json.JsonEncodedText.Encode(a.Nome)}"",
+    ""email"":""{a.Email}"",
+    ""telefone"":""{FmtTel(a.Telefone)}"",
+    ""status"":""{(int)a.Status}""
+  }}{(i < associados.Count - 1 ? "," : "")}")
+  }
+]
+</script>
+
+<div class="container-fluid px-4 py-4">
+
+    @if (TempData["Sucesso"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i>@TempData["Sucesso"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["Erro"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>@TempData["Erro"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h1 class="h3 fw-bold mb-0">Gerenciar Equipe</h1>
+            <p class="text-muted small mb-0">Agentes associados à sua conta</p>
+        </div>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalNovoAgente">
+            <i class="fas fa-user-plus me-1"></i> Novo Agente
+        </button>
+    </div>
+
+    @if (!associados.Any())
+    {
+        <div class="card border-0 shadow-sm text-center py-5">
+            <div class="card-body">
+                <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">Nenhum agente associado ainda</h5>
+                <p class="text-muted small">Crie agentes para que possam criar propostas vinculadas à sua conta.</p>
+                <button class="btn btn-primary mt-2" data-bs-toggle="modal" data-bs-target="#modalNovoAgente">
+                    <i class="fas fa-user-plus me-1"></i> Criar primeiro agente
+                </button>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-0">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Agente</th>
+                            <th>E-mail</th>
+                            <th>Membro desde</th>
+                            <th>Status</th>
+                            <th class="text-end pe-4" style="min-width:220px">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var a in associados)
+                        {
+                            var isAtivo    = a.Status == StatusUsuario.Ativo;
+                            var isInativo  = a.Status == StatusUsuario.Inativo;
+
+                            var (badgeCls, badgeLabel) = a.Status switch
+                            {
+                                StatusUsuario.Ativo     => ("bg-success",          "Ativo"),
+                                StatusUsuario.Inativo   => ("bg-secondary",        "Inativo"),
+                                StatusUsuario.Bloqueado => ("bg-danger",            "Bloqueado"),
+                                _                       => ("bg-warning text-dark", "Novo")
+                            };
+
+                            <tr class="@(isInativo ? "opacity-50" : "")">
+                                <td class="ps-4">
+                                    <div class="d-flex align-items-center gap-2">
+                                        @if (!string.IsNullOrEmpty(a.FotoPath))
+                                        {
+                                            <img src="@a.FotoPath" alt="@a.Nome"
+                                                 class="rounded-circle" width="36" height="36"
+                                                 style="object-fit:cover;flex-shrink:0">
+                                        }
+                                        else
+                                        {
+                                            <div class="rounded-circle d-flex align-items-center justify-content-center fw-bold text-white"
+                                                 style="width:36px;height:36px;font-size:14px;flex-shrink:0;background:var(--exec-secondary)">
+                                                @a.Nome.Substring(0, 1).ToUpper()
+                                            </div>
+                                        }
+                                        <span class="fw-medium">@a.Nome</span>
+                                    </div>
+                                </td>
+                                <td class="text-muted small">@a.Email</td>
+                                <td class="text-muted small">@a.DataCriacao.ToString("dd/MM/yyyy")</td>
+                                <td><span class="badge @badgeCls">@badgeLabel</span></td>
+                                <td class="text-end pe-4">
+                                    <div class="d-flex justify-content-end gap-1">
+
+                                        @* ── Editar ── *@
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-secondary"
+                                                title="Editar dados"
+                                                onclick="abrirModalEditar('@a.Id')">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+
+                                        @* ── Alterar Senha ── *@
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-secondary"
+                                                title="Alterar senha"
+                                                onclick="abrirModalSenha('@a.Id', '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(a.Nome))')">
+                                            <i class="fas fa-key"></i>
+                                        </button>
+
+                                        @* ── Inativar / Ativar ── *@
+                                        @if (isAtivo)
+                                        {
+                                            <form method="post" asp-action="InativarAssociado"
+                                                  onsubmit="return confirm('Inativar @Html.Raw(System.Text.Encodings.Web.HtmlEncoder.Default.Encode(a.Nome))? O acesso será bloqueado, mas todas as propostas serão mantidas.')">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@a.Id" />
+                                                <button type="submit" class="btn btn-sm btn-outline-warning" title="Inativar">
+                                                    <i class="fas fa-user-slash"></i>
+                                                </button>
+                                            </form>
+                                        }
+                                        else
+                                        {
+                                            <form method="post" asp-action="AlterarStatusAssociado">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@a.Id" />
+                                                <input type="hidden" name="status" value="@((int)StatusUsuario.Ativo)" />
+                                                <button type="submit" class="btn btn-sm btn-outline-success" title="Reativar">
+                                                    <i class="fas fa-user-check"></i>
+                                                </button>
+                                            </form>
+                                        }
+
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <p class="text-muted small mt-2 ms-1">
+            <i class="fas fa-info-circle me-1"></i>
+            Ao inativar um agente, o acesso é bloqueado imediatamente. Propostas existentes são preservadas e continuam visíveis no seu painel.
+        </p>
+    }
+</div>
+
+@* ══════════════════════════════════════════════════════════
+   MODAL — Novo Agente
+══════════════════════════════════════════════════════════ *@
+<div class="modal fade" id="modalNovoAgente" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-user-plus me-2"></i>Novo Agente Associado</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" asp-action="CriarAssociado">
+                @Html.AntiForgeryToken()
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-medium">Nome <span class="text-danger">*</span></label>
+                        <input type="text" name="nome" class="form-control" required maxlength="100"
+                               placeholder="Nome completo do agente">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-medium">E-mail <span class="text-danger">*</span></label>
+                        <input type="email" name="email" class="form-control" required placeholder="email@agencia.com">
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-medium">Telefone <span class="text-danger">*</span></label>
+                            <input type="text" name="telefone" id="tel-novo" class="form-control" required
+                                   placeholder="(11) 99999-9999" maxlength="15">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-medium">CPF <span class="text-danger">*</span></label>
+                            <input type="text" name="cpf" id="cpf-novo" class="form-control" required
+                                   placeholder="000.000.000-00" maxlength="14">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-medium">Senha inicial <span class="text-danger">*</span></label>
+                        <input type="password" name="senha" class="form-control" required minlength="6"
+                               placeholder="Mínimo 6 caracteres">
+                        <div class="form-text">O agente poderá alterar a senha após o primeiro acesso.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-user-check me-1"></i>Criar Agente
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@* ══════════════════════════════════════════════════════════
+   MODAL — Editar Agente
+══════════════════════════════════════════════════════════ *@
+<div class="modal fade" id="modalEditarAgente" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-user-edit me-2"></i>Editar Agente</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" asp-action="EditarAssociado">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="edit-id" />
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-medium">Nome <span class="text-danger">*</span></label>
+                        <input type="text" name="nome" id="edit-nome" class="form-control" required maxlength="100">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-medium">E-mail <span class="text-danger">*</span></label>
+                        <input type="email" name="email" id="edit-email" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-medium">Telefone</label>
+                        <input type="text" name="telefone" id="edit-tel" class="form-control"
+                               placeholder="(11) 99999-9999" maxlength="15">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-medium">Status <span class="text-danger">*</span></label>
+                        <select name="status" id="edit-status" class="form-select" required>
+                            <option value="@((int)StatusUsuario.Ativo)">Ativo</option>
+                            <option value="@((int)StatusUsuario.Inativo)">Inativo</option>
+                            <option value="@((int)StatusUsuario.Bloqueado)">Bloqueado</option>
+                        </select>
+                        <div class="form-text">
+                            Agentes inativos ou bloqueados não conseguem acessar a plataforma.
+                            Propostas existentes são sempre preservadas.
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>Salvar Alterações
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@* ══════════════════════════════════════════════════════════
+   MODAL — Alterar Senha
+══════════════════════════════════════════════════════════ *@
+<div class="modal fade" id="modalSenhaAgente" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-key me-2"></i>Alterar Senha</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" asp-action="AlterarSenhaAssociado" onsubmit="return validarSenhasModal()">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="senha-id" />
+                <div class="modal-body">
+                    <p class="text-muted small mb-3">
+                        Alterando senha de <strong id="senha-nome"></strong>.
+                    </p>
+                    <div class="mb-3">
+                        <label class="form-label fw-medium">Nova senha <span class="text-danger">*</span></label>
+                        <input type="password" name="novaSenha" id="senha-nova" class="form-control"
+                               required minlength="6" placeholder="Mínimo 6 caracteres"
+                               autocomplete="new-password">
+                    </div>
+                    <div class="mb-1">
+                        <label class="form-label fw-medium">Confirmar senha <span class="text-danger">*</span></label>
+                        <input type="password" name="confirmarSenha" id="senha-confirmar" class="form-control"
+                               required minlength="6" placeholder="Repita a nova senha"
+                               autocomplete="new-password">
+                        <div id="senha-erro" class="text-danger small mt-1" style="display:none">
+                            As senhas não conferem.
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-key me-1"></i>Alterar Senha
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+(function () {
+    // Lê o JSON injetado pelo Razor
+    const associados = JSON.parse(
+        document.getElementById('associados-data').textContent
+    );
+
+    // Máscara de telefone
+    function mascaraTel(v) {
+        v = v.replace(/\D/g, '').substring(0, 11);
+        if (v.length > 10)
+            return v.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+        return v.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3');
+    }
+
+    // Máscara de CPF
+    function mascaraCpf(v) {
+        v = v.replace(/\D/g, '').substring(0, 11);
+        v = v.replace(/(\d{3})(\d)/, '$1.$2');
+        v = v.replace(/(\d{3})(\d)/, '$1.$2');
+        v = v.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+        return v;
+    }
+
+    // Aplicar máscaras nos campos do modal Novo
+    const cpfNovo = document.getElementById('cpf-novo');
+    const telNovo = document.getElementById('tel-novo');
+    cpfNovo?.addEventListener('input', function () { this.value = mascaraCpf(this.value); });
+    telNovo?.addEventListener('input', function () { this.value = mascaraTel(this.value); });
+
+    // Aplicar máscara no campo de telefone do modal Editar
+    const editTel = document.getElementById('edit-tel');
+    editTel?.addEventListener('input', function () { this.value = mascaraTel(this.value); });
+
+    // ── Modal Editar ─────────────────────────────────────────
+    window.abrirModalEditar = function (id) {
+        const ag = associados.find(a => a.id === id);
+        if (!ag) return;
+
+        document.getElementById('edit-id').value     = ag.id;
+        document.getElementById('edit-nome').value   = ag.nome;
+        document.getElementById('edit-email').value  = ag.email;
+        document.getElementById('edit-tel').value    = ag.telefone;
+        document.getElementById('edit-status').value = ag.status;
+
+        new bootstrap.Modal(document.getElementById('modalEditarAgente')).show();
+    };
+
+    // ── Modal Senha ──────────────────────────────────────────
+    window.abrirModalSenha = function (id, nome) {
+        document.getElementById('senha-id').value   = id;
+        document.getElementById('senha-nome').textContent = nome;
+        document.getElementById('senha-nova').value = '';
+        document.getElementById('senha-confirmar').value = '';
+        document.getElementById('senha-erro').style.display = 'none';
+
+        new bootstrap.Modal(document.getElementById('modalSenhaAgente')).show();
+    };
+
+    // Validação client-side antes do submit
+    window.validarSenhasModal = function () {
+        const nova  = document.getElementById('senha-nova').value;
+        const conf  = document.getElementById('senha-confirmar').value;
+        const erro  = document.getElementById('senha-erro');
+        if (nova !== conf) {
+            erro.style.display = 'block';
+            return false;
+        }
+        erro.style.display = 'none';
+        return true;
+    };
+})();
+</script>
+}

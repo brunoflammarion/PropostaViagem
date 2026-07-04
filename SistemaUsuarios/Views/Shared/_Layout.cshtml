@@ -1,4 +1,32 @@
-﻿<!DOCTYPE html>
+﻿@functions {
+    static string LightenHex(string hex, int amt)
+    {
+        if (string.IsNullOrEmpty(hex) || !hex.StartsWith("#") || hex.Length != 7) return hex;
+        try
+        {
+            int r = Math.Clamp(Convert.ToInt32(hex.Substring(1, 2), 16) + amt, 0, 255);
+            int g = Math.Clamp(Convert.ToInt32(hex.Substring(3, 2), 16) + amt, 0, 255);
+            int b = Math.Clamp(Convert.ToInt32(hex.Substring(5, 2), 16) + amt, 0, 255);
+            return $"#{r:X2}{g:X2}{b:X2}";
+        }
+        catch { return hex; }
+    }
+}
+@{
+    var _uCorP = Context.Session.GetString("CorPrimaria");
+    var _uCorS = Context.Session.GetString("CorSecundaria");
+    var _uCorD = Context.Session.GetString("CorDestaque");
+    bool _uHasTheme = !string.IsNullOrEmpty(_uCorP) && !string.IsNullOrEmpty(_uCorS) && !string.IsNullOrEmpty(_uCorD);
+    var _uCorPLight = _uHasTheme ? LightenHex(_uCorP!, 28) : "";
+    var _uCorDDark  = _uHasTheme ? LightenHex(_uCorD!, -18) : "";
+    var _uFoto       = Context.Session.GetString("FotoPath");
+    var _uNome       = Context.Session.GetString("UsuarioNome") ?? "Usuário";
+    var _uIniciais   = string.Join("", _uNome.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(p => char.ToUpper(p[0]).ToString()));
+    var _uTipo       = Context.Session.GetString("TipoUsuario") ?? "Master";
+    var _uIsMaster   = _uTipo != "Associado";
+    var _uNomeMaster = Context.Session.GetString("NomeMaster");
+}
+<!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <meta charset="utf-8" />
@@ -12,590 +40,36 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-
-    <style>
-        :root {
-            /* === EXECUTIVE DESIGN SYSTEM === */
-            --exec-primary: #0A1128;
-            --exec-primary-light: #1a2845;
-            --exec-secondary: #65a3d4;
-            --exec-accent: #2ec4b6;
-            --exec-success: #28a745;
-            --exec-warning: #ffc107;
-            --exec-danger: #dc3545;
-            --exec-info: #17a2b8;
-            
-            /* === NEUTRALS === */
-            --exec-white: #FFFFFF;
-            --exec-light: #f8f9fa;
-            --exec-lighter: #f1f3f4;
-            --exec-border: #e9ecef;
-            --exec-border-light: #f1f1f1;
-            --exec-text: #2c3e50;
-            --exec-text-muted: #6c757d;
-            --exec-text-light: #adb5bd;
-            
-            /* === SPACING & LAYOUT === */
-            --exec-header-height: 70px;
-            --exec-container-padding: 1.5rem;
-            --exec-card-padding: 1rem;
-            --exec-section-spacing: 1.5rem;
-            
-            /* === VISUAL EFFECTS === */
-            --exec-radius: 8px;
-            --exec-radius-sm: 6px;
-            --exec-radius-lg: 12px;
-            --exec-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
-            --exec-shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.15);
-            --exec-shadow-strong: 0 8px 24px rgba(0, 0, 0, 0.12);
-            --exec-transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            
-            /* === GRADIENTS === */
-            --exec-gradient-primary: linear-gradient(135deg, #0A1128 0%, #1a2845 100%);
-            --exec-gradient-accent: linear-gradient(135deg, #2ec4b6 0%, #26a69a 100%);
-            --exec-gradient-light: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-        }
-
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: var(--exec-lighter);
-            color: var(--exec-text);
-            line-height: 1.5;
-            font-size: 0.875rem;
-        }
-
-        /* === NAVBAR EXECUTIVO === */
-        .navbar {
-            background: var(--exec-gradient-primary);
-            box-shadow: var(--exec-shadow);
-            border: none;
-            padding: 0.75rem 0;
-            height: var(--exec-header-height);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
-
-        .navbar-brand {
-            font-weight: 700;
-            font-size: 1.25rem;
-            color: white !important;
-            transition: var(--exec-transition);
-        }
-
-        .navbar-brand:hover {
-            color: var(--exec-accent) !important;
-            transform: scale(1.02);
-        }
-
-        .nav-link {
-            color: rgba(255, 255, 255, 0.9) !important;
-            font-weight: 500;
-            font-size: 0.875rem;
-            padding: 0.5rem 0.75rem !important;
-            border-radius: var(--exec-radius-sm);
-            transition: var(--exec-transition);
-            position: relative;
-        }
-
-        .nav-link:hover, .nav-link.active {
-            background-color: rgba(46, 196, 182, 0.15);
-            color: var(--exec-accent) !important;
-        }
-
-        .nav-link.active::after {
-            content: '';
-            position: absolute;
-            bottom: -0.75rem;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 20px;
-            height: 2px;
-            background: var(--exec-accent);
-            border-radius: 1px;
-        }
-
-        .dropdown-menu {
-            border: none;
-            border-radius: var(--exec-radius);
-            box-shadow: var(--exec-shadow-strong);
-            padding: 0.5rem 0;
-            background: var(--exec-white);
-            border: 1px solid var(--exec-border);
-            margin-top: 0.5rem;
-        }
-
-        .dropdown-item {
-            padding: 0.5rem 1rem;
-            transition: var(--exec-transition);
-            color: var(--exec-text);
-            font-size: 0.875rem;
-        }
-
-        .dropdown-item:hover {
-            background: var(--exec-light);
-            color: var(--exec-primary);
-        }
-
-        /* === MAIN CONTENT EXECUTIVO === */
-        .main-content {
-            min-height: calc(100vh - var(--exec-header-height) - 80px);
-            padding: var(--exec-container-padding);
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        /* === ALERTS EXECUTIVOS === */
-        .alert {
-            border-radius: var(--exec-radius);
-            border: none;
-            box-shadow: var(--exec-shadow);
-            position: relative;
-            overflow: hidden;
-            padding: 0.75rem 1rem;
-            margin-bottom: var(--exec-section-spacing);
-            font-size: 0.875rem;
-        }
-
-        .alert::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 4px;
-            height: 100%;
-            background: currentColor;
-        }
-
-        .alert-success {
-            background: rgba(40, 167, 69, 0.1);
-            color: #155724;
-            border-left: 4px solid var(--exec-success);
-        }
-
-        .alert-danger {
-            background: rgba(220, 53, 69, 0.1);
-            color: #721c24;
-            border-left: 4px solid var(--exec-danger);
-        }
-
-        .alert-warning {
-            background: rgba(255, 193, 7, 0.1);
-            color: #856404;
-            border-left: 4px solid var(--exec-warning);
-        }
-
-        .alert-info {
-            background: rgba(23, 162, 184, 0.1);
-            color: #0c5460;
-            border-left: 4px solid var(--exec-info);
-        }
-
-        /* === CARDS EXECUTIVOS === */
-        .card {
-            border: none;
-            box-shadow: var(--exec-shadow);
-            border-radius: var(--exec-radius);
-            transition: var(--exec-transition);
-            overflow: hidden;
-            background: var(--exec-white);
-            border: 1px solid var(--exec-border);
-            margin-bottom: var(--exec-section-spacing);
-        }
-
-        .card:hover {
-            box-shadow: var(--exec-shadow-hover);
-            border-color: var(--exec-secondary);
-        }
-
-        .card-header {
-            background: var(--exec-gradient-light);
-            border-bottom: 1px solid var(--exec-border);
-            font-weight: 600;
-            color: var(--exec-text);
-            padding: 0.875rem 1rem;
-            font-size: 0.875rem;
-        }
-
-        .card-header.bg-primary {
-            background: var(--exec-gradient-primary) !important;
-            color: white;
-            border-color: var(--exec-primary);
-        }
-
-        .card-body {
-            padding: var(--exec-card-padding);
-        }
-
-        /* === BOTÕES EXECUTIVOS === */
-        .btn {
-            border-radius: var(--exec-radius-sm);
-            padding: 0.5rem 1rem;
-            font-weight: 500;
-            font-size: 0.875rem;
-            transition: var(--exec-transition);
-            border: none;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .btn:hover {
-            transform: translateY(-1px);
-            box-shadow: var(--exec-shadow-hover);
-        }
-
-        .btn-primary {
-            background: var(--exec-gradient-accent);
-            color: white;
-            border-color: var(--exec-accent);
-        }
-
-        .btn-primary:hover {
-            background: linear-gradient(135deg, #26a69a 0%, #2ec4b6 100%);
-            color: white;
-            border-color: #26a69a;
-        }
-
-        .btn-outline-primary {
-            border: 1px solid var(--exec-primary);
-            color: var(--exec-primary);
-            background: transparent;
-        }
-
-        .btn-outline-primary:hover {
-            background: var(--exec-primary);
-            color: white;
-            border-color: var(--exec-primary);
-        }
-
-        .btn-success {
-            background: var(--exec-success);
-            border-color: var(--exec-success);
-        }
-
-        .btn-warning {
-            background: var(--exec-warning);
-            border-color: var(--exec-warning);
-            color: #212529;
-        }
-
-        .btn-danger {
-            background: var(--exec-danger);
-            border-color: var(--exec-danger);
-        }
-
-        .btn-info {
-            background: var(--exec-info);
-            border-color: var(--exec-info);
-        }
-
-        .btn-secondary {
-            background: var(--exec-text-muted);
-            border-color: var(--exec-text-muted);
-        }
-
-        .btn-outline-secondary {
-            border-color: var(--exec-border);
-            color: var(--exec-text-muted);
-        }
-
-        .btn-outline-secondary:hover {
-            background: var(--exec-text-muted);
-            border-color: var(--exec-text-muted);
-        }
-
-        .btn-sm {
-            padding: 0.375rem 0.75rem;
-            font-size: 0.8125rem;
-        }
-
-        .btn-lg {
-            padding: 0.75rem 1.5rem;
-            font-size: 1rem;
-        }
-
-        /* === FORM CONTROLS EXECUTIVOS === */
-        .form-control, .form-select {
-            border: 1px solid var(--exec-border);
-            border-radius: var(--exec-radius-sm);
-            padding: 0.5rem 0.75rem;
-            transition: var(--exec-transition);
-            background: var(--exec-white);
-            color: var(--exec-text);
-            font-size: 0.875rem;
-        }
-
-        .form-control:focus, .form-select:focus {
-            border-color: var(--exec-secondary);
-            box-shadow: 0 0 0 2px rgba(101, 163, 212, 0.15);
-            background: var(--exec-white);
-            color: var(--exec-text);
-        }
-
-        .form-control::placeholder {
-            color: var(--exec-text-light);
-        }
-
-        .form-label {
-            color: var(--exec-text);
-            font-weight: 500;
-            margin-bottom: 0.375rem;
-            font-size: 0.8125rem;
-        }
-
-        /* === TABLES EXECUTIVAS === */
-        .table {
-            background: var(--exec-white);
-            border-radius: var(--exec-radius);
-            overflow: hidden;
-            box-shadow: var(--exec-shadow);
-            font-size: 0.875rem;
-        }
-
-        .table thead th {
-            background: var(--exec-gradient-primary);
-            color: white;
-            border: none;
-            font-weight: 600;
-            text-transform: uppercase;
-            font-size: 0.75rem;
-            letter-spacing: 0.5px;
-            padding: 0.75rem;
-        }
-
-        .table tbody tr {
-            transition: var(--exec-transition);
-            border-bottom: 1px solid var(--exec-border-light);
-        }
-
-        .table tbody tr:hover {
-            background: var(--exec-light);
-        }
-
-        .table tbody td {
-            padding: 0.75rem;
-            color: var(--exec-text);
-            font-size: 0.875rem;
-        }
-
-        /* === BADGES EXECUTIVOS === */
-        .badge {
-            font-size: 0.6875rem;
-            padding: 0.375rem 0.75rem;
-            border-radius: var(--exec-radius-sm);
-            font-weight: 500;
-        }
-
-        .bg-primary { background-color: var(--exec-primary) !important; }
-        .bg-secondary { background-color: var(--exec-text-muted) !important; }
-        .bg-success { background-color: var(--exec-success) !important; }
-        .bg-warning { background-color: var(--exec-warning) !important; }
-        .bg-info { background-color: var(--exec-info) !important; }
-        .bg-danger { background-color: var(--exec-danger) !important; }
-
-        /* === BREADCRUMBS EXECUTIVOS === */
-        .breadcrumb {
-            background: var(--exec-light);
-            border-radius: var(--exec-radius);
-            padding: 0.75rem 1rem;
-            margin-bottom: var(--exec-section-spacing);
-            font-size: 0.875rem;
-        }
-
-        .breadcrumb-item + .breadcrumb-item::before {
-            content: "›";
-            font-size: 1.1em;
-            color: var(--exec-text-muted);
-        }
-
-        .breadcrumb-item a {
-            color: var(--exec-primary);
-            text-decoration: none;
-        }
-
-        .breadcrumb-item.active {
-            color: var(--exec-text);
-        }
-
-        /* === FOOTER EXECUTIVO === */
-        .footer {
-            background: var(--exec-gradient-primary);
-            color: white;
-            padding: 1.5rem 0;
-            margin-top: auto;
-            font-size: 0.875rem;
-        }
-
-        /* === UTILITIES EXECUTIVOS === */
-        .spinner-border {
-            color: var(--exec-secondary);
-        }
-
-        .text-primary { color: var(--exec-primary) !important; }
-        .text-secondary { color: var(--exec-text-muted) !important; }
-        .text-muted { color: var(--exec-text-light) !important; }
-        .text-success { color: var(--exec-success) !important; }
-        .text-warning { color: var(--exec-warning) !important; }
-        .text-info { color: var(--exec-info) !important; }
-        .text-danger { color: var(--exec-danger) !important; }
-
-        /* === RESPONSIVO EXECUTIVO === */
-        @@media (max-width: 768px) {
-            .main-content {
-                padding: 1rem;
-            }
-
-            .navbar {
-                padding: 0.5rem 0;
-            }
-
-            .navbar-brand {
-                font-size: 1.125rem;
-            }
-
-            .nav-link.active::after {
-                display: none;
-            }
-
-            .card:hover {
-                transform: none;
-            }
-
-            .btn:hover {
-                transform: none;
-            }
-
-            .table tbody tr:hover {
-                transform: none;
-            }
-
-            .card-body {
-                padding: 0.875rem;
-            }
-
-            .exec-container-padding {
-                padding: 1rem;
-            }
-        }
-
-        @@media (max-width: 576px) {
-            .main-content {
-                padding: 0.75rem;
-            }
-
-            .card-body {
-                padding: 0.75rem;
-            }
-
-            .btn {
-                padding: 0.5rem 0.875rem;
-                font-size: 0.8125rem;
-            }
-        }
-
-        /* === ANIMAÇÕES EXECUTIVAS === */
-        @@keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .fade-in-up {
-            animation: fadeInUp 0.3s ease-out;
-        }
-
-        /* === SCROLLBAR EXECUTIVA === */
-        ::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: var(--exec-border-light);
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: var(--exec-text-light);
-            border-radius: 3px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--exec-secondary);
-        }
-
-        /* === CONTAINER EXECUTIVO === */
-        .container, .container-fluid {
-            max-width: 1400px;
-        }
-
-        /* === DROPDOWN EXECUTIVO === */
-        .dropdown-toggle::after {
-            font-size: 0.75rem;
-        }
-
-        /* === LOADING STATES === */
-        .loading-skeleton {
-            background: linear-gradient(90deg, var(--exec-light) 25%, var(--exec-border) 50%, var(--exec-light) 75%);
-            background-size: 200% 100%;
-            animation: loading 1.5s infinite;
-        }
-
-        @@keyframes loading {
-            0% { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
-        }
-
-        /* === FOCUS STATES === */
-        .btn:focus,
-        .form-control:focus,
-        .form-select:focus {
-            outline: none;
-            box-shadow: 0 0 0 2px rgba(10, 17, 40, 0.15);
-        }
-
-        /* === HOVER STATES === */
-        .card:hover {
-            transform: translateY(-1px);
-        }
-
-        .table tbody tr:hover {
-            transform: scale(1.001);
-        }
-
-        /* === PRINT STYLES === */
-        @@media print {
-            .navbar,
-            .footer,
-            .btn,
-            .dropdown {
-                display: none !important;
-            }
-
-            .main-content {
-                padding: 0;
-                max-width: none;
-            }
-
-            .card {
-                box-shadow: none;
-                border: 1px solid #ddd;
-            }
-        }
-    </style>
+    <!-- Custom styles (after Bootstrap so our rules win) -->
+    <link href="~/css/custom.css" rel="stylesheet" asp-append-version="true">
 
     @await RenderSectionAsync("Styles", required: false)
+
+    @if (_uHasTheme)
+    {
+        <style id="user-theme">
+        :root {
+            --at-brand:           @_uCorP;
+            --at-brand-light:     @_uCorPLight;
+            --at-secondary:       @_uCorS;
+            --at-brand-active:    @_uCorD;
+            --at-gradient-brand:  linear-gradient(135deg, @_uCorP 0%, @_uCorPLight 100%);
+            --at-gradient-active: linear-gradient(135deg, @_uCorD 0%, @_uCorDDark 100%);
+        }
+        </style>
+    }
+
+    <!-- App layout override — carregado APÓS todos os outros CSS -->
+    <link href="~/css/agenttools-app.css" rel="stylesheet" asp-append-version="true">
 </head>
-<body>
+<body class="app-body">
+<div class="app-shell">
     <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg">
+    <nav class="navbar navbar-expand-lg app-navbar">
         <div class="container-fluid">
-            <a class="navbar-brand" href="@Url.Action("Index", "Home")">
-                <i class="fas fa-route me-2"></i>
-                Agent Tools
+            <a class="navbar-brand d-inline-flex align-items-center gap-2" href="@Url.Action("Index", "Home")">
+                <img src="~/images/logo.png" alt="AgentTools" width="40" height="40" style="display:block;flex-shrink:0;">
+                <span class="brand-wordmark">Agent <strong>Tools</strong></span>
             </a>
 
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -611,9 +85,9 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Criar" && ViewContext.RouteData.Values["controller"]?.ToString() == "Proposta" ? "active" : "")"
-                           href="@Url.Action("Criar", "Proposta")">
-                            <i class="fas fa-plus me-1"></i>Nova Proposta
+                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Cliente" ? "active" : "")"
+                           href="@Url.Action("Index", "Cliente")">
+                            <i class="fas fa-users me-1"></i>Clientes
                         </a>
                     </li>
                     <li class="nav-item">
@@ -622,22 +96,74 @@
                             <i class="fas fa-chart-bar me-1"></i>Analytics
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Tarefa" ? "active" : "")"
+                           href="@Url.Action("Index", "Tarefa")">
+                            <i class="fas fa-tasks me-1"></i>Tarefas
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Oferta" ? "active" : "")"
+                           href="@Url.Action("Index", "Oferta")">
+                            <i class="fas fa-bullhorn me-1"></i>Ofertas
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Lead" ? "active" : "")"
+                           href="@Url.Action("Index", "Lead")">
+                            <i class="fas fa-user-plus me-1"></i>Leads
+                        </a>
+                    </li>
+                    @if (Context.Session.GetString("UsuarioId") != null && _uIsMaster)
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Usuario" && ViewContext.RouteData.Values["action"]?.ToString() == "GerenciarEquipe" ? "active" : "")"
+                               href="@Url.Action("GerenciarEquipe", "Usuario")">
+                                <i class="fas fa-users-cog me-1"></i>Equipe
+                            </a>
+                        </li>
+                    }
                 </ul>
 
                 <ul class="navbar-nav">
                     @if (Context.Session.GetString("UsuarioId") != null)
                     {
                         <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
-                                <i class="fas fa-user-circle me-1"></i>
-                                @(Context.Session.GetString("UsuarioNome") ?? "Usuário")
+                            <a class="nav-link dropdown-toggle d-flex align-items-center gap-2" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                                @if (!string.IsNullOrEmpty(_uFoto))
+                                {
+                                    <img src="@_uFoto" alt="" style="width:26px;height:26px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,.35);flex-shrink:0;" />
+                                }
+                                else
+                                {
+                                    <span style="width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.18);display:inline-flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:700;color:#fff;flex-shrink:0;letter-spacing:.02em;">@_uIniciais</span>
+                                }
+                                @_uNome
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end">
+                                @if (!_uIsMaster && !string.IsNullOrEmpty(_uNomeMaster))
+                                {
+                                    <li class="px-3 py-2">
+                                        <span class="d-flex align-items-center gap-1 text-muted" style="font-size:.75rem">
+                                            <i class="fas fa-link me-1" style="color:var(--exec-accent)"></i>
+                                            Agente de <strong class="text-dark ms-1">@_uNomeMaster</strong>
+                                        </span>
+                                    </li>
+                                    <li><hr class="dropdown-divider my-1"></li>
+                                }
                                 <li>
                                     <a class="dropdown-item" href="@Url.Action("Index", "Usuario")">
-                                        <i class="fas fa-users me-2"></i>Gerenciar Usuários
+                                        <i class="fas fa-user-circle me-2"></i>Meu Perfil
                                     </a>
                                 </li>
+                                @if (_uIsMaster)
+                                {
+                                    <li>
+                                        <a class="dropdown-item" href="@Url.Action("GerenciarEquipe", "Usuario")">
+                                            <i class="fas fa-users-cog me-2"></i>Gerenciar Equipe
+                                        </a>
+                                    </li>
+                                }
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
                                     <a class="dropdown-item" href="@Url.Action("Logout", "Auth")">
@@ -661,7 +187,8 @@
     </nav>
 
     <!-- Main Content -->
-    <div class="main-content">
+    <main class="app-main">
+    <div class="at-app-container@(ViewData["FullBleed"] != null ? " at-app-container--full-bleed" : "")" role="main">
         <!-- Mensagens de Feedback -->
         @if (TempData["Sucesso"] != null)
         {
@@ -702,30 +229,34 @@
         <!-- Page Content -->
         @RenderBody()
     </div>
+    </main>
 
     <!-- Footer -->
-    <footer class="footer mt-auto">
+    <footer class="footer app-footer">
         <div class="container-fluid">
-            <div class="row">
+            <div class="row align-items-center">
                 <div class="col-md-6">
-                    <h6><i class="fas fa-route me-2"></i>Agent Tools</h6>
-                    <p class="mb-0 text-light opacity-75">Criando experiências inesquecíveis</p>
+                    <a href="@Url.Action("Index", "Home")" class="d-inline-flex align-items-center gap-2 text-decoration-none mb-1">
+                        <img src="~/images/logo.png" alt="AgentTools" width="32" height="32" style="display:block;flex-shrink:0;opacity:.55;">
+                        <span style="font-size:.95rem;font-weight:700;color:#1E4E8C;letter-spacing:-.01em;">Agent <strong>Tools</strong></span>
+                    </a>
+                    <p class="mb-0" style="font-size:.78rem;color:#687268;">Criando experiências inesquecíveis</p>
                 </div>
-                <div class="col-md-6 text-md-end">
-                    <div class="mb-2">
-                        <a href="#" class="text-light me-3 text-decoration-none opacity-75">
+                <div class="col-md-6 text-md-end mt-3 mt-md-0">
+                    <div class="mb-1">
+                        <a href="#" style="color:#687268;" class="me-3 text-decoration-none">
                             <i class="fab fa-facebook"></i>
                         </a>
-                        <a href="#" class="text-light me-3 text-decoration-none opacity-75">
+                        <a href="#" style="color:#687268;" class="me-3 text-decoration-none">
                             <i class="fab fa-instagram"></i>
                         </a>
-                        <a href="#" class="text-light text-decoration-none opacity-75">
+                        <a href="#" style="color:#687268;" class="text-decoration-none">
                             <i class="fab fa-whatsapp"></i>
                         </a>
                     </div>
                     <p class="mb-0">
-                        <small class="text-light opacity-50">
-                            © @DateTime.Now.Year - Todos os direitos reservados
+                        <small style="color:#687268;opacity:.65;">
+                            © @DateTime.Now.Year Agent Tools · Todos os direitos reservados
                         </small>
                     </p>
                 </div>
@@ -736,6 +267,10 @@
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 
+    <!-- Multi-photo upload component -->
+    <script src="~/js/multi-photo.js"></script>
+
     @await RenderSectionAsync("Scripts", required: false)
+</div><!-- /.app-shell -->
 </body>
 </html>

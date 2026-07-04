@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using SistemaUsuarios.Data;
 using SistemaUsuarios.Models;
 using SistemaUsuarios.Models.ViewModels;
+using SistemaUsuarios.Services;
 using BCrypt.Net;
 using System.Text.RegularExpressions;
 
@@ -22,14 +23,132 @@ namespace SistemaUsuarios.Controllers
             return HttpContext.Session.GetString("UsuarioId") != null;
         }
 
+        // GET /Usuario — perfil do usuário logado
         public async Task<IActionResult> Index()
         {
             if (!UsuarioLogado())
                 return RedirectToAction("Login", "Auth");
 
-            var usuarios = await _context.Usuarios.ToListAsync();
-            return View(usuarios);
+            var usuarioId = ObterUsuarioLogadoId();
+            var usuario = await _context.Usuarios.FindAsync(usuarioId);
+            if (usuario == null)
+                return RedirectToAction("Logout", "Auth");
+
+            var model = new UsuarioViewModel
+            {
+                Id = usuario.Id,
+                Nome = usuario.Nome,
+                Email = usuario.Email,
+                Telefone = FormatarTelefone(usuario.Telefone),
+                CPF = FormatarCPF(usuario.CPF),
+                Status = usuario.Status,
+                DataCriacao = usuario.DataCriacao,
+                FotoPath = usuario.FotoPath,
+                CorPrimaria   = usuario.CorPrimaria   ?? "#0A1128",
+                CorSecundaria = usuario.CorSecundaria ?? "#65a3d4",
+                CorDestaque   = usuario.CorDestaque   ?? "#2ec4b6",
+                NomeAgencia   = usuario.NomeAgencia,
+                SlugAgencia   = usuario.SlugAgencia,
+            };
+
+            return View(model);
         }
+
+        // POST /Usuario — salvar dados básicos do perfil
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Index(UsuarioViewModel model)
+        {
+            if (!UsuarioLogado())
+                return RedirectToAction("Login", "Auth");
+
+            // Senha não é alterada neste formulário
+            ModelState.Remove("Senha");
+            ModelState.Remove("ConfirmarSenha");
+
+            if (!ModelState.IsValid)
+                return View(model);
+
+            var usuarioId = ObterUsuarioLogadoId();
+            var usuario = await _context.Usuarios.FindAsync(usuarioId);
+            if (usuario == null)
+                return RedirectToAction("Logout", "Auth");
+
+            string cpfLimpo = LimparCPF(model.CPF);
+            string telefoneLimpo = LimparTelefone(model.Telefone);
+
+            if (await _context.Usuarios.AnyAsync(u => u.Email.ToLower() == model.Email.ToLower() && u.Id != usuarioId))
+            {
+                ModelState.AddModelError("Email", "Este e-mail já está em uso por outra conta.");
+                return View(model);
+            }
+
+            if (await _context.Usuarios.AnyAsync(u => u.CPF == cpfLimpo && u.Id != usuarioId))
+            {
+                ModelState.AddModelError("CPF", "Este CPF já está em uso por outra conta.");
+                return View(model);
+            }
+
+            if (await _context.Usuarios.AnyAsync(u => u.Telefone == telefoneLimpo && u.Id != usuarioId))
+            {
+                ModelState.AddModelError("Telefone", "Este telefone já está em uso por outra conta.");
+                return View(model);
+            }
+
+            usuario.Nome = model.Nome.Trim();
+            usuario.Email = model.Email.ToLower().Trim();
+            usuario.Telefone = telefoneLimpo;
+            usuario.CPF = cpfLimpo;
+
+            await _context.SaveChangesAsync();
+
+            // Atualiza o nome na sessão
+            HttpContext.Session.SetString("UsuarioNome", usuario.Nome);
+
+            TempData["Sucesso"] = "Dados atualizados com sucesso!";
+            return RedirectToAction("Index");
+        }
+
+        // POST /Usuario/AlterarSenha
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AlterarSenha(string senhaAtual, string novaSenha, string confirmarSenha)
+        {
+            if (!UsuarioLogado())
+                return RedirectToAction("Login", "Auth");
+
+            var usuarioId = ObterUsuarioLogadoId();
+            var usuario = await _context.Usuarios.FindAsync(usuarioId);
+            if (usuario == null)
+                return RedirectToAction("Logout", "Auth");
+
+            if (!BCrypt.Net.BCrypt.Verify(senhaAtual, usuario.Senha))
+            {
+                TempData["ErraSenha"] = "Senha atual incorreta.";
+                return RedirectToAction("Index");
+            }
+
+            if (novaSenha.Length < 6)
+            {
+                TempData["ErraSenha"] = "A nova senha deve ter pelo menos 6 caracteres.";
+                return RedirectToAction("Index");
+            }
+
+            if (novaSenha != confirmarSenha)
+            {
+                TempData["ErraSenha"] = "As senhas não conferem.";
+                return RedirectToAction("Index");
+            }
+
+            usuario.Senha = BCrypt.Net.BCrypt.HashPassword(novaSenha);
+            await _context.SaveChangesAsync();
+
+            TempData["SucessoSenha"] = "Senha alterada com sucesso!";
+            return RedirectToAction("Index");
+        }
+
+        private Guid ObterUsuarioLogadoId() =>
+            Guid.Parse(HttpContext.Session.GetString("UsuarioId")!);
 
         [HttpGet]
         public IActionResult Cadastrar()
@@ -198,6 +317,125 @@ namespace SistemaUsuarios.Controllers
             return RedirectToAction("Index");
         }
 
+        // POST /Usuario/AlterarFoto
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AlterarFoto(IFormFile foto)
+        {
+            if (!UsuarioLogado())
+                return RedirectToAction("Login", "Auth");
+
+            if (foto == null || foto.Length == 0)
+            {
+                TempData["Erro"] = "Selecione uma imagem para fazer upload.";
+                return RedirectToAction("Index");
+            }
+
+            try
+            {
+                var usuarioId = ObterUsuarioLogadoId();
+                var usuario = await _context.Usuarios.FindAsync(usuarioId);
+                if (usuario == null) return RedirectToAction("Logout", "Auth");
+
+                var fotoPath = await SalvarFotoUsuarioAsync(foto);
+
+                // Remove foto anterior se existir
+                if (!string.IsNullOrEmpty(usuario.FotoPath))
+                {
+                    var oldFull = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot",
+                        usuario.FotoPath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+                    if (System.IO.File.Exists(oldFull)) System.IO.File.Delete(oldFull);
+                }
+
+                usuario.FotoPath = fotoPath;
+                await _context.SaveChangesAsync();
+
+                HttpContext.Session.SetString("FotoPath", fotoPath);
+                TempData["Sucesso"] = "Foto de perfil atualizada!";
+            }
+            catch (InvalidOperationException ex)
+            {
+                TempData["Erro"] = ex.Message;
+            }
+
+            return RedirectToAction("Index");
+        }
+
+        // POST /Usuario/SalvarIdentidade
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SalvarIdentidade(string corPrimaria, string corSecundaria, string corDestaque, string? nomeAgencia)
+        {
+            if (!UsuarioLogado())
+                return RedirectToAction("Login", "Auth");
+
+            var hexRegex = new Regex(@"^#[0-9A-Fa-f]{6}$");
+            if (!hexRegex.IsMatch(corPrimaria ?? "") ||
+                !hexRegex.IsMatch(corSecundaria ?? "") ||
+                !hexRegex.IsMatch(corDestaque ?? ""))
+            {
+                TempData["ErroIdentidade"] = "Cores inválidas. Use o seletor de cores ou o formato #RRGGBB.";
+                return RedirectToAction("Index");
+            }
+
+            var usuarioId = ObterUsuarioLogadoId();
+            var usuario = await _context.Usuarios.FindAsync(usuarioId);
+            if (usuario == null) return RedirectToAction("Logout", "Auth");
+
+            usuario.CorPrimaria   = corPrimaria;
+            usuario.CorSecundaria = corSecundaria;
+            usuario.CorDestaque   = corDestaque;
+
+            // Atualiza nome e slug da agência
+            var nomeNormalizado = (nomeAgencia ?? "").Trim();
+            if (!string.IsNullOrEmpty(nomeNormalizado))
+            {
+                usuario.NomeAgencia = nomeNormalizado;
+
+                // Regenera slug apenas se o nome mudou ou ainda não tem slug
+                if (string.IsNullOrEmpty(usuario.SlugAgencia) ||
+                    !usuario.NomeAgencia.Equals(nomeNormalizado, StringComparison.OrdinalIgnoreCase))
+                {
+                    var slugsExistentes = await _context.Usuarios
+                        .Where(u => u.SlugAgencia != null)
+                        .Select(u => u.SlugAgencia!)
+                        .ToListAsync();
+
+                    usuario.SlugAgencia = SlugHelper.GenerateUnique(
+                        nomeNormalizado, slugsExistentes,
+                        excludeSlug: usuario.SlugAgencia);
+                }
+            }
+
+            await _context.SaveChangesAsync();
+
+            HttpContext.Session.SetString("CorPrimaria",   corPrimaria);
+            HttpContext.Session.SetString("CorSecundaria", corSecundaria);
+            HttpContext.Session.SetString("CorDestaque",   corDestaque);
+
+            TempData["SucessoIdentidade"] = "Configurações da agência salvas com sucesso!";
+            return RedirectToAction("Index");
+        }
+
+        private async Task<string> SalvarFotoUsuarioAsync(IFormFile foto)
+        {
+            var ext = Path.GetExtension(foto.FileName).ToLowerInvariant();
+            var permitidos = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
+            if (!permitidos.Contains(ext))
+                throw new InvalidOperationException("Apenas imagens são permitidas (JPG, PNG, GIF, WebP).");
+            if (foto.Length > 5 * 1024 * 1024)
+                throw new InvalidOperationException("Foto muito grande. Máximo 5 MB.");
+
+            var dir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "usuarios");
+            if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
+
+            var nome = $"{Guid.NewGuid()}{ext}";
+            var full = Path.Combine(dir, nome);
+            using var stream = new FileStream(full, FileMode.Create);
+            await foto.CopyToAsync(stream);
+            return $"/uploads/usuarios/{nome}";
+        }
+
         private string LimparCPF(string cpf)
         {
             return Regex.Replace(cpf ?? "", @"[^\d]", "");
@@ -227,6 +465,203 @@ namespace SistemaUsuarios.Controllers
                 return $"({telefone.Substring(0, 2)}) {telefone.Substring(2, 4)}-{telefone.Substring(6, 4)}";
 
             return telefone;
+        }
+
+        // ── Gestão de Equipe (apenas Master) ──────────────────────────────────────
+
+        private bool IsMaster() =>
+            HttpContext.Session.GetString("TipoUsuario") != "Associado";
+
+        /// <summary>Garante que o id pertence a um associado do master logado. Retorna null se não encontrado.</summary>
+        private async Task<Usuario?> ObterAssociadoDoMaster(Guid id)
+        {
+            var masterId = ObterUsuarioLogadoId();
+            return await _context.Usuarios
+                .FirstOrDefaultAsync(u => u.Id == id
+                                       && u.UsuarioMasterId == masterId
+                                       && u.TipoUsuario == TipoUsuario.Associado);
+        }
+
+        // GET /Usuario/GerenciarEquipe
+        [HttpGet]
+        public async Task<IActionResult> GerenciarEquipe()
+        {
+            if (!UsuarioLogado()) return RedirectToAction("Login", "Auth");
+            if (!IsMaster()) return RedirectToAction("Index", "Proposta");
+
+            var masterId = ObterUsuarioLogadoId();
+            var associados = await _context.Usuarios
+                .Where(u => u.UsuarioMasterId == masterId)
+                .OrderBy(u => u.Nome)
+                .ToListAsync();
+
+            ViewBag.Associados = associados;
+            return View();
+        }
+
+        // POST /Usuario/CriarAssociado
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CriarAssociado(string nome, string email, string telefone, string cpf, string senha)
+        {
+            if (!UsuarioLogado()) return RedirectToAction("Login", "Auth");
+            if (!IsMaster()) return RedirectToAction("Index", "Proposta");
+
+            var masterId = ObterUsuarioLogadoId();
+            var cpfLimpo = Regex.Replace(cpf ?? "", @"[^\d]", "");
+            var telLimpo = Regex.Replace(telefone ?? "", @"[^\d]", "");
+
+            if (await _context.Usuarios.AnyAsync(u => u.Email.ToLower() == email.ToLower()))
+            {
+                TempData["Erro"] = "Este e-mail já está em uso.";
+                return RedirectToAction("GerenciarEquipe");
+            }
+
+            if (await _context.Usuarios.AnyAsync(u => u.CPF == cpfLimpo))
+            {
+                TempData["Erro"] = "Este CPF já está em uso.";
+                return RedirectToAction("GerenciarEquipe");
+            }
+
+            var associado = new Usuario
+            {
+                Nome            = nome.Trim(),
+                Email           = email.ToLower().Trim(),
+                Telefone        = telLimpo,
+                CPF             = cpfLimpo,
+                Senha           = BCrypt.Net.BCrypt.HashPassword(senha),
+                TipoUsuario     = TipoUsuario.Associado,
+                UsuarioMasterId = masterId,
+                Status          = StatusUsuario.Ativo,
+                DataCriacao     = DateTime.Now
+            };
+
+            _context.Usuarios.Add(associado);
+            await _context.SaveChangesAsync();
+
+            TempData["Sucesso"] = $"Agente {nome.Trim()} criado com sucesso!";
+            return RedirectToAction("GerenciarEquipe");
+        }
+
+        // POST /Usuario/EditarAssociado
+        // Edita dados principais de um associado da própria equipe.
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditarAssociado(
+            Guid id, string nome, string email, string telefone, StatusUsuario status)
+        {
+            if (!UsuarioLogado()) return RedirectToAction("Login", "Auth");
+            if (!IsMaster()) return RedirectToAction("Index", "Proposta");
+
+            var associado = await ObterAssociadoDoMaster(id);
+            if (associado == null)
+            {
+                TempData["Erro"] = "Membro não encontrado ou sem permissão.";
+                return RedirectToAction("GerenciarEquipe");
+            }
+
+            var telLimpo = Regex.Replace(telefone ?? "", @"[^\d]", "");
+
+            // Unicidade de e-mail (exceto o próprio registro)
+            if (await _context.Usuarios.AnyAsync(u => u.Email.ToLower() == email.ToLower() && u.Id != id))
+            {
+                TempData["Erro"] = "Este e-mail já está em uso por outra conta.";
+                return RedirectToAction("GerenciarEquipe");
+            }
+
+            // Unicidade de telefone (exceto o próprio registro)
+            if (!string.IsNullOrEmpty(telLimpo) &&
+                await _context.Usuarios.AnyAsync(u => u.Telefone == telLimpo && u.Id != id))
+            {
+                TempData["Erro"] = "Este telefone já está em uso por outra conta.";
+                return RedirectToAction("GerenciarEquipe");
+            }
+
+            associado.Nome     = nome.Trim();
+            associado.Email    = email.ToLower().Trim();
+            associado.Telefone = telLimpo;
+            associado.Status   = status;
+
+            await _context.SaveChangesAsync();
+
+            TempData["Sucesso"] = $"Dados de {associado.Nome} atualizados com sucesso.";
+            return RedirectToAction("GerenciarEquipe");
+        }
+
+        // POST /Usuario/AlterarSenhaAssociado
+        // Apenas o master pode alterar a senha de seus associados.
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AlterarSenhaAssociado(Guid id, string novaSenha, string confirmarSenha)
+        {
+            if (!UsuarioLogado()) return RedirectToAction("Login", "Auth");
+            if (!IsMaster()) return RedirectToAction("Index", "Proposta");
+
+            if (string.IsNullOrWhiteSpace(novaSenha) || novaSenha.Length < 6)
+            {
+                TempData["Erro"] = "A nova senha deve ter pelo menos 6 caracteres.";
+                return RedirectToAction("GerenciarEquipe");
+            }
+
+            if (novaSenha != confirmarSenha)
+            {
+                TempData["Erro"] = "As senhas não conferem.";
+                return RedirectToAction("GerenciarEquipe");
+            }
+
+            var associado = await ObterAssociadoDoMaster(id);
+            if (associado == null)
+            {
+                TempData["Erro"] = "Membro não encontrado ou sem permissão.";
+                return RedirectToAction("GerenciarEquipe");
+            }
+
+            associado.Senha = BCrypt.Net.BCrypt.HashPassword(novaSenha);
+            await _context.SaveChangesAsync();
+
+            TempData["Sucesso"] = $"Senha de {associado.Nome} alterada com sucesso.";
+            return RedirectToAction("GerenciarEquipe");
+        }
+
+        // POST /Usuario/InativarAssociado
+        // Atalho semântico para inativação — preserva histórico e propostas.
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> InativarAssociado(Guid id)
+        {
+            if (!UsuarioLogado()) return RedirectToAction("Login", "Auth");
+            if (!IsMaster()) return RedirectToAction("Index", "Proposta");
+
+            var associado = await ObterAssociadoDoMaster(id);
+            if (associado == null)
+            {
+                TempData["Erro"] = "Membro não encontrado ou sem permissão.";
+                return RedirectToAction("GerenciarEquipe");
+            }
+
+            associado.Status = StatusUsuario.Inativo;
+            await _context.SaveChangesAsync();
+
+            TempData["Sucesso"] = $"{associado.Nome} foi inativado. Propostas existentes foram preservadas.";
+            return RedirectToAction("GerenciarEquipe");
+        }
+
+        // POST /Usuario/AlterarStatusAssociado
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AlterarStatusAssociado(Guid id, StatusUsuario status)
+        {
+            if (!UsuarioLogado()) return RedirectToAction("Login", "Auth");
+            if (!IsMaster()) return RedirectToAction("Index", "Proposta");
+
+            var associado = await ObterAssociadoDoMaster(id);
+            if (associado == null) return NotFound();
+
+            associado.Status = status;
+            await _context.SaveChangesAsync();
+
+            TempData["Sucesso"] = "Status atualizado.";
+            return RedirectToAction("GerenciarEquipe");
         }
     }
 }

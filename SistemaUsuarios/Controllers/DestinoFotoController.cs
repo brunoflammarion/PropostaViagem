@@ -25,6 +25,15 @@ namespace SistemaUsuarios.Controllers
             return Guid.Parse(usuarioIdString);
         }
 
+        private bool SessaoIsMaster() =>
+            HttpContext.Session.GetString("TipoUsuario") != "Associado";
+
+        private IActionResult RedirectToEditar(Guid propostaId)
+        {
+            TempData["ActiveTab"] = "destinos";
+            return RedirectToAction("Editar", "Proposta", new { id = propostaId });
+        }
+
         private async Task<string> SalvarFotoAsync(IFormFile foto)
         {
             if (foto == null || foto.Length == 0)
@@ -67,18 +76,19 @@ namespace SistemaUsuarios.Controllers
         // POST: DestinoFoto/AdicionarFoto
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AdicionarFoto(Guid destinoId, IFormFile foto, string? descricao, bool principal = false)
+        public async Task<IActionResult> AdicionarFoto(Guid destinoId, IFormFile[] fotos, string? descricao, bool principal = false)
         {
             if (!UsuarioLogado())
                 return RedirectToAction("Login", "Auth");
 
             var usuarioId = ObterUsuarioLogadoId();
 
+            var isMaster = SessaoIsMaster();
             // Verificar se o destino pertence ao usuário
             var destino = await _context.Destinos
                 .Include(d => d.Proposta)
                 .Include(d => d.Fotos)
-                .FirstOrDefaultAsync(d => d.Id == destinoId && d.Proposta.UsuarioId == usuarioId);
+                .FirstOrDefaultAsync(d => d.Id == destinoId && (isMaster ? d.Proposta.UsuarioMasterId == usuarioId : d.Proposta.UsuarioResponsavelId == usuarioId));
 
             if (destino == null)
             {
@@ -86,17 +96,16 @@ namespace SistemaUsuarios.Controllers
                 return RedirectToAction("Index", "Proposta");
             }
 
-            if (foto == null || foto.Length == 0)
+            var fotosValidas = (fotos ?? Array.Empty<IFormFile>()).Where(f => f != null && f.Length > 0).ToList();
+            if (!fotosValidas.Any())
             {
-                TempData["Erro"] = "Selecione uma foto para fazer upload";
-                return RedirectToAction("Gerenciar", "Destino", new { propostaId = destino.PropostaId });
+                TempData["Erro"] = "Selecione ao menos uma foto para fazer upload";
+                return RedirectToEditar(destino.PropostaId);
             }
 
             try
             {
-                var caminhoFoto = await SalvarFotoAsync(foto);
-
-                // Se esta foto é principal, remover flag principal das outras
+                // Se alguma foto será principal, limpar flag das existentes
                 if (principal)
                 {
                     var fotosExistentes = await _context.DestinoFotos
@@ -104,44 +113,59 @@ namespace SistemaUsuarios.Controllers
                         .ToListAsync();
 
                     foreach (var fotoExistente in fotosExistentes)
-                    {
                         fotoExistente.Principal = false;
-                    }
                 }
 
-                // Determinar próxima ordem
                 var maxOrdem = await _context.DestinoFotos
                     .Where(f => f.DestinoId == destinoId)
                     .MaxAsync(f => (int?)f.Ordem) ?? 0;
 
-                var destinoFoto = new DestinoFoto
-                {
-                    Id = Guid.NewGuid(),
-                    DestinoId = destinoId,
-                    CaminhoFoto = caminhoFoto,
-                    Descricao = descricao?.Trim(),
-                    Principal = principal,
-                    Ordem = maxOrdem + 1,
-                    DataCriacao = DateTime.Now
-                };
+                var erros = new List<string>();
+                int adicionadas = 0;
 
-                _context.DestinoFotos.Add(destinoFoto);
+                for (int i = 0; i < fotosValidas.Count; i++)
+                {
+                    try
+                    {
+                        var caminhoFoto = await SalvarFotoAsync(fotosValidas[i]);
+
+                        // Apenas a primeira foto recebe o flag principal (quando marcado)
+                        var isPrincipal = principal && i == 0;
+
+                        _context.DestinoFotos.Add(new DestinoFoto
+                        {
+                            Id = Guid.NewGuid(),
+                            DestinoId = destinoId,
+                            CaminhoFoto = caminhoFoto,
+                            Descricao = descricao?.Trim(),
+                            Principal = isPrincipal,
+                            Ordem = maxOrdem + i + 1,
+                            DataCriacao = DateTime.Now
+                        });
+                        adicionadas++;
+                    }
+                    catch (InvalidOperationException ex)
+                    {
+                        erros.Add($"{fotosValidas[i].FileName}: {ex.Message}");
+                    }
+                }
+
                 await _context.SaveChangesAsync();
 
-                TempData["Sucesso"] = "Foto adicionada com sucesso!";
-            }
-            catch (InvalidOperationException ex)
-            {
-                TempData["Erro"] = ex.Message;
+                if (erros.Any())
+                    TempData["Erro"] = string.Join(" | ", erros);
+                else
+                    TempData["Sucesso"] = adicionadas == 1
+                        ? "Foto adicionada com sucesso!"
+                        : $"{adicionadas} fotos adicionadas com sucesso!";
             }
             catch (Exception ex)
             {
-                TempData["Erro"] = "Erro ao salvar a foto. Tente novamente.";
-                // Log do erro (implementar logger se necessário)
+                TempData["Erro"] = "Erro ao salvar as fotos. Tente novamente.";
                 Console.WriteLine($"Erro ao salvar foto: {ex.Message}");
             }
 
-            return RedirectToAction("Gerenciar", "Destino", new { propostaId = destino.PropostaId });
+            return RedirectToEditar(destino.PropostaId);
         }
 
         // POST: DestinoFoto/ExcluirFoto
@@ -154,10 +178,11 @@ namespace SistemaUsuarios.Controllers
 
             var usuarioId = ObterUsuarioLogadoId();
 
+            var isMaster = SessaoIsMaster();
             var foto = await _context.DestinoFotos
                 .Include(f => f.Destino)
                     .ThenInclude(d => d.Proposta)
-                .FirstOrDefaultAsync(f => f.Id == id && f.Destino.Proposta.UsuarioId == usuarioId);
+                .FirstOrDefaultAsync(f => f.Id == id && (isMaster ? f.Destino.Proposta.UsuarioMasterId == usuarioId : f.Destino.Proposta.UsuarioResponsavelId == usuarioId));
 
             if (foto == null)
             {
@@ -203,7 +228,7 @@ namespace SistemaUsuarios.Controllers
             await _context.SaveChangesAsync();
 
             TempData["Sucesso"] = "Foto excluída com sucesso!";
-            return RedirectToAction("Gerenciar", "Destino", new { propostaId });
+            return RedirectToEditar(propostaId);
         }
 
         // POST: DestinoFoto/DefinirPrincipal
@@ -216,10 +241,11 @@ namespace SistemaUsuarios.Controllers
 
             var usuarioId = ObterUsuarioLogadoId();
 
+            var isMaster = SessaoIsMaster();
             var foto = await _context.DestinoFotos
                 .Include(f => f.Destino)
                     .ThenInclude(d => d.Proposta)
-                .FirstOrDefaultAsync(f => f.Id == id && f.Destino.Proposta.UsuarioId == usuarioId);
+                .FirstOrDefaultAsync(f => f.Id == id && (isMaster ? f.Destino.Proposta.UsuarioMasterId == usuarioId : f.Destino.Proposta.UsuarioResponsavelId == usuarioId));
 
             if (foto == null)
             {
@@ -243,7 +269,7 @@ namespace SistemaUsuarios.Controllers
             await _context.SaveChangesAsync();
 
             TempData["Sucesso"] = "Foto definida como principal!";
-            return RedirectToAction("Gerenciar", "Destino", new { propostaId = foto.Destino.PropostaId });
+            return RedirectToEditar(foto.Destino.PropostaId);
         }
 
         // POST: DestinoFoto/ReordenarFotos
@@ -254,11 +280,12 @@ namespace SistemaUsuarios.Controllers
                 return Unauthorized();
 
             var usuarioId = ObterUsuarioLogadoId();
+            var isMaster = SessaoIsMaster();
 
-            // Verificar destino
             var destino = await _context.Destinos
                 .Include(d => d.Proposta)
-                .FirstOrDefaultAsync(d => d.Id == request.DestinoId && d.Proposta.UsuarioId == usuarioId);
+                .FirstOrDefaultAsync(d => d.Id == request.DestinoId &&
+                    (isMaster ? d.Proposta.UsuarioMasterId == usuarioId : d.Proposta.UsuarioResponsavelId == usuarioId));
 
             if (destino == null)
                 return NotFound();
@@ -266,21 +293,52 @@ namespace SistemaUsuarios.Controllers
             if (request.FotosIds == null || !request.FotosIds.Any())
                 return BadRequest("Lista de IDs de fotos não pode estar vazia");
 
-            // Atualizar ordem das fotos
-            for (int i = 0; i < request.FotosIds.Count; i++)
-            {
-                var foto = await _context.DestinoFotos
-                    .FirstOrDefaultAsync(f => f.Id == request.FotosIds[i] && f.DestinoId == request.DestinoId);
+            // Rejeitar IDs duplicados
+            if (request.FotosIds.Distinct().Count() != request.FotosIds.Count)
+                return BadRequest("Lista contém IDs duplicados.");
 
-                if (foto != null)
+            // Carregar todas as fotos do destino de uma vez
+            var fotos = await _context.DestinoFotos
+                .Where(f => f.DestinoId == request.DestinoId)
+                .ToListAsync();
+
+            // Validar que todos os IDs enviados pertencem a este destino
+            var fotosIds = fotos.Select(f => f.Id).ToHashSet();
+            if (request.FotosIds.Any(id => !fotosIds.Contains(id)))
+                return BadRequest("Um ou mais IDs não pertencem a este destino.");
+
+            // Duas fases para evitar violação do índice único {DestinoId, Ordem}
+            await using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                // Fase 1: ordens temporárias negativas (sem conflito)
+                for (int i = 0; i < fotos.Count; i++)
+                    fotos[i].Ordem = -1000 - i;
+
+                await _context.SaveChangesAsync();
+
+                // Fase 2: ordem final conforme a lista enviada
+                for (int i = 0; i < request.FotosIds.Count; i++)
                 {
+                    var foto = fotos.First(f => f.Id == request.FotosIds[i]);
                     foto.Ordem = i + 1;
                 }
+
+                // Fotos não incluídas na lista recebem ordens após as listadas
+                var naoListadas = fotos.Where(f => !request.FotosIds.Contains(f.Id)).ToList();
+                for (int i = 0; i < naoListadas.Count; i++)
+                    naoListadas[i].Ordem = request.FotosIds.Count + i + 1;
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return Ok(new { success = true, message = "Fotos reordenadas com sucesso!" });
             }
-
-            await _context.SaveChangesAsync();
-
-            return Ok(new { success = true, message = "Fotos reordenadas com sucesso!" });
+            catch
+            {
+                await transaction.RollbackAsync();
+                return StatusCode(500, new { success = false, message = "Erro ao reordenar fotos." });
+            }
         }
 
         // POST: DestinoFoto/EditarFoto
@@ -293,10 +351,11 @@ namespace SistemaUsuarios.Controllers
 
             var usuarioId = ObterUsuarioLogadoId();
 
+            var isMaster = SessaoIsMaster();
             var foto = await _context.DestinoFotos
                 .Include(f => f.Destino)
                     .ThenInclude(d => d.Proposta)
-                .FirstOrDefaultAsync(f => f.Id == id && f.Destino.Proposta.UsuarioId == usuarioId);
+                .FirstOrDefaultAsync(f => f.Id == id && (isMaster ? f.Destino.Proposta.UsuarioMasterId == usuarioId : f.Destino.Proposta.UsuarioResponsavelId == usuarioId));
 
             if (foto == null)
             {
@@ -308,7 +367,7 @@ namespace SistemaUsuarios.Controllers
             await _context.SaveChangesAsync();
 
             TempData["Sucesso"] = "Descrição da foto atualizada!";
-            return RedirectToAction("Gerenciar", "Destino", new { propostaId = foto.Destino.PropostaId });
+            return RedirectToEditar(foto.Destino.PropostaId);
         }
 
         // GET: DestinoFoto/ObterFoto/{id} - Para exibir foto diretamente
@@ -330,7 +389,11 @@ namespace SistemaUsuarios.Controllers
                     return Unauthorized();
 
                 var usuarioId = ObterUsuarioLogadoId();
-                if (foto.Destino.Proposta.UsuarioId != usuarioId)
+                var isMaster = SessaoIsMaster();
+                var autorizado = isMaster
+                    ? foto.Destino.Proposta.UsuarioMasterId == usuarioId
+                    : foto.Destino.Proposta.UsuarioResponsavelId == usuarioId;
+                if (!autorizado)
                     return Forbid();
             }
 
@@ -382,7 +445,11 @@ namespace SistemaUsuarios.Controllers
                     return Unauthorized();
 
                 var usuarioId = ObterUsuarioLogadoId();
-                if (destino.Proposta.UsuarioId != usuarioId)
+                var isMaster = SessaoIsMaster();
+                var autorizado = isMaster
+                    ? destino.Proposta.UsuarioMasterId == usuarioId
+                    : destino.Proposta.UsuarioResponsavelId == usuarioId;
+                if (!autorizado)
                     return Forbid();
             }
 
@@ -408,12 +475,13 @@ namespace SistemaUsuarios.Controllers
 
             var usuarioId = ObterUsuarioLogadoId();
 
+            var isMaster = SessaoIsMaster();
             foreach (var item in request.DestinosEFotos)
             {
                 // Verificar se o destino pertence ao usuário
                 var destino = await _context.Destinos
                     .Include(d => d.Proposta)
-                    .FirstOrDefaultAsync(d => d.Id == item.DestinoId && d.Proposta.UsuarioId == usuarioId);
+                    .FirstOrDefaultAsync(d => d.Id == item.DestinoId && (isMaster ? d.Proposta.UsuarioMasterId == usuarioId : d.Proposta.UsuarioResponsavelId == usuarioId));
 
                 if (destino == null) continue;
 

@@ -1,817 +1,328 @@
-﻿@{
-    ViewData["Title"] = "Agent Tools - Dashboard";
+@model SistemaUsuarios.Models.ViewModels.HomeDashboardViewModel
+@using SistemaUsuarios.Models
+@using SistemaUsuarios.Models.ViewModels
+@{
+    ViewData["Title"] = "Início";
+
+    var hora = DateTime.Now.Hour;
+    var saudacao = hora < 12 ? "Bom dia" : hora < 18 ? "Boa tarde" : "Boa noite";
+    var primeiroNome = Model.NomeUsuario.Split(' ')[0];
+    var iniciais = string.Join("", Model.NomeUsuario
+        .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+        .Take(2).Select(p => char.ToUpper(p[0]).ToString()));
+    var agora = DateTime.Now;
+
+    static string RelTime(DateTime dt, DateTime now)
+    {
+        var diff = now - dt;
+        if (diff.TotalMinutes < 60) return $"há {(int)diff.TotalMinutes}min";
+        if (diff.TotalHours   < 24) return $"há {(int)diff.TotalHours}h";
+        if (diff.TotalDays    <  7) return $"há {(int)diff.TotalDays}d";
+        return dt.ToString("dd/MM");
+    }
 }
-
-<!-- Hero Section Executivo Compacto -->
-<section class="hero-section-exec">
-    <div class="container">
-        <div class="row align-items-center">
-            <div class="col-lg-8">
-                <div class="hero-content-exec">
-                    <h1 class="hero-title-exec">
-                        Bem-vindo ao <span class="text-accent">Agent Tools</span>
-                    </h1>
-                    <p class="hero-subtitle-exec">
-                        Gerencie suas propostas, acompanhe métricas e otimize seu trabalho com nossa plataforma executiva.
-                    </p>
-                    <div class="cta-buttons-exec">
-                        <a href="/Proposta/Criar" class="btn-primary-exec">
-                            <i class="fas fa-plus me-2"></i>
-                            Criar Nova Proposta
-                        </a>
-                        <a href="/Proposta" class="btn-secondary-exec">
-                            <i class="fas fa-list me-2"></i>
-                            Ver Minhas Propostas
-                        </a>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-4">
-                <div class="text-center">
-                    <div class="hero-graphic-exec">
-                        <i class="fas fa-chart-line"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- KPI Dashboard Executivo 
-<section class="kpi-dashboard-exec">
-    <div class="container">
-        <div class="kpi-grid-exec">
-            <div class="kpi-card-exec primary">
-                <div class="kpi-icon-exec">
-                    <i class="fas fa-file-alt"></i>
-                </div>
-                <div class="kpi-content-exec">
-                    <div class="kpi-number-exec" id="totalPropostas">0</div>
-                    <div class="kpi-label-exec">Total de Propostas</div>
-                    <div class="kpi-trend-exec positive">
-                        <i class="fas fa-arrow-up"></i>
-                        <span>Crescimento mensal</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="kpi-card-exec success">
-                <div class="kpi-icon-exec">
-                    <i class="fas fa-check-circle"></i>
-                </div>
-                <div class="kpi-content-exec">
-                    <div class="kpi-number-exec" id="propostasAprovadas">0</div>
-                    <div class="kpi-label-exec">Aprovadas</div>
-                    <div class="kpi-trend-exec positive">
-                        <i class="fas fa-trophy"></i>
-                        <span>Taxa de sucesso</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="kpi-card-exec info">
-                <div class="kpi-icon-exec">
-                    <i class="fas fa-eye"></i>
-                </div>
-                <div class="kpi-content-exec">
-                    <div class="kpi-number-exec" id="totalVisualizacoes">0</div>
-                    <div class="kpi-label-exec">Visualizações</div>
-                    <div class="kpi-trend-exec">
-                        <i class="fas fa-chart-bar"></i>
-                        <span>Engagement total</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="kpi-card-exec warning">
-                <div class="kpi-icon-exec">
-                    <i class="fas fa-clock"></i>
-                </div>
-                <div class="kpi-content-exec">
-                    <div class="kpi-number-exec" id="tempoMedio">0s</div>
-                    <div class="kpi-label-exec">Tempo Médio</div>
-                    <div class="kpi-trend-exec">
-                        <i class="fas fa-stopwatch"></i>
-                        <span>Engajamento</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>-->
-
-<!-- Ações Rápidas Executivas -->
-<section class="quick-actions-exec">
-    <div class="container">
-        <h2 class="section-title-exec">
-            <i class="fas fa-bolt me-2"></i>Ações Rápidas
-        </h2>
-        
-        <div class="actions-grid-exec">
-            <a href="/Proposta/Criar" class="action-card-exec primary">
-                <div class="action-icon-exec">
-                    <i class="fas fa-plus"></i>
-                </div>
-                <div class="action-content-exec">
-                    <h4>Nova Proposta</h4>
-                    <p>Criar proposta personalizada</p>
-                </div>
-                <div class="action-arrow-exec">
-                    <i class="fas fa-arrow-right"></i>
-                </div>
-            </a>
-
-            <a href="/Proposta" class="action-card-exec secondary">
-                <div class="action-icon-exec">
-                    <i class="fas fa-list"></i>
-                </div>
-                <div class="action-content-exec">
-                    <h4>Minhas Propostas</h4>
-                    <p>Gerenciar propostas existentes</p>
-                </div>
-                <div class="action-arrow-exec">
-                    <i class="fas fa-arrow-right"></i>
-                </div>
-            </a>
-
-            <a href="/PropostaAnalyticsData/Dashboard" class="action-card-exec accent">
-                <div class="action-icon-exec">
-                    <i class="fas fa-chart-bar"></i>
-                </div>
-                <div class="action-content-exec">
-                    <h4>Analytics</h4>
-                    <p>Relatórios e estatísticas</p>
-                </div>
-                <div class="action-arrow-exec">
-                    <i class="fas fa-arrow-right"></i>
-                </div>
-            </a>
-
-            <a href="/Usuario" class="action-card-exec outline">
-                <div class="action-icon-exec">
-                    <i class="fas fa-users"></i>
-                </div>
-                <div class="action-content-exec">
-                    <h4>Usuários</h4>
-                    <p>Gerenciar equipe</p>
-                </div>
-                <div class="action-arrow-exec">
-                    <i class="fas fa-arrow-right"></i>
-                </div>
-            </a>
-        </div>
-    </div>
-</section>
-
-<!-- Performance e Insights -->
-<section class="insights-exec">
-    <div class="container">
-        <div class="row g-4">
-            <!-- Performance Card -->
-            <div class="col-lg-8">
-                <div class="performance-card-exec">
-                    <div class="card-header-exec">
-                        <h3>
-                            <i class="fas fa-trending-up me-2"></i>
-                            Resumo de Performance
-                        </h3>
-                        <button class="btn-refresh-exec" onclick="refreshData()">
-                            <i class="fas fa-sync"></i>
-                        </button>
-                    </div>
-                    
-                    <div class="performance-metrics-exec">
-                        <div class="metric-exec">
-                            <div class="metric-label-exec">Taxa de Conversão</div>
-                            <div class="metric-value-exec" id="taxaConversao">0%</div>
-                            <div class="metric-change-exec positive">
-                                <i class="fas fa-arrow-up"></i> +2.3%
-                            </div>
-                        </div>
-                        
-                        <div class="metric-exec">
-                            <div class="metric-label-exec">Tempo Médio</div>
-                            <div class="metric-value-exec" id="tempoMedioView">0s</div>
-                            <div class="metric-change-exec positive">
-                                <i class="fas fa-arrow-up"></i> +15s
-                            </div>
-                        </div>
-                        
-                        <div class="metric-exec">
-                            <div class="metric-label-exec">Interações</div>
-                            <div class="metric-value-exec" id="totalInteracoes">0</div>
-                            <div class="metric-change-exec neutral">
-                                <i class="fas fa-minus"></i> Estável
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Activity Card -->
-            <div class="col-lg-4">
-                <div class="activity-card-exec">
-                    <div class="card-header-exec">
-                        <h3>
-                            <i class="fas fa-history me-2"></i>
-                            Atividade Recente
-                        </h3>
-                    </div>
-                    
-                    <div class="activity-list-exec">
-                        <div class="activity-item-exec">
-                            <div class="activity-icon-exec success">
-                                <i class="fas fa-check"></i>
-                            </div>
-                            <div class="activity-content-exec">
-                                <div class="activity-title-exec">Proposta aprovada</div>
-                                <div class="activity-time-exec">Há 2 horas</div>
-                            </div>
-                        </div>
-                        
-                        <div class="activity-item-exec">
-                            <div class="activity-icon-exec primary">
-                                <i class="fas fa-plus"></i>
-                            </div>
-                            <div class="activity-content-exec">
-                                <div class="activity-title-exec">Nova proposta criada</div>
-                                <div class="activity-time-exec">Há 4 horas</div>
-                            </div>
-                        </div>
-                        
-                        <div class="activity-item-exec">
-                            <div class="activity-icon-exec info">
-                                <i class="fas fa-eye"></i>
-                            </div>
-                            <div class="activity-content-exec">
-                                <div class="activity-title-exec">Proposta visualizada</div>
-                                <div class="activity-time-exec">Há 6 horas</div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="activity-footer-exec">
-                        <a href="/Proposta" class="link-minimal-exec">
-                            Ver todas as atividades
-                            <i class="fas fa-arrow-right ms-1"></i>
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
 
 @section Styles {
-    <style>
-        /* === HERO SECTION EXECUTIVO === */
-        .hero-section-exec {
-            background: var(--exec-gradient-primary);
-            color: white;
-            padding: 2rem 0; 
-            position: relative;
-            overflow: hidden;
-            margin: -1.5rem -1.5rem 0 -1.5rem;
-        }
-
-        .hero-section-exec::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: 
-                radial-gradient(circle at 25% 25%, rgba(255,255,255,0.1) 0%, transparent 50%),
-                radial-gradient(circle at 75% 75%, rgba(255,255,255,0.05) 0%, transparent 50%);
-            animation: float 20s ease-in-out infinite;
-        }
-
-        @@keyframes float {
-            0%, 100% { transform: translateY(0px) rotate(0deg); }
-            50% { transform: translateY(-10px) rotate(1deg); }
-        }
-
-        .hero-content-exec {
-            position: relative;
-            z-index: 2;
-        }
-
-        .hero-title-exec {
-            font-size: 2.25rem;
-            font-weight: 800;
-            margin-bottom: 1rem;
-            line-height: 1.2;
-        }
-
-        .text-accent {
-            color: var(--exec-accent);
-        }
-
-        .hero-subtitle-exec {
-            font-size: 1.125rem;
-            margin-bottom: 2rem;
-            opacity: 0.9;
-            font-weight: 400;
-            max-width: 500px;
-            line-height: 1.5;
-        }
-
-        .cta-buttons-exec {
-            display: flex;
-            gap: 1rem;
-            flex-wrap: wrap;
-        }
-
-        .btn-primary-exec {
-            background: var(--exec-gradient-accent);
-            border: none;
-            padding: 0.875rem 1.5rem;
-            font-size: 1rem;
-            font-weight: 600;
-            border-radius: var(--exec-radius);
-            color: white;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            transition: var(--exec-transition);
-            box-shadow: var(--exec-shadow);
-        }
-
-        .btn-primary-exec:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--exec-shadow-hover);
-            color: white;
-            text-decoration: none;
-        }
-
-        .btn-secondary-exec {
-            background: rgba(255, 255, 255, 0.1);
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            padding: 0.875rem 1.5rem;
-            font-size: 1rem;
-            font-weight: 500;
-            border-radius: var(--exec-radius);
-            color: white;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            transition: var(--exec-transition);
-            backdrop-filter: blur(10px);
-        }
-
-        .btn-secondary-exec:hover {
-            background: rgba(255, 255, 255, 0.2);
-            transform: translateY(-2px);
-            color: white;
-            text-decoration: none;
-        }
-
-        .hero-graphic-exec {
-            font-size: 4rem;
-            opacity: 0.3;
-            animation: float 3s ease-in-out infinite;
-        }
-
-        /* === KPI DASHBOARD === */
-        .kpi-dashboard-exec {
-            padding: 2rem 0;
-            background: var(--exec-lighter);
-            margin: 0 -1.5rem;
-        }
-
-        .kpi-grid-exec {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 1.5rem;
-        }
-
-        .kpi-card-exec {
-            background: white;
-            border-radius: var(--exec-radius-lg);
-            padding: 1.5rem;
-            box-shadow: var(--exec-shadow);
-            border: 1px solid var(--exec-border);
-            transition: var(--exec-transition);
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .kpi-card-exec::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-        }
-
-        .kpi-card-exec.primary::before { background: var(--exec-primary); }
-        .kpi-card-exec.success::before { background: var(--exec-success); }
-        .kpi-card-exec.info::before { background: var(--exec-info); }
-        .kpi-card-exec.warning::before { background: var(--exec-warning); }
-
-        .kpi-card-exec:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--exec-shadow-hover);
-        }
-
-        .kpi-icon-exec {
-            width: 50px;
-            height: 50px;
-            border-radius: var(--exec-radius);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.25rem;
-            color: white;
-            flex-shrink: 0;
-        }
-
-        .kpi-card-exec.primary .kpi-icon-exec { background: var(--exec-primary); }
-        .kpi-card-exec.success .kpi-icon-exec { background: var(--exec-success); }
-        .kpi-card-exec.info .kpi-icon-exec { background: var(--exec-info); }
-        .kpi-card-exec.warning .kpi-icon-exec { background: var(--exec-warning); }
-
-        .kpi-content-exec {
-            flex: 1;
-        }
-
-        .kpi-number-exec {
-            font-size: 2rem;
-            font-weight: 700;
-            color: var(--exec-primary);
-            line-height: 1;
-            margin-bottom: 0.25rem;
-        }
-
-        .kpi-label-exec {
-            color: var(--exec-text-muted);
-            font-size: 0.875rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-
-        .kpi-trend-exec {
-            display: flex;
-            align-items: center;
-            gap: 0.25rem;
-            font-size: 0.75rem;
-            font-weight: 500;
-            color: var(--exec-text-muted);
-        }
-
-        .kpi-trend-exec.positive {
-            color: var(--exec-success);
-        }
-
-        /* === AÇÕES RÁPIDAS === */
-        .quick-actions-exec {
-            padding: 2rem 0;
-        }
-
-        .section-title-exec {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--exec-primary);
-            margin-bottom: 1.5rem;
-        }
-
-        .actions-grid-exec {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 1rem;
-        }
-
-        .action-card-exec {
-            background: white;
-            border: 1px solid var(--exec-border);
-            border-radius: var(--exec-radius);
-            padding: 1.5rem;
-            text-decoration: none;
-            transition: var(--exec-transition);
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            box-shadow: var(--exec-shadow);
-        }
-
-        .action-card-exec:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--exec-shadow-hover);
-            text-decoration: none;
-            color: inherit;
-        }
-
-        .action-card-exec.primary:hover { border-color: var(--exec-primary); }
-        .action-card-exec.secondary:hover { border-color: var(--exec-secondary); }
-        .action-card-exec.accent:hover { border-color: var(--exec-accent); }
-        .action-card-exec.outline { border: 2px dashed var(--exec-border); }
-        .action-card-exec.outline:hover { border-color: var(--exec-primary); border-style: solid; }
-
-        .action-icon-exec {
-            width: 40px;
-            height: 40px;
-            border-radius: var(--exec-radius-sm);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1rem;
-            color: white;
-            flex-shrink: 0;
-        }
-
-        .action-card-exec.primary .action-icon-exec { background: var(--exec-primary); }
-        .action-card-exec.secondary .action-icon-exec { background: var(--exec-secondary); }
-        .action-card-exec.accent .action-icon-exec { background: var(--exec-accent); }
-        .action-card-exec.outline .action-icon-exec { background: var(--exec-light); color: var(--exec-primary); }
-
-        .action-content-exec {
-            flex: 1;
-        }
-
-        .action-content-exec h4 {
-            font-size: 1rem;
-            font-weight: 600;
-            color: var(--exec-primary);
-            margin-bottom: 0.25rem;
-        }
-
-        .action-content-exec p {
-            font-size: 0.875rem;
-            color: var(--exec-text-muted);
-            margin-bottom: 0;
-        }
-
-        .action-arrow-exec {
-            color: var(--exec-text-light);
-            transition: var(--exec-transition);
-        }
-
-        .action-card-exec:hover .action-arrow-exec {
-            color: var(--exec-primary);
-            transform: translateX(2px);
-        }
-
-        /* === INSIGHTS === */
-        .insights-exec {
-            padding: 2rem 0;
-            background: var(--exec-light);
-            margin: 0 -1.5rem;
-        }
-
-        .performance-card-exec,
-        .activity-card-exec {
-            background: white;
-            border: 1px solid var(--exec-border);
-            border-radius: var(--exec-radius);
-            box-shadow: var(--exec-shadow);
-            height: 100%;
-        }
-
-        .card-header-exec {
-            padding: 1.5rem 1.5rem 1rem 1.5rem;
-            border-bottom: 1px solid var(--exec-border);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .card-header-exec h3 {
-            font-size: 1.125rem;
-            font-weight: 600;
-            color: var(--exec-primary);
-            margin: 0;
-        }
-
-        .btn-refresh-exec {
-            background: none;
-            border: none;
-            color: var(--exec-text-muted);
-            padding: 0.25rem;
-            border-radius: var(--exec-radius-sm);
-            transition: var(--exec-transition);
-            cursor: pointer;
-        }
-
-        .btn-refresh-exec:hover {
-            background: var(--exec-light);
-            color: var(--exec-primary);
-        }
-
-        .performance-metrics-exec {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 1rem;
-            padding: 1.5rem;
-        }
-
-        .metric-exec {
-            text-align: center;
-        }
-
-        .metric-label-exec {
-            font-size: 0.75rem;
-            color: var(--exec-text-muted);
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-        }
-
-        .metric-value-exec {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--exec-primary);
-            margin-bottom: 0.25rem;
-        }
-
-        .metric-change-exec {
-            font-size: 0.75rem;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.25rem;
-        }
-
-        .metric-change-exec.positive { color: var(--exec-success); }
-        .metric-change-exec.neutral { color: var(--exec-text-muted); }
-
-        /* === ATIVIDADE === */
-        .activity-list-exec {
-            padding: 1.5rem;
-        }
-
-        .activity-item-exec {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            padding: 0.75rem 0;
-            border-bottom: 1px solid var(--exec-border);
-        }
-
-        .activity-item-exec:last-child {
-            border-bottom: none;
-        }
-
-        .activity-icon-exec {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.75rem;
-            color: white;
-            flex-shrink: 0;
-        }
-
-        .activity-icon-exec.primary { background: var(--exec-primary); }
-        .activity-icon-exec.success { background: var(--exec-success); }
-        .activity-icon-exec.info { background: var(--exec-info); }
-
-        .activity-content-exec {
-            flex: 1;
-        }
-
-        .activity-title-exec {
-            font-size: 0.875rem;
-            font-weight: 500;
-            color: var(--exec-text);
-            margin-bottom: 0.125rem;
-        }
-
-        .activity-time-exec {
-            font-size: 0.75rem;
-            color: var(--exec-text-muted);
-        }
-
-        .activity-footer-exec {
-            padding: 1rem 1.5rem;
-            border-top: 1px solid var(--exec-border);
-            text-align: center;
-        }
-
-        .link-minimal-exec {
-            color: var(--exec-primary);
-            text-decoration: none;
-            font-size: 0.875rem;
-            font-weight: 500;
-            transition: var(--exec-transition);
-        }
-
-        .link-minimal-exec:hover {
-            color: var(--exec-primary-light);
-            text-decoration: none;
-        }
-
-        /* === RESPONSIVO === */
-        @@media (max-width: 768px) {
-            .hero-section-exec {
-                padding: 1.5rem 0;
-                margin: -1rem -1rem 0 -1rem;
-            }
-
-            .hero-title-exec {
-                font-size: 1.75rem;
-            }
-
-            .hero-subtitle-exec {
-                font-size: 1rem;
-            }
-
-            .hero-graphic-exec {
-                font-size: 3rem;
-                margin-top: 1rem;
-            }
-
-            .cta-buttons-exec {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .kpi-dashboard-exec {
-                margin: 0 -1rem;
-                padding: 1.5rem 0;
-            }
-
-            .kpi-grid-exec {
-                grid-template-columns: 1fr;
-                gap: 1rem;
-                padding: 0 1rem;
-            }
-
-            .kpi-card-exec {
-                padding: 1rem;
-            }
-
-            .kpi-number-exec {
-                font-size: 1.75rem;
-            }
-
-            .actions-grid-exec {
-                grid-template-columns: 1fr;
-            }
-
-            .performance-metrics-exec {
-                grid-template-columns: 1fr;
-                gap: 1.5rem;
-            }
-
-            .insights-exec {
-                margin: 0 -1rem;
-                padding: 1.5rem 0;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="~/css/home-dashboard.css" />
 }
 
-@section Scripts {
-    <script>
-        // Carregar dados reais via AJAX
-        document.addEventListener('DOMContentLoaded', function() {
-            loadDashboardData();
-            
-            // Atualizar a cada 30 segundos
-            setInterval(loadDashboardData, 30000);
-        });
+<div class="home-dashboard">
 
-        function loadDashboardData() {
-            // Simular carregamento de dados (substituir por chamadas reais à API)
-            document.getElementById('totalPropostas').textContent = '12';
-            document.getElementById('propostasAprovadas').textContent = '8';
-            document.getElementById('totalVisualizacoes').textContent = '245';
-            document.getElementById('tempoMedio').textContent = '3m 24s';
-            document.getElementById('taxaConversao').textContent = '67%';
-            document.getElementById('tempoMedioView').textContent = '2m 15s';
-            document.getElementById('totalInteracoes').textContent = '89';
-        }
-
-        function refreshData() {
-            const btn = document.querySelector('.btn-refresh-exec');
-            btn.style.animation = 'spin 1s linear';
-            
-            setTimeout(() => {
-                btn.style.animation = '';
-                loadDashboardData();
-            }, 1000);
-        }
-
-        // CSS para animação de refresh
-        const style = document.createElement('style');
-        style.textContent = `
-            @@keyframes spin {
-                from { transform: rotate(0deg); }
-                to { transform: rotate(360deg); }
+<!-- ══════════════════════════════════════════════════════
+     HERO — Saudação + Ações rápidas
+══════════════════════════════════════════════════════ -->
+<div class="home-hero">
+    <div class="home-hero-identity">
+        <div class="home-hero-avatar">
+            @if (!string.IsNullOrEmpty(Model.FotoPath))
+            {
+                <img src="@Model.FotoPath" alt="@Model.NomeUsuario" />
             }
-        `;
-        document.head.appendChild(style);
-    </script>
+            else
+            {
+                @iniciais
+            }
+        </div>
+        <div class="home-hero-txt">
+            <h1>@saudacao, @primeiroNome.</h1>
+            <p>Veja o que precisa da sua atenção hoje.</p>
+        </div>
+    </div>
+    <div class="home-actions">
+        <a href="@Url.Action("Criar", "Proposta")" class="home-actions-cta">
+            <i class="fas fa-plus"></i> Nova proposta
+        </a>
+        <a href="@Url.Action("Index", "Lead")" class="home-actions-btn">
+            <i class="fas fa-user-plus"></i> Leads
+        </a>
+        <a href="@Url.Action("Index", "Cliente")" class="home-actions-btn">
+            <i class="fas fa-users"></i> Clientes
+        </a>
+        <a href="@Url.Action("Captacao", "Lead")" class="home-actions-btn">
+            <i class="fas fa-link"></i> Captação
+        </a>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     4 CARDS PRINCIPAIS
+══════════════════════════════════════════════════════ -->
+<div class="home-summary-grid">
+
+    <a href="@Url.Action("Index", "Lead")" class="home-summary-card home-card-leads">
+        <div class="home-summary-icon"><i class="fas fa-user-plus"></i></div>
+        <div class="home-summary-number">@Model.LeadsNovos</div>
+        <div class="home-summary-label">Leads novos</div>
+        <div class="home-summary-sub">aguardando primeiro contato</div>
+        <span class="home-summary-action">
+            Responder leads <i class="fas fa-arrow-right"></i>
+        </span>
+    </a>
+
+    <a href="@Url.Action("Index", "Proposta")" class="home-summary-card home-card-viz">
+        <div class="home-summary-icon"><i class="fas fa-eye"></i></div>
+        <div class="home-summary-number">@Model.PropostasVisualizadas7d</div>
+        <div class="home-summary-label">Propostas visualizadas</div>
+        <div class="home-summary-sub">clientes abriram o link (7 dias)</div>
+        <span class="home-summary-action">
+            Fazer follow-up <i class="fas fa-arrow-right"></i>
+        </span>
+    </a>
+
+    <a href="@Url.Action("Index", "Proposta")" class="home-summary-card home-card-andamento">
+        <div class="home-summary-icon"><i class="fas fa-plane"></i></div>
+        <div class="home-summary-number">@Model.ViagensAndamento</div>
+        <div class="home-summary-label">Viagens em andamento</div>
+        <div class="home-summary-sub">clientes viajando agora</div>
+        <span class="home-summary-action">
+            Acompanhar <i class="fas fa-arrow-right"></i>
+        </span>
+    </a>
+
+    <a href="@Url.Action("Index", "Proposta")" class="home-summary-card home-card-proximas">
+        <div class="home-summary-icon"><i class="fas fa-plane-departure"></i></div>
+        <div class="home-summary-number">@Model.ViagensProximas15d</div>
+        <div class="home-summary-label">Viagens próximas</div>
+        <div class="home-summary-sub">começam nos próximos 15 dias</div>
+        <span class="home-summary-action">
+            Revisar detalhes <i class="fas fa-arrow-right"></i>
+        </span>
+    </a>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     LAYOUT 2 COLUNAS
+══════════════════════════════════════════════════════ -->
+<div class="row g-4">
+
+    <!-- COLUNA PRINCIPAL -->
+    <div class="col-lg-8">
+
+        <!-- Fila de atenção -->
+        <div class="attention-queue">
+            <div class="home-section-head">
+                <h2><i class="fas fa-list-check"></i>Sua fila de atenção</h2>
+                @if (Model.FilaAtencao.Any())
+                {
+                    <a href="@Url.Action("Index", "Proposta")" class="home-section-link">
+                        Ver tudo <i class="fas fa-arrow-right" style="font-size:.65rem;"></i>
+                    </a>
+                }
+            </div>
+
+            @if (!Model.FilaAtencao.Any())
+            {
+                <div class="home-empty">
+                    <i class="fas fa-check-circle" style="color:#10b981;opacity:.5;"></i>
+                    <p>Tudo certo por aqui. Nenhuma pendência importante no momento.</p>
+                </div>
+            }
+            else
+            {
+                @foreach (var item in Model.FilaAtencao)
+                {
+                    <a href="@item.Url" class="attention-item @item.TipoCss">
+                        <div class="atq-icon-wrap">
+                            <i class="@item.TipoIcon"></i>
+                        </div>
+                        <div class="atq-body">
+                            <div class="atq-nome">@item.NomeContato</div>
+                            <div class="atq-desc">@item.Descricao</div>
+                        </div>
+                        <div class="atq-meta">
+                            <span class="atq-badge">@item.TipoBadge</span>
+                            <span class="atq-contexto">@item.Contexto</span>
+                        </div>
+                        <span class="atq-action">@item.AcaoLabel</span>
+                    </a>
+                }
+            }
+        </div>
+
+        <!-- Continue de onde parou -->
+        <div class="continue-list">
+            <div class="home-section-head">
+                <h2><i class="fas fa-history"></i>Continue de onde parou</h2>
+                <a href="@Url.Action("Index", "Proposta")" class="home-section-link">
+                    Ver propostas <i class="fas fa-arrow-right" style="font-size:.65rem;"></i>
+                </a>
+            </div>
+
+            @if (!Model.ContinueList.Any())
+            {
+                <div class="home-empty">
+                    <i class="fas fa-folder-open"></i>
+                    <p>Nenhuma atividade recente encontrada.</p>
+                </div>
+            }
+            else
+            {
+                @foreach (var item in Model.ContinueList)
+                {
+                    <a href="@item.Url" class="continue-item" data-tipo="@item.Tipo">
+                        <div class="cnt-icon">
+                            <i class="@item.TipoIcon"></i>
+                        </div>
+                        <div class="cnt-body">
+                            <div class="cnt-tipo-tag">@item.Tipo</div>
+                            <div class="cnt-nome">@item.Nome</div>
+                            @if (!string.IsNullOrEmpty(item.Destino))
+                            {
+                                <div class="cnt-destino">
+                                    <i class="fas fa-map-marker-alt me-1" style="font-size:.62rem;"></i>@item.Destino
+                                </div>
+                            }
+                        </div>
+                        <div class="cnt-right">
+                            <span class="cnt-badge @item.StatusCss">@item.Status</span>
+                            <span class="cnt-time">@RelTime(item.UltimaAtualizacao, agora)</span>
+                        </div>
+                    </a>
+                }
+            }
+        </div>
+
+    </div>
+
+    <!-- SIDEBAR -->
+    <div class="col-lg-4">
+
+        <!-- Viagens e agenda -->
+        <div class="home-section-head">
+            <h2><i class="fas fa-calendar-alt"></i>Viagens e agenda</h2>
+        </div>
+        <div class="travel-agenda-card mb-4">
+            @if (!Model.ViagensAgenda.Any())
+            {
+                <div class="home-empty" style="border:none;padding:24px;">
+                    <i class="fas fa-umbrella-beach"></i>
+                    <p>Sem viagens próximas ou em andamento.</p>
+                </div>
+            }
+            else
+            {
+                @foreach (var v in Model.ViagensAgenda)
+                {
+                    <a href="@v.Url" class="travel-item">
+                        <div class="travel-status-dot @(v.EmAndamento ? "travel-dot-andamento" : "travel-dot-proxima")"></div>
+                        <div class="travel-body">
+                            <div class="travel-titulo">@(v.ClienteNome ?? v.PropostaTitulo)</div>
+                            @if (!string.IsNullOrEmpty(v.Destino))
+                            {
+                                <div class="travel-cliente">
+                                    <i class="fas fa-map-marker-alt me-1" style="font-size:.6rem;"></i>@v.Destino
+                                </div>
+                            }
+                            <div class="travel-datas">
+                                <i class="fas fa-calendar me-1" style="font-size:.6rem;"></i>
+                                @v.DataInicio.ToString("dd/MM") — @v.DataFim.ToString("dd/MM")
+                            </div>
+                        </div>
+                        <span class="travel-badge @(v.EmAndamento ? "travel-badge-andamento" : "travel-badge-proxima")">
+                            @(v.EmAndamento ? "Em andamento" : "Próxima")
+                        </span>
+                    </a>
+                }
+            }
+        </div>
+
+        <!-- Sua página pública / Captação -->
+        @if (Model.Captacao != null)
+        {
+            <div class="home-section-head">
+                <h2><i class="fas fa-link"></i>Sua página pública</h2>
+            </div>
+            <div class="public-page-card">
+                <div class="public-page-header">
+                    @if (!string.IsNullOrEmpty(Model.Captacao.NomeAgencia))
+                    {
+                        <span style="font-size:.85rem;font-weight:700;color:var(--exec-text);">
+                            @Model.Captacao.NomeAgencia
+                        </span>
+                    }
+                    else
+                    {
+                        <span style="font-size:.82rem;color:var(--exec-text-muted);">Sua agência</span>
+                    }
+                    <span class="public-page-status @(Model.Captacao.IsActive ? "public-status-ativa" : "public-status-inativa")">
+                        <i class="fas fa-circle" style="font-size:.45rem;"></i>
+                        @(Model.Captacao.IsActive ? "Ativa" : "Inativa")
+                    </span>
+                </div>
+
+                @if (!string.IsNullOrEmpty(Model.Captacao.PublicUrl))
+                {
+                    <div class="public-page-link">@Model.Captacao.PublicUrl</div>
+                    <div class="public-page-actions">
+                        <button type="button" class="public-btn"
+                                onclick="copiarLink('@Model.Captacao.PublicUrl', this)">
+                            <i class="fas fa-copy"></i> Copiar link
+                        </button>
+                        <a href="@Url.Action("Captacao", "Lead")" class="public-btn">
+                            <i class="fas fa-cog"></i> Configurar
+                        </a>
+                    </div>
+                }
+                else if (string.IsNullOrEmpty(Model.Captacao.SlugAgencia))
+                {
+                    <div class="public-page-cta">
+                        <p>Configure sua página pública para receber leads de novos viajantes.</p>
+                        <a href="@Url.Action("Captacao", "Lead")"
+                           class="public-btn public-btn-primary"
+                           style="width:auto;padding:8px 16px;">
+                            <i class="fas fa-rocket"></i> Configurar captação
+                        </a>
+                    </div>
+                }
+                else
+                {
+                    <div class="public-page-cta">
+                        <p>Ative a captação para começar a receber leads pelo link público.</p>
+                        <a href="@Url.Action("Captacao", "Lead")"
+                           class="public-btn public-btn-primary"
+                           style="width:auto;padding:8px 16px;">
+                            <i class="fas fa-toggle-on"></i> Ativar captação
+                        </a>
+                    </div>
+                }
+            </div>
+        }
+
+    </div>
+</div>
+
+</div><!-- .home-dashboard -->
+
+@section Scripts {
+<script>
+function copiarLink(url, btn) {
+    navigator.clipboard.writeText(url).then(function () {
+        var orig = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check"></i> Copiado!';
+        btn.style.color = '#10b981';
+        setTimeout(function () { btn.innerHTML = orig; btn.style.color = ''; }, 2000);
+    });
+}
+</script>
 }

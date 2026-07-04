@@ -26,6 +26,14 @@ namespace SistemaUsuarios.Models.ViewModels
         [Display(Name = "Link Público")]
         public bool? FiltroLinkAtivo { get; set; }
 
+        // === VISUALIZAÇÃO ===
+        /// <summary>"lista" ou "kanban" — carregado da preferência do usuário.</summary>
+        public string VisualizacaoAtual { get; set; } = "lista";
+
+        // === HIERARQUIA ===
+        /// <summary>True quando o usuário logado é Master — controla exibição de coluna "Agente" e link de gestão de equipe.</summary>
+        public bool IsMaster { get; set; } = true;
+
         // === DADOS PARA EXIBIÇÃO ===
         public List<PropostaListViewModel> Propostas { get; set; } = new List<PropostaListViewModel>();
         public List<Usuario> Usuarios { get; set; } = new List<Usuario>();

@@ -1,0 +1,480 @@
+@model SistemaUsuarios.Models.ViewModels.AgencyPublicViewModel
+@{
+    Layout = "_LayoutLanding";
+    ViewData["Title"] = Model.NomeAgencia + " — Solicitação de viagem";
+
+    var corP = Model.CorPrimaria  ?? "#005197";
+    var corS = Model.CorSecundaria ?? "#4a90c4";
+    var corD = Model.CorDestaque  ?? "#2ec4b6";
+
+    var iniciais = string.IsNullOrEmpty(Model.NomeAgencia) ? "AG"
+        : string.Join("", Model.NomeAgencia.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+            .Take(2).Select(p => char.ToUpper(p[0]).ToString()));
+}
+
+@section Styles {
+<style>
+:root {
+    --agency-primary:   @corP;
+    --agency-secondary: @corS;
+    --agency-accent:    @corD;
+}
+
+* { box-sizing: border-box; }
+
+.agency-page {
+    min-height: 100vh;
+    background: #f4f6f9;
+    font-family: 'Inter', -apple-system, sans-serif;
+}
+
+/* ── Hero ─────────────────────────────── */
+.agency-hero {
+    background: linear-gradient(135deg, var(--agency-primary) 0%, color-mix(in srgb, var(--agency-primary) 80%, #000) 100%);
+    color: #fff;
+    padding: 3rem 1.5rem 2rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.agency-hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="20" r="1" fill="rgba(255,255,255,0.06)"/><circle cx="80" cy="15" r="1.5" fill="rgba(255,255,255,0.05)"/><circle cx="50" cy="70" r="1" fill="rgba(255,255,255,0.07)"/><circle cx="90" cy="60" r="1" fill="rgba(255,255,255,0.04)"/></svg>');
+    pointer-events: none;
+}
+
+.agency-avatar {
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    border: 3px solid rgba(255,255,255,.35);
+    background: rgba(255,255,255,.15);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.5rem; font-weight: 700; color: #fff;
+    margin: 0 auto 12px;
+    overflow: hidden;
+    position: relative; z-index: 1;
+}
+
+.agency-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+
+.agency-name {
+    font-size: 1.2rem; font-weight: 700;
+    letter-spacing: -.01em;
+    margin-bottom: 4px;
+    position: relative; z-index: 1;
+}
+
+.agency-tag {
+    font-size: .78rem; opacity: .75;
+    text-transform: uppercase; letter-spacing: .08em;
+    margin-bottom: 24px;
+    position: relative; z-index: 1;
+}
+
+.agency-hero-badge {
+    display: inline-block;
+    background: rgba(255,255,255,.15);
+    border: 1px solid rgba(255,255,255,.25);
+    border-radius: 20px;
+    padding: 3px 14px;
+    font-size: .7rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .08em;
+    margin-bottom: 16px;
+    position: relative; z-index: 1;
+}
+
+.agency-hero-title {
+    font-size: 2rem; font-weight: 800;
+    line-height: 1.2; margin-bottom: 12px;
+    position: relative; z-index: 1;
+}
+
+.agency-hero-subtitle {
+    font-size: 1rem; opacity: .88;
+    max-width: 500px; margin: 0 auto 20px;
+    line-height: 1.55;
+    position: relative; z-index: 1;
+}
+
+.agency-response-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(255,255,255,.12);
+    border: 1px solid rgba(255,255,255,.2);
+    border-radius: 24px;
+    padding: 6px 16px;
+    font-size: .85rem; font-weight: 500;
+    position: relative; z-index: 1;
+}
+
+/* ── Formulário ───────────────────────── */
+.agency-form-wrap {
+    max-width: 560px;
+    margin: -24px auto 0;
+    padding: 0 16px 48px;
+    position: relative; z-index: 2;
+}
+
+.agency-form-card {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 8px 40px rgba(0,0,0,.12);
+    padding: 32px 28px;
+}
+
+.agency-form-title {
+    font-size: 1.05rem; font-weight: 700;
+    color: #1a2b3c;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.agency-label {
+    font-size: .8rem; font-weight: 600;
+    color: #374151; margin-bottom: 5px;
+    display: block;
+}
+
+.agency-input {
+    width: 100%;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 10px 13px;
+    font-size: .9rem;
+    font-family: 'Inter', sans-serif;
+    color: #1a2b3c;
+    transition: border-color .15s, box-shadow .15s;
+    outline: none;
+}
+
+.agency-input:focus {
+    border-color: var(--agency-primary);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--agency-primary) 15%, transparent);
+}
+
+.agency-input::placeholder { color: #9ca3af; }
+
+.agency-input-group { margin-bottom: 18px; }
+
+.agency-submit-btn {
+    width: 100%;
+    background: linear-gradient(135deg, var(--agency-primary), color-mix(in srgb, var(--agency-primary) 80%, var(--agency-accent)));
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 14px;
+    font-size: 1rem; font-weight: 700;
+    cursor: pointer;
+    transition: opacity .2s, transform .15s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    margin-top: 8px;
+}
+
+.agency-submit-btn:hover { opacity: .92; transform: translateY(-1px); }
+.agency-submit-btn:active { transform: translateY(0); }
+
+/* ── Sucesso ──────────────────────────── */
+.agency-success {
+    text-align: center;
+    padding: 32px 20px;
+}
+
+.agency-success-icon {
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #16db93, #13c87f);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.8rem; color: #fff;
+    margin: 0 auto 20px;
+    box-shadow: 0 4px 16px rgba(22,219,147,.35);
+}
+
+.agency-success h4 {
+    font-size: 1.2rem; font-weight: 700;
+    color: #1a2b3c; margin-bottom: 10px;
+}
+
+.agency-success p {
+    font-size: .92rem; color: #6b7a8d;
+    margin-bottom: 8px; line-height: 1.55;
+}
+
+/* ── Inativa ──────────────────────────── */
+.agency-inactive {
+    text-align: center;
+    padding: 32px 20px;
+}
+
+.agency-inactive-icon {
+    font-size: 3rem; color: #d1d5db;
+    margin-bottom: 20px;
+    display: block;
+}
+
+/* ── Footer mini ──────────────────────── */
+.agency-footer {
+    text-align: center;
+    padding: 24px 16px;
+    font-size: .74rem;
+    color: #9ca3af;
+}
+
+.agency-footer a { color: #9ca3af; text-decoration: none; }
+.agency-footer a:hover { color: #6b7a8d; }
+
+/* ── Responsivo ───────────────────────── */
+@@media (max-width: 576px) {
+    .agency-hero-title { font-size: 1.6rem; }
+    .agency-form-card { padding: 24px 18px; }
+}
+</style>
+}
+
+<div class="agency-page">
+
+    <!-- ── Hero ──────────────────────────────────────────────── -->
+    <div class="agency-hero">
+        <div class="agency-avatar">
+            @if (!string.IsNullOrEmpty(Model.FotoPath))
+            {
+                <img src="@Model.FotoPath" alt="@Model.NomeAgencia" />
+            }
+            else
+            {
+                @iniciais
+            }
+        </div>
+        <div class="agency-name">@Model.NomeAgencia</div>
+        <div class="agency-tag">Agência de Viagens</div>
+
+        <div class="agency-hero-badge">FORMULÁRIO DE COTAÇÃO</div>
+        <h1 class="agency-hero-title">Vamos planejar<br>sua viagem</h1>
+
+        @if (!string.IsNullOrEmpty(Model.WelcomeMessage))
+        {
+            <p class="agency-hero-subtitle">@Model.WelcomeMessage</p>
+        }
+        else
+        {
+            <p class="agency-hero-subtitle">Preencha o formulário e entraremos em contato para criar uma proposta personalizada para você.</p>
+        }
+
+        @if (!string.IsNullOrEmpty(Model.ResponseTimeText))
+        {
+            <div class="agency-response-badge">
+                <i class="fas fa-clock"></i>
+                Resposta em até @Model.ResponseTimeText
+            </div>
+        }
+    </div>
+
+    <!-- ── Formulário / Estado ───────────────────────────────── -->
+    <div class="agency-form-wrap">
+        <div class="agency-form-card">
+
+            @if (Model.Enviado)
+            {
+                <!-- Sucesso -->
+                <div class="agency-success">
+                    <div class="agency-success-icon"><i class="fas fa-check"></i></div>
+                    <h4>Recebemos sua solicitação!</h4>
+                    <p>Em breve entraremos em contato para planejar sua viagem.</p>
+                    @if (!string.IsNullOrEmpty(Model.ResponseTimeText))
+                    {
+                        <p><strong>Tempo estimado de resposta: @Model.ResponseTimeText</strong></p>
+                    }
+                    <a href="/@Model.SlugAgencia" class="btn btn-outline-secondary btn-sm mt-3">
+                        <i class="fas fa-redo me-1"></i>Enviar nova solicitação
+                    </a>
+                </div>
+            }
+            else if (!Model.CaptacaoAtiva)
+            {
+                <!-- Inativa -->
+                <div class="agency-inactive">
+                    <i class="fas fa-pause-circle agency-inactive-icon"></i>
+                    <h5 style="color:#374151;font-weight:700;">Temporariamente indisponível</h5>
+                    <p class="text-muted mt-2" style="font-size:.9rem;">
+                        Esta agência não está recebendo novas solicitações no momento.
+                        <br>Tente novamente mais tarde.
+                    </p>
+                </div>
+            }
+            else
+            {
+                <!-- Erro de envio (validação) -->
+                @if (!string.IsNullOrEmpty(Model.ErroEnvio))
+                {
+                    <div class="alert alert-danger rounded-3 mb-4" style="font-size:.88rem;">
+                        <i class="fas fa-exclamation-circle me-2"></i>@Model.ErroEnvio
+                    </div>
+                }
+
+                <div class="agency-form-title">
+                    <i class="fas fa-plane-departure me-2" style="color:@corD;"></i>Sua solicitação de viagem
+                </div>
+
+                <form asp-controller="AgencyPublic" asp-action="Index"
+                      asp-route-agencySlug="@Model.SlugAgencia"
+                      method="post">
+                    @Html.AntiForgeryToken()
+
+                    <!-- Campos obrigatórios -->
+                    <div class="agency-input-group">
+                        <label class="agency-label" for="fullName">Nome completo <span style="color:#dc3545;">*</span></label>
+                        <input class="agency-input" type="text" id="fullName" name="fullName"
+                               maxlength="200" required placeholder="Seu nome completo" autocomplete="name" />
+                    </div>
+
+                    <div class="agency-input-group">
+                        <label class="agency-label" for="whatsApp">WhatsApp <span style="color:#dc3545;">*</span></label>
+                        <input class="agency-input" type="tel" id="whatsApp" name="whatsApp"
+                               maxlength="20" required placeholder="(11) 99999-9999" autocomplete="tel" />
+                    </div>
+
+                    <div class="agency-input-group">
+                        <label class="agency-label" for="destination">Destino desejado <span style="color:#dc3545;">*</span></label>
+                        <input class="agency-input" type="text" id="destination" name="destination"
+                               maxlength="300" required placeholder="Ex: Paris, Grécia, Disney..." />
+                    </div>
+
+                    <!-- Campos opcionais configurados -->
+                    @if (Model.ShowEmail)
+                    {
+                        <div class="agency-input-group">
+                            <label class="agency-label" for="email">E-mail</label>
+                            <input class="agency-input" type="email" id="email" name="email"
+                                   maxlength="150" placeholder="seu@email.com" autocomplete="email" />
+                        </div>
+                    }
+
+                    @if (Model.ShowOriginCity)
+                    {
+                        <div class="agency-input-group">
+                            <label class="agency-label" for="originCity">Cidade de origem</label>
+                            <input class="agency-input" type="text" id="originCity" name="originCity"
+                                   maxlength="150" placeholder="De onde você vai partir?" />
+                        </div>
+                    }
+
+                    @if (Model.ShowTravelDates)
+                    {
+                        <div class="agency-input-group">
+                            <label class="agency-label" for="travelDates">Datas previstas da viagem</label>
+                            <input class="agency-input" type="text" id="travelDates" name="travelDates"
+                                   maxlength="100" placeholder="Ex: 15/01 a 25/01/2026" />
+                        </div>
+                    }
+
+                    @if (Model.ShowAdults || Model.ShowChildren)
+                    {
+                        <div class="row g-3 mb-0">
+                            @if (Model.ShowAdults)
+                            {
+                                <div class="col-6">
+                                    <div class="agency-input-group">
+                                        <label class="agency-label" for="adults">Adultos</label>
+                                        <input class="agency-input" type="number" id="adults" name="adults"
+                                               min="1" max="20" placeholder="1" style="padding:10px 13px;" />
+                                    </div>
+                                </div>
+                            }
+                            @if (Model.ShowChildren)
+                            {
+                                <div class="col-6">
+                                    <div class="agency-input-group">
+                                        <label class="agency-label" for="children">Crianças</label>
+                                        <input class="agency-input" type="number" id="children" name="children"
+                                               min="0" max="20" placeholder="0" style="padding:10px 13px;" />
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+
+                    @if (Model.ShowBudget)
+                    {
+                        <div class="agency-input-group">
+                            <label class="agency-label" for="budget">Orçamento estimado</label>
+                            <input class="agency-input" type="text" id="budget" name="budget"
+                                   maxlength="100" placeholder="Ex: R$ 5.000 por pessoa" />
+                        </div>
+                    }
+
+                    @if (Model.ShowTripType)
+                    {
+                        <div class="agency-input-group">
+                            <label class="agency-label" for="tripType">Tipo de viagem</label>
+                            <select class="agency-input" id="tripType" name="tripType">
+                                <option value="">Selecione...</option>
+                                <option>Casal / Lua de mel</option>
+                                <option>Família</option>
+                                <option>Grupo de amigos</option>
+                                <option>Viagem solo</option>
+                                <option>Viagem corporativa</option>
+                                <option>Outro</option>
+                            </select>
+                        </div>
+                    }
+
+                    @if (Model.ShowAccommodationPreference)
+                    {
+                        <div class="agency-input-group">
+                            <label class="agency-label" for="accommodationPreference">Preferência de hospedagem</label>
+                            <select class="agency-input" id="accommodationPreference" name="accommodationPreference">
+                                <option value="">Selecione...</option>
+                                <option>Hotel econômico</option>
+                                <option>Hotel intermediário</option>
+                                <option>Hotel superior / 4 estrelas</option>
+                                <option>Hotel de luxo / 5 estrelas</option>
+                                <option>Resort</option>
+                                <option>Pousada / Boutique</option>
+                                <option>Sem preferência</option>
+                            </select>
+                        </div>
+                    }
+
+                    @if (Model.ShowBestContactTime)
+                    {
+                        <div class="agency-input-group">
+                            <label class="agency-label" for="bestContactTime">Melhor horário para contato</label>
+                            <input class="agency-input" type="text" id="bestContactTime" name="bestContactTime"
+                                   maxlength="100" placeholder="Ex: Manhã, após 18h, qualquer horário..." />
+                        </div>
+                    }
+
+                    @if (Model.ShowNotes)
+                    {
+                        <div class="agency-input-group">
+                            <label class="agency-label" for="notes">Observações adicionais</label>
+                            <textarea class="agency-input" id="notes" name="notes"
+                                      maxlength="1000" rows="3"
+                                      placeholder="Conte mais sobre o que você está imaginando para essa viagem..."
+                                      style="resize:vertical;"></textarea>
+                        </div>
+                    }
+
+                    <button type="submit" class="agency-submit-btn">
+                        <i class="fas fa-paper-plane"></i>
+                        Quero minha cotação
+                    </button>
+
+                    <p class="text-center mt-3 mb-0" style="font-size:.75rem;color:#9ca3af;">
+                        <i class="fas fa-shield-alt me-1"></i>
+                        Seus dados são usados apenas para preparar sua proposta de viagem.
+                    </p>
+                </form>
+            }
+
+        </div>
+    </div>
+
+    <!-- ── Footer ────────────────────────────────────────────── -->
+    <div class="agency-footer">
+        Página criada com <strong>AgentTools</strong> · <a href="/" target="_blank">agenttools.com.br</a>
+    </div>
+
+</div>

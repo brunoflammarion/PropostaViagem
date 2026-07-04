@@ -1,0 +1,450 @@
+/* ================================================================
+   AGENTTOOLS — APP LAYOUT v2.0
+   Paleta Ocean Blue oficial · Container responsivo · Componentes
+   Carregado APÓS todos os outros CSS pelo _Layout.cshtml.
+   ================================================================ */
+
+/* ── 0. PALETA OFICIAL ─────────────────────────────────────────── */
+:root {
+    --at-ocean:    #002B45;
+    --at-primary:  #1E4E8C;
+    --at-sky:      #5BA8FF;
+    --at-sky-soft: #E6F1FF;
+    --at-gray:     #68728B;
+    --at-white:    #FFFFFF;
+
+    --at-border:     rgba(30, 78, 140, 0.14);
+    --at-shadow:     0 12px 32px rgba(0, 43, 69, 0.08);
+    --at-shadow-sm:  0 4px 16px rgba(0, 43, 69, 0.06);
+    --at-radius:     16px;
+    --at-radius-sm:  10px;
+    --at-radius-lg:  22px;
+
+    /* legado -- exec-* aponta para a paleta oficial */
+    --exec-primary:  #1E4E8C;
+    --exec-light:    #F0F7FF;
+    --exec-border:   rgba(30, 78, 140, 0.14);
+}
+
+/* ── 1. BASE ───────────────────────────────────────────────────── */
+html {
+    background: #E6F1FF !important;
+}
+
+html body.app-body,
+body.app-body {
+    background: #E6F1FF !important;
+    color: #002B45 !important;
+    min-height: 100vh;
+}
+
+/* ── 2. SHELL + MAIN ───────────────────────────────────────────── */
+.app-shell {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: #E6F1FF;
+}
+
+.app-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: #E6F1FF !important;
+    color: #002B45;
+}
+
+/* ── 3. CONTAINER RESPONSIVO ───────────────────────────────────── */
+.at-app-container {
+    width: min(100% - 48px, 1440px);
+    margin: 0 auto;
+    padding: 32px 0 48px;
+    flex: 1;
+    animation: fadeInUp 0.22s ease-out;
+}
+
+.at-app-container--full-bleed {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    animation: none;
+}
+
+@media (max-width: 768px) {
+    .at-app-container {
+        width: min(100% - 24px, 1440px);
+        padding: 20px 0 32px;
+    }
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0);   }
+}
+
+/* ── 4. NAVBAR ─────────────────────────────────────────────────── */
+body.app-body .app-navbar,
+body.app-body .navbar {
+    background: linear-gradient(90deg, #002B45 0%, #1E4E8C 100%) !important;
+    box-shadow: 0 4px 20px rgba(0, 43, 69, 0.20) !important;
+    min-height: 64px;
+}
+
+body.app-body .navbar .nav-link {
+    color: rgba(255, 255, 255, 0.86) !important;
+    font-weight: 500;
+    padding: 0.45rem 0.85rem !important;
+    border-radius: 8px;
+    transition: background 0.15s, color 0.15s;
+}
+
+body.app-body .navbar .nav-link:hover {
+    color: #fff !important;
+    background: rgba(91, 168, 255, 0.14) !important;
+}
+
+body.app-body .navbar .nav-link.active {
+    color: #5BA8FF !important;
+    background: rgba(91, 168, 255, 0.18) !important;
+}
+
+body.app-body .navbar-brand,
+body.app-body .brand-wordmark {
+    color: #fff !important;
+}
+
+body.app-body .navbar .dropdown-toggle {
+    color: rgba(255, 255, 255, 0.86) !important;
+}
+
+body.app-body .navbar-toggler {
+    border-color: rgba(255, 255, 255, 0.25) !important;
+}
+
+body.app-body .navbar-toggler-icon {
+    filter: invert(1) !important;
+}
+
+/* ── 5. FOOTER ─────────────────────────────────────────────────── */
+body.app-body .app-footer,
+body.app-body .footer {
+    position: static !important;
+    flex-shrink: 0;
+    background: #E6F1FF !important;
+    border-top: 1px solid rgba(30, 78, 140, 0.12) !important;
+    color: #68728B !important;
+    width: auto !important;
+    line-height: normal !important;
+    padding: 24px 0 !important;
+}
+
+/* ── 6. TIPOGRAFIA ─────────────────────────────────────────────── */
+body.app-body h1, body.app-body h2, body.app-body h3,
+body.app-body h4, body.app-body h5, body.app-body h6,
+body.app-body .page-title, body.app-body .section-title,
+body.app-body .at-page-title {
+    color: #002B45 !important;
+}
+
+body.app-body .text-muted,
+body.app-body .page-subtitle, body.app-body .section-subtitle,
+body.app-body .at-page-subtitle, body.app-body .exec-subtitle {
+    color: #68728B !important;
+}
+
+body.app-body p {
+    color: inherit;
+}
+
+/* ── 7. CARDS ──────────────────────────────────────────────────── */
+body.app-body .card,
+body.app-body .app-card,
+body.app-body .dashboard-card,
+body.app-body .metric-card,
+body.app-body .content-card,
+body.app-body .section-card,
+body.app-body .exec-stat-card {
+    background: #FFFFFF !important;
+    color: #002B45 !important;
+    border: 1px solid rgba(30, 78, 140, 0.14) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 4px 16px rgba(0, 43, 69, 0.07) !important;
+}
+
+body.app-body .card-header {
+    background: #FFFFFF !important;
+    border-bottom: 1px solid rgba(30, 78, 140, 0.10) !important;
+    color: #002B45 !important;
+    font-weight: 600;
+}
+
+body.app-body .card-footer {
+    background: rgba(230, 241, 255, 0.5) !important;
+    border-top: 1px solid rgba(30, 78, 140, 0.08) !important;
+}
+
+body.app-body .card-body {
+    color: #002B45 !important;
+}
+
+/* ── 8. BOTÕES ─────────────────────────────────────────────────── */
+body.app-body .btn-primary {
+    background: #1E4E8C !important;
+    border-color: #1E4E8C !important;
+    color: #FFFFFF !important;
+}
+
+body.app-body .btn-primary:hover,
+body.app-body .btn-primary:focus {
+    background: #002B45 !important;
+    border-color: #002B45 !important;
+    color: #FFFFFF !important;
+}
+
+body.app-body .btn-outline-primary {
+    background: #FFFFFF !important;
+    color: #1E4E8C !important;
+    border: 1px solid rgba(30, 78, 140, 0.28) !important;
+}
+
+body.app-body .btn-outline-primary:hover {
+    background: #E6F1FF !important;
+    color: #002B45 !important;
+    border-color: #1E4E8C !important;
+}
+
+body.app-body .btn-outline-secondary {
+    color: #68728B !important;
+    border-color: rgba(30, 78, 140, 0.20) !important;
+    background: #FFFFFF !important;
+}
+
+body.app-body .btn-outline-secondary:hover {
+    background: #E6F1FF !important;
+    color: #002B45 !important;
+}
+
+/* ── 9. INPUTS ─────────────────────────────────────────────────── */
+body.app-body .form-control,
+body.app-body .form-select {
+    background: #FFFFFF !important;
+    color: #002B45 !important;
+    border: 1px solid rgba(30, 78, 140, 0.18) !important;
+    border-radius: 10px !important;
+}
+
+body.app-body .form-control::placeholder {
+    color: rgba(104, 114, 139, 0.65) !important;
+}
+
+body.app-body .form-control:focus,
+body.app-body .form-select:focus {
+    border-color: #5BA8FF !important;
+    box-shadow: 0 0 0 3px rgba(91, 168, 255, 0.20) !important;
+    background: #FFFFFF !important;
+    color: #002B45 !important;
+}
+
+body.app-body .input-group-text {
+    background: #EAF5FF !important;
+    border-color: rgba(30, 78, 140, 0.18) !important;
+    color: #1E4E8C !important;
+}
+
+body.app-body .form-label {
+    color: #002B45;
+    font-weight: 500;
+}
+
+/* ── 10. TABELAS ───────────────────────────────────────────────── */
+body.app-body .table {
+    color: #002B45 !important;
+}
+
+body.app-body .table thead th {
+    background: rgba(230, 241, 255, 0.85) !important;
+    color: #002B45 !important;
+    font-weight: 600;
+    border-bottom: 2px solid rgba(30, 78, 140, 0.12) !important;
+    border-top: none !important;
+}
+
+body.app-body .table tbody td {
+    color: #002B45 !important;
+    border-color: rgba(30, 78, 140, 0.07) !important;
+    vertical-align: middle;
+}
+
+body.app-body .table tbody tr:hover > td {
+    background: rgba(230, 241, 255, 0.50) !important;
+}
+
+/* ── 11. MODAL ─────────────────────────────────────────────────── */
+body.app-body .modal-content {
+    background: #FFFFFF !important;
+    color: #002B45 !important;
+    border-radius: 18px !important;
+    border: 1px solid rgba(30, 78, 140, 0.12) !important;
+    box-shadow: 0 24px 64px rgba(0, 43, 69, 0.18) !important;
+}
+
+body.app-body .modal-header {
+    border-bottom: 1px solid rgba(30, 78, 140, 0.12) !important;
+}
+
+body.app-body .modal-title {
+    color: #002B45 !important;
+}
+
+body.app-body .modal-footer {
+    border-top: 1px solid rgba(30, 78, 140, 0.10) !important;
+    background: rgba(230, 241, 255, 0.3) !important;
+}
+
+/* ── 12. DROPDOWN ──────────────────────────────────────────────── */
+body.app-body .dropdown-menu {
+    background: #FFFFFF !important;
+    border: 1px solid rgba(30, 78, 140, 0.12) !important;
+    border-radius: 14px !important;
+    box-shadow: 0 12px 32px rgba(0, 43, 69, 0.14) !important;
+    padding: 6px !important;
+}
+
+body.app-body .dropdown-item {
+    color: #002B45 !important;
+    border-radius: 8px !important;
+}
+
+body.app-body .dropdown-item:hover,
+body.app-body .dropdown-item:focus {
+    background: #E6F1FF !important;
+    color: #002B45 !important;
+}
+
+body.app-body .dropdown-divider {
+    border-color: rgba(30, 78, 140, 0.10) !important;
+}
+
+/* ── 13. BADGES ────────────────────────────────────────────────── */
+body.app-body .badge.bg-primary {
+    background: #1E4E8C !important;
+}
+
+body.app-body .badge.bg-secondary {
+    background: #68728B !important;
+}
+
+/* ── 14. ALERTAS ───────────────────────────────────────────────── */
+body.app-body .alert {
+    border-radius: 12px !important;
+}
+
+/* ── 15. CLASSES UTILITÁRIAS ───────────────────────────────────── */
+.at-page {
+    width: 100%;
+}
+
+.at-page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+}
+
+.at-page-title {
+    color: #002B45;
+    font-size: 1.75rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    margin: 0;
+    line-height: 1.2;
+}
+
+.at-page-subtitle {
+    color: #68728B;
+    font-size: 0.875rem;
+    margin-top: 4px;
+}
+
+/* ── 16. GRID HELPERS ──────────────────────────────────────────── */
+.at-grid-4 {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 20px;
+}
+
+.at-grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px;
+}
+
+.at-grid-2 {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+}
+
+@media (max-width: 1100px) {
+    .at-grid-4 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .at-page-header {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .at-grid-4,
+    .at-grid-3,
+    .at-grid-2 {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ── 17. HOME HERO — escopo navy, contraste claro ──────────────── */
+/* Necessário aqui pois este arquivo carrega por último e os
+   seletores globais acima usam !important com body.app-body       */
+
+body.app-body .home-hero h1,
+body.app-body .home-hero-txt h1 {
+    color: #FFFFFF !important;
+}
+
+body.app-body .home-hero p,
+body.app-body .home-hero-txt p {
+    color: rgba(255, 255, 255, 0.80) !important;
+}
+
+body.app-body .home-hero .home-actions-cta {
+    background: #FFFFFF !important;
+    color: #002B45 !important;
+    border-color: #FFFFFF !important;
+}
+
+body.app-body .home-hero .home-actions-cta:hover {
+    background: #E6F1FF !important;
+    color: #002B45 !important;
+}
+
+body.app-body .home-hero .home-actions-btn {
+    background: rgba(255, 255, 255, 0.12) !important;
+    color: #FFFFFF !important;
+    border-color: rgba(255, 255, 255, 0.28) !important;
+}
+
+body.app-body .home-hero .home-actions-btn:hover {
+    background: rgba(255, 255, 255, 0.22) !important;
+    color: #FFFFFF !important;
+    border-color: rgba(255, 255, 255, 0.45) !important;
+}
+
+body.app-body .home-hero .home-actions-btn i,
+body.app-body .home-hero .home-actions-cta i {
+    color: inherit !important;
+}

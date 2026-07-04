@@ -1,0 +1,158 @@
+@model List<SistemaUsuarios.Models.ViewModels.ConfiguracaoLembreteViewModel>
+@{
+    ViewData["Title"] = "Lembretes Automáticos";
+    Layout = "_Layout";
+}
+
+@section Styles {
+<style>
+#config-lembretes-page {
+    --c-accent: #6366f1;
+    --c-border: #e2e8f0;
+    --radius:   10px;
+}
+.cfg-section-title {
+    font-size: .7rem; font-weight: 800; text-transform: uppercase;
+    letter-spacing: .6px; color: #94a3b8; padding: 20px 0 8px;
+    border-bottom: 1px solid var(--c-border); margin-bottom: 12px;
+}
+.cfg-card {
+    background: #fff;
+    border-radius: var(--radius);
+    border: 1.5px solid var(--c-border);
+    padding: 16px 20px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    transition: border-color .15s;
+}
+.cfg-card:hover { border-color: #c7d2fe; }
+.cfg-card.disabled { opacity: .6; }
+
+.cfg-icon {
+    width: 40px; height: 40px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem; flex-shrink: 0;
+}
+.icon-followup    { background: #ede9fe; color: #7c3aed; }
+.icon-operacional { background: #e0f2fe; color: #0369a1; }
+.icon-comercial   { background: #fef3c7; color: #b45309; }
+.icon-aniversario { background: #fce7f3; color: #9d174d; }
+
+.cfg-body { flex: 1; min-width: 0; }
+.cfg-titulo { font-weight: 700; font-size: .9rem; color: #1e293b; }
+.cfg-desc   { font-size: .78rem; color: #64748b; margin-top: 2px; }
+.cfg-quando { font-size: .72rem; color: #6366f1; font-weight: 600; margin-top: 4px; display: flex; align-items: center; gap: 4px; }
+
+/* Toggle switch */
+.cfg-toggle { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0; }
+.cfg-toggle input { opacity: 0; width: 0; height: 0; }
+.cfg-slider {
+    position: absolute; inset: 0; background: #cbd5e1;
+    border-radius: 50px; cursor: pointer;
+    transition: background .2s;
+}
+.cfg-slider:before {
+    content: ""; position: absolute;
+    width: 18px; height: 18px; border-radius: 50%;
+    background: #fff; left: 3px; top: 3px;
+    transition: transform .2s;
+    box-shadow: 0 1px 4px rgba(0,0,0,.2);
+}
+.cfg-toggle input:checked + .cfg-slider { background: #6366f1; }
+.cfg-toggle input:checked + .cfg-slider:before { transform: translateX(20px); }
+</style>
+}
+
+<div id="config-lembretes-page">
+
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h4 class="mb-0 fw-800">Lembretes Automáticos</h4>
+        <p class="text-muted small mb-0">Escolha quais tarefas o sistema deve criar automaticamente</p>
+    </div>
+    <a href="@Url.Action("Index")" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-arrow-left me-1"></i>Voltar
+    </a>
+</div>
+
+@if (TempData["Sucesso"] is string msg)
+{
+    <div class="alert alert-success alert-dismissible fade show mb-4">
+        <i class="fas fa-check-circle me-2"></i>@msg
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="alert alert-info mb-4" style="background:#eef2ff;border-color:#c7d2fe;color:#3730a3;border-radius:10px;">
+    <i class="fas fa-info-circle me-2"></i>
+    Os lembretes habilitados são criados automaticamente quando uma proposta é aprovada ou quando o cliente visualiza a proposta.
+    Você pode habilitar ou desabilitar cada um individualmente.
+</div>
+
+<form method="post" action="@Url.Action("SalvarConfiguracoes")">
+    @foreach (var grupo in Model.GroupBy(c => c.Tipo).OrderBy(g => g.Key))
+    {
+        var iconeCls = grupo.Key switch
+        {
+            "Followup"    => "icon-followup fas fa-phone",
+            "Operacional" => "icon-operacional fas fa-cog",
+            "Comercial"   => "icon-comercial fas fa-handshake",
+            "Aniversario" => "icon-aniversario fas fa-birthday-cake",
+            _             => "icon-followup fas fa-tasks"
+        };
+        var tituloGrupo = grupo.Key switch
+        {
+            "Followup"    => "Follow-up",
+            "Operacional" => "Operacional",
+            "Comercial"   => "Comercial / Pós-viagem",
+            "Aniversario" => "Relacionamento",
+            _             => grupo.Key
+        };
+
+        <div class="cfg-section-title">@tituloGrupo</div>
+
+        @foreach (var cfg in grupo)
+        {
+            <input type="hidden" name="Codigos" value="@cfg.TemplateCodigo" />
+            <div class="cfg-card @(!cfg.Habilitado ? "disabled" : "")" id="card-@cfg.TemplateCodigo">
+                <div class="cfg-icon @(iconeCls.Split(' ')[0])">
+                    <i class="fas @(iconeCls.Split(' ')[1])"></i>
+                </div>
+                <div class="cfg-body">
+                    <div class="cfg-titulo">@cfg.Titulo</div>
+                    <div class="cfg-desc">@cfg.Descricao</div>
+                    @if (!string.IsNullOrEmpty(cfg.TextoQuando))
+                    {
+                        <div class="cfg-quando"><i class="fas fa-clock"></i>@cfg.TextoQuando</div>
+                    }
+                </div>
+                <label class="cfg-toggle">
+                    <input type="checkbox" name="Habilitados" value="@cfg.TemplateCodigo"
+                           @(cfg.Habilitado ? "checked" : "")
+                           onchange="toggleCard('@cfg.TemplateCodigo', this.checked)" />
+                    <span class="cfg-slider"></span>
+                </label>
+            </div>
+        }
+    }
+
+    <div class="d-flex justify-content-end mt-4">
+        <button type="submit" class="btn btn-primary px-4">
+            <i class="fas fa-save me-2"></i>Salvar configurações
+        </button>
+    </div>
+</form>
+
+</div>
+
+@section Scripts {
+<script>
+function toggleCard(codigo, habilitado) {
+    const card = document.getElementById('card-' + codigo);
+    if (habilitado) card.classList.remove('disabled');
+    else            card.classList.add('disabled');
+}
+</script>
+}

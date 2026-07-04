@@ -1,5 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using SistemaUsuarios.Data;
+using SistemaUsuarios.Services;
+using SistemaUsuarios.Infrastructure;
+using NetTopologySuite;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,9 +11,13 @@ builder.Services.AddControllersWithViews();
 
 // Configurar Entity Framework
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        sqlOptions => sqlOptions.UseNetTopologySuite()
+    )
+);
 
-// Configurar sess�es
+// Configurar sess�es
 builder.Services.AddSession(options =>
 {
     options.IdleTimeout = TimeSpan.FromMinutes(30);
@@ -20,6 +27,18 @@ builder.Services.AddSession(options =>
 
 // Adicionar HttpContextAccessor para acessar o contexto HTTP
 builder.Services.AddHttpContextAccessor();
+
+// Cache em memória para rate limiting de tentativas de acesso
+builder.Services.AddMemoryCache();
+
+// AeroDataBox flight lookup (via API.Market)
+builder.Services.AddHttpClient<IFlightLookupService, AeroDataBoxService>();
+
+// AI Copilot
+builder.Services.AddHttpClient<AiCopilotService>();
+
+// Módulo Tarefas
+builder.Services.AddScoped<ITarefaService, TarefaService>();
 
 var app = builder.Build();
 
@@ -35,7 +54,7 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-// Usar sess�es
+// Usar sess�es
 app.UseSession();
 
 app.UseAuthorization();
@@ -48,9 +67,9 @@ app.MapControllerRoute(
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+    pattern: "{controller=Landing}/{action=Index}/{id?}");
 
-// Adicionar rota espec�fica para landing page
+// Adicionar rota espec�fica para landing page
 app.MapControllerRoute(
     name: "landing",
     pattern: "cadastro-agentes",
@@ -61,23 +80,32 @@ app.MapControllerRoute(
     pattern: "landing/{action=Index}/{id?}",
     defaults: new { controller = "Landing" });
 
+// ── Rota pública por slug de agência ─────────────────────────────────────
+// DEVE ser a ÚLTIMA rota registrada. A constraint garante que não conflita
+// com nenhum controller ou prefixo de rota interno do sistema.
+app.MapControllerRoute(
+    name: "agency-public",
+    pattern: "{agencySlug}",
+    defaults: new { controller = "AgencyPublic", action = "Index" },
+    constraints: new { agencySlug = new NotReservedSlugConstraint() });
+
 // Garantir que o banco seja criado e populado
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     try
     {
-        // Aplicar migra��es pendentes
+        // Aplicar migra��es pendentes
         context.Database.Migrate();
 
-        // Seed layouts se n�o existirem
+        // Seed layouts se n�o existirem
         if (!context.Layouts.Any())
         {
             context.Layouts.AddRange(
                 new SistemaUsuarios.Models.Layout
                 {
-                    Nome = "Layout Padr�o",
-                    Descricao = "Layout padr�o do sistema",
+                    Nome = "Layout Padr�o",
+                    Descricao = "Layout padr�o do sistema",
                     Ativo = true,
                     DataCriacao = DateTime.Now
                 },
@@ -91,7 +119,7 @@ using (var scope = app.Services.CreateScope())
                 new SistemaUsuarios.Models.Layout
                 {
                     Nome = "Layout Familiar",
-                    Descricao = "Layout para viagens em fam�lia",
+                    Descricao = "Layout para viagens em fam�lia",
                     Ativo = true,
                     DataCriacao = DateTime.Now
                 }

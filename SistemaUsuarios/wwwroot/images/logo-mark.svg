@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" fill="none">
+  <!-- Outer ring -->
+  <circle cx="24" cy="24" r="22" stroke="#005197" stroke-width="1.5"/>
+  <!-- Inner ring (subtle) -->
+  <circle cx="24" cy="24" r="16" stroke="#005197" stroke-width="0.75" opacity="0.35"/>
+
+  <!-- N point (tall) -->
+  <polygon points="24,2 21,18 24,14 27,18" fill="#005197"/>
+  <!-- S point (tall) -->
+  <polygon points="24,46 21,30 24,34 27,30" fill="#1A2B3C" opacity="0.55"/>
+  <!-- E point -->
+  <polygon points="46,24 30,21 34,24 30,27" fill="#1A2B3C" opacity="0.55"/>
+  <!-- W point -->
+  <polygon points="2,24 18,21 14,24 18,27" fill="#1A2B3C" opacity="0.55"/>
+
+  <!-- NE point -->
+  <polygon points="38.1,9.9 27.5,20.5 30.2,17.8 31.4,21.4" fill="#005197" opacity="0.6"/>
+  <!-- NW point -->
+  <polygon points="9.9,9.9 20.5,20.5 17.8,17.8 16.6,21.4" fill="#005197" opacity="0.6"/>
+  <!-- SE point -->
+  <polygon points="38.1,38.1 27.5,27.5 30.2,30.2 31.4,26.6" fill="#005197" opacity="0.3"/>
+  <!-- SW point -->
+  <polygon points="9.9,38.1 20.5,27.5 17.8,30.2 16.6,26.6" fill="#005197" opacity="0.3"/>
+
+  <!-- Center dot -->
+  <circle cx="24" cy="24" r="2.5" fill="#005197"/>
+  <circle cx="24" cy="24" r="1.2" fill="white"/>
+
+  <!-- N label -->
+  <text x="24" y="11.5" text-anchor="middle" font-family="Montserrat, sans-serif" font-weight="700" font-size="5" fill="#005197" letter-spacing="0">N</text>
+</svg>

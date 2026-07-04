@@ -45,6 +45,19 @@ namespace SistemaUsuarios.Models.ViewModels
         [StringLength(2000, ErrorMessage = "Observações devem ter no máximo 2000 caracteres")]
         public string? ObservacoesGerais { get; set; }
 
+        /// <summary>HTML do editor rico escrito pelo agente na aba Revisão.</summary>
+        public string? ResumoProposta { get; set; }
+
+        // ── Avaliação pelo cliente ────────────────────────────────────────────
+        [Display(Name = "Solicitar avaliação de hospedagens")]
+        public bool SolicitarAvaliacaoHospedagem { get; set; } = false;
+
+        [Display(Name = "Solicitar avaliação de acomodações")]
+        public bool SolicitarAvaliacaoAcomodacao { get; set; } = false;
+
+        [Display(Name = "Solicitar avaliação de experiências")]
+        public bool SolicitarAvaliacaoExperiencia { get; set; } = false;
+
         [Display(Name = "Status")]
         public StatusProposta StatusProposta { get; set; } = StatusProposta.Rascunho;
 
@@ -58,6 +71,14 @@ namespace SistemaUsuarios.Models.ViewModels
         // Campos somente leitura para informações do sistema
         public DateTime? DataCriacao { get; set; }
         public DateTime? DataModificacao { get; set; }
+
+        // ── Responsável e criador ────────────────────────────────────────────────
+        /// <summary>Id do responsável atual (pode mudar via transferência pelo master).</summary>
+        public Guid? UsuarioResponsavelId { get; set; }
+        /// <summary>Nome do responsável atual — exibição read-only na view.</summary>
+        public string? NomeResponsavel { get; set; }
+        /// <summary>Nome do criador original — exibição read-only na view.</summary>
+        public string? NomeCriador { get; set; }
 
         // === PROPRIEDADES CALCULADAS ===
 

@@ -1,0 +1,21 @@
+# Pastas do Visual Studio
+.vs/
+*.user
+*.suo
+
+# Pastas de build
+bin/
+obj/
+publish/
+
+# Logs
+*.log
+
+# Artefatos de deploy
+deploy.zip
+
+# Uploads de usuários (conteúdo gerado em runtime, não versionado)
+wwwroot/uploads/
+
+# macOS
+.DS_Store

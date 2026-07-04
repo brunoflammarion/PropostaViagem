@@ -1,0 +1,289 @@
+@* Model: Guid? — null for Criar page, propostaId for Editar page *@
+@model Guid?
+
+<style>
+/* ══════════════════════════════════════════════════════════
+   COPILOT PANEL — apenas layout e animações
+   Botões usam classes Bootstrap nativas
+══════════════════════════════════════════════════════════ */
+
+.copilot-toggle-btn {
+    position: fixed;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 1040;
+    background: var(--bs-primary, #005197);
+    color: #fff;
+    border: none;
+    border-radius: 8px 0 0 8px;
+    padding: 16px 7px;
+    cursor: pointer;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    font-size: .78rem;
+    font-weight: 600;
+    letter-spacing: .5px;
+    transition: opacity .2s;
+    box-shadow: -2px 0 14px rgba(0,0,0,.18);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    line-height: 1;
+}
+.copilot-toggle-btn:hover { opacity: .85; }
+
+.copilot-dot {
+    width: 8px; height: 8px;
+    background: #4ade80; border-radius: 50%;
+    flex-shrink: 0;
+    animation: cp-pulse 2.2s ease-in-out infinite;
+}
+@@keyframes cp-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: .5; transform: scale(.8); }
+}
+
+/* Painel */
+.copilot-panel {
+    position: fixed;
+    right: -410px;
+    top: 0;
+    width: 390px;
+    height: 100vh;
+    background: #fff;
+    z-index: 1050;
+    display: flex;
+    flex-direction: column;
+    box-shadow: -4px 0 32px rgba(0,0,0,.15);
+    border-left: 1px solid #dee2e6;
+    transition: right .3s cubic-bezier(.4,0,.2,1);
+}
+.copilot-panel.open { right: 0; }
+
+/* Header */
+.copilot-header {
+    background: var(--bs-primary, #005197);
+    color: #fff;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+.copilot-avatar {
+    width: 34px; height: 34px;
+    background: rgba(255,255,255,.15);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .95rem; flex-shrink: 0;
+    border: 1.5px solid rgba(255,255,255,.2);
+}
+.copilot-close-btn {
+    background: none; border: none; color: rgba(255,255,255,.7);
+    font-size: 1rem; padding: 4px 6px; cursor: pointer; border-radius: 4px;
+    transition: color .15s; margin-left: auto;
+}
+.copilot-close-btn:hover { color: #fff; }
+
+/* Mensagens */
+.copilot-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: #f8f9fa;
+}
+
+.msg-ai, .msg-user { max-width: 95%; font-size: .845rem; line-height: 1.55; }
+.msg-ai  { align-self: flex-start; }
+.msg-user { align-self: flex-end; }
+
+.msg-ai .msg-bubble {
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 0 10px 10px 10px;
+    padding: 10px 13px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.04);
+    white-space: pre-wrap;
+}
+.msg-user .msg-bubble {
+    background: var(--bs-primary, #005197);
+    color: #fff;
+    border-radius: 10px 10px 0 10px;
+    padding: 9px 13px;
+}
+
+/* Separador de sessão */
+.cp-session-sep {
+    align-self: center;
+    font-size: .7rem;
+    color: #adb5bd;
+    padding: 2px 12px;
+    border: 1px solid #dee2e6;
+    border-radius: 20px;
+    background: #fff;
+    margin: 4px 0;
+}
+
+/* Loading */
+.cp-typing { display: flex; gap: 5px; align-items: center; padding: 12px 14px !important; }
+.cp-typing span {
+    width: 7px; height: 7px; background: #adb5bd; border-radius: 50%;
+    animation: cp-bounce .9s ease-in-out infinite;
+}
+.cp-typing span:nth-child(2) { animation-delay: .15s; }
+.cp-typing span:nth-child(3) { animation-delay: .3s; }
+@@keyframes cp-bounce {
+    0%, 60%, 100% { transform: translateY(0); }
+    30%           { transform: translateY(-6px); }
+}
+
+/* Pontos fortes */
+.cp-pontos { margin-top: 6px; display: flex; flex-direction: column; gap: 3px; }
+.cp-ponto {
+    font-size: .79rem; color: #198754; padding: 2px 0;
+    display: flex; gap: 6px; align-items: flex-start;
+}
+.cp-ponto i { color: #198754; margin-top: 3px; flex-shrink: 0; font-size: .68rem; }
+
+/* Gaps */
+.cp-gaps-bubble { background: #fff8e1 !important; border-color: #ffc107 !important; }
+.cp-gaps-title {
+    font-size: .72rem; font-weight: 700; color: #856404; margin-bottom: 5px;
+    text-transform: uppercase; letter-spacing: .3px;
+}
+.cp-gap {
+    font-size: .79rem; color: #664d03; padding: 2px 0;
+    display: flex; gap: 6px; align-items: flex-start;
+}
+.cp-gap i { color: #fd7e14; margin-top: 3px; flex-shrink: 0; font-size: .68rem; }
+
+/* Pergunta provocativa */
+.cp-question {
+    background: #e7f1ff !important;
+    border-color: #b6d4fe !important;
+    color: #084298 !important;
+    font-style: italic;
+    font-size: .82rem !important;
+}
+
+/* Chips rápidos — linha horizontal rolável */
+.cp-chips {
+    padding: 8px 12px;
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    border-top: 1px solid #dee2e6;
+    background: #fff;
+    flex-shrink: 0;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+.cp-chips::-webkit-scrollbar { display: none; }
+.cp-chips .btn { white-space: nowrap; flex-shrink: 0; }
+
+/* Input */
+.cp-input-area {
+    padding: 8px 12px 12px;
+    background: #fff;
+    border-top: 1px solid #dee2e6;
+    flex-shrink: 0;
+}
+.cp-input-wrap { display: flex; align-items: flex-end; gap: 8px; }
+.cp-textarea {
+    flex: 1; resize: none;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 8px 11px;
+    font-size: .845rem;
+    line-height: 1.45;
+    font-family: inherit;
+    outline: none;
+    transition: border-color .15s, box-shadow .15s;
+    min-height: 42px; max-height: 120px;
+    overflow-y: auto;
+}
+.cp-textarea:focus {
+    border-color: var(--bs-primary, #005197);
+    box-shadow: 0 0 0 .2rem rgba(0,81,151,.15);
+}
+.cp-send-btn {
+    width: 38px; height: 38px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .85rem;
+}
+.cp-hint { font-size: .67rem; color: #adb5bd; margin-top: 5px; }
+
+/* Scrollbar das mensagens */
+.copilot-messages::-webkit-scrollbar { width: 4px; }
+.copilot-messages::-webkit-scrollbar-track { background: transparent; }
+.copilot-messages::-webkit-scrollbar-thumb { background: #ced4da; border-radius: 4px; }
+</style>
+
+<!-- ── Aba lateral ─────────────────────────────────────────────── -->
+<button id="copilotToggle" class="copilot-toggle-btn" title="Abrir copiloto">
+    <div class="copilot-dot"></div>
+    Copiloto
+</button>
+
+<!-- ── Painel ─────────────────────────────────────────────────── -->
+<div id="copilotPanel"
+     class="copilot-panel"
+     data-proposta-id="@(Model?.ToString() ?? "")">
+
+    <!-- Header -->
+    <div class="copilot-header">
+        <div class="copilot-avatar"><i class="fas fa-compass"></i></div>
+        <div style="min-width:0;">
+            <div style="font-weight:700;font-size:.9rem;line-height:1.2;">Copiloto da Proposta</div>
+            <div style="font-size:.69rem;opacity:.8;">Consultor especialista · AgentTools IA</div>
+        </div>
+        <button id="copilotClose" class="copilot-close-btn" title="Fechar">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+
+    <!-- Área de mensagens (inclui histórico restaurado) -->
+    <div id="copilotMessages" class="copilot-messages"></div>
+
+    <!-- Ações rápidas — 4 chips consultivos -->
+    @if (Model.HasValue)
+    {
+        <div class="cp-chips" id="cpChips">
+            <button class="btn btn-sm btn-outline-secondary"
+                    data-msg="Quais são os principais pontos desta proposta que vão encantar o cliente? O que devo destacar na apresentação?">
+                ✨ Encantar o cliente
+            </button>
+            <button class="btn btn-sm btn-outline-secondary"
+                    data-msg="Traga insights específicos sobre os destinos e hospedagens desta proposta que eu possa usar como argumento de venda.">
+                📍 Pontos do destino
+            </button>
+            <button class="btn btn-sm btn-outline-secondary"
+                    data-msg="Como posso fortalecer a argumentação comercial desta proposta? Quais são os pontos mais convincentes para o cliente fechar?">
+                💼 Argumentação
+            </button>
+            <button class="btn btn-sm btn-outline-secondary"
+                    data-msg="O que está faltando ou mais fraco nessa proposta? O que eu deveria revisar antes de enviar ao cliente?">
+                🔎 O que melhorar?
+            </button>
+        </div>
+    }
+
+    <!-- Input -->
+    <div id="copilotInputArea" class="cp-input-area">
+        <div class="cp-input-wrap">
+            <textarea id="copilotInput"
+                      class="cp-textarea"
+                      placeholder="@(Model.HasValue ? "Pergunte sobre a proposta, o destino, o cliente..." : "Me conte: para onde é a viagem, quando e quem vai?")"
+                      rows="2"></textarea>
+            <button id="copilotSend" class="btn btn-primary cp-send-btn" title="Enviar">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+        <div class="cp-hint">Enter para enviar · Shift+Enter para nova linha</div>
+    </div>
+</div>

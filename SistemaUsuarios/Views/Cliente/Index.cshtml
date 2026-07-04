@@ -1,0 +1,379 @@
+@model SistemaUsuarios.Models.ViewModels.ClienteListViewModel
+@using SistemaUsuarios.Models
+@{
+    ViewData["Title"] = "Clientes";
+}
+
+<!-- ── Header ─────────────────────────────────────────────────────── -->
+<div class="executive-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2 class="exec-title"><i class="fas fa-users me-2"></i>Clientes</h2>
+            <span class="exec-subtitle">
+                @Model.TotalClientes cliente(s) na carteira ·
+                @Model.TotalPropostas proposta(s) ·
+                @Model.PropostasAprovadas aprovada(s)
+            </span>
+        </div>
+        <a href="@Url.Action("Criar", "Cliente")" class="btn btn-primary" style="border-radius:8px;font-weight:600;white-space:nowrap;">
+            <i class="fas fa-plus me-2"></i>Novo cliente
+        </a>
+    </div>
+</div>
+
+<!-- ── Dashboard de métricas ──────────────────────────────────────── -->
+<div class="exec-dashboard">
+    <div class="exec-stats-row">
+        <div class="exec-stat-item primary">
+            <div class="exec-stat-content">
+                <span class="exec-stat-number">@Model.TotalClientes</span>
+                <span class="exec-stat-label">Clientes</span>
+            </div>
+            <i class="fas fa-users exec-stat-icon"></i>
+        </div>
+        <div class="exec-stat-item secondary">
+            <div class="exec-stat-content">
+                <span class="exec-stat-number">@Model.TotalPropostas</span>
+                <span class="exec-stat-label">Propostas</span>
+            </div>
+            <i class="fas fa-file-alt exec-stat-icon"></i>
+        </div>
+        <div class="exec-stat-item success">
+            <div class="exec-stat-content">
+                <span class="exec-stat-number">@Model.PropostasAprovadas</span>
+                <span class="exec-stat-label">Aprovadas</span>
+            </div>
+            <i class="fas fa-check-circle exec-stat-icon"></i>
+        </div>
+        <div class="exec-stat-item warning">
+            <div class="exec-stat-content">
+                <span class="exec-stat-number">@Model.ClientesEmViagem</span>
+                <span class="exec-stat-label">Em Viagem</span>
+            </div>
+            <i class="fas fa-plane exec-stat-icon"></i>
+        </div>
+    </div>
+</div>
+
+<!-- ── Aniversários próximos ──────────────────────────────────────── -->
+@if (Model.AniversariosProximos.Any())
+{
+    <div class="cli-aniv-banner mb-4">
+        <div class="cli-aniv-label">
+            <i class="fas fa-birthday-cake me-2 text-warning"></i>
+            <span class="fw-semibold small">Aniversários próximos</span>
+        </div>
+        <div class="cli-aniv-chips">
+            @foreach (var a in Model.AniversariosProximos)
+            {
+                <a href="@Url.Action("Detalhe", "Cliente", new { id = a.ClienteId })"
+                   class="cli-aniv-chip @(a.DiasAteAniversario == 0 ? "hoje" : a.DiasAteAniversario <= 7 ? "semana" : "")">
+                    @if (!string.IsNullOrEmpty(a.FotoPath))
+                    {
+                        <img src="@a.FotoPath" class="cli-aniv-avatar-img" />
+                    }
+                    else
+                    {
+                        <span class="cli-aniv-avatar-initials">
+                            @(string.Join("", a.Nome.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(p => char.ToUpper(p[0]))))
+                        </span>
+                    }
+                    <span class="cli-aniv-info">
+                        <span class="cli-aniv-nome">@a.Nome.Split(' ')[0]</span>
+                        <span class="cli-aniv-dias">
+                            @if (a.DiasAteAniversario == 0)
+                            {
+                                <text>Hoje! 🎂</text>
+                            }
+                            else if (a.DiasAteAniversario == 1)
+                            {
+                                <text>Amanhã</text>
+                            }
+                            else
+                            {
+                                <text>em @a.DiasAteAniversario dias</text>
+                            }
+                        </span>
+                    </span>
+                </a>
+            }
+        </div>
+    </div>
+}
+
+<!-- ── TempData ───────────────────────────────────────────────────── -->
+@if (TempData["Sucesso"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show mb-3" role="alert">
+        <i class="fas fa-check-circle me-2"></i>@TempData["Sucesso"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["Erro"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
+        <i class="fas fa-exclamation-circle me-2"></i>@TempData["Erro"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- ── Filtro de busca ────────────────────────────────────────────── -->
+<div class="exec-filters">
+    <form method="get" asp-action="Index">
+        <div class="filters-row" style="grid-template-columns: 1fr auto;">
+            <div class="filter-compact">
+                <input asp-for="TermoBusca" name="termoBusca" class="form-control exec-search"
+                       placeholder="🔍 Buscar por nome, e-mail ou telefone..." />
+            </div>
+            <div class="filter-actions">
+                <button type="submit" class="btn btn-outline-primary exec-btn-filter">
+                    <i class="fas fa-filter"></i>
+                </button>
+                @if (!string.IsNullOrEmpty(Model.TermoBusca))
+                {
+                    <a href="/Cliente" class="btn btn-outline-secondary exec-btn-clear">
+                        <i class="fas fa-times"></i>
+                    </a>
+                }
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- ── Lista de clientes ──────────────────────────────────────────── -->
+@if (Model.Clientes.Any())
+{
+    <div class="cli-grid">
+        @foreach (var c in Model.Clientes)
+        {
+            var iniciais = string.Join("", c.Nome.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(p => char.ToUpper(p[0])));
+            <a href="@Url.Action("Detalhe", "Cliente", new { id = c.Id })" class="cli-card">
+
+                @if (c.EmViagem)
+                {
+                    <div class="cli-badge-viagem">
+                        <i class="fas fa-plane me-1"></i>Em viagem
+                    </div>
+                }
+
+                <!-- Avatar -->
+                <div class="cli-avatar-wrap">
+                    @if (!string.IsNullOrEmpty(c.FotoPath))
+                    {
+                        <img src="@c.FotoPath" class="cli-avatar-img" />
+                    }
+                    else
+                    {
+                        <div class="cli-avatar-initials">@iniciais</div>
+                    }
+                </div>
+
+                <!-- Dados -->
+                <div class="cli-card-body">
+                    <div class="cli-nome">@c.Nome</div>
+
+                    @if (c.Idade.HasValue)
+                    {
+                        <div class="cli-age">@c.Idade anos</div>
+                    }
+
+                    <div class="cli-contato">
+                        @if (!string.IsNullOrEmpty(c.Email))
+                        {
+                            <span class="cli-contato-item" title="@c.Email">
+                                <i class="fas fa-envelope"></i>
+                                <span class="cli-contato-text">@c.Email</span>
+                            </span>
+                        }
+                        @if (!string.IsNullOrEmpty(c.Telefone))
+                        {
+                            <span class="cli-contato-item">
+                                <i class="fas fa-phone"></i>@c.Telefone
+                            </span>
+                        }
+                    </div>
+
+                    @if (c.UltimosDestinos.Any())
+                    {
+                        <div class="cli-destinos">
+                            <i class="fas fa-map-pin text-muted me-1" style="font-size:.7rem;"></i>
+                            @string.Join(" · ", c.UltimosDestinos)
+                        </div>
+                    }
+                </div>
+
+                <!-- Métricas rodapé -->
+                <div class="cli-card-footer">
+                    <span class="cli-metric" title="Total de propostas">
+                        <i class="fas fa-file-alt"></i> @c.TotalPropostas
+                    </span>
+                    @if (c.PropostasAprovadas > 0)
+                    {
+                        <span class="cli-metric success" title="Aprovadas">
+                            <i class="fas fa-check"></i> @c.PropostasAprovadas
+                        </span>
+                    }
+                    <span class="cli-metric muted ms-auto" title="Cliente desde">
+                        <i class="fas fa-calendar-alt"></i> @c.DataCriacao.ToString("MM/yyyy")
+                    </span>
+                </div>
+            </a>
+        }
+    </div>
+}
+else
+{
+    <div class="exec-empty-state">
+        <i class="fas fa-users exec-empty-icon"></i>
+        <h4>@(string.IsNullOrEmpty(Model.TermoBusca) ? "Nenhum cliente na carteira" : "Nenhum cliente encontrado")</h4>
+        <p class="exec-empty-text">
+            @if (!string.IsNullOrEmpty(Model.TermoBusca))
+            {
+                <text>Tente outro termo de busca ou </text>
+            }
+            <a href="@Url.Action("Criar", "Cliente")" class="exec-empty-link">cadastre o primeiro cliente</a>.
+        </p>
+    </div>
+}
+
+@section Styles {
+<style>
+:root {
+    --exec-radius:    8px;
+    --exec-radius-lg: 12px;
+}
+
+/* ── Reutiliza exec-* do Index de Propostas ── */
+.executive-header { padding: 1.5rem 0; border-bottom: 1px solid var(--exec-border); margin-bottom: 1.5rem; }
+.exec-title { font-size: 1.75rem; font-weight: 700; color: var(--exec-primary); margin: 0; }
+.exec-subtitle { color: #6c757d; font-size: .875rem; font-weight: 500; }
+.exec-dashboard { margin-bottom: 1.5rem; }
+.exec-stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; }
+.exec-stat-item { background: white; border: 1px solid var(--exec-border); border-radius: var(--exec-radius); padding: 1rem; display: flex; align-items: center; justify-content: space-between; transition: all .2s; position: relative; overflow: hidden; }
+.exec-stat-item::before { content:''; position:absolute; top:0; left:0; width:3px; height:100%; background:var(--exec-primary); }
+.exec-stat-item.primary::before { background: var(--exec-primary); }
+.exec-stat-item.secondary::before { background: #343a40; }
+.exec-stat-item.success::before { background: #28a745; }
+.exec-stat-item.warning::before { background: #ffc107; }
+.exec-stat-item:hover { box-shadow: var(--exec-shadow-hover); transform: translateY(-1px); }
+.exec-stat-content { display: flex; flex-direction: column; }
+.exec-stat-number { font-size: 1.75rem; font-weight: 700; color: var(--exec-primary); line-height: 1; }
+.exec-stat-label { font-size: .75rem; color: #6c757d; text-transform: uppercase; font-weight: 600; letter-spacing: .5px; }
+.exec-stat-icon { font-size: 1.5rem; color: #dee2e6; }
+.exec-filters { margin-bottom: 1.5rem; }
+.filters-row { display: grid; gap: .75rem; align-items: end; }
+.exec-search { height: 38px; border: 1px solid var(--exec-border); border-radius: var(--exec-radius); font-size: .875rem; }
+.exec-btn-filter, .exec-btn-clear { width: 38px; height: 38px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: var(--exec-radius); }
+.filter-actions { display: flex; gap: .5rem; }
+.exec-empty-state { text-align: center; padding: 4rem 1rem; color: #6c757d; }
+.exec-empty-icon { font-size: 3rem; color: #dee2e6; margin-bottom: 1rem; display: block; }
+.exec-empty-text { font-size: .9rem; }
+.exec-empty-link { color: var(--exec-primary); font-weight: 600; }
+
+/* ── Banner de aniversários ── */
+.cli-aniv-banner {
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: var(--exec-radius-lg);
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+.cli-aniv-label { white-space: nowrap; }
+.cli-aniv-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.cli-aniv-chip {
+    display: flex; align-items: center; gap: 8px;
+    background: white; border: 1px solid #fde68a; border-radius: 50px;
+    padding: 4px 12px 4px 6px;
+    text-decoration: none; color: #78350f;
+    font-size: .8rem; transition: all .15s;
+}
+.cli-aniv-chip:hover { background: #fef3c7; color: #78350f; text-decoration: none; transform: translateY(-1px); box-shadow: 0 2px 6px rgba(0,0,0,.1); }
+.cli-aniv-chip.hoje { border-color: #f59e0b; background: #fef3c7; font-weight: 600; }
+.cli-aniv-chip.semana { border-color: #fbbf24; }
+.cli-aniv-avatar-img { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; }
+.cli-aniv-avatar-initials { width: 24px; height: 24px; border-radius: 50%; background: #f59e0b; color: white; font-size: .65rem; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.cli-aniv-info { display: flex; flex-direction: column; line-height: 1.3; }
+.cli-aniv-nome { font-weight: 600; font-size: .8rem; }
+.cli-aniv-dias { font-size: .7rem; opacity: .8; }
+
+/* ── Grid de clientes ── */
+.cli-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+}
+
+.cli-card {
+    background: white;
+    border: 1px solid var(--exec-border);
+    border-radius: var(--exec-radius-lg);
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    text-decoration: none;
+    color: inherit;
+    transition: all .2s;
+    position: relative;
+    overflow: hidden;
+}
+.cli-card:hover {
+    box-shadow: var(--exec-shadow-hover);
+    transform: translateY(-2px);
+    border-color: var(--exec-primary);
+    text-decoration: none;
+    color: inherit;
+}
+
+.cli-badge-viagem {
+    position: absolute; top: 10px; right: 10px;
+    background: #d4edda; color: #155724;
+    font-size: .6rem; font-weight: 700; text-transform: uppercase;
+    padding: 2px 8px; border-radius: 50px; letter-spacing: .4px;
+}
+
+.cli-avatar-wrap {
+    padding: 20px 20px 0;
+    display: flex; align-items: center; gap: 14px;
+}
+.cli-avatar-img {
+    width: 52px; height: 52px; border-radius: 50%; object-fit: cover;
+    border: 2px solid var(--exec-border); flex-shrink: 0;
+}
+.cli-avatar-initials {
+    width: 52px; height: 52px; border-radius: 50%; flex-shrink: 0;
+    background: linear-gradient(135deg, #1E4E8C 0%, #0D2B45 100%);
+    color: white; font-size: 1.1rem; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+}
+
+.cli-card-body { padding: 10px 20px 12px; flex: 1; }
+.cli-nome { font-size: .95rem; font-weight: 700; color: var(--exec-primary); margin-bottom: 2px; }
+.cli-age { font-size: .75rem; color: #6c757d; margin-bottom: 6px; }
+.cli-contato { display: flex; flex-direction: column; gap: 2px; margin-bottom: 8px; }
+.cli-contato-item { font-size: .78rem; color: #6c757d; display: flex; align-items: center; gap: 5px; }
+.cli-contato-item i { width: 12px; color: #adb5bd; flex-shrink: 0; }
+.cli-contato-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px; }
+.cli-destinos { font-size: .73rem; color: #adb5bd; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.cli-card-footer {
+    padding: 8px 16px; border-top: 1px solid var(--exec-border);
+    display: flex; align-items: center; gap: 8px;
+    background: #fafafa;
+}
+.cli-metric {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: .75rem; font-weight: 600; color: #6c757d;
+}
+.cli-metric.success { color: #28a745; }
+.cli-metric.muted { color: #adb5bd; font-weight: 400; }
+
+@@media (max-width: 576px) {
+    .cli-grid { grid-template-columns: 1fr; }
+    .cli-aniv-banner { flex-direction: column; align-items: flex-start; }
+    .exec-stats-row { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+}

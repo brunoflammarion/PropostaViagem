@@ -1,0 +1,678 @@
+@model SistemaUsuarios.Models.ViewModels.ClienteDetalheViewModel
+@using SistemaUsuarios.Models
+@{
+    ViewData["Title"] = Model.Nome;
+    var activeTab = Model.ActiveTab;
+}
+
+<!-- ── Breadcrumb ────────────────────────────────────────────────── -->
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb" style="font-size:.82rem;">
+        <li class="breadcrumb-item"><a href="@Url.Action("Index","Cliente")">Clientes</a></li>
+        <li class="breadcrumb-item active">@Model.Nome</li>
+    </ol>
+</nav>
+
+<!-- ── TempData ──────────────────────────────────────────────────── -->
+@if (TempData["Sucesso"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show mb-3" role="alert">
+        <i class="fas fa-check-circle me-2"></i>@TempData["Sucesso"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["Erro"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
+        <i class="fas fa-exclamation-circle me-2"></i>@TempData["Erro"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (Model.IsDeleted)
+{
+    <div class="alert alert-warning d-flex align-items-center gap-2 mb-3" role="alert">
+        <i class="fas fa-archive fa-lg"></i>
+        <span>
+            <strong>Cliente arquivado</strong> em @Model.DeletedAt?.ToString("dd/MM/yyyy 'às' HH:mm").
+            Os dados estão em modo somente leitura. As propostas vinculadas continuam funcionando normalmente.
+        </span>
+    </div>
+}
+
+<!-- ── Header do cliente ─────────────────────────────────────────── -->
+<div class="cd-header mb-4">
+    <div class="cd-header-inner">
+        <!-- Avatar -->
+        <div class="cd-avatar-wrap">
+            @if (!string.IsNullOrEmpty(Model.FotoPath))
+            {
+                <img src="@Model.FotoPath" class="cd-avatar-img" />
+            }
+            else
+            {
+                <div class="cd-avatar-initials">@Model.Iniciais</div>
+            }
+            @if (Model.EmViagem)
+            {
+                <span class="cd-badge-viagem" title="Em viagem agora">
+                    <i class="fas fa-plane"></i>
+                </span>
+            }
+        </div>
+
+        <!-- Info principal -->
+        <div class="cd-header-info">
+            <h2 class="cd-nome">
+                @Model.Nome
+                @if (Model.EmViagem)
+                {
+                    <span class="badge bg-success ms-2" style="font-size:.55rem;vertical-align:middle;">Em viagem</span>
+                }
+            </h2>
+            <div class="cd-meta">
+                @if (Model.Idade.HasValue)
+                {
+                    <span class="cd-meta-chip"><i class="fas fa-birthday-cake"></i>@Model.Idade anos</span>
+                }
+                @if (!string.IsNullOrEmpty(Model.Email))
+                {
+                    <span class="cd-meta-chip"><i class="fas fa-envelope"></i>@Model.Email</span>
+                }
+                @if (!string.IsNullOrEmpty(Model.Telefone))
+                {
+                    <span class="cd-meta-chip"><i class="fas fa-phone"></i>@Model.Telefone</span>
+                }
+                <span class="cd-meta-chip text-muted"><i class="fas fa-calendar-alt"></i>Cliente desde @(Model.DataEntradaCliente ?? Model.DataCriacao)</span>
+            </div>
+        </div>
+
+        <!-- Métricas rápidas -->
+        <div class="cd-stats-mini">
+            <div class="cd-stat-mini">
+                <span class="cd-stat-n">@Model.TotalPropostas</span>
+                <span class="cd-stat-l">Propostas</span>
+            </div>
+            <div class="cd-stat-mini">
+                <span class="cd-stat-n text-success">@Model.PropostasAprovadas</span>
+                <span class="cd-stat-l">Aprovadas</span>
+            </div>
+            <div class="cd-stat-mini">
+                <span class="cd-stat-n text-warning">@Model.PropostasEnviadas</span>
+                <span class="cd-stat-l">Enviadas</span>
+            </div>
+            <div class="cd-stat-mini">
+                <span class="cd-stat-n">@Model.PassageirosRecorrentes.Count</span>
+                <span class="cd-stat-l">Acompanhantes</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Tabs de navegação ─────────────────────────────────────────── -->
+<ul class="nav nav-pills mb-4" id="clienteTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link @(activeTab == "resumo" ? "active" : "")"
+                id="tab-resumo" data-bs-toggle="tab" data-bs-target="#pane-resumo"
+                type="button" role="tab">
+            <i class="fas fa-user me-1"></i>Resumo
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link @(activeTab == "propostas" ? "active" : "")"
+                id="tab-propostas" data-bs-toggle="tab" data-bs-target="#pane-propostas"
+                type="button" role="tab">
+            <i class="fas fa-file-alt me-1"></i>Propostas
+            <span class="badge ms-1">@Model.TotalPropostas</span>
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link @(activeTab == "passageiros" ? "active" : "")"
+                id="tab-passageiros" data-bs-toggle="tab" data-bs-target="#pane-passageiros"
+                type="button" role="tab">
+            <i class="fas fa-users me-1"></i>Passageiros
+            @if (Model.PassageirosRecorrentes.Any())
+            {
+                <span class="badge ms-1">@Model.PassageirosRecorrentes.Count</span>
+            }
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link @(activeTab == "agenda" ? "active" : "")"
+                id="tab-agenda" data-bs-toggle="tab" data-bs-target="#pane-agenda"
+                type="button" role="tab">
+            <i class="fas fa-calendar-alt me-1"></i>Agenda
+            @if (Model.Agenda.Any())
+            {
+                <span class="badge ms-1">@Model.Agenda.Count</span>
+            }
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="clienteTabsContent">
+
+    <!-- ════════════════ TAB: RESUMO ════════════════ -->
+    <div class="tab-pane fade @(activeTab == "resumo" ? "show active" : "")"
+         id="pane-resumo" role="tabpanel">
+        <div class="row g-4">
+
+            <!-- Formulário de dados -->
+            <div class="col-lg-6">
+                <form asp-controller="Cliente" asp-action="EditarDados"
+                      method="post" enctype="multipart/form-data" id="formEditarCliente">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Id" />
+
+                    @await Html.PartialAsync("_ClienteForm", Model)
+
+                    @if (!Model.IsDeleted)
+                    {
+                        <div class="mb-4">
+                            <button type="submit" class="btn btn-primary" style="border-radius:8px;font-weight:600;">
+                                <i class="fas fa-save me-2"></i>Salvar dados
+                            </button>
+                        </div>
+                    }
+                </form>
+            </div>
+
+            <!-- Painel lateral: visão rápida -->
+            <div class="col-lg-6">
+
+                <!-- Última proposta -->
+                @if (Model.Propostas.Any())
+                {
+                    var ultima = Model.Propostas.First();
+                    <div class="cd-section-card mb-3">
+                        <div class="cd-section-title">
+                            <i class="fas fa-history me-2"></i>Última Proposta
+                        </div>
+                        <a href="/Proposta/Editar/@ultima.Id" class="cd-proposta-mini-link">
+                            <div class="d-flex align-items-start gap-3">
+                                @if (!string.IsNullOrEmpty(ultima.FotoCapa))
+                                {
+                                    <img src="@ultima.FotoCapa" class="rounded"
+                                         style="width:56px;height:42px;object-fit:cover;flex-shrink:0;" />
+                                }
+                                else
+                                {
+                                    <div class="rounded d-flex align-items-center justify-content-center"
+                                         style="width:56px;height:42px;background:#f0f4ff;flex-shrink:0;color:#adb5bd;">
+                                        <i class="fas fa-image"></i>
+                                    </div>
+                                }
+                                <div class="flex-grow-1 min-w-0">
+                                    <div class="fw-semibold text-truncate" style="font-size:.88rem;">@ultima.Titulo</div>
+                                    <div class="d-flex gap-2 mt-1 flex-wrap">
+                                        <span class="badge" style="font-size:.65rem;@GetStatusStyle(ultima.StatusProposta)">
+                                            @ultima.StatusProposta
+                                        </span>
+                                        @if (ultima.DataInicio.HasValue)
+                                        {
+                                            <span class="text-muted" style="font-size:.75rem;">
+                                                <i class="fas fa-calendar me-1"></i>@ultima.DataInicio.Value.ToString("dd/MM/yyyy")
+                                            </span>
+                                        }
+                                        @if (ultima.Destinos.Any())
+                                        {
+                                            <span class="text-muted" style="font-size:.75rem;">
+                                                <i class="fas fa-map-pin me-1"></i>@string.Join(", ", ultima.Destinos.Take(2))
+                                            </span>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                }
+
+                <!-- Próximo evento na agenda -->
+                @if (Model.Agenda.Any())
+                {
+                    var prox = Model.Agenda.First();
+                    <div class="cd-section-card mb-3">
+                        <div class="cd-section-title">
+                            <i class="fas fa-calendar-check me-2"></i>Próximo Evento
+                        </div>
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="cd-evento-icon @prox.CorCss">
+                                <i class="@prox.Icone"></i>
+                            </div>
+                            <div>
+                                <div class="fw-semibold" style="font-size:.88rem;">@prox.Titulo</div>
+                                @if (!string.IsNullOrEmpty(prox.Subtitulo))
+                                {
+                                    <div class="text-muted small">@prox.Subtitulo</div>
+                                }
+                                <div class="text-muted" style="font-size:.75rem;">
+                                    @prox.Data.ToString("dd/MM/yyyy")
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <!-- Acompanhantes frequentes (preview) -->
+                @if (Model.PassageirosRecorrentes.Any())
+                {
+                    <div class="cd-section-card mb-3">
+                        <div class="cd-section-title d-flex justify-content-between align-items-center">
+                            <span><i class="fas fa-users me-2"></i>Viaja com</span>
+                            <button class="btn btn-xs btn-outline-secondary" type="button"
+                                    onclick="document.getElementById('tab-passageiros').click()">
+                                Ver todos
+                            </button>
+                        </div>
+                        <div class="d-flex flex-wrap gap-2">
+                            @foreach (var p in Model.PassageirosRecorrentes.Take(5))
+                            {
+                                var pIniciais = string.Join("", p.Nome.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(x => char.ToUpper(x[0])));
+                                <div class="cd-pax-chip" title="@p.Nome@(p.Relacionamento.HasValue ? " · " + p.Relacionamento : "")">
+                                    <div class="cd-pax-avatar">@pIniciais</div>
+                                    <span>@p.Nome.Split(' ')[0]</span>
+                                    @if (p.Ocorrencias > 1)
+                                    {
+                                        <span class="cd-pax-count">×@p.Ocorrencias</span>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <!-- Zona de perigo -->
+                @if (!Model.IsDeleted)
+                {
+                    <div class="cd-section-card cd-danger-zone">
+                        <div class="cd-section-title" style="color:#dc3545;border-color:#f8d7da;">
+                            <i class="fas fa-exclamation-triangle me-2"></i>Zona de Perigo
+                        </div>
+                        <p style="font-size:.82rem;color:#6c757d;margin-bottom:12px;">
+                            Arquivar remove o cliente da listagem. As propostas vinculadas continuam funcionando.
+                        </p>
+                        <button type="button" class="btn btn-sm btn-outline-danger w-100"
+                                data-bs-toggle="modal" data-bs-target="#modalArquivar"
+                                style="font-weight:600;">
+                            <i class="fas fa-archive me-2"></i>Arquivar cliente
+                        </button>
+                    </div>
+                }
+            </div>
+
+        </div>
+    </div><!-- /pane-resumo -->
+
+<!-- Modal: Arquivar cliente -->
+<div class="modal fade" id="modalArquivar" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title"><i class="fas fa-archive me-2 text-warning"></i>Arquivar cliente?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>O cliente <strong>@Model.Nome</strong> será removido da listagem.</p>
+                <p class="text-muted small mb-0">As propostas vinculadas continuam acessíveis normalmente.</p>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form asp-controller="Cliente" asp-action="ExcluirLogico" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <button type="submit" class="btn btn-danger" style="font-weight:600;">
+                        <i class="fas fa-archive me-1"></i>Sim, arquivar
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <!-- ════════════════ TAB: PROPOSTAS ════════════════ -->
+    <div class="tab-pane fade @(activeTab == "propostas" ? "show active" : "")"
+         id="pane-propostas" role="tabpanel">
+
+        @if (Model.Propostas.Any())
+        {
+            <div class="exec-propostas-grid">
+                @foreach (var p in Model.Propostas)
+                {
+                    <div class="exec-proposta-card">
+                        <div class="exec-status status-@p.StatusProposta.ToString().ToLower()">
+                            @p.StatusProposta
+                        </div>
+                        @if (p.EmAndamento)
+                        {
+                            <div class="exec-status" style="top:.75rem;left:.75rem;right:auto;background:#d4edda;color:#155724;">
+                                <i class="fas fa-plane me-1"></i>Em andamento
+                            </div>
+                        }
+                        <div class="exec-image-container">
+                            @if (!string.IsNullOrEmpty(p.FotoCapa))
+                            {
+                                <img src="@p.FotoCapa" class="exec-image" />
+                            }
+                            else
+                            {
+                                <div class="exec-image-placeholder"><i class="fas fa-image"></i></div>
+                            }
+                        </div>
+                        <div class="exec-content">
+                            <h4 class="exec-title-card">@p.Titulo</h4>
+                            <div class="exec-meta">
+                                @if (p.DataInicio.HasValue && p.DataFim.HasValue)
+                                {
+                                    <span class="exec-meta-item">
+                                        <i class="fas fa-calendar"></i>
+                                        @p.DataInicio.Value.ToString("dd/MM") – @p.DataFim.Value.ToString("dd/MM/yyyy")
+                                    </span>
+                                }
+                                <span class="exec-meta-item">
+                                    <i class="fas fa-users"></i>@(p.NumeroPassageiros + p.NumeroCriancas)
+                                </span>
+                                @if (p.DuracaoDias.HasValue)
+                                {
+                                    <span class="exec-meta-item">
+                                        <i class="fas fa-clock"></i>@p.DuracaoDias dias
+                                    </span>
+                                }
+                            </div>
+                            @if (p.Destinos.Any())
+                            {
+                                <div class="exec-meta mt-1">
+                                    <span class="exec-meta-item">
+                                        <i class="fas fa-map-pin"></i>@string.Join(" · ", p.Destinos.Take(3))
+                                    </span>
+                                </div>
+                            }
+                            <div class="exec-footer">
+                                <div class="exec-link-status">
+                                    @if (p.LinkPublicoAtivo)
+                                    {
+                                        <span class="exec-badge active"><i class="fas fa-link"></i> Ativo</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="exec-badge inactive"><i class="fas fa-link-slash"></i> Inativo</span>
+                                    }
+                                </div>
+                                <div class="exec-actions">
+                                    <a href="/Proposta/Detalhes/@p.Id" class="exec-action-btn primary" title="Visualizar">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="/Proposta/Editar/@p.Id" class="exec-action-btn secondary" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-5 text-muted">
+                <i class="fas fa-file-alt fa-3x mb-3 d-block" style="color:#dee2e6;"></i>
+                <p>Nenhuma proposta vinculada a este cliente.</p>
+                <a href="/Proposta/Criar" class="btn btn-primary btn-sm mt-1">
+                    <i class="fas fa-plus me-1"></i>Nova Proposta
+                </a>
+            </div>
+        }
+    </div><!-- /pane-propostas -->
+
+    <!-- ════════════════ TAB: PASSAGEIROS ════════════════ -->
+    <div class="tab-pane fade @(activeTab == "passageiros" ? "show active" : "")"
+         id="pane-passageiros" role="tabpanel">
+
+        @if (Model.PassageirosRecorrentes.Any())
+        {
+            <p class="text-muted small mb-3">
+                <i class="fas fa-info-circle me-1"></i>
+                Acompanhantes identificados nas propostas deste cliente, agrupados por nome.
+            </p>
+            <div class="row g-3">
+                @foreach (var pax in Model.PassageirosRecorrentes)
+                {
+                    var pIni = string.Join("", pax.Nome.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(x => char.ToUpper(x[0])));
+                    <div class="col-sm-6 col-lg-4">
+                        <div class="cd-pax-card">
+                            <div class="cd-pax-card-avatar">@pIni</div>
+                            <div class="cd-pax-card-info">
+                                <div class="fw-semibold">@pax.Nome</div>
+                                <div class="text-muted" style="font-size:.78rem;">
+                                    @if (pax.Relacionamento.HasValue)
+                                    {
+                                        <span class="me-2">@pax.Relacionamento</span>
+                                    }
+                                    @if (pax.Idade.HasValue)
+                                    {
+                                        <span>@pax.Idade anos</span>
+                                    }
+                                </div>
+                            </div>
+                            <div class="cd-pax-card-count" title="Aparece em @pax.Ocorrencias proposta(s)">
+                                <span class="badge bg-light text-dark border">×@pax.Ocorrencias</span>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-5 text-muted">
+                <i class="fas fa-users fa-3x mb-3 d-block" style="color:#dee2e6;"></i>
+                <p>Nenhum acompanhante encontrado nas propostas deste cliente.</p>
+            </div>
+        }
+    </div><!-- /pane-passageiros -->
+
+    <!-- ════════════════ TAB: AGENDA ════════════════ -->
+    <div class="tab-pane fade @(activeTab == "agenda" ? "show active" : "")"
+         id="pane-agenda" role="tabpanel">
+
+        @if (Model.Agenda.Any())
+        {
+            <p class="text-muted small mb-3">
+                <i class="fas fa-info-circle me-1"></i>
+                Próximos 12 meses — aniversário e viagens deste cliente.
+            </p>
+            <div class="cd-agenda-list">
+                @foreach (var ev in Model.Agenda)
+                {
+                    var hoje = DateTime.Today;
+                    var diasPara = (ev.Data.Date - hoje).Days;
+                    <div class="cd-agenda-item">
+                        <div class="cd-evento-icon @ev.CorCss">
+                            <i class="@ev.Icone"></i>
+                        </div>
+                        <div class="cd-agenda-info">
+                            <div class="cd-agenda-titulo">@ev.Titulo</div>
+                            @if (!string.IsNullOrEmpty(ev.Subtitulo))
+                            {
+                                <div class="cd-agenda-sub">@ev.Subtitulo</div>
+                            }
+                        </div>
+                        <div class="cd-agenda-data">
+                            <div class="cd-agenda-data-principal">@ev.Data.ToString("dd/MM")</div>
+                            <div class="cd-agenda-data-sub">
+                                @if (diasPara == 0)
+                                {
+                                    <span class="badge bg-warning text-dark">Hoje</span>
+                                }
+                                else if (diasPara == 1)
+                                {
+                                    <span class="text-warning fw-semibold" style="font-size:.72rem;">Amanhã</span>
+                                }
+                                else if (diasPara < 0)
+                                {
+                                    <span class="text-muted" style="font-size:.72rem;">Em andamento</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted" style="font-size:.72rem;">em @diasPara dias</span>
+                                }
+                            </div>
+                        </div>
+                        @if (ev.PropostaId.HasValue)
+                        {
+                            <a href="/Proposta/Editar/@ev.PropostaId" class="btn btn-xs btn-outline-secondary ms-2"
+                               title="Abrir proposta">
+                                <i class="fas fa-external-link-alt"></i>
+                            </a>
+                        }
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-5 text-muted">
+                <i class="fas fa-calendar-alt fa-3x mb-3 d-block" style="color:#dee2e6;"></i>
+                <p>Nenhum evento nos próximos 12 meses.</p>
+                <p class="small">Adicione a data de nascimento ou crie propostas com datas para ver eventos aqui.</p>
+            </div>
+        }
+    </div><!-- /pane-agenda -->
+
+</div><!-- /tab-content -->
+
+@functions {
+    static string GetStatusStyle(SistemaUsuarios.Models.StatusProposta status)
+    {
+        return status switch
+        {
+            SistemaUsuarios.Models.StatusProposta.Rascunho  => "background:#f8f9fa;color:#6c757d;",
+            SistemaUsuarios.Models.StatusProposta.Enviada   => "background:#fff3cd;color:#856404;",
+            SistemaUsuarios.Models.StatusProposta.Aprovada  => "background:#d4edda;color:#155724;",
+            SistemaUsuarios.Models.StatusProposta.Rejeitada => "background:#f8d7da;color:#721c24;",
+            SistemaUsuarios.Models.StatusProposta.Cancelada => "background:#e2e3e5;color:#383d41;",
+            _ => ""
+        };
+    }
+}
+
+@section Styles {
+<link rel="stylesheet" href="~/css/cliente.css" />
+<style>
+/* ── Exec Propostas (reutilizado de Proposta/Index) ── */
+.exec-propostas-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; }
+.exec-proposta-card { background: white; border: 1px solid var(--exec-border); border-radius: var(--exec-radius-lg); overflow: hidden; transition: all .2s; position: relative; }
+.exec-proposta-card:hover { box-shadow: var(--exec-shadow-hover); transform: translateY(-2px); border-color: var(--exec-primary); }
+.exec-status { position: absolute; top: .75rem; right: .75rem; padding: .25rem .75rem; border-radius: 12px; font-size: .6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; z-index: 2; }
+.status-rascunho { background: #f8f9fa; color: #6c757d; }
+.status-enviada   { background: #fff3cd; color: #856404; }
+.status-aprovada  { background: #d4edda; color: #155724; }
+.status-rejeitada { background: #f8d7da; color: #721c24; }
+.status-cancelada { background: #e2e3e5; color: #383d41; }
+.exec-image-container { height: 110px; overflow: hidden; }
+.exec-image { width: 100%; height: 100%; object-fit: cover; transition: transform .3s; }
+.exec-proposta-card:hover .exec-image { transform: scale(1.05); }
+.exec-image-placeholder { width: 100%; height: 100%; background: linear-gradient(135deg, #f8f9fa, #e9ecef); display: flex; align-items: center; justify-content: center; color: #adb5bd; font-size: 1.5rem; }
+.exec-content { padding: 1rem; }
+.exec-title-card { font-size: .9rem; font-weight: 700; color: var(--exec-primary); margin-bottom: .5rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.exec-meta { display: flex; flex-wrap: wrap; gap: .5rem; }
+.exec-meta-item { font-size: .75rem; color: #6c757d; display: flex; align-items: center; gap: .25rem; }
+.exec-footer { display: flex; justify-content: space-between; align-items: center; margin-top: .75rem; padding-top: .75rem; border-top: 1px solid var(--exec-border); }
+.exec-badge { display: inline-flex; align-items: center; gap: .25rem; font-size: .7rem; font-weight: 600; padding: .2rem .5rem; border-radius: 4px; }
+.exec-badge.active { background: #d4edda; color: #155724; }
+.exec-badge.inactive { background: #f8f9fa; color: #6c757d; }
+.exec-actions { display: flex; gap: .375rem; }
+.exec-action-btn { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 6px; border: 1px solid var(--exec-border); background: white; color: #6c757d; font-size: .75rem; text-decoration: none; transition: all .15s; }
+.exec-action-btn:hover { border-color: var(--exec-primary); color: var(--exec-primary); }
+.exec-action-btn.primary:hover { background: var(--exec-primary); color: white; border-color: var(--exec-primary); }
+.exec-action-btn.secondary:hover { background: #6c757d; color: white; border-color: #6c757d; }
+
+@@media (max-width: 768px) {
+    .exec-propostas-grid { grid-template-columns: 1fr; }
+}
+
+/* ══ Nav tabs — clienteTabs ═══════════════════════════════════════════════
+   Mesma lógica visual aplicada em #editarTabs (Proposta/Editar).
+   Padrão tab-underline: hierarquia expressa pelo indicador de 3px,
+   não por fundo colorido — garante contraste em todas as superfícies brancas.
+   ═════════════════════════════════════════════════════════════════════════ */
+
+/* Trilho: linha base cinza conecta as abas */
+#clienteTabs {
+    background: transparent !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    border-bottom: 2px solid #d1d9e0 !important;
+    gap: 0 !important;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+}
+
+#clienteTabs .nav-item { flex-shrink: 0; }
+
+/* Aba inativa: #374151 sobre #fff = 10,7:1 (WCAG AAA) */
+#clienteTabs .nav-link {
+    color: #374151 !important;
+    background: transparent !important;
+    border: none !important;
+    border-bottom: 3px solid transparent !important;
+    border-radius: 0 !important;
+    margin-bottom: -2px !important;
+    font-size: .875rem !important;
+    font-weight: 500 !important;
+    padding: 10px 16px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    transition: color 140ms ease, border-color 140ms ease, background 140ms ease !important;
+    white-space: nowrap !important;
+}
+
+/* Hover: #1a202c sobre #f0f4f7 = 13,9:1 (WCAG AAA) */
+#clienteTabs .nav-link:hover:not(.active) {
+    color: #1a202c !important;
+    background: #f0f4f7 !important;
+    border-bottom-color: #9db5c8 !important;
+}
+
+/* Aba ativa: #1d5080 sobre #fff = 7,2:1 (WCAG AAA) + indicador 3px */
+#clienteTabs .nav-link.active {
+    color: #1d5080 !important;
+    background: transparent !important;
+    border-bottom: 3px solid #3A7CA5 !important;
+    font-weight: 700 !important;
+    box-shadow: none !important;
+}
+
+/* Ícones herdam currentColor */
+#clienteTabs .nav-link i { opacity: .75; }
+#clienteTabs .nav-link:hover i,
+#clienteTabs .nav-link.active i { opacity: 1; }
+
+/* Badge inativo: #d1d9e0 bg + #374151 texto = 5,6:1 (WCAG AA) */
+#clienteTabs .nav-link .badge {
+    background-color: #d1d9e0 !important;
+    color: #374151 !important;
+    font-weight: 600 !important;
+    font-size: .7rem !important;
+    padding: 2px 6px !important;
+    border-radius: 999px !important;
+}
+
+/* Badge ativo: branco sobre #1d5080 = 7,2:1 (WCAG AAA) */
+#clienteTabs .nav-link.active .badge {
+    background-color: #1d5080 !important;
+    color: #ffffff !important;
+}
+</style>
+}
+
+@section Scripts {
+<script>
+// Preserva tab ativa ao navegar via bootstrap tabs
+document.querySelectorAll('#clienteTabs .nav-link').forEach(function(btn) {
+    btn.addEventListener('shown.bs.tab', function(e) {
+        var tab = e.target.getAttribute('data-bs-target').replace('#pane-', '');
+        history.replaceState(null, '', '?tab=' + tab);
+    });
+});
+</script>
+}

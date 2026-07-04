@@ -1,0 +1,145 @@
+:root {
+    --exec-radius:    8px;
+    --exec-radius-lg: 12px;
+}
+
+/* ── Header do cliente ── */
+.cd-header {
+    background: white;
+    border: 1px solid var(--exec-border);
+    border-radius: var(--exec-radius-lg);
+    padding: 24px;
+    box-shadow: var(--exec-shadow);
+}
+.cd-header-inner { display: flex; align-items: flex-start; gap: 20px; flex-wrap: wrap; }
+.cd-avatar-wrap { position: relative; flex-shrink: 0; }
+.cd-avatar-img { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; border: 3px solid var(--exec-border); }
+.cd-avatar-initials {
+    width: 72px; height: 72px; border-radius: 50%;
+    background: linear-gradient(135deg, #1E4E8C 0%, #0D2B45 100%);
+    color: white; font-size: 1.4rem; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+}
+.cd-badge-viagem {
+    position: absolute; bottom: 0; right: 0;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: #28a745; color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .65rem; border: 2px solid white;
+}
+.cd-header-info { flex: 1; min-width: 200px; }
+.cd-nome { font-size: 1.5rem; font-weight: 700; color: var(--exec-primary); margin: 0 0 8px; }
+.cd-meta { display: flex; flex-wrap: wrap; gap: 8px; }
+.cd-meta-chip { display: inline-flex; align-items: center; gap: 5px; font-size: .8rem; color: #6c757d; }
+.cd-meta-chip i { font-size: .75rem; }
+.cd-stats-mini {
+    display: flex; gap: 20px; flex-wrap: wrap;
+    border-left: 1px solid var(--exec-border); padding-left: 20px;
+    align-items: center;
+}
+.cd-stat-mini { display: flex; flex-direction: column; align-items: center; text-align: center; }
+.cd-stat-n { font-size: 1.4rem; font-weight: 700; color: var(--exec-primary); line-height: 1; }
+.cd-stat-l { font-size: .65rem; color: #adb5bd; text-transform: uppercase; font-weight: 600; letter-spacing: .4px; margin-top: 2px; }
+
+/* ── Section card ── */
+.cd-section-card {
+    background: white; border: 1px solid var(--exec-border);
+    border-radius: var(--exec-radius-lg); padding: 20px;
+    box-shadow: var(--exec-shadow);
+}
+.cd-section-title {
+    font-size: .65rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .08em; color: #6c757d;
+    border-bottom: 1px solid #f0f0f0; padding-bottom: 10px; margin-bottom: 16px;
+    display: flex; align-items: center;
+}
+
+/* ── Última proposta mini ── */
+.cd-proposta-mini-link {
+    display: block; text-decoration: none; color: inherit;
+    padding: 10px; border-radius: 8px; transition: background .15s;
+}
+.cd-proposta-mini-link:hover { background: #f8f9fa; }
+
+/* ── Evento ícone ── */
+.cd-evento-icon {
+    width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .85rem;
+}
+.cd-evento-icon.warning { background: #fff3cd; color: #856404; }
+.cd-evento-icon.success { background: #d4edda; color: #155724; }
+.cd-evento-icon.primary { background: #cce5ff; color: #004085; }
+.cd-evento-icon.info    { background: #d1ecf1; color: #0c5460; }
+
+/* ── Passageiros recorrentes ── */
+.cd-pax-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #f8f9fa; border: 1px solid var(--exec-border);
+    border-radius: 50px; padding: 4px 10px 4px 4px;
+    font-size: .78rem; color: var(--exec-primary);
+}
+.cd-pax-avatar {
+    width: 24px; height: 24px; border-radius: 50%;
+    background: #dee2e6; color: #495057;
+    font-size: .6rem; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+}
+.cd-pax-count { font-size: .68rem; color: #adb5bd; }
+.cd-pax-card {
+    background: white; border: 1px solid var(--exec-border);
+    border-radius: var(--exec-radius); padding: 14px 16px;
+    display: flex; align-items: center; gap: 12px;
+    box-shadow: var(--exec-shadow);
+}
+.cd-pax-card-avatar {
+    width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
+    background: linear-gradient(135deg, #1E4E8C 0%, #0D2B45 100%);
+    color: white; font-size: .8rem; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+}
+.cd-pax-card-info { flex: 1; min-width: 0; }
+.cd-pax-card-count { flex-shrink: 0; }
+
+/* ── Agenda ── */
+.cd-agenda-list { display: flex; flex-direction: column; gap: 10px; max-width: 600px; }
+.cd-agenda-item {
+    display: flex; align-items: center; gap: 14px;
+    background: white; border: 1px solid var(--exec-border);
+    border-radius: var(--exec-radius); padding: 12px 16px;
+    box-shadow: var(--exec-shadow);
+}
+.cd-agenda-info { flex: 1; min-width: 0; }
+.cd-agenda-titulo { font-size: .88rem; font-weight: 600; color: var(--exec-primary); }
+.cd-agenda-sub { font-size: .75rem; color: #6c757d; }
+.cd-agenda-data { text-align: right; flex-shrink: 0; }
+.cd-agenda-data-principal { font-size: .88rem; font-weight: 700; color: var(--exec-primary); }
+
+/* ── Indicação autocomplete ── */
+.cd-indicador-atual {
+    background: #f0f7ff; border: 1px solid #cce5ff;
+    border-radius: 8px; padding: 8px 12px;
+}
+.cd-autocomplete-list {
+    position: absolute; left: 0; right: 0; top: 100%;
+    background: #fff; border: 1px solid var(--exec-border);
+    border-radius: 0 0 8px 8px; box-shadow: 0 4px 12px rgba(0,0,0,.1);
+    max-height: 200px; overflow-y: auto; z-index: 100;
+}
+.cd-autocomplete-list .cd-ac-item {
+    padding: 8px 14px; font-size: .84rem; cursor: pointer;
+    display: flex; flex-direction: column; gap: 1px;
+}
+.cd-autocomplete-list .cd-ac-item:hover { background: #f0f4f8; }
+.cd-autocomplete-list .cd-ac-item small { font-size: .72rem; color: #6c757d; }
+.cd-indicador-search { position: relative; }
+
+/* ── Zona de perigo ── */
+.cd-danger-zone { border-color: #f8d7da !important; }
+
+.btn-xs { padding: 2px 6px; font-size: .72rem; }
+
+@media (max-width: 768px) {
+    .cd-header-inner { flex-direction: column; }
+    .cd-stats-mini { border-left: none; border-top: 1px solid var(--exec-border); padding-left: 0; padding-top: 16px; }
+}

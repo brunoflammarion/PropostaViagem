@@ -1,0 +1,434 @@
+@model SistemaUsuarios.Models.ViewModels.LeadCaptacaoViewModel
+@{
+    ViewData["Title"] = "Captação";
+
+    var corP = Context.Session.GetString("CorPrimaria") ?? "#005197";
+    var corD = Context.Session.GetString("CorDestaque") ?? "#2ec4b6";
+
+    var temNomeAgencia  = !string.IsNullOrEmpty(Model.NomeAgencia);
+    var temSlug         = !string.IsNullOrEmpty(Model.SlugAgencia);
+    var podePublicar    = temNomeAgencia && temSlug;
+
+    var iniciais = string.IsNullOrEmpty(Model.NomeAgencia) ? "AG"
+        : string.Join("", (Model.NomeAgencia).Split(' ', StringSplitOptions.RemoveEmptyEntries)
+            .Take(2).Select(p => char.ToUpper(p[0]).ToString()));
+}
+
+@section Styles {
+<link rel="stylesheet" href="~/css/captacao.css" asp-append-version="true" />
+}
+
+<!-- ═══ HEADER ═══════════════════════════════════════════════════ -->
+<div class="executive-header">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div>
+            <h2 class="exec-title"><i class="fas fa-bullseye me-2"></i>Captação</h2>
+            <span class="exec-subtitle">Configure o formulário público que seus leads preenchem antes do primeiro contato.</span>
+        </div>
+        <div class="d-flex gap-2 align-items-center">
+            @if (Model.LeadsNovos > 0)
+            {
+                <a href="/Lead" class="btn btn-outline-primary btn-sm">
+                    <i class="fas fa-inbox me-1"></i>@Model.LeadsNovos novo(s)
+                </a>
+            }
+            <a href="/Lead" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-list me-1"></i>Ver todos os leads
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ ABAS ══════════════════════════════════════════════════════ -->
+<div class="capture-tabs">
+    <a href="/Lead" class="capture-tab">
+        <i class="fas fa-table me-1"></i>Leads
+    </a>
+    <a href="/Lead/Captacao" class="capture-tab active">
+        <i class="fas fa-bullseye me-1"></i>Captação
+    </a>
+</div>
+
+@if (TempData["SucessoCaptacao"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show mb-4 rounded-3">
+        <i class="fas fa-check-circle me-2"></i>@TempData["SucessoCaptacao"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["ErroCaptacao"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show mb-4 rounded-3">
+        <i class="fas fa-exclamation-circle me-2"></i>@TempData["ErroCaptacao"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- ═══ LAYOUT DUAS COLUNAS ══════════════════════════════════════ -->
+<form asp-controller="Lead" asp-action="Captacao" method="post" id="formCaptacao">
+@Html.AntiForgeryToken()
+
+<div class="capture-layout">
+
+    <!-- ╔═══════════════════════════════════════╗
+         ║ COLUNA ESQUERDA — Configurações       ║
+         ╚═══════════════════════════════════════╝ -->
+    <div class="capture-settings-col">
+
+        <!-- ── BLOCO 1: Status ───────────────────── -->
+        <div class="capture-settings-card">
+            <div class="capture-card-header">
+                <span class="capture-card-label">STATUS</span>
+            </div>
+            <div class="capture-toggle-row">
+                <div>
+                    <div class="capture-toggle-title" id="statusToggleLabel">
+                        @(Model.IsActive ? "Formulário ativo" : "Formulário inativo")
+                    </div>
+                    <div class="capture-toggle-desc">
+                        @(Model.IsActive
+                            ? "Sua página pública está recebendo novos leads."
+                            : "A página pública não aceita novos envios.")
+                    </div>
+                </div>
+                <label class="capture-switch">
+                    <input type="checkbox" name="IsActive" id="toggleAtivo" value="true"
+                           @(Model.IsActive ? "checked" : "")
+                           onchange="atualizarStatusLabel(this)" />
+                    <span class="capture-switch-slider"></span>
+                </label>
+            </div>
+        </div>
+
+        <!-- ── BLOCO 2: Nome da agência ──────────── -->
+        <div class="capture-settings-card">
+            <div class="capture-card-header">
+                <span class="capture-card-label">AGÊNCIA</span>
+            </div>
+
+            @if (!podePublicar)
+            {
+                <div class="capture-alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Para publicar sua página de captação, informe primeiro o nome da sua agência
+                    em <a href="/Usuario" class="fw-semibold">Configurações do perfil</a>.
+                </div>
+            }
+            else
+            {
+                <div class="capture-agency-name">@Model.NomeAgencia</div>
+            }
+
+            @if (temSlug)
+            {
+                <div class="capture-link-box" id="linkBox">
+                    <span id="linkText" class="capture-link-text">@Model.PublicUrl</span>
+                    <div class="d-flex gap-2 mt-2">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="copiarLink()">
+                            <i class="fas fa-copy me-1"></i><span id="copyLabel">Copiar link</span>
+                        </button>
+                        <a href="/@Model.SlugAgencia" target="_blank" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-external-link-alt me-1"></i>Ver página
+                        </a>
+                    </div>
+                </div>
+            }
+
+            <div class="capture-hint">
+                <a href="/Usuario" class="text-muted" style="font-size:.78rem;">
+                    <i class="fas fa-pen me-1"></i>Editar nome da agência no perfil
+                </a>
+            </div>
+        </div>
+
+        <!-- ── BLOCO 3: Mensagem de boas-vindas ──── -->
+        <div class="capture-settings-card">
+            <div class="capture-card-header">
+                <span class="capture-card-label">MENSAGEM DE BOAS-VINDAS <span class="text-muted fw-normal">(opcional)</span></span>
+            </div>
+            <textarea name="WelcomeMessage" id="welcomeInput" class="capture-textarea"
+                      maxlength="200" rows="3"
+                      placeholder="Muito bem-vindo! Conte um pouco sobre a viagem que você está planejando."
+                      oninput="atualizarPreview()">@(Model.WelcomeMessage ?? "")</textarea>
+            <div class="capture-char-count">
+                <span id="charCount">@((Model.WelcomeMessage ?? "").Length)</span>/200 caracteres
+            </div>
+            <div class="capture-hint">Aparece como subtítulo da sua página pública, abaixo da chamada principal.</div>
+        </div>
+
+        <!-- ── BLOCO 4: Tempo de resposta ────────── -->
+        <div class="capture-settings-card">
+            <div class="capture-card-header">
+                <span class="capture-card-label">TEMPO DE RESPOSTA <span class="text-danger">*</span></span>
+            </div>
+            <input type="text" name="ResponseTimeText" id="responseTimeInput" class="form-control"
+                   maxlength="80" value="@(Model.ResponseTimeText ?? "")"
+                   placeholder="Ex: 30 minutos, 2 horas, 1 dia útil"
+                   oninput="atualizarPreview()" />
+            <div class="capture-hint mt-2">
+                Exibido na página pública como promessa de retorno. Seja realista — agências que cumprem o prazo geram mais confiança.
+            </div>
+        </div>
+
+        <!-- ── BLOCO 5: Incorporar no site ──────── -->
+        <div class="capture-settings-card">
+            <div class="capture-card-header">
+                <span class="capture-card-label">INCORPORAR NO SITE</span>
+            </div>
+            <details class="capture-embed">
+                <summary class="capture-embed-toggle">
+                    <i class="fas fa-code me-1"></i>Ver código para incorporar
+                </summary>
+                <div class="capture-embed-body">
+                    <pre id="embedCode" class="capture-code-block">@if (temSlug)
+{
+    <text>&lt;iframe src="@Model.PublicUrl" width="100%" height="720" style="border:0;border-radius:16px;"&gt;&lt;/iframe&gt;</text>
+}
+else
+{
+    <text>&lt;!-- Configure o nome da agência para gerar o código --&gt;</text>
+}</pre>
+                    <button type="button" class="btn btn-sm btn-outline-secondary mt-2" onclick="copiarCodigo()">
+                        <i class="fas fa-copy me-1"></i><span id="codeCopyLabel">Copiar código</span>
+                    </button>
+                </div>
+            </details>
+        </div>
+
+        <!-- ── BLOCO 6: Campos do formulário ─────── -->
+        <div class="capture-settings-card">
+            <div class="capture-card-header">
+                <span class="capture-card-label">CAMPOS DO FORMULÁRIO</span>
+            </div>
+
+            <!-- Campos obrigatórios fixos -->
+            <div class="capture-fields-group">
+                <div class="capture-fields-label">Campos obrigatórios</div>
+                @foreach (var campo in new[] { "Nome completo", "WhatsApp", "Destino desejado" })
+                {
+                    <div class="capture-field-row capture-field-required">
+                        <div class="capture-field-info">
+                            <span class="capture-field-name">@campo</span>
+                            <span class="capture-field-badge">Obrigatório</span>
+                        </div>
+                        <i class="fas fa-lock text-muted" style="font-size:.75rem;"></i>
+                    </div>
+                }
+            </div>
+
+            <!-- Campos opcionais -->
+            <div class="capture-fields-group mt-3">
+                <div class="capture-fields-label">Campos opcionais</div>
+
+                @{
+                    var camposOpcionais = new[]
+                    {
+                        ("ShowEmail", "E-mail", "ShowEmail", Model.ShowEmail),
+                        ("ShowOriginCity", "Cidade de origem", "ShowOriginCity", Model.ShowOriginCity),
+                        ("ShowTravelDates", "Datas previstas da viagem", "ShowTravelDates", Model.ShowTravelDates),
+                        ("ShowAdults", "Quantidade de adultos", "ShowAdults", Model.ShowAdults),
+                        ("ShowChildren", "Quantidade de crianças", "ShowChildren", Model.ShowChildren),
+                        ("ShowBudget", "Orçamento estimado", "ShowBudget", Model.ShowBudget),
+                        ("ShowTripType", "Tipo de viagem", "ShowTripType", Model.ShowTripType),
+                        ("ShowAccommodationPreference", "Preferência de hospedagem", "ShowAccommodationPreference", Model.ShowAccommodationPreference),
+                        ("ShowNotes", "Observações adicionais", "ShowNotes", Model.ShowNotes),
+                        ("ShowBestContactTime", "Melhor horário para contato", "ShowBestContactTime", Model.ShowBestContactTime),
+                    };
+                }
+
+                @foreach (var (fieldId, label, name, isChecked) in camposOpcionais)
+                {
+                    <div class="capture-field-row" onclick="toggleField('@fieldId')">
+                        <div class="capture-field-info">
+                            <span class="capture-field-name">@label</span>
+                        </div>
+                        <label class="capture-switch capture-switch-sm" onclick="event.stopPropagation()">
+                            <input type="checkbox" id="@fieldId" name="@name" value="true"
+                                   @(isChecked ? "checked" : "")
+                                   onchange="atualizarPreview()" />
+                            <span class="capture-switch-slider"></span>
+                        </label>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- ── Botão salvar ──────────────────────── -->
+        <div class="capture-save-row">
+            <button type="submit" class="btn btn-primary capture-save-btn">
+                <i class="fas fa-save me-2"></i>Salvar configurações
+            </button>
+        </div>
+
+    </div><!-- /settings-col -->
+
+    <!-- ╔═══════════════════════════════════════╗
+         ║ COLUNA DIREITA — Pré-visualização     ║
+         ╚═══════════════════════════════════════╝ -->
+    <div class="capture-preview-col">
+        <div class="capture-preview-card" id="previewCard">
+            <div class="capture-preview-label">
+                <span class="capture-card-label">PRÉ-VISUALIZAÇÃO</span>
+                <span class="capture-preview-sub">Como o viajante vê</span>
+            </div>
+
+            <!-- Hero da página pública (mini) -->
+            <div class="capture-preview-hero" id="previewHero" style="background: linear-gradient(135deg, @corP 0%, @(corP)cc 100%);">
+                <div class="capture-preview-agency">
+                    <div class="capture-preview-avatar" id="previewAvatar">@iniciais</div>
+                    <div>
+                        <div class="capture-preview-agency-name" id="previewNomeAgencia">
+                            @(Model.NomeAgencia ?? "Nome da Agência")
+                        </div>
+                        <div class="capture-preview-agency-tag">Agência de Viagens</div>
+                    </div>
+                </div>
+                <div class="capture-preview-badge">FORMULÁRIO DE COTAÇÃO</div>
+                <h3 class="capture-preview-title">Vamos planejar<br>sua viagem</h3>
+                <p class="capture-preview-welcome" id="previewWelcome">
+                    @(string.IsNullOrEmpty(Model.WelcomeMessage)
+                        ? "Muito bem-vindo! Conte um pouco sobre a viagem que você está planejando."
+                        : Model.WelcomeMessage)
+                </p>
+                @if (!string.IsNullOrEmpty(Model.ResponseTimeText))
+                {
+                    <div class="capture-preview-response" id="previewResponse">
+                        <i class="fas fa-clock me-1"></i>Resposta em até @Model.ResponseTimeText
+                    </div>
+                }
+                else
+                {
+                    <div class="capture-preview-response" id="previewResponse" style="display:none;">
+                        <i class="fas fa-clock me-1"></i>Resposta em até ...
+                    </div>
+                }
+            </div>
+
+            <!-- Formulário mini -->
+            <div class="capture-preview-form">
+                <div class="capture-preview-field-group">
+                    <div class="capture-preview-field">
+                        <div class="capture-preview-field-label">Nome completo *</div>
+                        <div class="capture-preview-field-input"></div>
+                    </div>
+                    <div class="capture-preview-field">
+                        <div class="capture-preview-field-label">WhatsApp *</div>
+                        <div class="capture-preview-field-input"></div>
+                    </div>
+                    <div class="capture-preview-field">
+                        <div class="capture-preview-field-label">Destino desejado *</div>
+                        <div class="capture-preview-field-input"></div>
+                    </div>
+
+                    <!-- Campos opcionais renderizados via JS -->
+                    <div id="previewOptionalFields"></div>
+                </div>
+
+                <div class="capture-preview-submit" style="background:@corD;">
+                    Quero minha cotação <i class="fas fa-arrow-right ms-1"></i>
+                </div>
+            </div>
+        </div>
+    </div><!-- /preview-col -->
+
+</div><!-- /capture-layout -->
+</form>
+
+@section Scripts {
+<script>
+(function () {
+    // ── Campos opcionais e seus labels ──
+    var camposOpcionais = [
+        { id: 'ShowEmail',                   label: 'E-mail' },
+        { id: 'ShowOriginCity',              label: 'Cidade de origem' },
+        { id: 'ShowTravelDates',             label: 'Datas previstas' },
+        { id: 'ShowAdults',                  label: 'Qtd. adultos' },
+        { id: 'ShowChildren',                label: 'Qtd. crianças' },
+        { id: 'ShowBudget',                  label: 'Orçamento estimado' },
+        { id: 'ShowTripType',                label: 'Tipo de viagem' },
+        { id: 'ShowAccommodationPreference', label: 'Prefer. hospedagem' },
+        { id: 'ShowNotes',                   label: 'Observações' },
+        { id: 'ShowBestContactTime',         label: 'Melhor horário' },
+    ];
+
+    function atualizarPreview() {
+        // Mensagem de boas-vindas
+        var welcome = document.getElementById('welcomeInput').value.trim();
+        var prevWelcome = document.getElementById('previewWelcome');
+        prevWelcome.textContent = welcome || 'Muito bem-vindo! Conte um pouco sobre a viagem que você está planejando.';
+
+        // Contador de caracteres
+        document.getElementById('charCount').textContent = welcome.length;
+
+        // Tempo de resposta
+        var responseTime = document.getElementById('responseTimeInput').value.trim();
+        var prevResponse = document.getElementById('previewResponse');
+        if (responseTime) {
+            prevResponse.innerHTML = '<i class="fas fa-clock me-1"></i>Resposta em até ' + escHtml(responseTime);
+            prevResponse.style.display = '';
+        } else {
+            prevResponse.style.display = 'none';
+        }
+
+        // Campos opcionais no preview
+        var container = document.getElementById('previewOptionalFields');
+        container.innerHTML = '';
+        camposOpcionais.forEach(function (campo) {
+            var chk = document.getElementById(campo.id);
+            if (chk && chk.checked) {
+                var div = document.createElement('div');
+                div.className = 'capture-preview-field';
+                div.innerHTML = '<div class="capture-preview-field-label">' + campo.label + '</div>'
+                    + '<div class="capture-preview-field-input"></div>';
+                container.appendChild(div);
+            }
+        });
+    }
+
+    // Expõe globalmente para uso nos oninput/onchange inline
+    window.atualizarPreview = atualizarPreview;
+
+    function atualizarStatusLabel(chk) {
+        var label = document.getElementById('statusToggleLabel');
+        if (label) label.textContent = chk.checked ? 'Formulário ativo' : 'Formulário inativo';
+    }
+    window.atualizarStatusLabel = atualizarStatusLabel;
+
+    function toggleField(id) {
+        var chk = document.getElementById(id);
+        if (chk) { chk.checked = !chk.checked; atualizarPreview(); }
+    }
+    window.toggleField = toggleField;
+
+    function escHtml(str) {
+        var d = document.createElement('div');
+        d.textContent = str;
+        return d.innerHTML;
+    }
+
+    function copiarLink() {
+        var url = document.getElementById('linkText').textContent.trim();
+        if (!url) return;
+        navigator.clipboard.writeText(url).then(function () {
+            var lbl = document.getElementById('copyLabel');
+            lbl.textContent = 'Copiado!';
+            setTimeout(function () { lbl.textContent = 'Copiar link'; }, 2000);
+        });
+    }
+    window.copiarLink = copiarLink;
+
+    function copiarCodigo() {
+        var code = document.getElementById('embedCode').textContent.trim();
+        navigator.clipboard.writeText(code).then(function () {
+            var lbl = document.getElementById('codeCopyLabel');
+            lbl.textContent = 'Copiado!';
+            setTimeout(function () { lbl.textContent = 'Copiar código'; }, 2000);
+        });
+    }
+    window.copiarCodigo = copiarCodigo;
+
+    // Inicializa preview na carga
+    atualizarPreview();
+})();
+</script>
+}

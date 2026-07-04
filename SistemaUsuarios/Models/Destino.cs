@@ -1,4 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using NetTopologySuite;
+using NetTopologySuite.Geometries;
 
 namespace SistemaUsuarios.Models
 {
@@ -35,5 +37,26 @@ namespace SistemaUsuarios.Models
 
         // ✅ NAVEGAÇÃO PARA FOTOS (1:N)
         public virtual ICollection<DestinoFoto> Fotos { get; set; } = new List<DestinoFoto>();
+
+        // NAVEGAÇÃO PARA HOSPEDAGENS (1:N)
+        public virtual ICollection<Hospedagem> Hospedagens { get; set; } = new List<Hospedagem>();
+
+        // NAVEGAÇÃO PARA EXPERIÊNCIAS (1:N)
+        public virtual ICollection<Experiencia> Experiencias { get; set; } = new List<Experiencia>();
+
+        // NAVEGAÇÃO PARA TRANSPORTES (1:N)
+        public virtual ICollection<Transporte> Transportes { get; set; } = new List<Transporte>();
+
+        public double? Latitude { get; set; }
+        public double? Longitude { get; set; }
+        public Point? Localizacao { get; set; }
+
+        public string? DescricaoLLM { get; set; }
+        public string? AtracoesLLM { get; set; } // Pode ser serializado como JSON
+        public string? GastronomiaLLM { get; set; }
+        public string? InformacoesPraticasLLM { get; set; }
+        public string? MalaViagemLLM { get; set; }
+        public string? CuidadosLLM { get; set; }
+        public string? PratosTipicosLLM { get; set; }
     }
 }

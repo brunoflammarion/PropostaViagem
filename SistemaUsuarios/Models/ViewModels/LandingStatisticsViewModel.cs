@@ -33,9 +33,13 @@ namespace SistemaUsuarios.Models.ViewModels
         [Required(ErrorMessage = "Selecione como você trabalha")]
         public string TipoAgente { get; set; }
 
-        // Campos opcionais para segmentação
-        public string UrlReferenciador { get; set; }
-        public string CampanhaOrigem { get; set; }
+        // Campos opcionais de segmentação (capturados no formulário estendido)
+        public string? NomeAgencia       { get; set; }
+        public string? PropostasMes      { get; set; }
+        public string? PlanoInteresse    { get; set; }
+        public string? DesafioAtual      { get; set; }
+        public string? UrlReferenciador  { get; set; }
+        public string? CampanhaOrigem    { get; set; }
     }
 
     // ViewModel para completar o cadastro

@@ -1,6 +1,163 @@
 ﻿@model SistemaUsuarios.Models.Proposta
+@using System.Text.RegularExpressions
+@using System.Text.Json
 @{
     ViewData["Title"] = $"Gerenciar Destinos - {Model.Titulo}";
+}
+@functions {
+    static string RenderLlmBlock(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json)) return "";
+
+        JsonDocument? doc = null;
+        try { doc = JsonDocument.Parse(json); }
+        catch { }
+
+        if (doc == null)
+            return $"<p class=\"small text-muted fst-italic\">{System.Net.WebUtility.HtmlEncode(json)}</p>";
+
+        var sb = new System.Text.StringBuilder();
+        var root = doc.RootElement;
+
+        if (root.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var item in root.EnumerateArray())
+            {
+                sb.Append("<div class=\"rev-arr-item\">");
+                if (item.ValueKind == JsonValueKind.Object)
+                    AppendObjectProps(sb, item);
+                else
+                    sb.Append($"<span class=\"rev-insight-value\">{System.Net.WebUtility.HtmlEncode(GetJsonString(item))}</span>");
+                sb.Append("</div>");
+            }
+        }
+        else if (root.ValueKind == JsonValueKind.Object)
+        {
+            AppendObjectProps(sb, root);
+        }
+        else
+        {
+            sb.Append($"<p class=\"rev-insight-value\">{System.Net.WebUtility.HtmlEncode(GetJsonString(root))}</p>");
+        }
+
+        doc.Dispose();
+        return sb.ToString();
+    }
+
+    static void AppendObjectProps(System.Text.StringBuilder sb, JsonElement obj)
+    {
+        foreach (var prop in obj.EnumerateObject())
+        {
+            var val = GetJsonString(prop.Value);
+            if (string.IsNullOrWhiteSpace(val)) continue;
+            var enc = System.Net.WebUtility.HtmlEncode(val);
+            var label = System.Net.WebUtility.HtmlEncode(LlmLabel(prop.Name));
+            var nomeLower = prop.Name.ToLowerInvariant();
+
+            if (nomeLower.Contains("gancho"))
+                sb.Append($"<div class=\"rev-gancho\"><i class=\"fas fa-bolt text-warning me-1\"></i>{enc}</div>");
+            else if (nomeLower.Contains("referencia") || nomeLower.Contains("referência"))
+                sb.Append($"<div class=\"mb-1\"><span class=\"rev-insight-label\">Referência</span> <span class=\"text-muted small fst-italic\">{enc}</span></div>");
+            else
+                sb.Append($"<div class=\"mb-2\"><div class=\"rev-insight-label\">{label}</div><div class=\"rev-insight-value\">{enc}</div></div>");
+        }
+    }
+
+    static string GetJsonString(JsonElement el)
+    {
+        return el.ValueKind switch
+        {
+            JsonValueKind.String => el.GetString() ?? "",
+            JsonValueKind.Number => el.ToString(),
+            JsonValueKind.True   => "Sim",
+            JsonValueKind.False  => "Não",
+            JsonValueKind.Array  => string.Join(", ",
+                el.EnumerateArray().Select(e => GetJsonString(e)).Where(s => !string.IsNullOrEmpty(s))),
+            _ => ""
+        };
+    }
+
+    static string LlmLabel(string key)
+    {
+        if (string.IsNullOrEmpty(key)) return key;
+        var s = Regex.Replace(key, "([A-Z])", " $1").Trim();
+        return char.ToUpper(s[0]) + s[1..];
+    }
+
+    static string RenderTemasAccordion(SistemaUsuarios.Models.Destino d, string accId)
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.Append($"<div class=\"accordion\" id=\"{System.Net.WebUtility.HtmlEncode(accId)}\">");
+
+        if (!string.IsNullOrEmpty(d.CuidadosLLM))
+        {
+            var id = "cuidados-" + d.Id.ToString("N");
+            sb.Append(AccordionItem(accId, id,
+                "fas fa-exclamation-triangle text-danger", "Cuidados &amp; Atenção",
+                "border-danger", RenderLlmBlock(d.CuidadosLLM)));
+        }
+
+        if (!string.IsNullOrEmpty(d.GastronomiaLLM) || !string.IsNullOrEmpty(d.PratosTipicosLLM))
+        {
+            var id = "gastro-" + d.Id.ToString("N");
+            var gastroHtml = new System.Text.StringBuilder();
+            if (!string.IsNullOrEmpty(d.GastronomiaLLM))
+                gastroHtml.Append(RenderLlmBlock(d.GastronomiaLLM));
+            if (!string.IsNullOrEmpty(d.PratosTipicosLLM))
+            {
+                if (!string.IsNullOrEmpty(d.GastronomiaLLM))
+                    gastroHtml.Append("<hr class=\"my-2\" />");
+                gastroHtml.Append("<div class=\"rev-insight-label mb-2\">Pratos Típicos</div>");
+                gastroHtml.Append(RenderLlmBlock(d.PratosTipicosLLM));
+            }
+            sb.Append(AccordionItem(accId, id,
+                "fas fa-utensils text-warning", "Gastronomia &amp; Pratos",
+                "border-warning", gastroHtml.ToString()));
+        }
+
+        if (!string.IsNullOrEmpty(d.AtracoesLLM))
+        {
+            var id = "atracoes-" + d.Id.ToString("N");
+            sb.Append(AccordionItem(accId, id,
+                "fas fa-map-marked-alt text-info", "Atrações &amp; Pontos de Interesse",
+                "border-info", RenderLlmBlock(d.AtracoesLLM)));
+        }
+
+        if (!string.IsNullOrEmpty(d.InformacoesPraticasLLM))
+        {
+            var id = "infoprat-" + d.Id.ToString("N");
+            sb.Append(AccordionItem(accId, id,
+                "fas fa-info-circle text-primary", "Informações Práticas",
+                "border-primary", RenderLlmBlock(d.InformacoesPraticasLLM)));
+        }
+
+        if (!string.IsNullOrEmpty(d.MalaViagemLLM))
+        {
+            var id = "mala-" + d.Id.ToString("N");
+            sb.Append(AccordionItem(accId, id,
+                "fas fa-suitcase text-secondary", "Mala de Viagem",
+                "border-secondary", RenderLlmBlock(d.MalaViagemLLM)));
+        }
+
+        sb.Append("</div>");
+        return sb.ToString();
+    }
+
+    static string AccordionItem(string parentId, string itemId,
+        string iconCls, string label, string borderCls, string bodyHtml)
+    {
+        return "<div class=\"accordion-item " + borderCls + " border-opacity-25 rounded-3 mb-2 overflow-hidden\">"
+             + "<h2 class=\"accordion-header\">"
+             + "<button class=\"accordion-button collapsed py-2 px-3\" type=\"button\""
+             + " data-bs-toggle=\"collapse\" data-bs-target=\"#" + itemId + "\""
+             + " data-bs-parent=\"#" + parentId + "\">"
+             + "<i class=\"" + iconCls + " me-2\" style=\"font-size:.85rem;\"></i>"
+             + "<span class=\"small fw-semibold\">" + label + "</span>"
+             + "</button></h2>"
+             + "<div id=\"" + itemId + "\" class=\"accordion-collapse collapse\">"
+             + "<div class=\"accordion-body py-2 px-3\">" + bodyHtml + "</div>"
+             + "</div></div>";
+    }
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -17,6 +174,67 @@
         </a>
     </div>
 </div>
+
+<div class="container-fluid">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/Proposta">Propostas</a></li>
+            <li class="breadcrumb-item"><a href="/Proposta/Detalhes/@Model.Id">@Model.Titulo</a></li>
+            <li class="breadcrumb-item active">Editar</li>
+        </ol>
+    </nav>
+
+    <!-- Header com Progress -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2><i class="fas fa-edit me-2 text-primary"></i>Editar Proposta de Viagem</h2>
+                    <p class="text-muted mb-0">Atualize as informações da sua proposta personalizada</p>
+                </div>
+                <div class="btn-group">
+                    <a href="/Proposta/Detalhes/@Model.Id" class="btn btn-outline-info">
+                        <i class="fas fa-eye me-1"></i>Visualizar
+                    </a>
+                    @if (Model.LinkPublicoAtivo)
+                    {
+                        <a href="/Proposta/Publico/@Model.Id" target="_blank" class="btn btn-outline-success">
+                            <i class="fas fa-external-link-alt me-1"></i>Ver Público
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Progress Steps -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body py-2">
+                    <div class="d-flex justify-content-center align-items-center">
+                        <div class="step-progress">
+                            <div class="step active">
+                                <div class="step-circle">
+                                    <i class="fas fa-file-alt"></i>
+                                </div>
+                                <div class="step-label">Informações Básicas</div>
+                            </div>
+                            <div class="step-line"></div>
+                            <div class="step active">
+                                <div class="step-circle">
+                                    <i class="fas fa-map-marked-alt"></i>
+                                </div>
+                                <div class="step-label">Destinos & Fotos</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 
 <!-- Informações da Proposta -->
 <div class="row mb-4">
@@ -79,57 +297,6 @@
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Adicionar Novo Destino -->
-<div class="row mb-4">
-    <div class="col-md-12">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0"><i class="fas fa-plus me-2"></i>Adicionar Novo Destino</h5>
-            </div>
-            <div class="card-body">
-                <form asp-action="AdicionarDestino" method="post">
-                    <input type="hidden" name="propostaId" value="@Model.Id" />
-
-                    <div class="row">
-                        <div class="col-md-3 mb-3">
-                            <label class="form-label">Nome do Destino *</label>
-                            <input type="text" name="nome" class="form-control" placeholder="Ex: Paris, França" required />
-                        </div>
-                        <div class="col-md-2 mb-3">
-                            <label class="form-label">País</label>
-                            <input type="text" name="pais" class="form-control" placeholder="França" />
-                        </div>
-                        <div class="col-md-2 mb-3">
-                            <label class="form-label">Cidade</label>
-                            <input type="text" name="cidade" class="form-control" placeholder="Paris" />
-                        </div>
-                        <div class="col-md-2 mb-3">
-                            <label class="form-label">Data Chegada</label>
-                            <input type="date" name="dataChegada" class="form-control" />
-                        </div>
-                        <div class="col-md-2 mb-3">
-                            <label class="form-label">Data Saída</label>
-                            <input type="date" name="dataSaida" class="form-control" />
-                        </div>
-                        <div class="col-md-1 mb-3 d-flex align-items-end">
-                            <button type="submit" class="btn btn-success w-100">
-                                <i class="fas fa-plus"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-11 mb-3">
-                            <label class="form-label">Descrição</label>
-                            <textarea name="descricao" class="form-control" rows="2" placeholder="Descrição do destino, atividades planejadas, observações..."></textarea>
-                        </div>
-                    </div>
-                </form>
             </div>
         </div>
     </div>
@@ -251,6 +418,9 @@
                                             <button type="button" class="btn btn-outline-success" onclick="abrirModalFoto('@destino.Id', '@destino.Nome')">
                                                 <i class="fas fa-plus"></i> Foto
                                             </button>
+                                            <button type="button" class="btn btn-outline-info" onclick="abrirModalHospedagem('@destino.Id', '@destino.Nome', '@(destino.Cidade ?? destino.Nome)')" title="Adicionar hospedagem">
+                                                <i class="fas fa-hotel"></i> Hotel
+                                            </button>
                                             <form asp-action="ExcluirDestino" method="post" style="display: inline;" onsubmit="return confirm('Tem certeza que deseja excluir este destino e todas suas fotos?');">
                                                 <input type="hidden" name="id" value="@destino.Id" />
                                                 <button type="submit" class="btn btn-outline-danger">
@@ -359,6 +529,236 @@
                                             </div>
                                         </div>
                                     </div>
+
+                                    <!-- Seção de Hospedagens -->
+                                    <div class="border-top pt-3 mt-3">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <h6 class="mb-0"><i class="fas fa-hotel me-2 text-info"></i>Hospedagens (@destino.Hospedagens.Count)</h6>
+                                        </div>
+
+                                        @foreach (var hospedagem in destino.Hospedagens.OrderBy(h => h.Ordem))
+                                        {
+                                            <div class="card mb-3 border-info hosp-card"
+                                                 data-hosp-id="@hospedagem.Id"
+                                                 data-hosp-nome="@hospedagem.Nome"
+                                                 data-hosp-descricao="@hospedagem.Descricao"
+                                                 data-hosp-endereco="@hospedagem.Endereco"
+                                                 data-hosp-latitude="@hospedagem.Latitude?.ToString("G17", System.Globalization.CultureInfo.InvariantCulture)"
+                                                 data-hosp-longitude="@hospedagem.Longitude?.ToString("G17", System.Globalization.CultureInfo.InvariantCulture)"
+                                                 data-hosp-checkin="@(hospedagem.CheckIn?.ToString("yyyy-MM-ddTHH:mm") ?? "")"
+                                                 data-hosp-checkout="@(hospedagem.CheckOut?.ToString("yyyy-MM-ddTHH:mm") ?? "")"
+                                                 data-hosp-categoria="@((int)hospedagem.Categoria)"
+                                                 data-hosp-tipopensao="@((int)hospedagem.TipoPensao)"
+                                                 data-hosp-reserva="@hospedagem.Reserva"
+                                                 data-hosp-observacoes="@hospedagem.Observacoes">
+                                                <div class="card-header bg-light d-flex justify-content-between align-items-center py-2">
+                                                    <div>
+                                                        <span class="fw-semibold">@hospedagem.Nome</span>
+                                                        <span class="badge bg-info ms-2">
+                                                            @(hospedagem.Categoria switch {
+                                                                SistemaUsuarios.Models.CategoriaHospedagem.Hotel => "Hotel",
+                                                                SistemaUsuarios.Models.CategoriaHospedagem.Pousada => "Pousada",
+                                                                SistemaUsuarios.Models.CategoriaHospedagem.Resort => "Resort",
+                                                                SistemaUsuarios.Models.CategoriaHospedagem.HotelFazenda => "Hotel Fazenda",
+                                                                SistemaUsuarios.Models.CategoriaHospedagem.AluguelCasa => "Aluguel de Casa",
+                                                                SistemaUsuarios.Models.CategoriaHospedagem.Camping => "Camping",
+                                                                _ => "Outros"
+                                                            })
+                                                        </span>
+                                                        <span class="badge bg-secondary ms-1">
+                                                            @(hospedagem.TipoPensao switch {
+                                                                SistemaUsuarios.Models.TipoPensao.SemPensao => "Sem Pensão",
+                                                                SistemaUsuarios.Models.TipoPensao.CafeDaManha => "Café da Manhã",
+                                                                SistemaUsuarios.Models.TipoPensao.MeiaPensao => "Meia Pensão",
+                                                                SistemaUsuarios.Models.TipoPensao.PensaoCompleta => "Pensão Completa",
+                                                                SistemaUsuarios.Models.TipoPensao.AllInclusive => "All Inclusive",
+                                                                _ => "Outros"
+                                                            })
+                                                        </span>
+                                                        @if (hospedagem.CheckIn.HasValue || hospedagem.CheckOut.HasValue)
+                                                        {
+                                                            <small class="text-muted ms-2">
+                                                                <i class="fas fa-calendar me-1"></i>
+                                                                @hospedagem.CheckIn?.ToString("dd/MM/yyyy HH:mm") — @hospedagem.CheckOut?.ToString("dd/MM/yyyy HH:mm")
+                                                            </small>
+                                                        }
+                                                    </div>
+                                                    <div class="btn-group btn-group-sm">
+                                                        <button type="button" class="btn btn-outline-primary btn-sm"
+                                                                onclick="abrirModalEditarHospedagem(this.closest('.hosp-card'))"
+                                                                title="Editar hospedagem">
+                                                            <i class="fas fa-edit me-1"></i>Editar
+                                                        </button>
+                                                        <button type="button" class="btn btn-outline-secondary btn-sm"
+                                                                data-bs-toggle="collapse"
+                                                                data-bs-target="#hosp-det-@hospedagem.Id"
+                                                                title="Gerenciar comodidades e acomodações">
+                                                            <i class="fas fa-cog me-1"></i>Detalhes
+                                                            <span class="badge bg-secondary ms-1">@hospedagem.Acomodacoes.Count acmd</span>
+                                                            @if (hospedagem.Comodidades.Any())
+                                                            {
+                                                                <span class="badge bg-info ms-1">@hospedagem.Comodidades.Count comod</span>
+                                                            }
+                                                        </button>
+                                                        <form asp-controller="Hospedagem" asp-action="Excluir" method="post" style="display:inline;" onsubmit="return confirm('Excluir esta hospedagem e todas suas acomodações?');">
+                                                            <input type="hidden" name="id" value="@hospedagem.Id" />
+                                                            <button type="submit" class="btn btn-outline-danger btn-sm"><i class="fas fa-trash"></i></button>
+                                                        </form>
+                                                    </div>
+                                                </div>
+
+                                                <div class="collapse" id="hosp-det-@hospedagem.Id">
+                                                    <div class="card-body pt-2">
+
+                                                        <!-- ===== SEÇÃO: COMODIDADES ===== -->
+                                                        <div class="mb-3">
+                                                            <h6 class="text-muted mb-2"><i class="fas fa-concierge-bell me-1"></i>Comodidades</h6>
+                                                            @if (hospedagem.Comodidades.Any())
+                                                            {
+                                                                <div class="d-flex flex-wrap gap-1 mb-2">
+                                                                    @foreach (var comodidade in hospedagem.Comodidades.OrderBy(c => c.Ordem))
+                                                                    {
+                                                                        <span class="badge bg-light text-dark border d-inline-flex align-items-center gap-1 py-1 px-2">
+                                                                            <i class="fas fa-check-circle text-success" style="font-size:0.7rem;"></i>
+                                                                            @comodidade.Nome
+                                                                            <form asp-controller="Hospedagem" asp-action="ExcluirComodidade" method="post" style="display:inline;" onsubmit="return confirm('Remover comodidade?');">
+                                                                                <input type="hidden" name="id" value="@comodidade.Id" />
+                                                                                <button type="submit" class="btn p-0 ms-1 border-0 bg-transparent lh-1" title="Remover">
+                                                                                    <i class="fas fa-times text-muted" style="font-size:0.6rem;"></i>
+                                                                                </button>
+                                                                            </form>
+                                                                        </span>
+                                                                    }
+                                                                </div>
+                                                            }
+                                                            else
+                                                            {
+                                                                <p class="small text-muted mb-2">Nenhuma comodidade cadastrada.</p>
+                                                            }
+                                                            <form asp-controller="Hospedagem" asp-action="AdicionarComodidade" method="post" class="d-flex gap-1">
+                                                                <input type="hidden" name="hospedagemId" value="@hospedagem.Id" />
+                                                                <input type="text" name="nome" class="form-control form-control-sm" placeholder="Adicionar comodidade..." maxlength="200" style="max-width:220px;" />
+                                                                <button type="submit" class="btn btn-sm btn-outline-secondary flex-shrink-0">
+                                                                    <i class="fas fa-plus me-1"></i>Adicionar
+                                                                </button>
+                                                            </form>
+                                                        </div>
+
+                                                        <hr class="my-2" />
+
+                                                        <!-- ===== SEÇÃO: ACOMODAÇÕES ===== -->
+                                                        <h6 class="text-muted mb-2"><i class="fas fa-bed me-1"></i>Acomodações</h6>
+
+                                                        @foreach (var acomodacao in hospedagem.Acomodacoes.OrderBy(a => a.Ordem))
+                                                        {
+                                                            <div class="card mb-2 border-light">
+                                                                <div class="card-body p-2">
+                                                                    <div class="d-flex justify-content-between align-items-start">
+                                                                        <strong class="small">@acomodacao.Nome</strong>
+                                                                        <div class="btn-group btn-group-sm">
+                                                                            <button type="button" class="btn btn-outline-secondary btn-sm"
+                                                                                    data-bs-toggle="collapse"
+                                                                                    data-bs-target="#acmd-@acomodacao.Id"
+                                                                                    title="Editar acomodação">
+                                                                                <i class="fas fa-edit me-1"></i>Editar
+                                                                            </button>
+                                                                            <button type="button" class="btn btn-outline-success btn-sm"
+                                                                                    onclick="abrirModalFotoAcomodacao('@acomodacao.Id', '@acomodacao.Nome')"
+                                                                                    title="Adicionar foto">
+                                                                                <i class="fas fa-camera me-1"></i>Foto
+                                                                            </button>
+                                                                            <form asp-controller="Hospedagem" asp-action="ExcluirAcomodacao" method="post" style="display:inline;" onsubmit="return confirm('Excluir esta acomodação?');">
+                                                                                <input type="hidden" name="id" value="@acomodacao.Id" />
+                                                                                <button type="submit" class="btn btn-outline-danger btn-sm"><i class="fas fa-trash"></i></button>
+                                                                            </form>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    <!-- Miniaturas das fotos visíveis diretamente (sem precisar expandir) -->
+                                                                    @if (acomodacao.Fotos.Any())
+                                                                    {
+                                                                        <div class="d-flex flex-wrap gap-1 mt-2">
+                                                                            @foreach (var foto in acomodacao.Fotos.OrderBy(f => f.Ordem))
+                                                                            {
+                                                                                <div class="position-relative" style="width:64px;height:48px;">
+                                                                                    <img src="@foto.CaminhoFoto" alt="@foto.Descricao" class="rounded" style="width:64px;height:48px;object-fit:cover;" />
+                                                                                    @if (foto.Principal)
+                                                                                    {
+                                                                                        <span class="position-absolute top-0 start-0 badge bg-success" style="font-size:0.5rem;padding:2px;"><i class="fas fa-star"></i></span>
+                                                                                    }
+                                                                                    <form asp-controller="Hospedagem" asp-action="ExcluirFotoAcomodacao" method="post" style="display:inline;" onsubmit="return confirm('Excluir foto?');">
+                                                                                        <input type="hidden" name="id" value="@foto.Id" />
+                                                                                        <button type="submit" class="btn btn-danger btn-sm position-absolute top-0 end-0 p-0" style="width:16px;height:16px;font-size:0.55rem;line-height:1;"><i class="fas fa-times"></i></button>
+                                                                                    </form>
+                                                                                </div>
+                                                                            }
+                                                                        </div>
+                                                                    }
+
+                                                                    <!-- Formulário de edição inline -->
+                                                                    <div class="collapse mt-2" id="acmd-@acomodacao.Id">
+                                                                        <form asp-controller="Hospedagem" asp-action="EditarAcomodacao" method="post" class="mb-0">
+                                                                            <input type="hidden" name="id" value="@acomodacao.Id" />
+                                                                            <div class="mb-1">
+                                                                                <label class="form-label form-label-sm mb-1 text-muted">Nome</label>
+                                                                                <input type="text" name="nome" class="form-control form-control-sm" value="@acomodacao.Nome" required />
+                                                                            </div>
+                                                                            <div class="mb-1">
+                                                                                <label class="form-label form-label-sm mb-1 text-muted">Descrição</label>
+                                                                                <textarea name="descricao" class="form-control form-control-sm" rows="3" placeholder="Descreva o que inclui esta acomodação...">@acomodacao.Descricao</textarea>
+                                                                            </div>
+                                                                            <button type="submit" class="btn btn-sm btn-primary"><i class="fas fa-save me-1"></i>Salvar</button>
+                                                                        </form>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        }
+
+                                                        <!-- Adicionar nova acomodação -->
+                                                        <div class="card border-light bg-light mt-2">
+                                                            <div class="card-body p-2">
+                                                                <p class="small text-muted mb-2 fw-semibold"><i class="fas fa-plus-circle me-1 text-success"></i>Nova Acomodação</p>
+                                                                <form asp-controller="Hospedagem" asp-action="AdicionarAcomodacao" method="post">
+                                                                    <input type="hidden" name="hospedagemId" value="@hospedagem.Id" />
+                                                                    <div class="row g-1 mb-1">
+                                                                        <div class="col-sm-4">
+                                                                            <input type="text" name="nome" class="form-control form-control-sm" placeholder="Nome (ex: Suíte, Quarto...)" required />
+                                                                        </div>
+                                                                        <div class="col-sm-8">
+                                                                            <input type="text" name="descricao" class="form-control form-control-sm" placeholder="Descrição resumida..." />
+                                                                        </div>
+                                                                    </div>
+                                                                    <button type="submit" class="btn btn-sm btn-outline-success"><i class="fas fa-plus me-1"></i>Adicionar</button>
+                                                                </form>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+
+                                    @{
+                                        var _accId = "acc-dest-" + destino.Id.ToString("N");
+                                        var _hasInsights = !string.IsNullOrEmpty(destino.CuidadosLLM)
+                                            || !string.IsNullOrEmpty(destino.GastronomiaLLM)
+                                            || !string.IsNullOrEmpty(destino.PratosTipicosLLM)
+                                            || !string.IsNullOrEmpty(destino.AtracoesLLM)
+                                            || !string.IsNullOrEmpty(destino.InformacoesPraticasLLM)
+                                            || !string.IsNullOrEmpty(destino.MalaViagemLLM);
+                                    }
+                                    @if (_hasInsights)
+                                    {
+                                        <!-- Insights para o Agente -->
+                                        <div class="border-top pt-3 mt-3">
+                                            <div class="dest-insights-panel">
+                                                <div class="panel-title">
+                                                    <i class="fas fa-brain me-1"></i>Insights para o Agente
+                                                </div>
+                                                @Html.Raw(RenderTemasAccordion(destino, _accId))
+                                            </div>
+                                        </div>
+                                    }
                                 </div>
                             </div>
                         }
@@ -376,6 +776,100 @@ else
         <p class="text-muted">Comece adicionando o primeiro destino da viagem usando o formulário acima.</p>
     </div>
 }
+
+<!-- Adicionar Novo Destino -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-plus me-2"></i>Adicionar Novo Destino</h5>
+            </div>
+            <div class="card-body">
+                <form asp-action="AdicionarDestino" method="post">
+                    <input type="hidden" id="propostaId" name="propostaId" value="@Model.Id" />
+
+                    <div class="row">
+                        <div class="col-md-3 mb-3 position-relative">
+                            <label class="form-label">Nome do Destino *</label>
+                            <input type="text" name="nome" id="nomeDestino" class="form-control" placeholder="Ex: Paris, França" required autocomplete="off" />
+                            <div id="sugestoesDestino" class="list-group mt-1" style="position: absolute; z-index: 9999; width: 100%;"></div>
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label class="form-label">País</label>
+                            <input type="text" name="pais" class="form-control" placeholder="França" id="campoPais"  />
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label class="form-label">Cidade</label>
+                            <input type="text" name="cidade" class="form-control" placeholder="Paris" id="campoCidade" />
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label class="form-label">Data Chegada</label>
+                            <input type="date" name="dataChegada" class="form-control" />
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label class="form-label">Data Saída</label>
+                            <input type="date" name="dataSaida" class="form-control" />
+                        </div>
+                        <div class="col-md-1 mb-3 d-flex align-items-end">
+                            <button type="submit" class="btn btn-success w-100">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                        <div type="hidden" class="col-md-3 mb-3 position-relative">
+                            <input type="hidden" name="latitude" id="latitude" />
+                        </div>
+                        <div type="hidden" class="col-md-3 mb-3 position-relative">
+                            <input type="hidden" name="longitude" id="longitude" />
+                        </div>
+                    </div>
+
+                    <div class="mb-2">
+                    <label for="Nome" class="form-label">Destino/Cidade</label>
+                    <input id="Nome" name="nome" class="form-control" />
+                    </div>
+
+                    <button type="button" id="btnGerarDesc" class="btn btn-outline-primary">
+                    Gerar descrição com IA
+                    </button>
+
+                    <!-- Editor exibido após gerar -->
+                    <div id="editor-llm" class="mt-3 d-none">
+                    <label class="form-label">Descrição</label>
+                    <textarea id="Descricao" name="descricao" rows="5" class="form-control"></textarea>
+
+                    <!-- Preview de Insights para o Agente (preenchido via JS após geração) -->
+                    <div id="novo-dest-insights" class="mt-3 d-none">
+                        <div class="dest-insights-panel">
+                            <div class="panel-title"><i class="fas fa-brain me-1"></i>Preview — Insights para o Agente</div>
+                            <div id="novo-dest-insights-body" class="accordion"></div>
+                        </div>
+                    </div>
+
+                    <!-- Se quiser salvar campos estruturados também -->
+                    <label class="form-label mt-3">Atrações (JSON)</label>
+                    <textarea id="AtracoesLLM" name="AtracoesLLM" rows="6" class="form-control"></textarea>
+
+                    <label class="form-label mt-3">Pratos Tipicos (JSON)</label>
+                    <textarea id="pratosTipicosLLM" name="pratosTipicosLLM" rows="5" class="form-control"></textarea>
+
+                    <label class="form-label mt-3">Gastronomia (JSON)</label>
+                    <textarea id="GastronomiaLLM" name="GastronomiaLLM" rows="6" class="form-control"></textarea>
+
+                    <label class="form-label mt-3">Informações práticas (JSON)</label>
+                    <textarea id="InformacoesPraticasLLM" name="InformacoesPraticasLLM" rows="6" class="form-control"></textarea>
+
+                    <label class="form-label mt-3">Mala de viagem (JSON)</label>
+                    <textarea id="MalaViagemLLM" name="MalaViagemLLM" rows="5" class="form-control"></textarea>
+
+                    <label class="form-label mt-3">Cuidados (JSON)</label>
+                    <textarea id="CuidadosLLM" name="CuidadosLLM" rows="5" class="form-control"></textarea>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 
 <!-- Modal Universal para Upload de Foto - CORRIGIDO Z-INDEX -->
 <div class="modal fade modal-upload-foto" id="modalUploadFoto" tabindex="-1" aria-labelledby="modalUploadFotoLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
@@ -435,63 +929,876 @@ else
     </div>
 </div>
 
+<!-- Modal: Adicionar Hospedagem -->
+<div class="modal fade" id="modalAdicionarHospedagem" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-info bg-opacity-10">
+                <h5 class="modal-title"><i class="fas fa-hotel me-2 text-info"></i>Adicionar Hospedagem — <span id="nomeDestinoHospedagem"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-controller="Hospedagem" asp-action="Adicionar" method="post" id="formAdicionarHospedagem">
+                <div class="modal-body">
+                    <input type="hidden" name="destinoId" id="destinoIdHospedagem" />
+                    <input type="hidden" name="latitude" id="hospLatitude" />
+                    <input type="hidden" name="longitude" id="hospLongitude" />
+                    <input type="hidden" id="hospCidadeContexto" />
+
+                    <!-- Nome com autocomplete -->
+                    <div class="row">
+                        <div class="col-md-8 mb-3 position-relative">
+                            <label class="form-label fw-semibold">Nome da Hospedagem *</label>
+                            <input type="text" name="nome" id="hospNomeInput" class="form-control" placeholder="Ex: Hotel Marriott, Pousada da Praia..." required autocomplete="off" />
+                            <div id="hospSugestoes" class="list-group mt-1" style="position:absolute;z-index:9999;width:calc(100% - 24px);max-height:220px;overflow-y:auto;"></div>
+                            <div class="form-text"><i class="fas fa-search me-1 text-muted"></i>Digite o nome para buscar sugestões no Google</div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-semibold">Categoria</label>
+                            <select name="categoria" id="hospCategoriaSelect" class="form-select">
+                                <option value="1">Hotel</option>
+                                <option value="2">Pousada</option>
+                                <option value="3">Resort</option>
+                                <option value="4">Hotel Fazenda</option>
+                                <option value="5">Aluguel de Casa</option>
+                                <option value="6">Camping</option>
+                                <option value="7">Outros</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Endereço preenchido automaticamente pelo Google -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Endereço</label>
+                        <div class="input-group">
+                            <input type="text" name="endereco" id="hospEnderecoInput" class="form-control" placeholder="Preenchido automaticamente ao selecionar sugestão" />
+                            <span class="input-group-text text-muted" id="hospCoordBadge" style="font-size:0.75rem;display:none;">
+                                <i class="fas fa-map-pin me-1 text-success"></i><span id="hospCoordTexto"></span>
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Descrição com IA -->
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="form-label fw-semibold mb-0">Descrição</label>
+                            <button type="button" id="btnGerarDescHosp" class="btn btn-outline-primary btn-sm" disabled>
+                                <i class="fas fa-magic me-1"></i>Gerar com IA
+                            </button>
+                        </div>
+                        <textarea name="descricao" id="hospDescricaoInput" class="form-control" rows="3" placeholder="Selecione uma sugestão ou clique em 'Gerar com IA' para preencher automaticamente..."></textarea>
+                        <div id="hospIaLoader" class="text-center py-2 d-none">
+                            <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+                            <small class="text-muted">Consultando IA...</small>
+                        </div>
+                    </div>
+
+                    <!-- Comodidades (preenchidas pela IA, editáveis pelo usuário) -->
+                    <input type="hidden" name="comodidadesJson" id="hospComodidadesJson" value="" />
+                    <div class="mb-3" id="hospComodidadesDiv" style="display:none;">
+                        <label class="form-label fw-semibold">Comodidades <small class="text-muted">(geradas pela IA — você pode adicionar ou remover)</small></label>
+                        <div id="hospComodidadesBadges" class="d-flex flex-wrap gap-1 mb-2"></div>
+                        <div class="input-group input-group-sm">
+                            <input type="text" id="hospNovaComodidade" class="form-control" placeholder="Adicionar comodidade manualmente..." maxlength="200" />
+                            <button type="button" class="btn btn-outline-secondary" id="btnHospAddComodidade">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="mb-2" id="hospComodidadesDivEmpty">
+                        <label class="form-label fw-semibold">Comodidades</label>
+                        <div class="input-group input-group-sm">
+                            <input type="text" id="hospNovaComodidadeEmpty" class="form-control" placeholder="Adicionar comodidade manualmente..." maxlength="200" />
+                            <button type="button" class="btn btn-outline-secondary" id="btnHospAddComodidadeEmpty">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                        <div class="form-text">Digite e clique em + para adicionar. Ou use "Gerar com IA" para preencher automaticamente.</div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-semibold">Tipo de Pensão</label>
+                            <select name="tipoPensao" class="form-select">
+                                <option value="1">Sem Pensão</option>
+                                <option value="2">Café da Manhã</option>
+                                <option value="3">Meia Pensão</option>
+                                <option value="4">Pensão Completa</option>
+                                <option value="5">All Inclusive</option>
+                                <option value="6">Outros</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-semibold">Check-in</label>
+                            <input type="datetime-local" name="checkIn" class="form-control" />
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-semibold">Check-out</label>
+                            <input type="datetime-local" name="checkOut" class="form-control" />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Reserva</label>
+                        <textarea name="reserva" class="form-control" rows="2" placeholder="Número de reserva, código de confirmação, link..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-info text-white"><i class="fas fa-plus me-1"></i>Adicionar Hospedagem</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Editar Hospedagem -->
+<div class="modal fade" id="modalEditarHospedagem" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-warning bg-opacity-10">
+                <h5 class="modal-title"><i class="fas fa-hotel me-2 text-warning"></i>Editar Hospedagem</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-controller="Hospedagem" asp-action="Editar" method="post" id="formEditarHospedagem">
+                <div class="modal-body">
+                    <input type="hidden" name="id" id="editHospId" />
+                    <input type="hidden" name="latitude" id="editHospLatitude" />
+                    <input type="hidden" name="longitude" id="editHospLongitude" />
+
+                    <!-- Nome com autocomplete -->
+                    <div class="row">
+                        <div class="col-md-8 mb-3 position-relative">
+                            <label class="form-label fw-semibold">Nome da Hospedagem *</label>
+                            <input type="text" name="nome" id="editHospNomeInput" class="form-control" placeholder="Ex: Hotel Marriott, Pousada da Praia..." required autocomplete="off" />
+                            <div id="editHospSugestoes" class="list-group mt-1" style="position:absolute;z-index:9999;width:calc(100% - 24px);max-height:220px;overflow-y:auto;"></div>
+                            <div class="form-text"><i class="fas fa-search me-1 text-muted"></i>Digite para buscar novo hotel ou edite manualmente</div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-semibold">Categoria</label>
+                            <select name="categoria" id="editHospCategoriaSelect" class="form-select">
+                                <option value="1">Hotel</option>
+                                <option value="2">Pousada</option>
+                                <option value="3">Resort</option>
+                                <option value="4">Hotel Fazenda</option>
+                                <option value="5">Aluguel de Casa</option>
+                                <option value="6">Camping</option>
+                                <option value="7">Outros</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Endereço -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Endereço</label>
+                        <div class="input-group">
+                            <input type="text" name="endereco" id="editHospEnderecoInput" class="form-control" />
+                            <span class="input-group-text text-muted" id="editHospCoordBadge" style="font-size:0.75rem;display:none;">
+                                <i class="fas fa-map-pin me-1 text-success"></i><span id="editHospCoordTexto"></span>
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Descrição com IA -->
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="form-label fw-semibold mb-0">Descrição</label>
+                            <button type="button" id="btnGerarDescEditHosp" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-magic me-1"></i>Gerar com IA
+                            </button>
+                        </div>
+                        <textarea name="descricao" id="editHospDescricaoInput" class="form-control" rows="3"></textarea>
+                        <div id="editHospIaLoader" class="text-center py-2 d-none">
+                            <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+                            <small class="text-muted">Consultando IA...</small>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-semibold">Tipo de Pensão</label>
+                            <select name="tipoPensao" id="editHospTipoPensaoSelect" class="form-select">
+                                <option value="1">Sem Pensão</option>
+                                <option value="2">Café da Manhã</option>
+                                <option value="3">Meia Pensão</option>
+                                <option value="4">Pensão Completa</option>
+                                <option value="5">All Inclusive</option>
+                                <option value="6">Outros</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-semibold">Check-in</label>
+                            <input type="datetime-local" name="checkIn" id="editHospCheckin" class="form-control" />
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-semibold">Check-out</label>
+                            <input type="datetime-local" name="checkOut" id="editHospCheckout" class="form-control" />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Reserva</label>
+                        <textarea name="reserva" id="editHospReserva" class="form-control" rows="2" placeholder="Número de reserva, código de confirmação, link..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-warning"><i class="fas fa-save me-1"></i>Salvar Hospedagem</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Adicionar Foto da Acomodação -->
+<div class="modal fade" id="modalFotoAcomodacao" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-camera me-2"></i>Foto da Acomodação — <span id="nomeAcomodacaoModal"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-controller="Hospedagem" asp-action="AdicionarFotoAcomodacao" method="post" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <input type="hidden" name="acomodacaoId" id="acomodacaoIdInput" />
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Foto *</label>
+                        <input type="file" name="foto" id="fotoAcomodacaoInput" class="form-control" accept="image/*" required />
+                        <div class="form-text">Formatos: JPG, PNG, GIF, WebP (máx: 10MB)</div>
+                        <div id="previewAcomodacao" class="mt-2" style="display:none;">
+                            <img id="previewAcomodacaoImg" class="img-fluid rounded" style="max-height:180px;" />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Descrição</label>
+                        <input type="text" name="descricao" class="form-control" placeholder="Opcional" maxlength="200" />
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" name="principal" class="form-check-input" id="principalAcomodacao" />
+                        <label class="form-check-label" for="principalAcomodacao"><i class="fas fa-star me-1"></i>Foto principal da acomodação</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success"><i class="fas fa-upload me-1"></i>Adicionar Foto</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+<style>
+/* ── Insights para o Agente (Gerenciar Destinos) ── */
+.rev-arr-item {
+    border-left: 3px solid var(--exec-accent, #2ec4b6);
+    padding: 6px 10px;
+    margin-bottom: 8px;
+    background: rgba(0,0,0,.02);
+    border-radius: 0 4px 4px 0;
+}
+.rev-insight-label {
+    font-size: .72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: var(--exec-primary, #0A1128);
+    opacity: .6;
+    margin-bottom: 2px;
+}
+.rev-insight-value {
+    font-size: .84rem;
+    color: #2d3748;
+    line-height: 1.45;
+}
+.rev-gancho {
+    background: linear-gradient(90deg, #fff8e1 0%, transparent 100%);
+    border-left: 3px solid #f59e0b;
+    padding: 5px 10px;
+    border-radius: 0 4px 4px 0;
+    font-size: .84rem;
+    font-weight: 500;
+    margin-bottom: 6px;
+}
+.dest-insights-panel {
+    background: #f8f9ff;
+    border: 1px solid rgba(10,17,40,.08);
+    border-radius: 8px;
+    padding: 12px 14px;
+}
+.dest-insights-panel .panel-title {
+    font-size: .78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: var(--exec-primary, #0A1128);
+    opacity: .55;
+    margin-bottom: 10px;
+}
+</style>
+}
+
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
-    <script>
-        // Variáveis globais
-        let modalUploadFoto;
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js" crossorigin="anonymous"></script>
 
-        // Inicializar modal quando DOM estiver pronto
-        document.addEventListener('DOMContentLoaded', function() {
-            modalUploadFoto = new bootstrap.Modal(document.getElementById('modalUploadFoto'), {
-                backdrop: 'static',
-                keyboard: false,
-                focus: true
+    <script>
+        $(document).ready(function () {
+            $('#nomeDestino').on('input', function () {
+                const termo = $(this).val();
+                if (termo.length < 3) {
+                    $('#sugestoesDestino').empty();
+                    return;
+                }
+
+                $.get('/Destino/BuscarSugestoes', { termo }, function (data) {
+                    if (typeof data === "string") {
+                        data = JSON.parse(data);
+                    }
+
+                    if (!data || !data.predictions) return;
+
+                    const sugestoes = data.predictions.map(p => {
+                        const descricao = p.description;
+                        const placeId = p.place_id;
+                        return `<a href="#" class="list-group-item list-group-item-action" data-id="${placeId}" data-desc="${descricao}">${descricao}</a>`;
+                    });
+
+                    $('#sugestoesDestino').html(sugestoes.join(''));
+                });
             });
 
-            // Configurar event listeners
+            $('#sugestoesDestino').on('click', 'a', function (e) {
+                e.preventDefault();
+                const descricao = $(this).data('desc');
+                const placeId = $(this).data('id');
+
+                $('#nomeDestino').val(descricao);
+                $('#sugestoesDestino').empty();
+
+                // Faz chamada para buscar cidade e país
+                $.get('/Destino/BuscarDetalhes', { placeId }, function (data) {
+                    if (data && data.cidade) {
+                        $('#campoCidade').val(data.cidade);
+                    }
+                    if (data && data.pais) {
+                        $('#campoPais').val(data.pais);
+                    }
+                    if (data && data.latitude) {
+                        $('#latitude').val(data.latitude.toString());
+
+                    }
+                    if (data && data.longitude) {
+                        $('#longitude').val(data.longitude.toString());
+                    }
+                    // Chamar LLM para preencher descrição
+                    $.ajax({
+                        url: '/Destino/GerarDescricao',
+                        type: 'POST',
+                        data: { nome: descricao },
+                        success: function (data) {
+                            console.log("🔍 JSON recebido:", data);
+
+                            $('#descricaoDestino').val(data.descricao || '');
+
+                            if (Array.isArray(data.atracoes)) {
+                                const textoAtracoes = data.atracoes.map(a =>
+                                    `• ${a.nome}: ${a.descricao} (Público: ${a.tipoPublico})`
+                                ).join('\n');
+                                $('#atracoesDestino').val(textoAtracoes);
+                            }
+
+                            if (Array.isArray(data.gastronomia)) {
+                                const textoGastronomia = data.gastronomia.map(g =>
+                                    `• ${g.nome} (${g.tipoCulinaria}) - Prato: ${g.pratoDestaque} | Perfil: ${g.perfilIdeal}`
+                                ).join('\n');
+                                $('#gastronomiaDestino').val(textoGastronomia);
+                            }
+
+                            if (data.informacoesPraticas) {
+                                const i = data.informacoesPraticas;
+                                const textoInfo = `• Melhor época: ${i.melhorEpoca}\n` +
+                                    `• Clima médio: ${i.climaMedio}\n` +
+                                    `• Transporte: ${i.meiosTransporte}\n` +
+                                    `• Documentos: ${i.documentosExigidos}\n` +
+                                    `• Dicas: ${i.dicasGerais}`;
+                                $('#infoPraticasDestino').val(textoInfo);
+                            }
+
+                            if (data.pratosTipicos) {
+                                const m = data.pratosTipicos;
+                                const textoMala = `• nome: ${m.nome}\n` +
+                                    `• descricao: ${m.descricao}\n` +
+                                    `• ocasião: ${m.ocasião}`+
+                                    `• ganchoComercial: ${m.ganchoComercial}`;
+                                $('#malaDestino').val(textoMala);
+                            }
+
+                            if (data.malaViagem) {
+                                const m = data.malaViagem;
+                                const textoMala = `• Roupas: ${m.roupasAdequadas}\n` +
+                                    `• Itens obrigatórios: ${m.itensObrigatorios}\n` +
+                                    `• Acessórios úteis: ${m.acessoriosUteis}`;
+                                $('#malaDestino').val(textoMala);
+                            }
+
+                            if (data.cuidados) {
+                                const c = data.cuidados;
+                                const textoCuidados = `• Segurança: ${c.seguranca}\n` +
+                                    `• Regiões a evitar: ${c.regioesEvitar}\n` +
+                                    `• Vacinas: ${c.vacinasRecomendadas}\n` +
+                                    `• Golpes: ${c.golpesComuns}\n` +
+                                    `• Orientações: ${c.orientacoesPraticas}`;
+                                $('#cuidadosDestino').val(textoCuidados);
+                            }
+                        }
+                        ,
+                        error: function () {
+                            alert('Erro ao gerar descritivo.');
+                        }
+                    });
+                });                             
+                console.log("Selecionado:", descricao, placeId);
+            });
+    });        
+    </script>
+    <!--<script>
+        $(document).ready(function () {
+            $('#btnGerarDescricao').on('click', function () {
+               var nome = $('#nomeDestino').val();
+
+                if (!nome) {
+                    alert("Informe o nome do destino.");
+                    return;
+                }
+
+                $.ajax({
+                    url: '/Destino/GerarDescricao',
+                    type: 'POST',
+                    data: { nome: $('#nomeDestino').val() },
+                    success: function (data) {
+                        $('#descricaoDestino').val(data);
+                    },
+                    error: function () {
+                        alert('Erro ao gerar descritivo.');
+                    }
+                });
+            });
+        });
+    </script>-->
+    <script>
+        document.getElementById('btnGerarDesc').addEventListener('click', async () => {
+        const nome = (document.getElementById('Nome').value || '').trim();
+        if (!nome) { alert('Preencha o nome do destino/cidade.'); return; }
+
+        const btn = document.getElementById('btnGerarDesc');
+        btn.disabled = true; btn.textContent = 'Gerando...';
+
+        try {
+            const resp = await fetch('@Url.Action("GerarDescricao","Destino")', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+            body: new URLSearchParams({ nome })
+            });
+
+            const text = await resp.text();
+            if (!resp.ok) throw new Error(text);
+
+            const data = JSON.parse(text);
+
+            // Preenche os campos para o agente revisar/editar
+            document.getElementById('Descricao').value = data.descricao ?? '';
+            document.getElementById('AtracoesLLM').value = JSON.stringify(data.atracoes ?? [], null, 2);
+            document.getElementById('GastronomiaLLM').value = JSON.stringify(data.gastronomia ?? [], null, 2);
+            document.getElementById('InformacoesPraticasLLM').value = JSON.stringify(data.informacoesPraticas ?? {}, null, 2);
+            document.getElementById('MalaViagemLLM').value = JSON.stringify(data.malaViagem ?? [], null, 2);
+            document.getElementById('pratosTipicosLLM').value = JSON.stringify(data.pratosTipicos ?? [], null, 2);
+            document.getElementById('CuidadosLLM').value = JSON.stringify(data.cuidados ?? [], null, 2);
+
+            document.getElementById('editor-llm').classList.remove('d-none');
+            renderInsightsPreview(data);
+        } catch (err) {
+            alert('Erro ao gerar descrição: ' + err.message);
+        } finally {
+            btn.disabled = false; btn.textContent = 'Gerar descrição com IA';
+        }
+        });
+
+        // ── Renderiza preview de insights após geração de IA ──────────────
+        function renderInsightsPreview(data) {
+            const body = document.getElementById('novo-dest-insights-body');
+            if (!body) return;
+            body.innerHTML = '';
+
+            const sections = [
+                { key: 'cuidados',            icon: 'fa-exclamation-triangle text-danger',  label: 'Cuidados & Atenção',            border: 'border-danger'   },
+                { key: 'gastronomia',          icon: 'fa-utensils text-warning',             label: 'Gastronomia & Pratos',          border: 'border-warning'  },
+                { key: 'atracoes',             icon: 'fa-map-marked-alt text-info',          label: 'Atrações & Pontos de Interesse', border: 'border-info'     },
+                { key: 'informacoesPraticas',  icon: 'fa-info-circle text-primary',          label: 'Informações Práticas',          border: 'border-primary'  },
+                { key: 'malaViagem',           icon: 'fa-suitcase text-secondary',           label: 'Mala de Viagem',                border: 'border-secondary'},
+            ];
+
+            let hasAny = false;
+            sections.forEach(function(s, i) {
+                const val = data[s.key];
+                if (!val || (Array.isArray(val) && val.length === 0)) return;
+                const itemId = 'preview-' + s.key;
+                const bodyHtml = renderJsonVal(val);
+                body.insertAdjacentHTML('beforeend',
+                    '<div class="accordion-item ' + s.border + ' border-opacity-25 rounded-3 mb-2 overflow-hidden">'
+                    + '<h2 class="accordion-header">'
+                    + '<button class="accordion-button collapsed py-2 px-3" type="button"'
+                    + ' data-bs-toggle="collapse" data-bs-target="#' + itemId + '">'
+                    + '<i class="fas ' + s.icon + ' me-2" style="font-size:.85rem;"></i>'
+                    + '<span class="small fw-semibold">' + s.label + '</span>'
+                    + '</button></h2>'
+                    + '<div id="' + itemId + '" class="accordion-collapse collapse">'
+                    + '<div class="accordion-body py-2 px-3">' + bodyHtml + '</div>'
+                    + '</div></div>'
+                );
+                hasAny = true;
+            });
+
+            document.getElementById('novo-dest-insights').classList.toggle('d-none', !hasAny);
+        }
+
+        function renderJsonVal(val) {
+            if (Array.isArray(val)) {
+                return val.map(function(item) {
+                    if (typeof item === 'object' && item !== null)
+                        return '<div class="rev-arr-item">' + renderObjProps(item) + '</div>';
+                    return '<div class="rev-arr-item"><span class="rev-insight-value">' + escHtml(String(item)) + '</span></div>';
+                }).join('');
+            }
+            if (typeof val === 'object' && val !== null) return renderObjProps(val);
+            return '<p class="rev-insight-value">' + escHtml(String(val)) + '</p>';
+        }
+
+        function renderObjProps(obj) {
+            return Object.entries(obj).filter(function([,v]) { return v !== null && v !== undefined && v !== ''; }).map(function([k, v]) {
+                const enc = escHtml(Array.isArray(v) ? v.join(', ') : String(v));
+                const label = escHtml(k.replace(/([A-Z])/g, ' $1').trim().replace(/^./, function(c) { return c.toUpperCase(); }));
+                if (k.toLowerCase().includes('gancho'))
+                    return '<div class="rev-gancho"><i class="fas fa-bolt text-warning me-1"></i>' + enc + '</div>';
+                return '<div class="mb-2"><div class="rev-insight-label">' + label + '</div><div class="rev-insight-value">' + enc + '</div></div>';
+            }).join('');
+        }
+
+        function escHtml(s) {
+            return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+        </script>
+
+    <script>
+        // =====================================================
+        // INSTÂNCIAS DE MODAL — criadas uma única vez
+        // =====================================================
+        let modalUploadFoto, modalAdicionarHospedagem, modalEditarHospedagem, modalFotoAcomodacao;
+
+        document.addEventListener('DOMContentLoaded', function () {
+            modalUploadFoto          = new bootstrap.Modal(document.getElementById('modalUploadFoto'),          { backdrop: 'static', keyboard: false });
+            modalAdicionarHospedagem = new bootstrap.Modal(document.getElementById('modalAdicionarHospedagem'), { backdrop: 'static' });
+            modalEditarHospedagem    = new bootstrap.Modal(document.getElementById('modalEditarHospedagem'),    { backdrop: 'static' });
+            modalFotoAcomodacao      = new bootstrap.Modal(document.getElementById('modalFotoAcomodacao'),      { backdrop: 'static' });
+
+            // Limpeza de backdrop ao fechar qualquer modal (previne backdrop órfão)
+            ['modalUploadFoto', 'modalAdicionarHospedagem', 'modalEditarHospedagem', 'modalFotoAcomodacao'].forEach(function (id) {
+                document.getElementById(id).addEventListener('hidden.bs.modal', function () {
+                    document.querySelectorAll('.modal-backdrop').forEach(function (el) { el.remove(); });
+                    document.body.classList.remove('modal-open');
+                    document.body.style.removeProperty('overflow');
+                    document.body.style.removeProperty('padding-right');
+                });
+            });
+
             configurarEventListeners();
             configurarSortables();
             configurarValidacaoFormularios();
         });
 
         // Função para abrir modal de foto
-        window.abrirModalFoto = function(destinoId, nomeDestino) {
-            console.log('Abrindo modal para destino:', destinoId, nomeDestino);
-            
-            // Limpar formulário
-            const form = document.getElementById('formUploadFoto');
-            form.reset();
-            
-            // Definir dados do destino
+        window.abrirModalFoto = function (destinoId, nomeDestino) {
+            document.getElementById('formUploadFoto').reset();
             document.getElementById('destinoIdInput').value = destinoId;
             document.getElementById('nomeDestinoModal').textContent = nomeDestino;
-            
-            // Esconder preview
             document.getElementById('previewContainer').style.display = 'none';
-            
-            // Resetar botão
             const btnUpload = document.getElementById('btnUpload');
             btnUpload.disabled = false;
             btnUpload.innerHTML = '<i class="fas fa-upload me-1"></i>Adicionar Foto';
-            
-            // Forçar z-index correto e mostrar modal
-            const modalElement = document.getElementById('modalUploadFoto');
-            modalElement.style.zIndex = '9999';
-            
-            // Usar setTimeout para garantir que as mudanças sejam aplicadas
-            setTimeout(() => {
-                modalUploadFoto.show();
-                
-                // Garantir que o backdrop também tenha z-index correto
-                setTimeout(() => {
-                    const backdrop = document.querySelector('.modal-backdrop');
-                    if (backdrop) {
-                        backdrop.style.zIndex = '9998';
-                    }
-                }, 100);
-            }, 50);
+            modalUploadFoto.show();
         };
+
+        // Função para abrir modal de adicionar hospedagem
+        window.abrirModalHospedagem = function (destinoId, nomeDestino, cidade) {
+            document.getElementById('destinoIdHospedagem').value = destinoId;
+            document.getElementById('nomeDestinoHospedagem').textContent = nomeDestino;
+            hospCidadeAtual = cidade || nomeDestino || '';
+            hospNomeSelecionado = '';
+            document.getElementById('btnGerarDescHosp').disabled = true;
+            modalAdicionarHospedagem.show();
+        };
+
+        // Função para abrir modal de editar hospedagem
+        window.abrirModalEditarHospedagem = function (card) {
+            const d = card.dataset;
+            document.getElementById('editHospId').value               = d.hospId         || '';
+            document.getElementById('editHospNomeInput').value        = d.hospNome        || '';
+            document.getElementById('editHospEnderecoInput').value    = d.hospEndereco    || '';
+            document.getElementById('editHospLatitude').value         = d.hospLatitude    || '';
+            document.getElementById('editHospLongitude').value        = d.hospLongitude   || '';
+            document.getElementById('editHospCategoriaSelect').value  = d.hospCategoria   || '1';
+            document.getElementById('editHospTipoPensaoSelect').value = d.hospTipopensao  || '1';
+            document.getElementById('editHospCheckin').value          = d.hospCheckin     || '';
+            document.getElementById('editHospCheckout').value         = d.hospCheckout    || '';
+            document.getElementById('editHospDescricaoInput').value   = d.hospDescricao   || '';
+            document.getElementById('editHospReserva').value          = d.hospReserva     || '';
+
+            const lat = d.hospLatitude, lng = d.hospLongitude;
+            const coordBadge = document.getElementById('editHospCoordBadge');
+            if (lat && lng) {
+                document.getElementById('editHospCoordTexto').textContent =
+                    parseFloat(lat).toFixed(4) + ', ' + parseFloat(lng).toFixed(4);
+                coordBadge.style.display = '';
+            } else {
+                coordBadge.style.display = 'none';
+            }
+
+            editHospNomeSelecionado = d.hospNome || '';
+            document.getElementById('editHospSugestoes').innerHTML = '';
+            document.getElementById('editHospIaLoader').classList.add('d-none');
+            modalEditarHospedagem.show();
+        };
+
+        // Função para abrir modal de foto da acomodação
+        window.abrirModalFotoAcomodacao = function (acomodacaoId, nomeAcomodacao) {
+            document.getElementById('acomodacaoIdInput').value = acomodacaoId;
+            document.getElementById('nomeAcomodacaoModal').textContent = nomeAcomodacao;
+            if (document.getElementById('fotoAcomodacaoInput')) {
+                document.getElementById('fotoAcomodacaoInput').value = '';
+            }
+            document.getElementById('previewAcomodacao').style.display = 'none';
+            modalFotoAcomodacao.show();
+        };
+
+        // =====================================================
+        // AUTOCOMPLETE + IA — ADICIONAR / EDITAR HOSPEDAGEM
+        // =====================================================
+        let hospNomeSelecionado = '';
+        let hospCidadeAtual = '';
+        let editHospNomeSelecionado = '';
+
+        // === Gerenciamento de Comodidades no modal Adicionar ===
+        let hospComodidadesAtual = [];
+
+        function renderHospComodidades() {
+            const badges = hospComodidadesAtual.map((c, i) =>
+                `<span class="badge bg-light text-dark border d-inline-flex align-items-center gap-1 py-1 px-2">
+                    <i class="fas fa-check-circle text-success" style="font-size:0.7rem;"></i>
+                    ${c}
+                    <button type="button" class="btn p-0 ms-1 border-0 bg-transparent lh-1 hosp-comod-remove" data-idx="${i}" title="Remover">
+                        <i class="fas fa-times text-muted" style="font-size:0.65rem;"></i>
+                    </button>
+                </span>`
+            ).join('');
+            $('#hospComodidadesBadges').html(badges);
+            $('#hospComodidadesJson').val(hospComodidadesAtual.join(','));
+
+            if (hospComodidadesAtual.length > 0) {
+                $('#hospComodidadesDiv').show();
+                $('#hospComodidadesDivEmpty').hide();
+            } else {
+                $('#hospComodidadesDiv').hide();
+                $('#hospComodidadesDivEmpty').show();
+            }
+        }
+
+        $(document).on('click', '.hosp-comod-remove', function () {
+            const idx = parseInt($(this).data('idx'));
+            hospComodidadesAtual.splice(idx, 1);
+            renderHospComodidades();
+        });
+
+        function adicionarComodidadeManual(inputId) {
+            const nome = $('#' + inputId).val().trim();
+            if (!nome) return;
+            if (hospComodidadesAtual.some(c => c.toLowerCase() === nome.toLowerCase())) {
+                $('#' + inputId).val('');
+                return;
+            }
+            hospComodidadesAtual.push(nome);
+            $('#' + inputId).val('');
+            renderHospComodidades();
+        }
+
+        $('#btnHospAddComodidade').on('click', function () { adicionarComodidadeManual('hospNovaComodidade'); });
+        $('#hospNovaComodidade').on('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); adicionarComodidadeManual('hospNovaComodidade'); } });
+        $('#btnHospAddComodidadeEmpty').on('click', function () { adicionarComodidadeManual('hospNovaComodidadeEmpty'); });
+        $('#hospNovaComodidadeEmpty').on('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); adicionarComodidadeManual('hospNovaComodidadeEmpty'); } });
+
+        $('#hospNomeInput').on('input', function () {
+            const termo = $(this).val();
+            hospNomeSelecionado = '';
+            $('#btnGerarDescHosp').prop('disabled', true);
+            if (termo.length < 3) { $('#hospSugestoes').empty(); return; }
+
+            $.get('/Hospedagem/BuscarSugestoesHotel', { termo, cidade: hospCidadeAtual }, function (data) {
+                if (typeof data === 'string') data = JSON.parse(data);
+                if (!data || !data.predictions) return;
+
+                const itens = data.predictions.map(p =>
+                    `<a href="#" class="list-group-item list-group-item-action py-1 px-2 small hosp-sugestao-item"
+                        data-id="${p.place_id}" data-desc="${p.description}">
+                        <i class="fas fa-hotel text-info me-1"></i>${p.description}
+                    </a>`
+                );
+                $('#hospSugestoes').html(itens.join(''));
+            });
+        });
+
+        $('#hospSugestoes').on('click', '.hosp-sugestao-item', function (e) {
+            e.preventDefault();
+            const placeId = $(this).data('id');
+            const descricao = $(this).data('desc');
+            $('#hospNomeInput').val(descricao);
+            hospNomeSelecionado = descricao;
+            $('#hospSugestoes').empty();
+            $('#btnGerarDescHosp').prop('disabled', false);
+
+            // Buscar detalhes (endereço + lat/lng + categoria)
+            $.get('/Hospedagem/BuscarDetalhesHotel', { placeId }, function (dados) {
+                if (dados.endereco) $('#hospEnderecoInput').val(dados.endereco);
+                if (dados.latitude && dados.longitude) {
+                    $('#hospLatitude').val(dados.latitude);
+                    $('#hospLongitude').val(dados.longitude);
+                    $('#hospCoordTexto').text(`${parseFloat(dados.latitude).toFixed(4)}, ${parseFloat(dados.longitude).toFixed(4)}`);
+                    $('#hospCoordBadge').show();
+                }
+                if (dados.categoria) $('#hospCategoriaSelect').val(dados.categoria);
+                // Usar o nome oficial do hotel
+                if (dados.nome) {
+                    $('#hospNomeInput').val(dados.nome);
+                    hospNomeSelecionado = dados.nome;
+                }
+            });
+        });
+
+        $('#btnGerarDescHosp').on('click', function () {
+            const nome = hospNomeSelecionado || $('#hospNomeInput').val();
+            if (!nome) return;
+
+            $(this).prop('disabled', true);
+            $('#hospIaLoader').removeClass('d-none');
+            $('#hospDescricaoInput').val('');
+
+            $.post('/Hospedagem/GerarDescricaoHospedagem', { nome, cidade: hospCidadeAtual }, function (data) {
+                if (typeof data === 'string') data = JSON.parse(data);
+                if (data.descricao) $('#hospDescricaoInput').val(data.descricao);
+                if (data.dicasCheckIn || data.observacoesGerais) {
+                    const obs = [data.dicasCheckIn, data.observacoesGerais].filter(Boolean).join('\n\n');
+                    $('#hospObservacoesInput').val(obs);
+                }
+                if (data.comodidades && Array.isArray(data.comodidades) && data.comodidades.length > 0) {
+                    // Mescla com as que o usuário já adicionou manualmente, sem duplicar
+                    const novas = data.comodidades.filter(c => !hospComodidadesAtual.some(e => e.toLowerCase() === c.toLowerCase()));
+                    hospComodidadesAtual = [...hospComodidadesAtual, ...novas];
+                    renderHospComodidades();
+                }
+            }).fail(function () {
+                alert('Erro ao consultar IA. Tente novamente.');
+            }).always(function () {
+                $('#hospIaLoader').addClass('d-none');
+                $('#btnGerarDescHosp').prop('disabled', false);
+            });
+        });
+
+        // Limpar modal ao fechar
+        $('#modalAdicionarHospedagem').on('hidden.bs.modal', function () {
+            $('#formAdicionarHospedagem')[0].reset();
+            $('#hospSugestoes').empty();
+            $('#hospCoordBadge').hide();
+            $('#hospIaLoader').addClass('d-none');
+            hospNomeSelecionado = '';
+            $('#btnGerarDescHosp').prop('disabled', true);
+            hospComodidadesAtual = [];
+            renderHospComodidades();
+        });
+
+        // =====================================================
+        // AUTOCOMPLETE + IA — EDITAR HOSPEDAGEM (modal)
+        // =====================================================
+
+        $('#editHospNomeInput').on('input', function () {
+            const termo = $(this).val();
+            editHospNomeSelecionado = '';
+            if (termo.length < 3) { $('#editHospSugestoes').empty(); return; }
+
+            $.get('/Hospedagem/BuscarSugestoesHotel', { termo }, function (data) {
+                if (typeof data === 'string') data = JSON.parse(data);
+                if (!data || !data.predictions) return;
+
+                const itens = data.predictions.map(p =>
+                    `<a href="#" class="list-group-item list-group-item-action py-1 px-2 small edit-hosp-modal-item"
+                        data-id="${p.place_id}" data-desc="${p.description}">
+                        <i class="fas fa-hotel text-info me-1"></i>${p.description}
+                    </a>`
+                );
+                $('#editHospSugestoes').html(itens.join(''));
+            });
+        });
+
+        $('#editHospSugestoes').on('click', '.edit-hosp-modal-item', function (e) {
+            e.preventDefault();
+            const placeId = $(this).data('id');
+            const descricao = $(this).data('desc');
+            $('#editHospNomeInput').val(descricao);
+            editHospNomeSelecionado = descricao;
+            $('#editHospSugestoes').empty();
+
+            $.get('/Hospedagem/BuscarDetalhesHotel', { placeId }, function (dados) {
+                if (dados.nome) { $('#editHospNomeInput').val(dados.nome); editHospNomeSelecionado = dados.nome; }
+                if (dados.endereco) $('#editHospEnderecoInput').val(dados.endereco);
+                if (dados.latitude && dados.longitude) {
+                    $('#editHospLatitude').val(dados.latitude);
+                    $('#editHospLongitude').val(dados.longitude);
+                    $('#editHospCoordTexto').text(parseFloat(dados.latitude).toFixed(4) + ', ' + parseFloat(dados.longitude).toFixed(4));
+                    $('#editHospCoordBadge').show();
+                }
+                if (dados.categoria) $('#editHospCategoriaSelect').val(dados.categoria);
+            });
+        });
+
+        $('#btnGerarDescEditHosp').on('click', function () {
+            const nome = editHospNomeSelecionado || $('#editHospNomeInput').val();
+            if (!nome) return;
+            $(this).prop('disabled', true);
+            $('#editHospIaLoader').removeClass('d-none');
+
+            $.post('/Hospedagem/GerarDescricaoHospedagem', { nome }, function (data) {
+                if (typeof data === 'string') data = JSON.parse(data);
+                if (data.descricao) $('#editHospDescricaoInput').val(data.descricao);
+            }).fail(function () {
+                alert('Erro ao consultar IA. Tente novamente.');
+            }).always(function () {
+                $('#editHospIaLoader').addClass('d-none');
+                $('#btnGerarDescEditHosp').prop('disabled', false);
+            });
+        });
+
+        $('#modalEditarHospedagem').on('hidden.bs.modal', function () {
+            $('#editHospSugestoes').empty();
+            $('#editHospIaLoader').addClass('d-none');
+            editHospNomeSelecionado = '';
+        });
+
+        // Preview foto acomodação
+        document.getElementById('fotoAcomodacaoInput')?.addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('previewAcomodacaoImg').src = e.target.result;
+                    document.getElementById('previewAcomodacao').style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
 
         function configurarEventListeners() {
             // Preview da imagem selecionada
@@ -662,36 +1969,30 @@ else
         }
 
         function configurarValidacaoFormularios() {
-            // Validação de formulários
-            document.addEventListener('DOMContentLoaded', function () {
-                // Validar datas ao adicionar destino
-                const formAdicionarDestino = document.querySelector('form[action*="AdicionarDestino"]');
-                if (formAdicionarDestino) {
-                    formAdicionarDestino.addEventListener('submit', function (e) {
-                        const dataChegada = this.querySelector('input[name="dataChegada"]').value;
-                        const dataSaida = this.querySelector('input[name="dataSaida"]').value;
+            // Validar datas ao adicionar destino
+            const formAdicionarDestino = document.querySelector('form[action*="AdicionarDestino"]');
+            if (formAdicionarDestino) {
+                formAdicionarDestino.addEventListener('submit', function (e) {
+                    const dataChegada = this.querySelector('input[name="dataChegada"]')?.value;
+                    const dataSaida = this.querySelector('input[name="dataSaida"]')?.value;
+                    if (dataChegada && dataSaida && new Date(dataChegada) > new Date(dataSaida)) {
+                        e.preventDefault();
+                        showErrorAlert('Data de saída deve ser posterior à data de chegada');
+                        return false;
+                    }
+                });
+            }
 
-                        if (dataChegada && dataSaida && new Date(dataChegada) > new Date(dataSaida)) {
-                            e.preventDefault();
-                            showErrorAlert('Data de saída deve ser posterior à data de chegada');
-                            return false;
-                        }
-                    });
-                }
-
-                // Validar datas ao editar destino
-                const formsEditarDestino = document.querySelectorAll('form[action*="EditarDestino"]');
-                formsEditarDestino.forEach(form => {
-                    form.addEventListener('submit', function (e) {
-                        const dataChegada = this.querySelector('input[name="dataChegada"]').value;
-                        const dataSaida = this.querySelector('input[name="dataSaida"]').value;
-
-                        if (dataChegada && dataSaida && new Date(dataChegada) > new Date(dataSaida)) {
-                            e.preventDefault();
-                            showErrorAlert('Data de saída deve ser posterior à data de chegada');
-                            return false;
-                        }
-                    });
+            // Validar datas ao editar destino
+            document.querySelectorAll('form[action*="EditarDestino"]').forEach(function (form) {
+                form.addEventListener('submit', function (e) {
+                    const dataChegada = this.querySelector('input[name="dataChegada"]')?.value;
+                    const dataSaida = this.querySelector('input[name="dataSaida"]')?.value;
+                    if (dataChegada && dataSaida && new Date(dataChegada) > new Date(dataSaida)) {
+                        e.preventDefault();
+                        showErrorAlert('Data de saída deve ser posterior à data de chegada');
+                        return false;
+                    }
                 });
             });
         }
@@ -744,26 +2045,6 @@ else
             }, 5000);
         }
 
-        // Auto-collapse accordion items when opening a new one
-        document.addEventListener('DOMContentLoaded', function () {
-            const collapseButtons = document.querySelectorAll('[data-bs-toggle="collapse"]');
-            collapseButtons.forEach(button => {
-                button.addEventListener('click', function () {
-                    const targetId = this.getAttribute('data-bs-target');
-                    const allCollapses = document.querySelectorAll('.collapse.show');
-
-                    allCollapses.forEach(collapse => {
-                        if (collapse.id !== targetId.substring(1)) { // Remove # from targetId
-                            const bsCollapse = new bootstrap.Collapse(collapse, {
-                                toggle: false
-                            });
-                            bsCollapse.hide();
-                        }
-                    });
-                });
-            });
-        });
-
         // Adicionar funcionalidade de preview de imagens expandido
         document.addEventListener('click', function(e) {
             if (e.target.matches('.img-thumbnail, .img-fluid')) {
@@ -803,82 +2084,11 @@ else
             bsModal.show();
         }
 
-        // Debug function para verificar problemas de z-index
-        function debugZIndex() {
-            const modal = document.getElementById('modalUploadFoto');
-            const backdrop = document.querySelector('.modal-backdrop');
-            
-            console.log('Modal z-index:', window.getComputedStyle(modal).zIndex);
-            console.log('Backdrop z-index:', backdrop ? window.getComputedStyle(backdrop).zIndex : 'N/A');
-            console.log('Modal display:', window.getComputedStyle(modal).display);
-            console.log('Modal classes:', modal.className);
-        }
-
-        // Função para forçar reposicionamento do modal se necessário
-        function forceModalFix() {
-            const modal = document.getElementById('modalUploadFoto');
-            const backdrop = document.querySelector('.modal-backdrop');
-            
-            if (modal) {
-                modal.style.zIndex = '99999';
-                modal.style.display = 'block';
-            }
-            
-            if (backdrop) {
-                backdrop.style.zIndex = '99998';
-            }
-        }
-
-        // Event listener adicional para garantir que o modal funcione
-        document.addEventListener('DOMContentLoaded', function() {
-            // Verificar se há problemas com o modal após 1 segundo
-            setTimeout(() => {
-                const modal = document.getElementById('modalUploadFoto');
-                if (modal && !modal.style.zIndex) {
-                    console.log('Aplicando fix de z-index preventivo');
-                    modal.style.zIndex = '99999';
-                }
-            }, 1000);
-        });
     </script>
 }
 
 <style>
-    /* === ESTILOS CORRIGIDOS PARA MODAL === */
-    
-    /* Garantir que o modal tenha z-index superior */
-    .modal-upload-foto {
-        z-index: 99999 !important;
-    }
-
-    .modal-upload-foto .modal-dialog {
-        z-index: 100000 !important;
-        position: relative;
-    }
-
-    .modal-upload-foto .modal-content {
-        z-index: 100001 !important;
-        position: relative;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3) !important;
-    }
-
-    /* Backdrop específico para o modal de upload */
-    .modal-backdrop.show {
-        z-index: 99998 !important;
-    }
-
-    /* Prevenir conflitos com outros elementos */
-    .list-group-item {
-        position: relative;
-        z-index: 1;
-    }
-
-    .card {
-        position: relative;
-        z-index: 1;
-    }
-
-    /* Estilos existentes mantidos */
+    /* === ESTILOS === */
     .drag-handle {
         cursor: move;
     }
@@ -983,21 +2193,6 @@ else
         }
     }
 
-    /* Fix específico para iOS Safari */
-    @@supports (-webkit-touch-callout: none) {
-        .modal-upload-foto {
-            z-index: 99999 !important;
-            -webkit-transform: translate3d(0, 0, 0);
-        }
-    }
-
-    /* Garantir que nenhum elemento interfira com o modal */
-    .navbar,
-    .card-header,
-    .btn-group {
-        z-index: auto !important;
-    }
-
     /* Animação suave para o modal */
     .modal.fade .modal-dialog {
         transition: transform 0.3s ease-out;
@@ -1024,3 +2219,5 @@ else
         transform: rotate(5deg);
     }
 </style>
+
+

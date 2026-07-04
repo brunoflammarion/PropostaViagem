@@ -29,6 +29,9 @@ namespace SistemaUsuarios.Controllers
             return Guid.Parse(usuarioIdString);
         }
 
+        private bool SessaoIsMaster() =>
+            HttpContext.Session.GetString("TipoUsuario") != "Associado";
+
         // DASHBOARD GERAL - Nível 1
         public async Task<IActionResult> Dashboard()
         {
@@ -36,20 +39,48 @@ namespace SistemaUsuarios.Controllers
                 return RedirectToAction("Login", "Auth");
 
             var usuarioId = ObterUsuarioLogadoId();
+            var isMaster = SessaoIsMaster();
+
+            var totalPropostas = await _context.Propostas.CountAsync(p =>
+                isMaster ? p.UsuarioMasterId == usuarioId : p.UsuarioResponsavelId == usuarioId);
+
+            var totalVisualizacoes = await _context.PropostaVisualizacoes
+                .Where(v => isMaster
+                    ? v.Proposta.UsuarioMasterId == usuarioId
+                    : v.Proposta.UsuarioResponsavelId == usuarioId)
+                .CountAsync();
+
+            var propostasComVisualizacao = await _context.Propostas
+                .CountAsync(p =>
+                    (isMaster ? p.UsuarioMasterId == usuarioId : p.UsuarioResponsavelId == usuarioId)
+                    && p.PropostaVisualizacoes.Any());
+
+            var seteAtras = DateTime.Now.AddDays(-7);
+            var clientesQuentes = await _context.Propostas
+                .CountAsync(p =>
+                    (isMaster ? p.UsuarioMasterId == usuarioId : p.UsuarioResponsavelId == usuarioId)
+                    && p.PropostaVisualizacoes.Any(v => v.DataHoraInicio >= seteAtras)
+                    && p.StatusProposta != StatusProposta.Aprovada
+                    && p.StatusProposta != StatusProposta.Cancelada);
 
             var viewModel = new DashboardAnalyticsViewModel
             {
                 UsuarioId = usuarioId,
-                TotalPropostas = await _context.Propostas.CountAsync(p => p.UsuarioId == usuarioId),
-                TotalVisualizacoes = await _context.PropostaVisualizacoes
-                    .Where(v => v.Proposta.UsuarioId == usuarioId)
-                    .CountAsync(),
-
-                VisualizacoesUltimos30Dias = await ObterVisualizacoesUltimos30Dias(usuarioId),
-                PropostasPopulares = await ObterPropostasPopulares(usuarioId),
-                EstatisticasGerais = await ObterEstatisticasGerais(usuarioId),
-                LocalizacoesAcessos = await ObterLocalizacoesAcessos(usuarioId),
-                DispositivosAcessos = await ObterDispositivosAcessos(usuarioId)
+                TotalPropostas = totalPropostas,
+                TotalVisualizacoes = totalVisualizacoes,
+                PropostasComVisualizacao = propostasComVisualizacao,
+                ClientesQuentes = clientesQuentes,
+                TaxaPropostasVisualizadas = totalPropostas > 0
+                    ? Math.Round((double)propostasComVisualizacao / totalPropostas * 100, 0)
+                    : 0,
+                VisualizacoesUltimos30Dias = await ObterVisualizacoesUltimos30Dias(usuarioId, isMaster),
+                PropostasPopulares = await ObterPropostasPopulares(usuarioId, isMaster),
+                PropostasRadar = await ObterPropostasRadar(usuarioId, isMaster),
+                AtividadeRecente = await ObterAtividadeRecente(usuarioId, isMaster),
+                OportunidadesFollowUp = await ObterOportunidadesFollowUp(usuarioId, isMaster),
+                EstatisticasGerais = await ObterEstatisticasGerais(usuarioId, isMaster),
+                LocalizacoesAcessos = await ObterLocalizacoesAcessos(usuarioId, isMaster),
+                DispositivosAcessos = await ObterDispositivosAcessos(usuarioId, isMaster)
             };
 
             return View(viewModel);
@@ -64,11 +95,13 @@ namespace SistemaUsuarios.Controllers
 
             var usuarioId = ObterUsuarioLogadoId();
 
-            // Verificar se a proposta pertence ao usuário
+            // Verificar se a proposta pertence ao usuário (respeitando hierarquia)
+            var isMaster = SessaoIsMaster();
             var proposta = await _context.Propostas
                 .Include(p => p.Usuario)
                 .Include(p => p.Layout)
-                .FirstOrDefaultAsync(p => p.Id == propostaId && p.UsuarioId == usuarioId);
+                .FirstOrDefaultAsync(p => p.Id == propostaId &&
+                    (isMaster ? p.UsuarioMasterId == usuarioId : p.UsuarioResponsavelId == usuarioId));
 
             if (proposta == null)
             {
@@ -100,8 +133,10 @@ namespace SistemaUsuarios.Controllers
             var usuarioId = ObterUsuarioLogadoId();
             var dataInicio = DateTime.Now.AddDays(-dias);
 
+            var isMaster = SessaoIsMaster();
             var dados = await _context.PropostaVisualizacoes
-                .Where(v => v.Proposta.UsuarioId == usuarioId && v.DataHoraInicio >= dataInicio)
+                .Where(v => (isMaster ? v.Proposta.UsuarioMasterId == usuarioId : v.Proposta.UsuarioResponsavelId == usuarioId)
+                    && v.DataHoraInicio >= dataInicio)
                 .GroupBy(v => v.DataHoraInicio.Date)
                 .Select(g => new
                 {
@@ -122,24 +157,29 @@ namespace SistemaUsuarios.Controllers
             if (!UsuarioLogado()) return Unauthorized();
 
             var usuarioId = ObterUsuarioLogadoId();
+            var isMaster = SessaoIsMaster();
             var hoje = DateTime.Today;
 
             var stats = new
             {
                 VisualizacoesHoje = await _context.PropostaVisualizacoes
-                    .Where(v => v.Proposta.UsuarioId == usuarioId && v.DataHoraInicio >= hoje)
+                    .Where(v => (isMaster ? v.Proposta.UsuarioMasterId == usuarioId : v.Proposta.UsuarioResponsavelId == usuarioId)
+                        && v.DataHoraInicio >= hoje)
                     .CountAsync(),
 
                 TempoMedioHoje = await _context.PropostaVisualizacoes
-                    .Where(v => v.Proposta.UsuarioId == usuarioId && v.DataHoraInicio >= hoje)
+                    .Where(v => (isMaster ? v.Proposta.UsuarioMasterId == usuarioId : v.Proposta.UsuarioResponsavelId == usuarioId)
+                        && v.DataHoraInicio >= hoje)
                     .AverageAsync(v => (double?)v.TempoVisualizacaoSegundos) ?? 0,
 
                 InteracoesHoje = await _context.PropostaVisualizacoes
-                    .Where(v => v.Proposta.UsuarioId == usuarioId && v.DataHoraInicio >= hoje)
+                    .Where(v => (isMaster ? v.Proposta.UsuarioMasterId == usuarioId : v.Proposta.UsuarioResponsavelId == usuarioId)
+                        && v.DataHoraInicio >= hoje)
                     .CountAsync(v => v.ClicouEmail || v.ClicouWhatsApp),
 
                 PropostasAtivasHoje = await _context.Propostas
-                    .Where(p => p.UsuarioId == usuarioId && p.LinkPublicoAtivo)
+                    .Where(p => (isMaster ? p.UsuarioMasterId == usuarioId : p.UsuarioResponsavelId == usuarioId)
+                        && p.LinkPublicoAtivo)
                     .CountAsync()
             };
 
@@ -153,9 +193,10 @@ namespace SistemaUsuarios.Controllers
 
             var usuarioId = ObterUsuarioLogadoId();
 
+            var isMaster = SessaoIsMaster();
             var localizacoes = await _context.PropostaVisualizacoes
-                .Where(v => v.Proposta.UsuarioId == usuarioId &&
-                           v.Latitude.HasValue && v.Longitude.HasValue)
+                .Where(v => (isMaster ? v.Proposta.UsuarioMasterId == usuarioId : v.Proposta.UsuarioResponsavelId == usuarioId)
+                    && v.Latitude.HasValue && v.Longitude.HasValue)
                 .GroupBy(v => new { v.Cidade, v.Estado, v.Pais, v.Latitude, v.Longitude })
                 .Select(g => new
                 {
@@ -181,9 +222,11 @@ namespace SistemaUsuarios.Controllers
 
             var usuarioId = ObterUsuarioLogadoId();
 
-            // Verificar propriedade
+            // Verificar propriedade (respeitando hierarquia)
+            var isMaster = SessaoIsMaster();
             var proposta = await _context.Propostas
-                .FirstOrDefaultAsync(p => p.Id == propostaId && p.UsuarioId == usuarioId);
+                .FirstOrDefaultAsync(p => p.Id == propostaId &&
+                    (isMaster ? p.UsuarioMasterId == usuarioId : p.UsuarioResponsavelId == usuarioId));
 
             if (proposta == null) return NotFound();
 
@@ -192,13 +235,14 @@ namespace SistemaUsuarios.Controllers
         }
 
         // Métodos auxiliares privados - CORRIGIDOS
-        private async Task<List<VisualizacaoDiariaViewModel>> ObterVisualizacoesUltimos30Dias(Guid usuarioId)
+        private async Task<List<VisualizacaoDiariaViewModel>> ObterVisualizacoesUltimos30Dias(Guid usuarioId, bool isMaster)
         {
             var dataInicio = DateTime.Now.AddDays(-30);
 
             return await _context.PropostaVisualizacoes
                 .Include(v => v.Proposta)
-                .Where(v => v.Proposta.UsuarioId == usuarioId && v.DataHoraInicio >= dataInicio)
+                .Where(v => (isMaster ? v.Proposta.UsuarioMasterId == usuarioId : v.Proposta.UsuarioResponsavelId == usuarioId)
+                    && v.DataHoraInicio >= dataInicio)
                 .GroupBy(v => v.DataHoraInicio.Date)
                 .Select(g => new VisualizacaoDiariaViewModel
                 {
@@ -211,10 +255,10 @@ namespace SistemaUsuarios.Controllers
                 .ToListAsync();
         }
 
-        private async Task<List<PropostaPopularViewModel>> ObterPropostasPopulares(Guid usuarioId)
+        private async Task<List<PropostaPopularViewModel>> ObterPropostasPopulares(Guid usuarioId, bool isMaster)
         {
             var propostas = await _context.Propostas
-                .Where(p => p.UsuarioId == usuarioId)
+                .Where(p => isMaster ? p.UsuarioMasterId == usuarioId : p.UsuarioResponsavelId == usuarioId)
                 .Select(p => new
                 {
                     p.Id,
@@ -239,11 +283,11 @@ namespace SistemaUsuarios.Controllers
             .ToList();
         }
 
-        private async Task<EstatisticasGeraisViewModel> ObterEstatisticasGerais(Guid usuarioId)
+        private async Task<EstatisticasGeraisViewModel> ObterEstatisticasGerais(Guid usuarioId, bool isMaster)
         {
             var visualizacoes = await _context.PropostaVisualizacoes
                 .Include(v => v.Proposta)
-                .Where(v => v.Proposta.UsuarioId == usuarioId)
+                .Where(v => isMaster ? v.Proposta.UsuarioMasterId == usuarioId : v.Proposta.UsuarioResponsavelId == usuarioId)
                 .ToListAsync();
 
             return new EstatisticasGeraisViewModel
@@ -261,11 +305,12 @@ namespace SistemaUsuarios.Controllers
             };
         }
 
-        private async Task<List<LocalizacaoAcessoViewModel>> ObterLocalizacoesAcessos(Guid usuarioId)
+        private async Task<List<LocalizacaoAcessoViewModel>> ObterLocalizacoesAcessos(Guid usuarioId, bool isMaster)
         {
             return await _context.PropostaVisualizacoes
                 .Include(v => v.Proposta)
-                .Where(v => v.Proposta.UsuarioId == usuarioId && !string.IsNullOrEmpty(v.Pais))
+                .Where(v => (isMaster ? v.Proposta.UsuarioMasterId == usuarioId : v.Proposta.UsuarioResponsavelId == usuarioId)
+                    && !string.IsNullOrEmpty(v.Pais))
                 .GroupBy(v => new { v.Pais, v.Estado, v.Cidade })
                 .Select(g => new LocalizacaoAcessoViewModel
                 {
@@ -280,11 +325,12 @@ namespace SistemaUsuarios.Controllers
                 .ToListAsync();
         }
 
-        private async Task<List<DispositivoAcessoViewModel>> ObterDispositivosAcessos(Guid usuarioId)
+        private async Task<List<DispositivoAcessoViewModel>> ObterDispositivosAcessos(Guid usuarioId, bool isMaster)
         {
             return await _context.PropostaVisualizacoes
                 .Include(v => v.Proposta)
-                .Where(v => v.Proposta.UsuarioId == usuarioId && !string.IsNullOrEmpty(v.TipoDispositivo))
+                .Where(v => (isMaster ? v.Proposta.UsuarioMasterId == usuarioId : v.Proposta.UsuarioResponsavelId == usuarioId)
+                    && !string.IsNullOrEmpty(v.TipoDispositivo))
                 .GroupBy(v => new { v.TipoDispositivo, v.Navegador, v.SistemaOperacional })
                 .Select(g => new DispositivoAcessoViewModel
                 {
@@ -457,6 +503,118 @@ namespace SistemaUsuarios.Controllers
                 })
                 .OrderByDescending(x => x.Visualizacoes)
                 .ToListAsync();
+        }
+
+        private async Task<List<PropostaRadarViewModel>> ObterPropostasRadar(Guid usuarioId, bool isMaster)
+        {
+            return await _context.Propostas
+                .Where(p =>
+                    (isMaster ? p.UsuarioMasterId == usuarioId : p.UsuarioResponsavelId == usuarioId)
+                    && p.PropostaVisualizacoes.Any())
+                .Select(p => new PropostaRadarViewModel
+                {
+                    PropostaId = p.Id,
+                    Titulo = p.Titulo,
+                    ClienteNome = p.Cliente != null ? p.Cliente.Nome : null,
+                    ClienteId = p.ClienteId,
+                    DestinoNome = p.Destinos.OrderBy(d => d.Ordem).Select(d => d.Nome).FirstOrDefault(),
+                    StatusProposta = p.StatusProposta,
+                    TotalVisualizacoes = p.PropostaVisualizacoes.Count(),
+                    UltimaVisualizacao = p.PropostaVisualizacoes.Max(v => (DateTime?)v.DataHoraInicio),
+                    LinkPublicoAtivo = p.LinkPublicoAtivo,
+                    TaxaInteracao = p.PropostaVisualizacoes.Count() > 0
+                        ? (double)p.PropostaVisualizacoes.Count(v => v.ClicouEmail || v.ClicouWhatsApp)
+                          / (double)p.PropostaVisualizacoes.Count() * 100
+                        : 0
+                })
+                .OrderByDescending(x => x.TotalVisualizacoes)
+                .ThenByDescending(x => x.UltimaVisualizacao)
+                .Take(25)
+                .ToListAsync();
+        }
+
+        private async Task<List<AtividadeRecenteViewModel>> ObterAtividadeRecente(Guid usuarioId, bool isMaster)
+        {
+            return await _context.PropostaVisualizacoes
+                .Where(v => isMaster
+                    ? v.Proposta.UsuarioMasterId == usuarioId
+                    : v.Proposta.UsuarioResponsavelId == usuarioId)
+                .OrderByDescending(v => v.DataHoraInicio)
+                .Take(20)
+                .Select(v => new AtividadeRecenteViewModel
+                {
+                    PropostaId = v.PropostaId,
+                    PropostaTitulo = v.Proposta.Titulo,
+                    ClienteNome = v.Proposta.Cliente != null ? v.Proposta.Cliente.Nome : null,
+                    ClienteId = v.Proposta.ClienteId,
+                    DataHoraVisualizacao = v.DataHoraInicio,
+                    TipoDispositivo = v.TipoDispositivo,
+                    Cidade = v.Cidade,
+                    Pais = v.Pais
+                })
+                .ToListAsync();
+        }
+
+        private async Task<List<OportunidadeFollowUpViewModel>> ObterOportunidadesFollowUp(Guid usuarioId, bool isMaster)
+        {
+            var seteAtras = DateTime.Now.AddDays(-7);
+            var trintaAtras = DateTime.Now.AddDays(-30);
+
+            var dados = await _context.Propostas
+                .Where(p =>
+                    (isMaster ? p.UsuarioMasterId == usuarioId : p.UsuarioResponsavelId == usuarioId)
+                    && p.PropostaVisualizacoes.Any(v => v.DataHoraInicio >= trintaAtras)
+                    && p.StatusProposta != StatusProposta.Aprovada
+                    && p.StatusProposta != StatusProposta.Cancelada)
+                .Select(p => new
+                {
+                    p.Id,
+                    p.Titulo,
+                    ClienteNome = p.Cliente != null ? p.Cliente.Nome : null,
+                    p.ClienteId,
+                    p.StatusProposta,
+                    TotalVisualizacoes = p.PropostaVisualizacoes.Count(),
+                    VisualizacoesRecentes = p.PropostaVisualizacoes.Count(v => v.DataHoraInicio >= seteAtras),
+                    UltimaVisualizacao = p.PropostaVisualizacoes.Max(v => (DateTime?)v.DataHoraInicio)
+                })
+                .OrderByDescending(x => x.UltimaVisualizacao)
+                .Take(10)
+                .ToListAsync();
+
+            return dados.Select(d =>
+            {
+                string motivo;
+                if (d.VisualizacoesRecentes > 1)
+                    motivo = $"Visualizou {d.VisualizacoesRecentes}× nos últimos 7 dias. Ótimo momento para contato.";
+                else if (d.UltimaVisualizacao >= DateTime.Now.AddDays(-1))
+                    motivo = "Proposta visualizada hoje. Bom momento para fazer follow-up.";
+                else if (d.UltimaVisualizacao >= seteAtras)
+                    motivo = $"Proposta visualizada {FormatarTempoRelativo(d.UltimaVisualizacao!.Value)}. Cliente demonstrou interesse recente.";
+                else
+                    motivo = $"Proposta visualizada {d.TotalVisualizacoes}× no último mês sem resposta.";
+
+                return new OportunidadeFollowUpViewModel
+                {
+                    PropostaId = d.Id,
+                    PropostaTitulo = d.Titulo,
+                    ClienteNome = d.ClienteNome,
+                    ClienteId = d.ClienteId,
+                    TotalVisualizacoes = d.TotalVisualizacoes,
+                    UltimaVisualizacao = d.UltimaVisualizacao,
+                    StatusProposta = d.StatusProposta,
+                    MotivoSugestao = motivo
+                };
+            }).ToList();
+        }
+
+        private static string FormatarTempoRelativo(DateTime dataHora)
+        {
+            var diff = DateTime.Now - dataHora;
+            if (diff.TotalMinutes < 60) return $"há {(int)diff.TotalMinutes}min";
+            if (diff.TotalHours < 24) return $"há {(int)diff.TotalHours}h";
+            if (diff.TotalDays < 2) return "ontem";
+            if (diff.TotalDays < 7) return $"há {(int)diff.TotalDays} dias";
+            return dataHora.ToString("dd/MM");
         }
 
         [HttpPost]

@@ -54,6 +54,28 @@ namespace SistemaUsuarios.Controllers
             // Criar sessão
             HttpContext.Session.SetString("UsuarioId", usuario.Id.ToString());
             HttpContext.Session.SetString("UsuarioNome", usuario.Nome);
+            HttpContext.Session.SetString("TipoUsuario", usuario.TipoUsuario.ToString());
+            if (usuario.UsuarioMasterId.HasValue)
+                HttpContext.Session.SetString("UsuarioMasterId", usuario.UsuarioMasterId.Value.ToString());
+            if (!string.IsNullOrEmpty(usuario.FotoPath))
+                HttpContext.Session.SetString("FotoPath", usuario.FotoPath);
+            if (!string.IsNullOrEmpty(usuario.CorPrimaria))
+                HttpContext.Session.SetString("CorPrimaria", usuario.CorPrimaria);
+            if (!string.IsNullOrEmpty(usuario.CorSecundaria))
+                HttpContext.Session.SetString("CorSecundaria", usuario.CorSecundaria);
+            if (!string.IsNullOrEmpty(usuario.CorDestaque))
+                HttpContext.Session.SetString("CorDestaque", usuario.CorDestaque);
+
+            // Resolver nome do master para Associados (exibição no layout)
+            if (usuario.TipoUsuario == TipoUsuario.Associado && usuario.UsuarioMasterId.HasValue)
+            {
+                var master = await _context.Usuarios
+                    .AsNoTracking()
+                    .Select(u => new { u.Id, u.Nome })
+                    .FirstOrDefaultAsync(u => u.Id == usuario.UsuarioMasterId.Value);
+                if (master != null)
+                    HttpContext.Session.SetString("NomeMaster", master.Nome);
+            }
 
             return RedirectToAction("Index", "Home");
         }

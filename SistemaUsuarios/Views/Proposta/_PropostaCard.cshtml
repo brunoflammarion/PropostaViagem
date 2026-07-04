@@ -1,0 +1,139 @@
+@model SistemaUsuarios.Models.ViewModels.PropostaListViewModel
+@using SistemaUsuarios.Models
+<div class="exec-proposta-card"
+     data-id="@Model.Id"
+     data-status="@((int)Model.StatusProposta)">
+
+    <!-- Status Badge -->
+    <div class="exec-status status-@(Model.StatusProposta.ToString().ToLower())">
+        @Model.StatusProposta
+    </div>
+
+    <!-- Imagem -->
+    <div class="exec-image-container">
+        @if (!string.IsNullOrEmpty(Model.FotoCapa))
+        {
+            <img src="@Model.FotoCapa" alt="@Model.Titulo" class="exec-image" />
+        }
+        else
+        {
+            <div class="exec-image-placeholder">
+                <i class="fas fa-image"></i>
+            </div>
+        }
+    </div>
+
+    <!-- Conteúdo -->
+    <div class="exec-content">
+        <h4 class="exec-title-card">@Model.Titulo</h4>
+        @if (ViewData["IsMaster"] is true)
+        {
+            @* Mostrar responsável atual; se foi transferida, indicar o criador também *@
+            var nomeResp = !string.IsNullOrEmpty(Model.NomeResponsavel) ? Model.NomeResponsavel : Model.NomeUsuario;
+            var foiTransferida = !string.IsNullOrEmpty(Model.NomeResponsavel)
+                && Model.NomeResponsavel != Model.NomeUsuario;
+            <div class="mb-1 d-flex align-items-center gap-1 flex-wrap">
+                <span style="font-size:.7rem;color:var(--exec-text-muted);background:var(--exec-lighter);border-radius:4px;padding:1px 6px;">
+                    <i class="fas fa-user-tie" style="font-size:.65rem;margin-right:3px;color:var(--exec-accent)"></i>@nomeResp
+                </span>
+                @if (foiTransferida)
+                {
+                    <span style="font-size:.65rem;color:var(--exec-text-light)" title="Criada por @Model.NomeUsuario">
+                        <i class="fas fa-history" style="font-size:.6rem"></i> @Model.NomeUsuario
+                    </span>
+                }
+            </div>
+        }
+
+        <div class="exec-meta">
+            @if (Model.DataInicio.HasValue && Model.DataFim.HasValue)
+            {
+                <span class="exec-meta-item">
+                    <i class="fas fa-calendar"></i>
+                    @Model.DataInicio.Value.ToString("dd/MM") – @Model.DataFim.Value.ToString("dd/MM")
+                </span>
+            }
+            <span class="exec-meta-item">
+                <i class="fas fa-users"></i>
+                @(Model.NumeroPassageiros + Model.NumeroCriancas)
+            </span>
+            @if (Model.DuracaoDias.HasValue)
+            {
+                <span class="exec-meta-item">
+                    <i class="fas fa-clock"></i>
+                    @Model.DuracaoDias dias
+                </span>
+            }
+        </div>
+
+        <div class="exec-footer">
+            <div class="exec-link-status">
+                @if (Model.LinkPublicoAtivo)
+                {
+                    <span class="exec-badge active"><i class="fas fa-link"></i> Ativo</span>
+                }
+                else
+                {
+                    <span class="exec-badge inactive"><i class="fas fa-link-slash"></i> Inativo</span>
+                }
+            </div>
+
+            <div class="exec-actions">
+                <a href="/Proposta/Detalhes/@Model.Id" target="_blank"
+                   class="exec-action-btn primary" title="Visualizar">
+                    <i class="fas fa-eye"></i>
+                </a>
+                <a href="/Proposta/Editar/@Model.Id"
+                   class="exec-action-btn secondary" title="Editar">
+                    <i class="fas fa-edit"></i>
+                </a>
+                <a href="/PropostaAnalyticsData/PropostaDetalhada/@Model.Id"
+                   class="exec-action-btn success" title="Analytics">
+                    <i class="fas fa-chart-bar"></i>
+                </a>
+
+                <div class="dropdown">
+                    <button class="exec-action-btn outline dropdown-toggle"
+                            data-bs-toggle="dropdown" title="Mais">
+                        <i class="fas fa-ellipsis-h"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end exec-dropdown">
+                        <li>
+                            <a class="dropdown-item" href="/Destino/Gerenciar/@Model.Id">
+                                <i class="fas fa-map-marked-alt me-2"></i>Destinos
+                            </a>
+                        </li>
+                        @if (Model.LinkPublicoAtivo)
+                        {
+                            <li>
+                                <button class="dropdown-item" onclick="copiarLink('@Model.LinkCompartilhamento')">
+                                    <i class="fas fa-share me-2"></i>Compartilhar
+                                </button>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="/Proposta/Publico/@Model.Id" target="_blank">
+                                    <i class="fas fa-external-link-alt me-2"></i>Ver Público
+                                </a>
+                            </li>
+                        }
+                        <li><hr class="dropdown-divider" /></li>
+                        <li>
+                            <button class="dropdown-item" onclick="duplicarProposta('@Model.Id')">
+                                <i class="fas fa-copy me-2"></i>Duplicar
+                            </button>
+                        </li>
+                        <li>
+                            <form method="post" action="/Proposta/Excluir" style="display:inline;" class="w-100">
+                                <input type="hidden" name="id" value="@Model.Id" />
+                                <button type="submit" class="dropdown-item text-danger"
+                                        onclick="return confirm('Excluir esta proposta?')">
+                                    <i class="fas fa-trash me-2"></i>Excluir
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

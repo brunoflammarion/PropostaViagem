@@ -1,57 +1,427 @@
-﻿@model SistemaUsuarios.Models.ViewModels.LoginViewModel
+@model SistemaUsuarios.Models.ViewModels.LoginViewModel
 @{
-    ViewData["Title"] = "Login";
-    Layout = "_Layout";
+    ViewData["Title"] = "Entrar";
+    Layout = "_LayoutLanding";
+
+    var hasErrors = !ViewData.ModelState.IsValid &&
+                    ViewData.ModelState.Values.Any(v => v.Errors.Count > 0);
 }
 
-<div class="row justify-content-center">
-    <div class="col-md-6 col-lg-4">
-        <div class="card shadow">
-            <div class="card-header bg-primary text-white text-center">
-                <h4><i class="fas fa-sign-in-alt me-2"></i>Entrar</h4>
-            </div>
-            <div class="card-body">
-                <form asp-action="Login" method="post">
-                    <div asp-validation-summary="All" class="text-danger mb-3"></div>
+@section Styles {
+<style>
+/* ── Reset body para o layout de auth ─────────────────────── */
+body {
+    background: #F3F6FB;
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+}
 
-                    <div class="mb-3">
-                        <label asp-for="Email" class="form-label"></label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-envelope"></i></span>
-                            <input asp-for="Email" class="form-control" placeholder="seu@email.com" />
-                        </div>
-                        <span asp-validation-for="Email" class="text-danger"></span>
-                    </div>
+/* ── Shell full-screen ────────────────────────────────────── */
+.auth-shell {
+    min-height: 100vh;
+    width: 100%;
+    display: flex;
+    align-items: stretch;
+}
 
-                    <div class="mb-3">
-                        <label asp-for="Senha" class="form-label"></label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-lock"></i></span>
-                            <input asp-for="Senha" class="form-control" placeholder="Sua senha" />
-                        </div>
-                        <span asp-validation-for="Senha" class="text-danger"></span>
-                    </div>
+/* ════════════════════════════════════════════════════════════
+   PAINEL ESQUERDO — Brand
+════════════════════════════════════════════════════════════ */
+.auth-side {
+    width: 440px;
+    flex-shrink: 0;
+    background: linear-gradient(160deg, #002B45 0%, #1E4E8C 58%, #3F82D9 100%);
+    display: flex;
+    flex-direction: column;
+    padding: 2.5rem 2.75rem;
+    position: relative;
+    overflow: hidden;
+}
 
-                    <div class="mb-3 form-check">
-                        <input asp-for="LembrarMe" class="form-check-input" />
-                        <label asp-for="LembrarMe" class="form-check-label"></label>
-                    </div>
+.auth-side::before {
+    content: '';
+    position: absolute; top: -120px; right: -120px;
+    width: 340px; height: 340px; border-radius: 50%;
+    background: rgba(255,255,255,.05); pointer-events: none;
+}
+.auth-side::after {
+    content: '';
+    position: absolute; bottom: -80px; left: -80px;
+    width: 260px; height: 260px; border-radius: 50%;
+    background: rgba(255,255,255,.04); pointer-events: none;
+}
 
-                    <div class="d-grid">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-sign-in-alt me-2"></i>Entrar
-                        </button>
-                    </div>
-                </form>
-            </div>
-            <div class="card-footer text-center">
-                <p class="mb-0">
-                    Não tem uma conta?
-                    <a href="@Url.Action("Cadastrar", "Usuario")" class="text-decoration-none">
-                        Cadastre-se aqui
-                    </a>
-                </p>
+/* Topo: voltar + brand em linha */
+.auth-side-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    position: relative;
+    z-index: 1;
+    margin-bottom: 3.5rem;
+}
+
+.auth-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: .78rem;
+    font-weight: 600;
+    color: rgba(255,255,255,.60);
+    text-decoration: none;
+    transition: color .15s;
+}
+.auth-back:hover { color: #fff; }
+.auth-back i { font-size: .68rem; }
+
+.auth-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+}
+.auth-brand img {
+    width: 32px; height: 32px;
+    display: block; flex-shrink: 0;
+}
+.auth-brand span {
+    font-size: 1rem; font-weight: 700;
+    color: #fff; letter-spacing: -.01em;
+    white-space: nowrap;
+}
+.auth-brand strong { font-weight: 800; }
+
+/* Corpo: headline + pills */
+.auth-side-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+    z-index: 1;
+}
+
+.auth-side-body h2 {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1.22;
+    letter-spacing: -0.03em;
+    margin-bottom: 1rem;
+}
+.auth-side-body p {
+    font-size: .875rem;
+    color: rgba(255,255,255,.72);
+    line-height: 1.6;
+    margin: 0;
+}
+
+.auth-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 1.75rem;
+}
+.auth-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255,255,255,.10);
+    border: 1px solid rgba(255,255,255,.18);
+    border-radius: 50px;
+    padding: 5px 12px;
+    font-size: .74rem;
+    font-weight: 600;
+    color: #fff;
+    backdrop-filter: blur(6px);
+}
+.auth-pill i { font-size: .68rem; opacity: .85; }
+
+/* Rodapé do painel */
+.auth-side-foot {
+    font-size: .72rem;
+    color: rgba(255,255,255,.32);
+    position: relative;
+    z-index: 1;
+    margin-top: 2rem;
+}
+
+/* ════════════════════════════════════════════════════════════
+   PAINEL DIREITO — Form
+════════════════════════════════════════════════════════════ */
+.auth-main {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1.5rem;
+    background: #F3F6FB;
+}
+
+.auth-card {
+    width: 100%;
+    max-width: 430px;
+    background: #FFFFFF;
+    border-radius: 24px;
+    border: 1px solid rgba(30, 78, 140, 0.10);
+    box-shadow: 0 8px 40px rgba(0,43,69,.10), 0 1px 4px rgba(0,43,69,.06);
+    padding: 2.5rem 2.25rem;
+}
+
+.auth-card-header {
+    margin-bottom: 1.75rem;
+}
+.auth-card-header h1 {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #002B45;
+    letter-spacing: -.03em;
+    margin: 0 0 .35rem;
+}
+.auth-card-header p {
+    font-size: .85rem;
+    color: #68728B;
+    margin: 0;
+}
+
+/* ── Alerta de erro ──────────────────────────────────────── */
+.auth-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    font-size: .875rem;
+    margin-bottom: 1.25rem;
+    line-height: 1.5;
+}
+.auth-alert-danger {
+    background: #FFF1F2;
+    border: 1px solid #FDA4AF;
+    color: #9F1239;
+}
+.auth-alert i { margin-top: 2px; flex-shrink: 0; }
+.auth-alert ul {
+    margin: 0;
+    padding-left: 18px;
+    list-style: disc;
+}
+.auth-alert ul li { margin: 0; }
+
+/* ── Inputs ──────────────────────────────────────────────── */
+.auth-form .form-label {
+    font-size: .8rem;
+    font-weight: 600;
+    color: #002B45;
+    margin-bottom: .35rem;
+}
+.auth-form .input-group-text {
+    background: #F8FAFC;
+    border: 1.5px solid #E2E8F0;
+    border-right: none;
+    color: #94a3b8;
+    font-size: .85rem;
+    border-radius: 10px 0 0 10px !important;
+    transition: border-color .15s, background .15s;
+}
+.auth-form .form-control {
+    border: 1.5px solid #E2E8F0;
+    border-left: none;
+    background: #F8FAFC;
+    font-size: .875rem;
+    color: #002B45;
+    padding: .6rem .85rem;
+    border-radius: 0 10px 10px 0 !important;
+    transition: border-color .15s, box-shadow .15s;
+}
+.auth-form .form-control::placeholder { color: rgba(104,114,139,.55); }
+.auth-form .form-control:focus {
+    border-color: #5BA8FF;
+    box-shadow: 0 0 0 3px rgba(91,168,255,.16);
+    background: #fff;
+    outline: none;
+}
+.auth-form .input-group:focus-within .input-group-text {
+    border-color: #5BA8FF;
+    background: #fff;
+}
+.auth-form .form-check-label {
+    font-size: .8rem;
+    color: #68728B;
+    cursor: pointer;
+}
+.auth-form .form-check-input:checked {
+    background-color: #1E4E8C;
+    border-color: #1E4E8C;
+}
+
+/* ── Botão submit ────────────────────────────────────────── */
+.auth-submit {
+    display: block;
+    width: 100%;
+    padding: .75rem;
+    background: linear-gradient(90deg, #1E4E8C 0%, #002B45 100%);
+    color: #fff;
+    border: none;
+    border-radius: 50px;
+    font-size: .9rem;
+    font-weight: 700;
+    letter-spacing: -.01em;
+    cursor: pointer;
+    transition: filter .15s, transform .15s;
+    margin-top: .5rem;
+}
+.auth-submit:hover {
+    filter: brightness(1.08);
+    transform: translateY(-1px);
+    color: #fff;
+}
+
+/* ── Divider / footer do card ────────────────────────────── */
+.auth-divider {
+    text-align: center;
+    margin: 1.5rem 0 1rem;
+    font-size: .78rem;
+    color: #94a3b8;
+    position: relative;
+}
+.auth-divider::before {
+    content: '';
+    position: absolute;
+    top: 50%; left: 0; right: 0;
+    height: 1px;
+    background: #E2E8F0;
+}
+.auth-divider span {
+    background: #fff;
+    padding: 0 .75rem;
+    position: relative;
+}
+
+.auth-footer-link {
+    text-align: center;
+    font-size: .82rem;
+    color: #68728B;
+    margin: 0;
+}
+.auth-footer-link a {
+    color: #1E4E8C;
+    font-weight: 600;
+    text-decoration: none;
+}
+.auth-footer-link a:hover { text-decoration: underline; }
+
+/* ════════════════════════════════════════════════════════════
+   RESPONSIVIDADE
+════════════════════════════════════════════════════════════ */
+@@media (max-width: 900px) {
+    .auth-side { display: none; }
+    .auth-main { width: 100%; padding: 24px; }
+    .auth-card { max-width: 100%; }
+}
+
+@@media (max-width: 480px) {
+    .auth-main { padding: 16px; }
+    .auth-card { padding: 1.75rem 1.25rem; }
+    .auth-card-header h1 { font-size: 1.3rem; }
+}
+</style>
+}
+
+<div class="auth-shell">
+
+    <!-- ── Painel esquerdo — Brand ──────────────────── -->
+    <aside class="auth-side">
+
+        <!-- Topo: voltar + brand em linha -->
+        <div class="auth-side-top">
+            <a href="/" class="auth-back">
+                <i class="fas fa-arrow-left"></i> Voltar ao site
+            </a>
+            <a href="/" class="auth-brand">
+                <img src="/images/logo.png" alt="Agent Tools">
+                <span>Agent <strong>Tools</strong></span>
+            </a>
+        </div>
+
+        <!-- Centro: headline + texto + pills -->
+        <div class="auth-side-body">
+            <h2>Transforme viagens em experiências inesquecíveis.</h2>
+            <p>A plataforma operacional para agentes que querem crescer com tecnologia e inteligência.</p>
+            <div class="auth-pills">
+                <span class="auth-pill"><i class="fas fa-bolt"></i> Propostas com IA</span>
+                <span class="auth-pill"><i class="fas fa-chart-line"></i> Analytics</span>
+                <span class="auth-pill"><i class="fas fa-users"></i> Gestão de leads</span>
+                <span class="auth-pill"><i class="fas fa-link"></i> Página pública</span>
             </div>
         </div>
-    </div>
+
+        <!-- Rodapé -->
+        <div class="auth-side-foot">
+            © @DateTime.Now.Year Agent Tools · Todos os direitos reservados
+        </div>
+
+    </aside>
+
+    <!-- ── Painel direito — Formulário ─────────────── -->
+    <main class="auth-main">
+        <div class="auth-card">
+
+            <div class="auth-card-header">
+                <h1>Bem-vindo de volta</h1>
+                <p>Entre na sua conta para continuar</p>
+            </div>
+
+            @* Alerta de erro — só renderiza quando há erros reais *@
+            @if (hasErrors)
+            {
+                <div class="auth-alert auth-alert-danger">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <div>
+                        <div asp-validation-summary="All"></div>
+                    </div>
+                </div>
+            }
+
+            <form asp-action="Login" method="post" class="auth-form">
+                <div class="mb-3">
+                    <label asp-for="Email" class="form-label">E-mail</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                        <input asp-for="Email" class="form-control" placeholder="seu@email.com" autocomplete="email" />
+                    </div>
+                    <span asp-validation-for="Email" class="text-danger" style="font-size:.77rem;"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Senha" class="form-label">Senha</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                        <input asp-for="Senha" class="form-control" placeholder="••••••••" autocomplete="current-password" />
+                    </div>
+                    <span asp-validation-for="Senha" class="text-danger" style="font-size:.77rem;"></span>
+                </div>
+
+                <div class="mb-4 form-check">
+                    <input asp-for="LembrarMe" class="form-check-input" />
+                    <label asp-for="LembrarMe" class="form-check-label">Lembrar minha conta</label>
+                </div>
+
+                <button type="submit" class="auth-submit">
+                    Entrar na conta
+                </button>
+            </form>
+
+            <div class="auth-divider"><span>ou</span></div>
+
+            <p class="auth-footer-link">
+                Não tem uma conta?
+                <a href="@Url.Action("Cadastrar", "Usuario")">Cadastre-se grátis</a>
+            </p>
+
+        </div>
+    </main>
+
 </div>

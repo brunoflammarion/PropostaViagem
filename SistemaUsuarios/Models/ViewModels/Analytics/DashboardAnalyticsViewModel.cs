@@ -8,11 +8,58 @@ namespace SistemaUsuarios.Models.ViewModels.Analytics
         public Guid UsuarioId { get; set; }
         public int TotalPropostas { get; set; }
         public int TotalVisualizacoes { get; set; }
+        public int PropostasComVisualizacao { get; set; }
+        public int ClientesQuentes { get; set; }
+        public double TaxaPropostasVisualizadas { get; set; }
         public List<VisualizacaoDiariaViewModel> VisualizacoesUltimos30Dias { get; set; } = new();
         public List<PropostaPopularViewModel> PropostasPopulares { get; set; } = new();
+        public List<PropostaRadarViewModel> PropostasRadar { get; set; } = new();
+        public List<AtividadeRecenteViewModel> AtividadeRecente { get; set; } = new();
+        public List<OportunidadeFollowUpViewModel> OportunidadesFollowUp { get; set; } = new();
         public EstatisticasGeraisViewModel EstatisticasGerais { get; set; } = new();
         public List<LocalizacaoAcessoViewModel> LocalizacoesAcessos { get; set; } = new();
         public List<DispositivoAcessoViewModel> DispositivosAcessos { get; set; } = new();
+    }
+
+    // RADAR DE PROPOSTAS — lista enriquecida com cliente, destino, status, última visualização
+    public class PropostaRadarViewModel
+    {
+        public Guid PropostaId { get; set; }
+        public string Titulo { get; set; } = "";
+        public string? ClienteNome { get; set; }
+        public Guid? ClienteId { get; set; }
+        public string? DestinoNome { get; set; }
+        public StatusProposta StatusProposta { get; set; }
+        public int TotalVisualizacoes { get; set; }
+        public DateTime? UltimaVisualizacao { get; set; }
+        public bool LinkPublicoAtivo { get; set; }
+        public double TaxaInteracao { get; set; }
+    }
+
+    // ATIVIDADE RECENTE — feed de visualizações individuais
+    public class AtividadeRecenteViewModel
+    {
+        public Guid PropostaId { get; set; }
+        public string PropostaTitulo { get; set; } = "";
+        public string? ClienteNome { get; set; }
+        public Guid? ClienteId { get; set; }
+        public DateTime DataHoraVisualizacao { get; set; }
+        public string? TipoDispositivo { get; set; }
+        public string? Cidade { get; set; }
+        public string? Pais { get; set; }
+    }
+
+    // OPORTUNIDADES DE FOLLOW-UP — propostas que merecem contato
+    public class OportunidadeFollowUpViewModel
+    {
+        public Guid PropostaId { get; set; }
+        public string PropostaTitulo { get; set; } = "";
+        public string? ClienteNome { get; set; }
+        public Guid? ClienteId { get; set; }
+        public int TotalVisualizacoes { get; set; }
+        public DateTime? UltimaVisualizacao { get; set; }
+        public StatusProposta StatusProposta { get; set; }
+        public string MotivoSugestao { get; set; } = "";
     }
 
     // DASHBOARD ESPECÍFICO - NÍVEL 2

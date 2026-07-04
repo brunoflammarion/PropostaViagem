@@ -1,0 +1,635 @@
+@model SistemaUsuarios.Models.ViewModels.TarefaIndexViewModel
+@using SistemaUsuarios.Models
+@{
+    ViewData["Title"] = "Tarefas";
+    Layout = "_Layout";
+
+    var hoje = DateTime.Today;
+}
+
+@functions {
+    static string PrioridadeBadge(string? p) => p switch
+    {
+        TarefaPrioridade.Alta  => "badge-prioridade-alta",
+        TarefaPrioridade.Media => "badge-prioridade-media",
+        _                      => "badge-prioridade-baixa"
+    };
+
+    static string TipoBadge(string? t) => t switch
+    {
+        TarefaTipo.Followup    => "badge-tipo-followup",
+        TarefaTipo.Operacional => "badge-tipo-operacional",
+        TarefaTipo.Comercial   => "badge-tipo-comercial",
+        TarefaTipo.Aniversario => "badge-tipo-aniversario",
+        _                      => "badge-tipo-geral"
+    };
+
+    static string TipoIcone(string? t) => t switch
+    {
+        TarefaTipo.Followup    => "fa-phone",
+        TarefaTipo.Operacional => "fa-cog",
+        TarefaTipo.Comercial   => "fa-handshake",
+        TarefaTipo.Aniversario => "fa-birthday-cake",
+        _                      => "fa-tasks"
+    };
+
+    static string FormatarData(DateTime d)
+    {
+        var hoje = DateTime.Today;
+        if (d.Date == hoje)            return "Hoje";
+        if (d.Date == hoje.AddDays(1)) return "Amanhã";
+        if (d.Date == hoje.AddDays(-1)) return "Ontem";
+        return d.ToString("dd/MM/yyyy");
+    }
+}
+
+@section Styles {
+<style>
+#tarefas-page {
+    --c-primary:   #6366f1;
+    --c-success:   #10b981;
+    --c-danger:    #ef4444;
+    --c-warning:   #f59e0b;
+    --c-muted:     #94a3b8;
+    --c-border:    #e2e8f0;
+    --c-bg:        #f8fafc;
+    --radius-md:   10px;
+    --radius-sm:   6px;
+    --shadow-sm:   0 2px 8px rgba(0,0,0,.07);
+    --shadow-md:   0 6px 20px rgba(0,0,0,.1);
+}
+#tarefas-page body { background: var(--c-bg); }
+
+/* ── Header stat cards ── */
+.tf-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 28px;
+}
+@@media (max-width: 576px) { .tf-stat-grid { grid-template-columns: 1fr 1fr; } }
+
+.tf-stat-card {
+    background: #fff;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    padding: 18px 20px;
+    border-left: 4px solid transparent;
+    cursor: pointer;
+    transition: box-shadow .15s, transform .15s;
+}
+.tf-stat-card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+.tf-stat-card.atrasadas { border-left-color: #ef4444; }
+.tf-stat-card.hoje      { border-left-color: #6366f1; }
+.tf-stat-card.semana    { border-left-color: #10b981; }
+
+.tf-stat-num  { font-size: 1.8rem; font-weight: 800; line-height: 1; }
+.tf-stat-lbl  { font-size: .75rem; color: var(--c-muted); font-weight: 600; text-transform: uppercase; letter-spacing: .4px; margin-top: 4px; }
+.tf-stat-card.atrasadas .tf-stat-num { color: #ef4444; }
+.tf-stat-card.hoje      .tf-stat-num { color: #6366f1; }
+.tf-stat-card.semana    .tf-stat-num { color: #10b981; }
+
+/* ── Tabs ── */
+.tf-tabs {
+    display: flex;
+    gap: 4px;
+    border-bottom: 2px solid var(--c-border);
+    margin-bottom: 20px;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+.tf-tabs::-webkit-scrollbar { display: none; }
+.tf-tab {
+    padding: 8px 18px;
+    border: none;
+    background: none;
+    font-size: .88rem;
+    font-weight: 600;
+    color: var(--c-muted);
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: color .15s, border-color .15s;
+}
+.tf-tab:hover { color: var(--c-primary); }
+.tf-tab.active { color: var(--c-primary); border-bottom-color: var(--c-primary); }
+.tf-tab .tf-tab-count {
+    background: var(--c-primary);
+    color: #fff;
+    border-radius: 50px;
+    font-size: .65rem;
+    padding: 1px 7px;
+    margin-left: 5px;
+    font-weight: 700;
+}
+.tf-tab-count.danger { background: #ef4444; }
+
+/* ── Task list ── */
+.tf-panel { display: none; }
+.tf-panel.active { display: block; }
+
+.tf-list { list-style: none; margin: 0; padding: 0; }
+
+.tf-item {
+    background: #fff;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    padding: 14px 18px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    transition: box-shadow .15s;
+    border-left: 3px solid transparent;
+}
+.tf-item:hover { box-shadow: var(--shadow-md); }
+.tf-item.alta   { border-left-color: #ef4444; }
+.tf-item.media  { border-left-color: #f59e0b; }
+.tf-item.baixa  { border-left-color: #10b981; }
+.tf-item.concluida { opacity: .55; }
+.tf-item.atrasada .tf-data { color: #ef4444; font-weight: 700; }
+
+.tf-check {
+    width: 22px; height: 22px; border-radius: 50%;
+    border: 2px solid var(--c-border);
+    flex-shrink: 0; margin-top: 2px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: border-color .15s, background .15s;
+}
+.tf-check:hover { border-color: #10b981; background: #f0fdf4; }
+.tf-check.checked { border-color: #10b981; background: #10b981; }
+.tf-check.checked i { color: #fff; font-size: .75rem; }
+
+.tf-body  { flex: 1; min-width: 0; }
+.tf-titulo { font-weight: 600; font-size: .92rem; color: #1e293b; margin-bottom: 4px; line-height: 1.3; }
+.tf-titulo.riscado { text-decoration: line-through; color: var(--c-muted); }
+.tf-meta  { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.tf-data  { font-size: .76rem; color: var(--c-muted); display: flex; align-items: center; gap: 3px; }
+.tf-rel   { font-size: .73rem; color: #64748b; }
+
+.tf-actions { display: flex; gap: 4px; flex-shrink: 0; }
+.tf-btn {
+    background: none; border: 1px solid var(--c-border);
+    border-radius: var(--radius-sm); padding: 4px 8px;
+    font-size: .72rem; cursor: pointer; color: #64748b;
+    transition: background .15s, color .15s;
+    display: flex; align-items: center; gap: 3px;
+}
+.tf-btn:hover { background: var(--c-bg); color: #1e293b; }
+.tf-btn.danger:hover { border-color: #ef4444; color: #ef4444; background: #fff5f5; }
+
+/* ── Badges ── */
+.badge-tipo, .badge-prioridade {
+    display: inline-flex; align-items: center; gap: 3px;
+    border-radius: 50px; padding: 2px 8px; font-size: .65rem; font-weight: 700;
+}
+.badge-tipo-followup    { background: #ede9fe; color: #7c3aed; }
+.badge-tipo-operacional { background: #e0f2fe; color: #0369a1; }
+.badge-tipo-comercial   { background: #fef3c7; color: #b45309; }
+.badge-tipo-aniversario { background: #fce7f3; color: #9d174d; }
+.badge-tipo-geral       { background: #f1f5f9; color: #475569; }
+.badge-prioridade-alta  { background: #fee2e2; color: #dc2626; }
+.badge-prioridade-media { background: #fef3c7; color: #92400e; }
+.badge-prioridade-baixa { background: #d1fae5; color: #065f46; }
+
+/* ── Proposta / cliente pill ── */
+.tf-proposta-pill {
+    font-size: .7rem; color: #6366f1; background: #eef2ff;
+    border-radius: 50px; padding: 2px 8px; text-decoration: none;
+    display: inline-flex; align-items: center; gap: 3px;
+    max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.tf-proposta-pill:hover { background: #e0e7ff; color: #4f46e5; }
+.tf-cliente-pill {
+    font-size: .7rem; color: #059669; background: #ecfdf5;
+    border-radius: 50px; padding: 2px 8px;
+    display: inline-flex; align-items: center; gap: 3px;
+    max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* ── Empty state ── */
+.tf-empty {
+    text-align: center; padding: 56px 20px;
+    color: var(--c-muted);
+}
+.tf-empty i { font-size: 2.5rem; margin-bottom: 12px; display: block; opacity: .4; }
+.tf-empty p { font-size: .9rem; margin: 0; }
+
+/* ── Botão nova tarefa ── */
+.btn-nova-tarefa {
+    background: #6366f1; color: #fff; border: none;
+    border-radius: var(--radius-md); padding: 10px 22px;
+    font-weight: 700; font-size: .88rem;
+    display: inline-flex; align-items: center; gap: 7px;
+    cursor: pointer; transition: background .15s, box-shadow .15s;
+    box-shadow: 0 4px 14px rgba(99,102,241,.3);
+}
+.btn-nova-tarefa:hover { background: #4f46e5; color: #fff; }
+
+/* ── Modal ── */
+.tf-modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.45); z-index: 1050;
+    align-items: center; justify-content: center;
+}
+.tf-modal-overlay.open { display: flex; }
+.tf-modal {
+    background: #fff; border-radius: 14px;
+    padding: 28px 28px 24px; width: 100%; max-width: 500px; max-height: 90vh;
+    overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,.2);
+    margin: 16px;
+}
+.tf-modal h5 { font-weight: 800; color: #1e293b; margin-bottom: 20px; }
+.tf-modal label { font-size: .8rem; font-weight: 600; color: #475569; margin-bottom: 4px; display: block; }
+.tf-modal input, .tf-modal select, .tf-modal textarea {
+    width: 100%; border: 1.5px solid #e2e8f0; border-radius: 7px;
+    padding: 9px 12px; font-size: .9rem; margin-bottom: 14px;
+    transition: border-color .15s;
+}
+.tf-modal input:focus, .tf-modal select:focus, .tf-modal textarea:focus {
+    outline: none; border-color: #6366f1;
+}
+.tf-modal textarea { resize: vertical; min-height: 70px; }
+.tf-modal-footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
+.btn-tf-cancel { background: #f1f5f9; border: none; border-radius: 7px; padding: 9px 20px; font-weight: 600; font-size: .87rem; cursor: pointer; }
+.btn-tf-save   { background: #6366f1; color: #fff; border: none; border-radius: 7px; padding: 9px 22px; font-weight: 700; font-size: .87rem; cursor: pointer; }
+.btn-tf-save:hover { background: #4f46e5; }
+
+/* ── Separador de data ── */
+.tf-date-sep {
+    font-size: .72rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .6px; color: var(--c-muted);
+    padding: 10px 0 6px; border-bottom: 1px solid var(--c-border);
+    margin-bottom: 8px;
+}
+</style>
+}
+
+<div id="tarefas-page">
+
+<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
+    <div>
+        <h4 class="mb-0 fw-800">Tarefas</h4>
+        <p class="text-muted small mb-0">Organize seu dia e não perca nenhum follow-up</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="@Url.Action("Configuracoes")" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-sliders-h me-1"></i>Lembretes automáticos
+        </a>
+        <button class="btn-nova-tarefa" onclick="abrirModalNova()">
+            <i class="fas fa-plus"></i>Nova Tarefa
+        </button>
+    </div>
+</div>
+
+<!-- ── Stat cards ── -->
+<div class="tf-stat-grid">
+    <div class="tf-stat-card atrasadas" onclick="ativarTab('atrasadas')">
+        <div class="tf-stat-num">@Model.TotalAtrasadas</div>
+        <div class="tf-stat-lbl"><i class="fas fa-exclamation-circle me-1"></i>Atrasadas</div>
+    </div>
+    <div class="tf-stat-card hoje" onclick="ativarTab('hoje')">
+        <div class="tf-stat-num">@Model.TotalHoje</div>
+        <div class="tf-stat-lbl"><i class="fas fa-calendar-day me-1"></i>Hoje</div>
+    </div>
+    <div class="tf-stat-card semana" onclick="ativarTab('semana')">
+        <div class="tf-stat-num">@Model.TotalSemana</div>
+        <div class="tf-stat-lbl"><i class="fas fa-calendar-week me-1"></i>Esta semana</div>
+    </div>
+</div>
+
+<!-- ── Tabs ── -->
+<div class="tf-tabs">
+    <button class="tf-tab @(Model.TotalAtrasadas > 0 ? "active" : "")" data-panel="atrasadas" id="tab-atrasadas">
+        Atrasadas
+        @if (Model.TotalAtrasadas > 0) { <span class="tf-tab-count danger">@Model.TotalAtrasadas</span> }
+    </button>
+    <button class="tf-tab @(Model.TotalAtrasadas == 0 ? "active" : "")" data-panel="hoje" id="tab-hoje">
+        Hoje
+        @if (Model.TotalHoje > 0) { <span class="tf-tab-count">@Model.TotalHoje</span> }
+    </button>
+    <button class="tf-tab" data-panel="semana" id="tab-semana">
+        Esta semana
+        @if (Model.TotalSemana > 0) { <span class="tf-tab-count">@Model.TotalSemana</span> }
+    </button>
+    <button class="tf-tab" data-panel="concluidas" id="tab-concluidas">
+        Concluídas
+    </button>
+</div>
+
+<!-- ── Panel: Atrasadas ── -->
+<div class="tf-panel @(Model.TotalAtrasadas > 0 ? "active" : "")" id="panel-atrasadas">
+    @if (!Model.TarefasAtrasadas.Any())
+    {
+        <div class="tf-empty">
+            <i class="fas fa-check-circle"></i>
+            <p>Nenhuma tarefa atrasada</p>
+        </div>
+    }
+    else
+    {
+        <ul class="tf-list">
+            @foreach (var t in Model.TarefasAtrasadas)
+            {
+                <li class="tf-item @(t.Prioridade?.ToLower()) atrasada" data-id="@t.Id">
+                    <div class="tf-check" onclick="concluir('@t.Id', this)">
+                        <i class="fas fa-check" style="display:none"></i>
+                    </div>
+                    <div class="tf-body">
+                        <div class="tf-titulo">@t.Titulo</div>
+                        <div class="tf-meta">
+                            <span class="tf-data"><i class="fas fa-clock"></i>@FormatarData(t.DataVencimento)</span>
+                            <span class="badge-tipo @TipoBadge(t.Tipo)"><i class="fas @TipoIcone(t.Tipo)"></i>@t.Tipo</span>
+                            @if (!string.IsNullOrEmpty(t.Prioridade)) { <span class="badge-prioridade @PrioridadeBadge(t.Prioridade)">@t.Prioridade</span> }
+                            @if (t.Cliente != null) { <span class="tf-cliente-pill"><i class="fas fa-user"></i>@t.Cliente.Nome</span> }
+                            @if (t.Proposta != null) { <a class="tf-proposta-pill" href="/Proposta/Editar/@t.PropostaId"><i class="fas fa-file-alt"></i>@t.Proposta.Titulo</a> }
+                        </div>
+                        @if (!string.IsNullOrEmpty(t.Descricao)) { <div class="tf-rel mt-1">@t.Descricao</div> }
+                    </div>
+                    <div class="tf-actions">
+                        <button class="tf-btn danger" onclick="cancelar('@t.Id', this)" title="Cancelar"><i class="fas fa-times"></i></button>
+                    </div>
+                </li>
+            }
+        </ul>
+    }
+</div>
+
+<!-- ── Panel: Hoje ── -->
+<div class="tf-panel @(Model.TotalAtrasadas == 0 ? "active" : "")" id="panel-hoje">
+    @if (!Model.TarefasHoje.Any())
+    {
+        <div class="tf-empty">
+            <i class="fas fa-sun"></i>
+            <p>Nenhuma tarefa para hoje</p>
+        </div>
+    }
+    else
+    {
+        <ul class="tf-list">
+            @foreach (var t in Model.TarefasHoje)
+            {
+                <li class="tf-item @(t.Prioridade?.ToLower())" data-id="@t.Id">
+                    <div class="tf-check" onclick="concluir('@t.Id', this)">
+                        <i class="fas fa-check" style="display:none"></i>
+                    </div>
+                    <div class="tf-body">
+                        <div class="tf-titulo">@t.Titulo</div>
+                        <div class="tf-meta">
+                            <span class="badge-tipo @TipoBadge(t.Tipo)"><i class="fas @TipoIcone(t.Tipo)"></i>@t.Tipo</span>
+                            @if (!string.IsNullOrEmpty(t.Prioridade)) { <span class="badge-prioridade @PrioridadeBadge(t.Prioridade)">@t.Prioridade</span> }
+                            @if (t.Cliente != null) { <span class="tf-cliente-pill"><i class="fas fa-user"></i>@t.Cliente.Nome</span> }
+                            @if (t.Proposta != null) { <a class="tf-proposta-pill" href="/Proposta/Editar/@t.PropostaId"><i class="fas fa-file-alt"></i>@t.Proposta.Titulo</a> }
+                        </div>
+                        @if (!string.IsNullOrEmpty(t.Descricao)) { <div class="tf-rel mt-1">@t.Descricao</div> }
+                    </div>
+                    <div class="tf-actions">
+                        <button class="tf-btn danger" onclick="cancelar('@t.Id', this)" title="Cancelar"><i class="fas fa-times"></i></button>
+                    </div>
+                </li>
+            }
+        </ul>
+    }
+</div>
+
+<!-- ── Panel: Semana ── -->
+<div class="tf-panel" id="panel-semana">
+    @if (!Model.TarefasSemana.Any())
+    {
+        <div class="tf-empty">
+            <i class="fas fa-calendar-check"></i>
+            <p>Nenhuma tarefa para os próximos 7 dias</p>
+        </div>
+    }
+    else
+    {
+        var grupos = Model.TarefasSemana.GroupBy(t => t.DataVencimento.Date).OrderBy(g => g.Key);
+        @foreach (var grupo in grupos)
+        {
+            <div class="tf-date-sep">@FormatarData(grupo.Key) &mdash; @grupo.Key.ToString("dddd", new System.Globalization.CultureInfo("pt-BR"))</div>
+            <ul class="tf-list">
+                @foreach (var t in grupo)
+                {
+                    <li class="tf-item @(t.Prioridade?.ToLower())" data-id="@t.Id">
+                        <div class="tf-check" onclick="concluir('@t.Id', this)">
+                            <i class="fas fa-check" style="display:none"></i>
+                        </div>
+                        <div class="tf-body">
+                            <div class="tf-titulo">@t.Titulo</div>
+                            <div class="tf-meta">
+                                <span class="badge-tipo @TipoBadge(t.Tipo)"><i class="fas @TipoIcone(t.Tipo)"></i>@t.Tipo</span>
+                                @if (!string.IsNullOrEmpty(t.Prioridade)) { <span class="badge-prioridade @PrioridadeBadge(t.Prioridade)">@t.Prioridade</span> }
+                                @if (t.Cliente != null) { <span class="tf-cliente-pill"><i class="fas fa-user"></i>@t.Cliente.Nome</span> }
+                                @if (t.Proposta != null) { <a class="tf-proposta-pill" href="/Proposta/Editar/@t.PropostaId"><i class="fas fa-file-alt"></i>@t.Proposta.Titulo</a> }
+                            </div>
+                            @if (!string.IsNullOrEmpty(t.Descricao)) { <div class="tf-rel mt-1">@t.Descricao</div> }
+                        </div>
+                        <div class="tf-actions">
+                            <button class="tf-btn danger" onclick="cancelar('@t.Id', this)" title="Cancelar"><i class="fas fa-times"></i></button>
+                        </div>
+                    </li>
+                }
+            </ul>
+        }
+    }
+</div>
+
+<!-- ── Panel: Concluídas ── -->
+<div class="tf-panel" id="panel-concluidas">
+    @if (!Model.TarefasConcluidas.Any())
+    {
+        <div class="tf-empty">
+            <i class="fas fa-clipboard-check"></i>
+            <p>Nenhuma tarefa concluída nos últimos 30 dias</p>
+        </div>
+    }
+    else
+    {
+        <ul class="tf-list">
+            @foreach (var t in Model.TarefasConcluidas.OrderByDescending(x => x.DataConclusao))
+            {
+                <li class="tf-item concluida" data-id="@t.Id">
+                    <div class="tf-check checked">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="tf-body">
+                        <div class="tf-titulo riscado">@t.Titulo</div>
+                        <div class="tf-meta">
+                            <span class="tf-data"><i class="fas fa-check-circle" style="color:#10b981"></i>Concluída em @(t.DataConclusao?.ToString("dd/MM") ?? "—")</span>
+                            <span class="badge-tipo @TipoBadge(t.Tipo)"><i class="fas @TipoIcone(t.Tipo)"></i>@t.Tipo</span>
+                            @if (t.Cliente != null) { <span class="tf-cliente-pill"><i class="fas fa-user"></i>@t.Cliente.Nome</span> }
+                        </div>
+                    </div>
+                </li>
+            }
+        </ul>
+    }
+</div>
+
+</div><!-- /#tarefas-page -->
+
+<!-- ── Modal nova tarefa ── -->
+<div class="tf-modal-overlay" id="modalNovaTarefa">
+    <div class="tf-modal">
+        <h5><i class="fas fa-plus-circle me-2" style="color:#6366f1"></i>Nova Tarefa</h5>
+
+        <label>Título *</label>
+        <input type="text" id="nTitulo" placeholder="Ex: Ligar para o cliente..." maxlength="200" />
+
+        <label>Data de vencimento *</label>
+        <input type="date" id="nData" value="@DateTime.Today.ToString("yyyy-MM-dd")" />
+
+        <div class="row g-2">
+            <div class="col-6">
+                <label>Tipo</label>
+                <select id="nTipo">
+                    <option value="Geral">Geral</option>
+                    <option value="Followup">Follow-up</option>
+                    <option value="Operacional">Operacional</option>
+                    <option value="Comercial">Comercial</option>
+                </select>
+            </div>
+            <div class="col-6">
+                <label>Prioridade</label>
+                <select id="nPrioridade">
+                    <option value="Media">Média</option>
+                    <option value="Alta">Alta</option>
+                    <option value="Baixa">Baixa</option>
+                </select>
+            </div>
+        </div>
+
+        <label>Cliente (opcional)</label>
+        <select id="nCliente">
+            @foreach (var item in Model.Clientes)
+            {
+                <option value="@item.Value">@item.Text</option>
+            }
+        </select>
+
+        <label>Proposta (opcional)</label>
+        <select id="nProposta">
+            @foreach (var item in Model.Propostas)
+            {
+                <option value="@item.Value">@item.Text</option>
+            }
+        </select>
+
+        <label>Descrição</label>
+        <textarea id="nDescricao" placeholder="Detalhes da tarefa..."></textarea>
+
+        <div class="tf-modal-footer">
+            <button class="btn-tf-cancel" onclick="fecharModalNova()">Cancelar</button>
+            <button class="btn-tf-save" onclick="salvarNovaTarefa()"><i class="fas fa-check me-1"></i>Criar Tarefa</button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+document.querySelectorAll('.tf-tab').forEach(btn => {
+    btn.addEventListener('click', () => ativarTab(btn.dataset.panel));
+});
+
+function ativarTab(panel) {
+    document.querySelectorAll('.tf-tab').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tf-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('tab-' + panel)?.classList.add('active');
+    document.getElementById('panel-' + panel)?.classList.add('active');
+}
+
+// ── Concluir ──────────────────────────────────────────────────────────────────
+async function concluir(id, checkEl) {
+    checkEl.classList.add('checked');
+    checkEl.innerHTML = '<i class="fas fa-check"></i>';
+    const item = checkEl.closest('.tf-item');
+    item.style.opacity = '.5';
+
+    const r = await fetch('/Tarefa/Concluir', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(id)
+    });
+    const data = await r.json();
+    if (data.ok) {
+        setTimeout(() => item.remove(), 500);
+        atualizarContadores();
+    } else {
+        item.style.opacity = '1';
+        checkEl.classList.remove('checked');
+        checkEl.innerHTML = '';
+    }
+}
+
+// ── Cancelar ──────────────────────────────────────────────────────────────────
+async function cancelar(id, btn) {
+    if (!confirm('Cancelar esta tarefa?')) return;
+    const item = btn.closest('.tf-item');
+    const r = await fetch('/Tarefa/Cancelar', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(id)
+    });
+    const data = await r.json();
+    if (data.ok) { item.remove(); atualizarContadores(); }
+}
+
+function atualizarContadores() {
+    ['hoje','atrasadas','semana'].forEach(p => {
+        const count = document.querySelectorAll('#panel-' + p + ' .tf-item').length;
+        const span  = document.querySelector('#tab-' + p + ' .tf-tab-count');
+        if (span) {
+            if (count > 0) span.textContent = count;
+            else span.remove();
+        }
+        const numEl = document.querySelector('.tf-stat-card.' + p + ' .tf-stat-num');
+        if (numEl) numEl.textContent = count;
+    });
+}
+
+// ── Modal nova tarefa ─────────────────────────────────────────────────────────
+function abrirModalNova() {
+    document.getElementById('modalNovaTarefa').classList.add('open');
+    document.getElementById('nTitulo').focus();
+}
+function fecharModalNova() {
+    document.getElementById('modalNovaTarefa').classList.remove('open');
+}
+document.getElementById('modalNovaTarefa').addEventListener('click', e => {
+    if (e.target === e.currentTarget) fecharModalNova();
+});
+
+async function salvarNovaTarefa() {
+    const titulo = document.getElementById('nTitulo').value.trim();
+    const data   = document.getElementById('nData').value;
+    if (!titulo) { document.getElementById('nTitulo').focus(); return; }
+    if (!data)   { document.getElementById('nData').focus(); return; }
+
+    const fd = new FormData();
+    fd.append('Titulo',         titulo);
+    fd.append('DataVencimento', data);
+    fd.append('Tipo',           document.getElementById('nTipo').value);
+    fd.append('Prioridade',     document.getElementById('nPrioridade').value);
+    fd.append('Descricao',      document.getElementById('nDescricao').value);
+    const clienteId  = document.getElementById('nCliente').value;
+    const propostaId = document.getElementById('nProposta').value;
+    if (clienteId)  fd.append('ClienteId',  clienteId);
+    if (propostaId) fd.append('PropostaId', propostaId);
+
+    const btn = document.querySelector('.btn-tf-save');
+    btn.disabled = true; btn.textContent = 'Salvando...';
+
+    const r = await fetch('/Tarefa/Criar', { method: 'POST', body: fd });
+    const d = await r.json();
+
+    btn.disabled = false; btn.innerHTML = '<i class="fas fa-check me-1"></i>Criar Tarefa';
+
+    if (d.ok) {
+        fecharModalNova();
+        location.reload();
+    } else {
+        alert(d.erro || 'Erro ao criar tarefa.');
+    }
+}
+</script>
+}

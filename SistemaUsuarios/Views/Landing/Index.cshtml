@@ -1,722 +1,1037 @@
-﻿@model SistemaUsuarios.Models.ViewModels.LandingStatisticsViewModel
+@model SistemaUsuarios.Models.ViewModels.LandingStatisticsViewModel
 @{
-    ViewData["Title"] = "Transforme suas Propostas de Viagem";
-    Layout = null;
+    Layout = "_LayoutLanding";
+    ViewData["Title"] = "Agent Tools — Propostas de Viagem Premium com IA";
 }
 
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-</head>
-<body>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] | Sistema Profissional para Agentes</title>
-    
-    <!-- SEO Meta Tags -->
-    <meta name="description" content="Crie propostas de viagem profissionais, acompanhe métricas em tempo real e converta mais clientes. Cadastre-se grátis!">
-    <meta name="keywords" content="propostas de viagem, agentes de viagem, sistema para agências, conversão de clientes">
-    
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <!-- AOS Animation -->
-    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
-    
-    
-    <style>
-        :root {
-            --primary: #2563eb;
-            --primary-dark: #1d4ed8;
-            --accent: #10b981;
-            --accent-dark: #059669;
-            --dark: #1e293b;
-            --light: #f8fafc;
-            --white: #ffffff;
-            --gray-100: #f1f5f9;
-            --gray-500: #64748b;
-            --gray-900: #0f172a;
-            --gradient-hero: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --gradient-accent: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-            --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-            --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-        }
+@section Styles {
+<style>
+:root {
+    --navy:   #0D2B45;
+    --blue:   #1E4E8C;
+    --blue2:  #0D2B45;
+    --teal:   #5BA8FF;
+    --teal2:  #3F82D9;
+    --cream:  #EAF5FF;
+    --warm:   #EAF5FF;
+    --text:   #1A2B3C;
+    --muted:  #667085;
+    --white:  #FFFFFF;
+    --grad-hero:   linear-gradient(135deg, #0D2B45 0%, #1E4E8C 60%, #3F82D9 100%);
+    --grad-blue:   linear-gradient(135deg, #1E4E8C 0%, #0D2B45 100%);
+    --grad-teal:   linear-gradient(135deg, #3F82D9 0%, #1E4E8C 100%);
+    --grad-navy:   linear-gradient(135deg, #0D2B45 0%, #1E4E8C 100%);
+    --shadow-sm:   0 2px 8px rgba(13,43,69,0.08);
+    --shadow-md:   0 8px 24px rgba(13,43,69,0.14);
+    --shadow-lg:   0 16px 48px rgba(13,43,69,0.16);
+    --r:  12px;
+    --r2: 20px;
+}
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+html { scroll-behavior: smooth; }
+body { font-family: 'Inter', sans-serif; color: var(--text); overflow-x: hidden; -webkit-font-smoothing: antialiased; font-feature-settings: "cv02","cv03","cv04","cv11"; }
 
-        body {
-            font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
-            line-height: 1.6;
-            color: var(--dark);
-            background: var(--white);
-            overflow-x: hidden;
-        }
+/* ── NAVBAR ──────────────────────────────────────────────────────── */
+.lp-nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+    padding: 0.9rem 0;
+    background: rgba(13,43,69,0.96);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    transition: all 0.3s;
+}
+.lp-nav.scrolled { padding: 0.6rem 0; box-shadow: var(--shadow-md); }
+.lp-nav .brand { font-weight: 400; font-size: 1.1rem; color: #fff; text-decoration: none; display: flex; align-items: center; gap: 0.55rem; letter-spacing: 0.01em; }
+.lp-nav .brand strong { font-weight: 700; }
+.nav-links { display: flex; align-items: center; gap: 1.8rem; list-style: none; margin: 0; padding: 0; }
+.nav-links a { color: rgba(255,255,255,0.75); text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: color 0.2s; }
+.nav-links a:hover { color: #fff; }
+.btn-nav { background: var(--grad-teal); color: #fff !important; padding: 0.55rem 1.4rem; border-radius: 50px; font-weight: 600; font-size: 0.88rem !important; white-space: nowrap; }
+.btn-nav:hover { opacity: 0.9; }
+.hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; background: none; border: none; padding: 4px; }
+.hamburger span { display: block; width: 24px; height: 2px; background: #fff; border-radius: 2px; transition: all 0.3s; }
+@@media (max-width: 768px) {
+    .hamburger { display: flex; }
+    .nav-links { display: none; flex-direction: column; gap: 0.5rem; position: absolute; top: 100%; left: 0; right: 0; background: rgba(13,43,69,0.98); padding: 1.5rem 2rem; }
+    .nav-links.open { display: flex; }
+    .btn-nav { width: 100%; text-align: center; padding: 0.7rem; }
+}
 
-        /* === HERO SECTION === */
-        .hero {
-            min-height: 100vh;
-            background: var(--gradient-hero);
-            position: relative;
-            display: flex;
-            align-items: center;
-            overflow: hidden;
-        }
+/* ── HERO ─────────────────────────────────────────────────────────── */
+.lp-hero {
+    min-height: 100vh; background: var(--grad-hero);
+    display: flex; align-items: center; position: relative; overflow: hidden;
+    padding: 7rem 0 4rem;
+}
+.lp-hero::before {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(ellipse 70% 60% at 80% 50%, rgba(91,168,255,0.09) 0%, transparent 70%),
+                radial-gradient(ellipse 50% 80% at 10% 80%, rgba(30,78,140,0.18) 0%, transparent 60%);
+}
+.hero-eyebrow { display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(91,168,255,0.14); border: 1px solid rgba(91,168,255,0.35); color: var(--teal); padding: 0.35rem 1rem; border-radius: 50px; font-size: 0.82rem; font-weight: 600; margin-bottom: 1.5rem; letter-spacing: 0.03em; }
+.hero-headline { font-size: clamp(2.4rem, 5vw, 3.8rem); font-weight: 800; color: #fff; line-height: 1.1; letter-spacing: -0.03em; margin-bottom: 1.5rem; }
+.hero-headline em { font-style: normal; color: var(--teal); }
+.hero-sub { font-size: 1.15rem; color: rgba(255,255,255,0.82); line-height: 1.7; max-width: 560px; margin-bottom: 1rem; }
+.hero-text-comp { font-size: 0.95rem; color: rgba(255,255,255,0.55); line-height: 1.6; max-width: 500px; margin-bottom: 2.5rem; }
+.hero-ctas { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; }
+.btn-cta-main { background: var(--grad-teal); color: #fff; padding: 1rem 2.2rem; border-radius: 50px; font-weight: 700; font-size: 1rem; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; transition: all 0.3s; box-shadow: 0 8px 24px rgba(30,78,140,0.35); }
+.btn-cta-main:hover { color: #fff; transform: translateY(-2px); box-shadow: 0 12px 32px rgba(30,78,140,0.45); }
+.btn-cta-sec { background: rgba(255,255,255,0.1); border: 1.5px solid rgba(255,255,255,0.25); color: #fff; padding: 1rem 1.8rem; border-radius: 50px; font-weight: 500; font-size: 1rem; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; transition: all 0.3s; backdrop-filter: blur(8px); }
+.btn-cta-sec:hover { color: #fff; background: rgba(255,255,255,0.18); transform: translateY(-2px); }
+.hero-microcopy { font-size: 0.82rem; color: rgba(255,255,255,0.45); margin-top: 0.75rem; }
 
-        .hero::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: 
-                radial-gradient(circle at 25% 25%, rgba(255,255,255,0.1) 0%, transparent 50%),
-                radial-gradient(circle at 75% 75%, rgba(255,255,255,0.05) 0%, transparent 50%);
-            animation: float 20s ease-in-out infinite;
-        }
+/* Mockup proposta no Hero */
+.proposal-mockup { position: relative; z-index: 2; }
+.mockup-wrap {
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: var(--r2);
+    padding: 1.25rem;
+    backdrop-filter: blur(12px);
+    transform: perspective(1200px) rotateY(-6deg) rotateX(3deg);
+    transition: transform 0.4s;
+    box-shadow: var(--shadow-lg);
+}
+.mockup-wrap:hover { transform: perspective(1200px) rotateY(-1deg) rotateX(1deg); }
+.mockup-card { background: var(--white); border-radius: 16px; overflow: hidden; }
+.mockup-cover {
+    background: linear-gradient(160deg, #0D2B45 0%, #1E4E8C 60%, #3F82D9 100%);
+    padding: 1.5rem 1.5rem 1.2rem;
+    color: #fff;
+}
+.mockup-cover-tag { font-size: 0.65rem; font-weight: 600; letter-spacing: 0.1em; opacity: 0.7; text-transform: uppercase; }
+.mockup-cover-title { font-size: 1.1rem; font-weight: 700; margin: 0.3rem 0 0.2rem; }
+.mockup-cover-sub { font-size: 0.78rem; opacity: 0.8; }
+.mockup-cover-dates { display: flex; gap: 1rem; margin-top: 0.8rem; }
+.mockup-date-item { background: rgba(255,255,255,0.15); border-radius: 8px; padding: 0.4rem 0.7rem; font-size: 0.7rem; }
+.mockup-body { padding: 1rem 1.25rem; }
+.mockup-section-row { display: flex; align-items: center; gap: 0.6rem; padding: 0.55rem 0; border-bottom: 1px solid #f3f4f6; }
+.mockup-section-row:last-child { border-bottom: none; }
+.mockup-icon-wrap { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; flex-shrink: 0; }
+.mockup-label { font-size: 0.72rem; font-weight: 600; color: var(--text); }
+.mockup-sub-label { font-size: 0.65rem; color: var(--muted); }
+.mockup-footer { padding: 0.8rem 1.25rem; background: #f9fafb; display: flex; align-items: center; justify-content: space-between; }
+.mockup-access-btn { background: var(--grad-teal); color: #fff; border: none; padding: 0.45rem 1rem; border-radius: 50px; font-size: 0.7rem; font-weight: 600; }
 
-        @@keyframes float {
-            0%, 100% { transform: translateY(0px) rotate(0deg); }
-            50% { transform: translateY(-20px) rotate(1deg); }
-        }
+@@media (max-width: 992px) { .mockup-wrap { transform: none; margin-top: 3rem; } }
+@@media (max-width: 768px) { .hero-ctas { flex-direction: column; } .btn-cta-main, .btn-cta-sec { justify-content: center; } }
 
-        .hero-content {
-            position: relative;
-            z-index: 2;
-            color: white;
-        }
+/* ── SEÇÕES GENÉRICAS ────────────────────────────────────────────── */
+.lp-section { padding: 5rem 0; }
+.lp-section-alt { background: var(--cream); }
+.lp-section-dark { background: var(--grad-hero); color: #fff; }
+.section-eyebrow { font-size: 0.8rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--teal); margin-bottom: 0.75rem; }
+.section-title { font-size: clamp(1.8rem, 3.5vw, 2.5rem); font-weight: 800; line-height: 1.15; letter-spacing: -0.025em; margin-bottom: 1rem; color: var(--text); }
+.section-title-white { color: #fff; }
+.section-lead { font-size: 1.05rem; color: var(--muted); max-width: 620px; line-height: 1.7; }
+.section-lead-white { color: rgba(255,255,255,0.75); }
+.text-center .section-lead { margin: 0 auto; }
 
-        .hero h1 {
-            font-size: 4rem;
-            font-weight: 800;
-            margin-bottom: 1.5rem;
-            line-height: 1.1;
-            background: linear-gradient(135deg, #ffffff 0%, #e2e8f0 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
+/* ── CARDS DE DOR ────────────────────────────────────────────────── */
+.pain-card { background: var(--white); border-radius: var(--r2); padding: 2rem; box-shadow: var(--shadow-sm); border: 1px solid rgba(0,0,0,0.05); transition: all 0.3s; border-top: 3px solid transparent; }
+.pain-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); border-top-color: var(--blue); }
+.pain-icon { width: 48px; height: 48px; border-radius: var(--r); background: linear-gradient(135deg, rgba(30,78,140,0.1), rgba(30,78,140,0.05)); display: flex; align-items: center; justify-content: center; color: var(--blue); font-size: 1.2rem; margin-bottom: 1rem; }
+.pain-title { font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem; }
+.pain-text { font-size: 0.9rem; color: var(--muted); line-height: 1.6; margin: 0; }
 
-        .hero .subtitle {
-            font-size: 1.5rem;
-            margin-bottom: 3rem;
-            opacity: 0.95;
-            font-weight: 400;
-            max-width: 600px;
-        }
+/* ── CARDS DE BENEFÍCIO ──────────────────────────────────────────── */
+.benefit-card { background: var(--white); border-radius: var(--r2); padding: 2rem; border: 1px solid rgba(0,0,0,0.06); transition: all 0.3s; position: relative; overflow: hidden; }
+.benefit-card::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background: var(--grad-blue); transform: scaleX(0); transition: transform 0.3s; }
+.benefit-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
+.benefit-card:hover::after { transform: scaleX(1); }
+.benefit-icon { width: 52px; height: 52px; background: var(--grad-blue); border-radius: var(--r); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 1.25rem; margin-bottom: 1.25rem; }
+.benefit-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem; }
+.benefit-text { font-size: 0.9rem; color: var(--muted); line-height: 1.6; margin: 0; }
 
-        .hero-stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 1.5rem;
-            margin: 3rem 0;
-            max-width: 500px;
-        }
+/* ── COMO FUNCIONA STEPS ─────────────────────────────────────────── */
+.step-item { display: flex; gap: 1.5rem; align-items: flex-start; }
+.step-num { width: 48px; height: 48px; background: var(--grad-blue); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: 700; flex-shrink: 0; box-shadow: 0 4px 12px rgba(30,78,140,0.35); }
+.step-content h4 { font-size: 1.05rem; font-weight: 700; margin-bottom: 0.4rem; }
+.step-content p { font-size: 0.9rem; color: var(--muted); margin: 0; line-height: 1.6; }
+.step-connector { width: 2px; height: 2rem; background: linear-gradient(to bottom, rgba(30,78,140,0.3), transparent); margin-left: 23px; }
 
-        .stat-item {
-            text-align: center;
-            background: rgba(255, 255, 255, 0.15);
-            padding: 1.5rem 1rem;
-            border-radius: 16px;
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            transition: all 0.3s ease;
-        }
+/* ── FEATURE CARDS ───────────────────────────────────────────────── */
+.feature-card2 { background: var(--white); border-radius: var(--r2); padding: 1.75rem; border: 1px solid rgba(0,0,0,0.06); transition: all 0.3s; display: flex; flex-direction: column; gap: 0.75rem; }
+.feature-card2:hover { box-shadow: var(--shadow-md); transform: translateY(-3px); }
+.feature-icon2 { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; color: #fff; flex-shrink: 0; }
+.feature-title2 { font-size: 0.95rem; font-weight: 700; margin: 0; }
+.feature-text2 { font-size: 0.85rem; color: var(--muted); line-height: 1.6; margin: 0; }
 
-        .stat-item:hover {
-            transform: translateY(-5px);
-            background: rgba(255, 255, 255, 0.2);
-        }
+/* ── COMPARAÇÃO ──────────────────────────────────────────────────── */
+.compare-col { border-radius: var(--r2); padding: 2.25rem; }
+.compare-before { background: #f9fafb; border: 1.5px solid #e5e7eb; }
+.compare-after { background: var(--grad-hero); color: #fff; box-shadow: var(--shadow-lg); }
+.compare-title { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 1.5rem; }
+.compare-before .compare-title { color: var(--muted); }
+.compare-after .compare-title { color: var(--teal); }
+.compare-item { display: flex; align-items: flex-start; gap: 0.75rem; padding: 0.6rem 0; border-bottom: 1px solid rgba(0,0,0,0.05); font-size: 0.9rem; }
+.compare-after .compare-item { border-bottom-color: rgba(255,255,255,0.08); color: rgba(255,255,255,0.9); }
+.compare-item:last-child { border-bottom: none; }
+.compare-icon { font-size: 0.9rem; margin-top: 2px; flex-shrink: 0; }
+.compare-before .compare-icon { color: #9ca3af; }
+.compare-after .compare-icon { color: var(--teal); }
 
-        .stat-number {
-            font-size: 2.5rem;
-            font-weight: 800;
-            display: block;
-            margin-bottom: 0.5rem;
-        }
+/* ── PROPOSTA PREVIEW ────────────────────────────────────────────── */
+.preview-mockup { background: var(--white); border-radius: var(--r2); box-shadow: var(--shadow-lg); overflow: hidden; border: 1px solid rgba(0,0,0,0.06); }
+.preview-cover {
+    background: linear-gradient(160deg, #0D2B45 0%, #1E4E8C 55%, #3F82D9 100%);
+    padding: 2.5rem 2rem 2rem;
+    color: #fff;
+    position: relative;
+}
+.preview-cover-agency { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.65; }
+.preview-cover-title { font-size: 1.6rem; font-weight: 800; letter-spacing: -0.02em; margin: 0.4rem 0 0.2rem; }
+.preview-cover-sub { font-size: 0.9rem; opacity: 0.8; }
+.preview-meta { display: flex; gap: 1.5rem; margin-top: 1.5rem; flex-wrap: wrap; }
+.preview-meta-item { background: rgba(255,255,255,0.15); border-radius: 8px; padding: 0.5rem 0.9rem; font-size: 0.75rem; backdrop-filter: blur(8px); }
+.preview-meta-item i { margin-right: 0.35rem; }
+.preview-sections { padding: 1.5rem 2rem; display: grid; gap: 0.75rem; }
+.preview-row { display: flex; align-items: center; gap: 0.85rem; padding: 0.85rem 1rem; background: #f9fafb; border-radius: var(--r); transition: background 0.2s; }
+.preview-row:hover { background: var(--cream); }
+.preview-row-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; color: #fff; flex-shrink: 0; }
+.preview-row-text h6 { font-size: 0.82rem; font-weight: 700; margin: 0 0 0.1rem; }
+.preview-row-text span { font-size: 0.75rem; color: var(--muted); }
+.preview-footer { padding: 1.25rem 2rem; background: #f3f4f6; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+.preview-access-btn { background: var(--grad-teal); color: #fff; border: none; padding: 0.6rem 1.4rem; border-radius: 50px; font-size: 0.82rem; font-weight: 700; }
+.preview-lock { font-size: 0.75rem; color: var(--muted); display: flex; align-items: center; gap: 0.35rem; }
 
-        .stat-label {
-            font-size: 0.875rem;
-            opacity: 0.9;
-            font-weight: 500;
-        }
+/* ── PLANOS ──────────────────────────────────────────────────────── */
+.pricing-toggle { display: flex; align-items: center; gap: 0.75rem; justify-content: center; margin-bottom: 3rem; }
+.toggle-label { font-size: 0.9rem; font-weight: 600; color: var(--muted); transition: color 0.2s; }
+.toggle-label.active { color: var(--text); }
+.toggle-switch { position: relative; width: 52px; height: 28px; }
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+.toggle-track { position: absolute; inset: 0; background: #e5e7eb; border-radius: 14px; cursor: pointer; transition: background 0.3s; }
+.toggle-track::before { content: ''; position: absolute; width: 20px; height: 20px; left: 4px; top: 4px; background: #fff; border-radius: 50%; transition: transform 0.3s; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+.toggle-switch input:checked + .toggle-track { background: var(--blue); }
+.toggle-switch input:checked + .toggle-track::before { transform: translateX(24px); }
+.pricing-badge { background: linear-gradient(135deg, rgba(30,78,140,0.15), rgba(30,78,140,0.08)); color: var(--teal); border: 1px solid rgba(30,78,140,0.25); font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; padding: 0.2rem 0.6rem; border-radius: 50px; margin-left: 0.5rem; }
+.plan-card { background: var(--white); border-radius: var(--r2); padding: 2.5rem; border: 2px solid #e5e7eb; transition: all 0.3s; position: relative; height: 100%; display: flex; flex-direction: column; }
+.plan-card:hover { box-shadow: var(--shadow-md); }
+.plan-card.featured { border-color: var(--blue); box-shadow: 0 0 0 4px rgba(30,78,140,0.08), var(--shadow-md); }
+.plan-featured-badge { position: absolute; top: -13px; left: 50%; transform: translateX(-50%); background: var(--grad-blue); color: #fff; font-size: 0.72rem; font-weight: 700; padding: 0.3rem 1rem; border-radius: 50px; white-space: nowrap; letter-spacing: 0.04em; }
+.plan-name { font-size: 1.2rem; font-weight: 800; margin-bottom: 0.3rem; }
+.plan-desc { font-size: 0.85rem; color: var(--muted); margin-bottom: 1.5rem; line-height: 1.5; }
+.plan-price { margin-bottom: 0.4rem; }
+.plan-price .amount { font-size: 2.6rem; font-weight: 800; color: var(--text); line-height: 1; letter-spacing: -0.04em; }
+.plan-price .currency { font-size: 1.1rem; font-weight: 700; vertical-align: top; margin-top: 0.4rem; display: inline-block; }
+.plan-price .period { font-size: 0.85rem; color: var(--muted); }
+.plan-equiv { font-size: 0.8rem; color: var(--muted); margin-bottom: 1.75rem; }
+.plan-divider { border: none; border-top: 1px solid #f3f4f6; margin: 1.5rem 0; }
+.plan-features { list-style: none; margin: 0 0 2rem; padding: 0; flex: 1; }
+.plan-features li { display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.45rem 0; font-size: 0.875rem; color: var(--text); }
+.plan-features li i { color: var(--teal); font-size: 0.85rem; margin-top: 2px; flex-shrink: 0; }
+.btn-plan { display: block; text-align: center; padding: 0.9rem; border-radius: 50px; font-weight: 700; font-size: 0.95rem; text-decoration: none; transition: all 0.3s; border: 2px solid; }
+.btn-plan-outline { border-color: var(--blue); color: var(--blue); background: transparent; }
+.btn-plan-outline:hover { background: var(--blue); color: #fff; }
+.btn-plan-solid { background: var(--grad-blue); color: #fff; border-color: transparent; box-shadow: 0 6px 18px rgba(30,78,140,0.3); }
+.btn-plan-solid:hover { color: #fff; transform: translateY(-2px); box-shadow: 0 10px 24px rgba(30,78,140,0.4); }
+.pricing-note { text-align: center; margin-top: 2rem; font-size: 0.85rem; color: var(--muted); }
 
-        .cta-buttons {
-            display: flex;
-            gap: 1.5rem;
-            margin-top: 3rem;
-            flex-wrap: wrap;
-        }
+/* ── FORMULÁRIO CAPTURA ──────────────────────────────────────────── */
+.capture-form { background: var(--white); border-radius: var(--r2); padding: 2.5rem; box-shadow: var(--shadow-md); }
+.capture-form .form-label { font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; }
+.capture-form .form-control, .capture-form .form-select { border: 1.5px solid #e5e7eb; border-radius: var(--r); padding: 0.7rem 1rem; font-size: 0.9rem; transition: border-color 0.2s, box-shadow 0.2s; }
+.capture-form .form-control:focus, .capture-form .form-select:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(30,78,140,0.15); outline: none; }
+.btn-capture { width: 100%; padding: 1rem; background: var(--grad-blue); border: none; border-radius: 50px; color: #fff; font-size: 1rem; font-weight: 700; cursor: pointer; transition: all 0.3s; box-shadow: 0 6px 18px rgba(30,78,140,0.35); }
+.btn-capture:hover { transform: translateY(-2px); box-shadow: 0 10px 26px rgba(30,78,140,0.45); }
+.capture-success { display: none; text-align: center; padding: 2rem; }
+.capture-success i { font-size: 3rem; color: var(--teal); margin-bottom: 1rem; }
 
-        .btn-primary-hero {
-            background: var(--gradient-accent);
-            border: none;
-            padding: 1.25rem 2.5rem;
-            font-size: 1.125rem;
-            font-weight: 600;
-            border-radius: 50px;
-            color: white;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.75rem;
-            transition: all 0.3s ease;
-            box-shadow: var(--shadow-xl);
-            position: relative;
-            overflow: hidden;
-        }
+/* ── FAQ ─────────────────────────────────────────────────────────── */
+.faq-item .accordion-button { font-size: 0.95rem; font-weight: 600; background: var(--white); color: var(--text); border: none; box-shadow: none; padding: 1.2rem 1.5rem; }
+.faq-item .accordion-button:not(.collapsed) { color: var(--blue); background: rgba(30,78,140,0.04); box-shadow: none; }
+.faq-item .accordion-button::after { filter: none; }
+.faq-item .accordion-button:not(.collapsed)::after { filter: none; }
+.faq-item .accordion-body { font-size: 0.9rem; color: var(--muted); line-height: 1.7; padding: 0 1.5rem 1.2rem; }
+.faq-item .accordion-item { border: 1px solid #e5e7eb; border-radius: var(--r) !important; margin-bottom: 0.75rem; overflow: hidden; }
+.faq-item .accordion-item:last-child { margin-bottom: 0; }
 
-        .btn-primary-hero::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-            transition: left 0.5s ease;
-        }
+/* ── CTA INTERMEDIÁRIO ───────────────────────────────────────────── */
+.mid-cta { background: var(--grad-navy); color: #fff; padding: 5rem 0; text-align: center; position: relative; overflow: hidden; }
+.mid-cta::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 60% 70% at 50% 50%, rgba(91,168,255,0.10) 0%, transparent 70%); }
+.mid-cta-content { position: relative; z-index: 2; }
+.mid-cta h2 { font-size: clamp(1.8rem, 3vw, 2.4rem); font-weight: 800; letter-spacing: -0.025em; margin-bottom: 1rem; color: #fff; }
+.mid-cta p { font-size: 1.05rem; color: rgba(255,255,255,0.7); max-width: 540px; margin: 0 auto 2.5rem; line-height: 1.7; }
 
-        .btn-primary-hero:hover::before {
-            left: 100%;
-        }
+/* ── FOOTER ──────────────────────────────────────────────────────── */
+.lp-footer { background: var(--navy); color: rgba(255,255,255,0.5); padding: 2.5rem 0; text-align: center; font-size: 0.85rem; }
+.lp-footer .brand-foot { color: #fff; font-weight: 400; font-size: 1rem; margin-bottom: 0.3rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
+.lp-footer .brand-foot strong { font-weight: 700; }
+</style>
+}
 
-        .btn-primary-hero:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-            color: white;
-        }
+<!-- Barra de progresso de scroll -->
+<div class="scroll-indicator" id="scrollIndicator"></div>
 
-        .btn-secondary-hero {
-            background: rgba(255, 255, 255, 0.1);
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            padding: 1.25rem 2rem;
-            font-size: 1.125rem;
-            font-weight: 500;
-            border-radius: 50px;
-            color: white;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.75rem;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(20px);
-        }
+<!-- ╔══════════════════════════════════════════════════════════╗ -->
+<!--  12. NAVBAR                                                  -->
+<!-- ╚══════════════════════════════════════════════════════════╝ -->
+<nav class="lp-nav" id="lpNav">
+    <div class="container">
+        <div class="d-flex align-items-center justify-content-between">
+            <a href="#" class="brand">
+                <img src="/images/logo.png" alt="Agent Tools" width="34" height="34" style="display:block;flex-shrink:0;filter:brightness(0) invert(1);opacity:.9;">
+                Agent <strong>Tools</strong>
+            </a>
+            <button class="hamburger" id="hamburger" aria-label="Menu">
+                <span></span><span></span><span></span>
+            </button>
+            <ul class="nav-links" id="navLinks">
+                <li><a href="#como-funciona">Como funciona</a></li>
+                <li><a href="#funcionalidades">Funcionalidades</a></li>
+                <li><a href="#planos">Planos</a></li>
+                <li><a href="#faq">FAQ</a></li>
+                <li><a href="/Auth/Login" style="color:rgba(255,255,255,.75);font-size:.9rem;font-weight:500;">Entrar</a></li>
+                <li><a href="#acesso" class="btn-nav">Teste grátis por 29 dias</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
 
-        .btn-secondary-hero:hover {
-            background: rgba(255, 255, 255, 0.2);
-            transform: translateY(-3px);
-            color: white;
-        }
+<!-- ╔══════════════════════════════════════════════════════════╗ -->
+<!--  1. HERO                                                     -->
+<!-- ╚══════════════════════════════════════════════════════════╝ -->
+<section class="lp-hero" id="hero">
+    <div class="container">
+        <div class="row align-items-center g-5">
+            <div class="col-lg-6" data-aos="fade-right">
+                <div class="hero-eyebrow">
+                    <i class="fas fa-star"></i> Plataforma para agências de viagem
+                </div>
+                <h1 class="hero-headline">
+                    Propostas de viagem <em>premium</em> em minutos, com IA.
+                </h1>
+                <p class="hero-sub">
+                    Transforme briefings, voos, destinos, hospedagens, experiências e seguros em uma proposta digital bonita, organizada e pronta para encantar seu cliente.
+                </p>
+                <p class="hero-text-comp">
+                    Agent tools é a plataforma operacional para agências que querem vender viagens com mais agilidade, inteligência e sofisticação.
+                </p>
+                <div class="hero-ctas">
+                    <a href="#acesso" class="btn-cta-main">
+                        <i class="fas fa-rocket"></i> Começar teste grátis de 29 dias
+                    </a>
+                    <a href="#como-funciona" class="btn-cta-sec">
+                        <i class="fas fa-play-circle"></i> Ver como funciona
+                    </a>
+                </div>
+                <p class="hero-microcopy">
+                    <i class="fas fa-shield-alt me-1"></i> Teste gratuito por 29 dias. Sem compromisso.
+                </p>
+            </div>
+            <div class="col-lg-6 proposal-mockup" data-aos="fade-left" data-aos-delay="150">
+                <div class="mockup-wrap">
+                    <div class="mockup-card">
+                        <div class="mockup-cover">
+                            <div class="mockup-cover-tag">Agência Exemplo — Proposta Exclusiva</div>
+                            <div class="mockup-cover-title">Europa Clássica · 12 dias</div>
+                            <div class="mockup-cover-sub">Paris · Roma · Amsterdam · Barcelona</div>
+                            <div class="mockup-cover-dates">
+                                <div class="mockup-date-item"><i class="fas fa-calendar me-1"></i>12 Mar — 24 Mar</div>
+                                <div class="mockup-date-item"><i class="fas fa-users me-1"></i>2 passageiros</div>
+                            </div>
+                        </div>
+                        <div class="mockup-body">
+                            <div class="mockup-section-row">
+                                <div class="mockup-icon-wrap" style="background:linear-gradient(135deg,#1E4E8C,#0D2B45)"><i class="fas fa-plane text-white" style="font-size:0.7rem"></i></div>
+                                <div>
+                                    <div class="mockup-label">Voo GRU → CDG</div>
+                                    <div class="mockup-sub-label">Air France AF 457 · Econômica</div>
+                                </div>
+                            </div>
+                            <div class="mockup-section-row">
+                                <div class="mockup-icon-wrap" style="background:linear-gradient(135deg,#8B5CF6,#7C3AED)"><i class="fas fa-hotel text-white" style="font-size:0.7rem"></i></div>
+                                <div>
+                                    <div class="mockup-label">Hotel Le Marais · Paris</div>
+                                    <div class="mockup-sub-label">4 noites · Café da manhã incluso</div>
+                                </div>
+                            </div>
+                            <div class="mockup-section-row">
+                                <div class="mockup-icon-wrap" style="background:linear-gradient(135deg,#F59E0B,#D97706)"><i class="fas fa-star text-white" style="font-size:0.7rem"></i></div>
+                                <div>
+                                    <div class="mockup-label">Tour Torre Eiffel + Versalhes</div>
+                                    <div class="mockup-sub-label">Experiência premium guiada</div>
+                                </div>
+                            </div>
+                            <div class="mockup-section-row">
+                                <div class="mockup-icon-wrap" style="background:linear-gradient(135deg,#10B981,#059669)"><i class="fas fa-umbrella text-white" style="font-size:0.7rem"></i></div>
+                                <div>
+                                    <div class="mockup-label">Seguro Viagem Europa Total</div>
+                                    <div class="mockup-sub-label">Cobertura completa · 12 dias</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mockup-footer">
+                            <div style="font-size:0.7rem;color:#6B7280"><i class="fas fa-lock me-1"></i>Link com código de acesso</div>
+                            <button class="mockup-access-btn">Acessar Proposta</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
 
-        .hero-mockup {
-            position: relative;
-            z-index: 2;
-        }
+<!-- ╔══════════════════════════════════════════════════════════╗ -->
+<!--  2. DOR                                                      -->
+<!-- ╚══════════════════════════════════════════════════════════╝ -->
+<section class="lp-section" id="dor">
+    <div class="container">
+        <div class="text-center mb-5" data-aos="fade-up">
+            <div class="section-eyebrow">O problema</div>
+            <h2 class="section-title">Sua consultoria é valiosa demais para virar uma proposta improvisada.</h2>
+            <p class="section-lead">
+                Montar uma proposta de viagem ainda costuma envolver WhatsApp, PDF, Canva, Word, planilhas, imagens soltas e muito retrabalho. No fim, o agente perde tempo formatando material e o cliente nem sempre percebe todo o valor da consultoria.
+            </p>
+        </div>
+        <div class="row g-4">
+            <div class="col-sm-6 col-lg-3" data-aos="fade-up" data-aos-delay="0">
+                <div class="pain-card">
+                    <div class="pain-icon"><i class="fas fa-clock"></i></div>
+                    <div class="pain-title">Tempo perdido</div>
+                    <p class="pain-text">Horas gastas montando propostas manualmente, do zero, em ferramentas que não foram feitas para isso.</p>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-3" data-aos="fade-up" data-aos-delay="80">
+                <div class="pain-card">
+                    <div class="pain-icon"><i class="fas fa-palette"></i></div>
+                    <div class="pain-title">Experiência inconsistente</div>
+                    <p class="pain-text">Cada proposta sai com um visual diferente. Sem padrão, sem identidade de marca, sem sofisticação.</p>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-3" data-aos="fade-up" data-aos-delay="160">
+                <div class="pain-card">
+                    <div class="pain-icon"><i class="fas fa-eye-slash"></i></div>
+                    <div class="pain-title">Baixa percepção de valor</div>
+                    <p class="pain-text">O cliente olha preço antes de perceber a experiência. A consultoria fica invisível na formatação genérica.</p>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-3" data-aos="fade-up" data-aos-delay="240">
+                <div class="pain-card">
+                    <div class="pain-icon"><i class="fas fa-th-list"></i></div>
+                    <div class="pain-title">Informação espalhada</div>
+                    <p class="pain-text">Cliente, passageiros, voos, hotéis e documentos ficam em vários lugares. Difícil de organizar, difícil de entregar.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
 
-        .mockup-container {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 24px;
-            padding: 2rem;
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            transform: perspective(1000px) rotateY(-5deg) rotateX(5deg);
-            transition: all 0.3s ease;
-        }
+<!-- ╔══════════════════════════════════════════════════════════╗ -->
+<!--  3. PROPOSTA DE VALOR                                        -->
+<!-- ╚══════════════════════════════════════════════════════════╝ -->
+<section class="lp-section lp-section-alt">
+    <div class="container">
+        <div class="text-center mb-5" data-aos="fade-up">
+            <div class="section-eyebrow">A solução</div>
+            <h2 class="section-title">Uma plataforma para transformar proposta em experiência de venda.</h2>
+            <p class="section-lead">
+                O Agent tools centraliza a criação da proposta, a organização do cliente e o uso de IA para transformar informações soltas em uma experiência digital clara, bonita e pronta para venda.
+            </p>
+        </div>
+        <div class="row g-4">
+            <div class="col-sm-6 col-lg-3" data-aos="fade-up" data-aos-delay="0">
+                <div class="benefit-card h-100">
+                    <div class="benefit-icon"><i class="fas fa-bolt"></i></div>
+                    <div class="benefit-title">Mais velocidade</div>
+                    <p class="benefit-text">Crie propostas completas sem começar do zero. Estrutura pronta, campos organizados, fluxo natural.</p>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-3" data-aos="fade-up" data-aos-delay="80">
+                <div class="benefit-card h-100">
+                    <div class="benefit-icon"><i class="fas fa-gem"></i></div>
+                    <div class="benefit-title">Mais encantamento</div>
+                    <p class="benefit-text">Entregue uma experiência visual premium ao cliente. Layout sofisticado que valoriza a consultoria antes do preço.</p>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-3" data-aos="fade-up" data-aos-delay="160">
+                <div class="benefit-card h-100">
+                    <div class="benefit-icon"><i class="fas fa-layer-group"></i></div>
+                    <div class="benefit-title">Mais organização</div>
+                    <p class="benefit-text">Tenha clientes, passageiros, propostas e histórico em um só lugar. Acesso rápido, sem dispersão.</p>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-3" data-aos="fade-up" data-aos-delay="240">
+                <div class="benefit-card h-100">
+                    <div class="benefit-icon"><i class="fas fa-brain"></i></div>
+                    <div class="benefit-title">Mais inteligência</div>
+                    <p class="benefit-text">Use IA para enriquecer destinos, descrições e detalhes da viagem. Menos pesquisa manual, mais proposta de valor.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
 
-        .mockup-container:hover {
-            transform: perspective(1000px) rotateY(0deg) rotateX(0deg);
-        }
+<!-- ╔══════════════════════════════════════════════════════════╗ -->
+<!--  4. COMO FUNCIONA                                            -->
+<!-- ╚══════════════════════════════════════════════════════════╝ -->
+<section class="lp-section" id="como-funciona">
+    <div class="container">
+        <div class="row align-items-center g-5">
+            <div class="col-lg-5" data-aos="fade-right">
+                <div class="section-eyebrow">Fluxo de trabalho</div>
+                <h2 class="section-title">Do briefing à proposta em poucos passos.</h2>
+                <p class="section-lead">Cada etapa foi pensada para o fluxo real de uma agência. Sem complexidade, sem curva de aprendizado longa.</p>
+            </div>
+            <div class="col-lg-6 offset-lg-1" data-aos="fade-left">
+                <div class="d-flex flex-column gap-1">
+                    <div class="step-item">
+                        <div class="step-num">1</div>
+                        <div class="step-content">
+                            <h4>Cadastre o cliente</h4>
+                            <p>Inclua cliente, passageiros, preferências e dados importantes da viagem em um cadastro organizado.</p>
+                        </div>
+                    </div>
+                    <div class="step-connector"></div>
+                    <div class="step-item">
+                        <div class="step-num">2</div>
+                        <div class="step-content">
+                            <h4>Monte a proposta</h4>
+                            <p>Adicione voos, destinos, hospedagens, experiências, transportes, seguros e observações com facilidade.</p>
+                        </div>
+                    </div>
+                    <div class="step-connector"></div>
+                    <div class="step-item">
+                        <div class="step-num">3</div>
+                        <div class="step-content">
+                            <h4>Use IA para enriquecer</h4>
+                            <p>Gere descrições, dicas práticas, gastronomia, atrações, cuidados e sugestões por destino com um clique.</p>
+                        </div>
+                    </div>
+                    <div class="step-connector"></div>
+                    <div class="step-item">
+                        <div class="step-num">4</div>
+                        <div class="step-content">
+                            <h4>Compartilhe a experiência</h4>
+                            <p>Envie um link com código de acesso para o cliente visualizar a proposta digital de forma elegante, sem precisar instalar nada.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
 
-        .mockup-window {
-            background: white;
-            border-radius: 16px;
-            overflow: hidden;
-            box-shadow: var(--shadow-xl);
-        }
-
-        .mockup-header {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 1rem 1.5rem;
-            background: var(--gray-100);
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .mockup-dot {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-        }
-
-        .mockup-dot:nth-child(1) { background: #ff5f56; }
-        .mockup-dot:nth-child(2) { background: #ffbd2e; }
-        .mockup-dot:nth-child(3) { background: #27ca3f; }
-
-        .mockup-content {
-            padding: 2rem;
-            color: var(--dark);
-        }
-
-        .mockup-title {
-            font-size: 1.25rem;
-            font-weight: 700;
-            margin-bottom: 1rem;
-            color: var(--dark);
-        }
-
-        .mockup-stats {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .mockup-stat {
-            background: var(--gray-100);
-            padding: 0.75rem 1rem;
-            border-radius: 12px;
-            font-size: 0.875rem;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .mockup-features {
-            background: var(--gray-100);
-            padding: 1.5rem;
-            border-radius: 12px;
-            font-size: 0.875rem;
-            line-height: 1.6;
-        }
-
-        /* === FEATURES SECTION === */
-        .features {
-            padding: 6rem 0;
-            background: var(--light);
-        }
-
-        .section-title {
-            text-align: center;
-            margin-bottom: 4rem;
-        }
-
-        .section-title h2 {
-            font-size: 3rem;
-            font-weight: 800;
-            margin-bottom: 1rem;
-            background: var(--gradient-hero);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .section-title p {
-            font-size: 1.25rem;
-            color: var(--gray-500);
-            max-width: 600px;
-            margin: 0 auto;
-        }
-
-        .feature-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-        }
-
-        .feature-card {
-            background: white;
-            padding: 3rem 2rem;
-            border-radius: 24px;
-            box-shadow: var(--shadow);
-            text-align: center;
-            transition: all 0.3s ease;
-            border: 1px solid rgba(0, 0, 0, 0.05);
-            height: 100%;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .feature-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: var(--gradient-hero);
-            transform: scaleX(0);
-            transition: transform 0.3s ease;
-        }
-
-        .feature-card:hover::before {
-            transform: scaleX(1);
-        }
-
-        .feature-card:hover {
-            transform: translateY(-8px);
-            box-shadow: var(--shadow-xl);
-        }
-
-        .feature-icon {
-            width: 80px;
-            height: 80px;
-            background: var(--gradient-hero);
-            border-radius: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 2rem;
-            font-size: 2rem;
-            color: white;
-            position: relative;
-        }
-
-        .feature-icon::after {
-            content: '';
-            position: absolute;
-            top: -4px;
-            left: -4px;
-            right: -4px;
-            bottom: -4px;
-            background: var(--gradient-hero);
-            border-radius: 24px;
-            opacity: 0.2;
-            z-index: -1;
-        }
-
-        .feature-card h3 {
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin-bottom: 1rem;
-            color: var(--dark);
-        }
-
-        .feature-card p {
-            color: var(--gray-500);
-            line-height: 1.6;
-            font-size: 1rem;
-        }
-
-        /* === CTA SECTION === */
-        .cta-section {
-            padding: 6rem 0;
-            background: var(--gradient-hero);
-            color: white;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .cta-section::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: 
-                radial-gradient(circle at 20% 20%, rgba(255,255,255,0.1) 0%, transparent 50%),
-                radial-gradient(circle at 80% 80%, rgba(255,255,255,0.05) 0%, transparent 50%);
-        }
-
-        .cta-content {
-            position: relative;
-            z-index: 2;
-        }
-
-        .cta-section h2 {
-            font-size: 3rem;
-            font-weight: 800;
-            margin-bottom: 1rem;
-        }
-
-        .cta-section p {
-            font-size: 1.25rem;
-            margin-bottom: 3rem;
-            opacity: 0.9;
-            max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        .signup-form {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 24px;
-            padding: 3rem;
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            max-width: 500px;
-            margin: 0 auto;
-        }
-
-        .signup-form h3 {
-            font-size: 1.75rem;
-            font-weight: 700;
-            margin-bottom: 2rem;
-        }
-
-        .form-group {
-            margin-bottom: 1.5rem;
-            position: relative;
-        }
-
-        .form-control-modern {
-            width: 100%;
-            padding: 1.25rem 1.5rem;
-            border: 2px solid rgba(255, 255, 255, 0.2);
-            border-radius: 16px;
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            font-size: 1rem;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
-        }
-
-        .form-control-modern::placeholder {
-            color: rgba(255, 255, 255, 0.7);
-        }
-
-        .form-control-modern:focus {
-            outline: none;
-            border-color: rgba(255, 255, 255, 0.5);
-            background: rgba(255, 255, 255, 0.15);
-            box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.1);
-        }
-
-        .btn-signup {
-            width: 100%;
-            padding: 1.25rem;
-            background: var(--gradient-accent);
-            border: none;
-            border-radius: 16px;
-            color: white;
-            font-size: 1.125rem;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin-top: 1rem;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .btn-signup::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-            transition: left 0.5s ease;
-        }
-
-        .btn-signup:hover::before {
-            left: 100%;
-        }
-
-        .btn-signup:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-xl);
-        }
-
-        .form-disclaimer {
-            font-size: 0.875rem;
-            margin-top: 1rem;
-            opacity: 0.8;
-        }
-
-        /* === SCROLL INDICATOR === */
-        .scroll-indicator {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 0%;
-            height: 4px;
-            background: var(--gradient-accent);
-            z-index: 9999;
-            transition: width 0.1s ease;
-        }
-
-        /* === RESPONSIVE === */
-        @@media (max-width: 768px) {
-            .hero h1 {
-                font-size: 2.5rem;
+<!-- ╔══════════════════════════════════════════════════════════╗ -->
+<!--  5. FUNCIONALIDADES                                          -->
+<!-- ╚══════════════════════════════════════════════════════════╝ -->
+<section class="lp-section lp-section-alt" id="funcionalidades">
+    <div class="container">
+        <div class="text-center mb-5" data-aos="fade-up">
+            <div class="section-eyebrow">Funcionalidades</div>
+            <h2 class="section-title">Tudo que sua agência precisa para organizar e apresentar melhor suas viagens.</h2>
+        </div>
+        <div class="row g-3">
+            @{
+                var features = new[] {
+                    new { Icon = "fas fa-file-alt", Color = "#1E4E8C", Title = "Propostas digitais premium", Text = "Layouts modernos para apresentar viagens de forma clara, bonita e sofisticada." },
+                    new { Icon = "fas fa-users", Color = "#8B5CF6", Title = "Gestão de clientes e passageiros", Text = "Organize dados do cliente, acompanhantes, histórico e preferências." },
+                    new { Icon = "fas fa-plane-departure", Color = "#F59E0B", Title = "Voos inteligentes", Text = "Busque dados de voo automaticamente a partir da companhia e número do voo." },
+                    new { Icon = "fas fa-map-marked-alt", Color = "#10B981", Title = "Destinos com IA", Text = "Gere descrições, dicas, atrações, gastronomia, mala sugerida e cuidados por destino." },
+                    new { Icon = "fas fa-concierge-bell", Color = "#EF4444", Title = "Hospedagens, experiências e transportes", Text = "Monte a jornada completa da viagem em uma única proposta organizada." },
+                    new { Icon = "fas fa-shield-alt", Color = "#06B6D4", Title = "Seguros e documentos", Text = "Inclua seguros, vouchers, imagens, arquivos e observações importantes." },
+                    new { Icon = "fas fa-link", Color = "#EC4899", Title = "Link público com código de acesso", Text = "Compartilhe uma proposta elegante e fácil de acessar. Sem instalação para o cliente." },
+                    new { Icon = "fas fa-paint-brush", Color = "#F97316", Title = "Identidade visual da agência", Text = "Use cores e estilo próprios para reforçar sua marca em cada proposta." }
+                };
             }
-
-            .hero .subtitle {
-                font-size: 1.25rem;
+            @foreach (var feat in features)
+            {
+                <div class="col-sm-6 col-lg-3" data-aos="fade-up">
+                    <div class="feature-card2">
+                        <div class="feature-icon2" style="background: @feat.Color">
+                            <i class="@feat.Icon"></i>
+                        </div>
+                        <div class="feature-title2">@feat.Title</div>
+                        <p class="feature-text2">@feat.Text</p>
+                    </div>
+                </div>
             }
+        </div>
+    </div>
+</section>
 
-            .hero-stats {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 1rem;
-            }
+<!-- ╔══════════════════════════════════════════════════════════╗ -->
+<!--  9. CTA INTERMEDIÁRIO (posicionado antes do comparativo)    -->
+<!-- ╚══════════════════════════════════════════════════════════╝ -->
+<section class="mid-cta">
+    <div class="container">
+        <div class="mid-cta-content" data-aos="fade-up">
+            <h2>Pronto para criar propostas que vendem melhor?</h2>
+            <p>Teste o Agent tools por 29 dias e veja como uma proposta digital premium pode elevar a percepção de valor da sua agência.</p>
+            <a href="#acesso" class="btn-cta-main mx-auto">
+                <i class="fas fa-rocket"></i> Começar teste grátis de 29 dias
+            </a>
+        </div>
+    </div>
+</section>
 
-            .cta-buttons {
-                flex-direction: column;
-                align-items: stretch;
-            }
+<!-- ╔══════════════════════════════════════════════════════════╗ -->
+<!--  6. DIFERENCIAL COMPETITIVO                                  -->
+<!-- ╚══════════════════════════════════════════════════════════╝ -->
+<section class="lp-section">
+    <div class="container">
+        <div class="text-center mb-5" data-aos="fade-up">
+            <div class="section-eyebrow">Diferencial</div>
+            <h2 class="section-title">Não é só uma proposta bonita.<br>É uma operação comercial mais inteligente.</h2>
+        </div>
+        <div class="row g-4 justify-content-center">
+            <div class="col-md-5" data-aos="fade-right">
+                <div class="compare-col compare-before">
+                    <div class="compare-title">Antes</div>
+                    <div class="compare-item"><i class="fas fa-times compare-icon"></i><span>Proposta manual em PDF, Canva ou Word</span></div>
+                    <div class="compare-item"><i class="fas fa-times compare-icon"></i><span>Informações espalhadas no WhatsApp</span></div>
+                    <div class="compare-item"><i class="fas fa-times compare-icon"></i><span>Pouco padrão visual entre propostas</span></div>
+                    <div class="compare-item"><i class="fas fa-times compare-icon"></i><span>Retrabalho a cada novo cliente</span></div>
+                    <div class="compare-item"><i class="fas fa-times compare-icon"></i><span>Menor percepção de valor pelo cliente</span></div>
+                </div>
+            </div>
+            <div class="col-md-5" data-aos="fade-left">
+                <div class="compare-col compare-after">
+                    <div class="compare-title">Com Agent tools</div>
+                    <div class="compare-item"><i class="fas fa-check compare-icon"></i><span>Proposta digital premium, elegante</span></div>
+                    <div class="compare-item"><i class="fas fa-check compare-icon"></i><span>Dados organizados em uma só plataforma</span></div>
+                    <div class="compare-item"><i class="fas fa-check compare-icon"></i><span>IA aplicada ao turismo</span></div>
+                    <div class="compare-item"><i class="fas fa-check compare-icon"></i><span>Link compartilhável com código de acesso</span></div>
+                    <div class="compare-item"><i class="fas fa-check compare-icon"></i><span>Histórico do cliente e experiência profissional</span></div>
+                </div>
+            </div>
+        </div>
+        <p class="text-center mt-4 text-muted" style="font-size:0.9rem;max-width:580px;margin-left:auto;margin-right:auto" data-aos="fade-up">
+            O Agent tools foi pensado para apoiar o fluxo real de uma agência: cadastro, edição, proposta, revisão, apresentação, histórico e relacionamento com o cliente.
+        </p>
+    </div>
+</section>
 
-            .btn-primary-hero,
-            .btn-secondary-hero {
-                justify-content: center;
-            }
+<!-- ╔══════════════════════════════════════════════════════════╗ -->
+<!--  7. PREVIEW DA PROPOSTA                                      -->
+<!-- ╚══════════════════════════════════════════════════════════╝ -->
+<section class="lp-section lp-section-alt">
+    <div class="container">
+        <div class="text-center mb-5" data-aos="fade-up">
+            <div class="section-eyebrow">Experiência do cliente</div>
+            <h2 class="section-title">Uma proposta que valoriza a viagem antes mesmo da compra.</h2>
+            <p class="section-lead">Mostre ao cliente uma experiência visual organizada, com todos os detalhes importantes da viagem em um só lugar.</p>
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-lg-8" data-aos="fade-up" data-aos-delay="100">
+                <div class="preview-mockup">
+                    <div class="preview-cover">
+                        <div class="preview-cover-agency">Viagens Premium Boutique · Proposta exclusiva</div>
+                        <div class="preview-cover-title">Japão Essencial · 10 dias</div>
+                        <div class="preview-cover-sub">Tóquio · Kyoto · Osaka · Nara</div>
+                        <div class="preview-meta">
+                            <div class="preview-meta-item"><i class="fas fa-calendar"></i>15 Out — 25 Out 2025</div>
+                            <div class="preview-meta-item"><i class="fas fa-users"></i>2 passageiros</div>
+                            <div class="preview-meta-item"><i class="fas fa-map-marker-alt"></i>4 destinos</div>
+                        </div>
+                    </div>
+                    <div class="preview-sections">
+                        <div class="preview-row">
+                            <div class="preview-row-icon" style="background:linear-gradient(135deg,#1E4E8C,#0D2B45)"><i class="fas fa-plane"></i></div>
+                            <div class="preview-row-text">
+                                <h6>Voos incluídos</h6>
+                                <span>GRU → NRT (ida) · NRT → GRU (volta) · LATAM Airlines</span>
+                            </div>
+                        </div>
+                        <div class="preview-row">
+                            <div class="preview-row-icon" style="background:linear-gradient(135deg,#8B5CF6,#7C3AED)"><i class="fas fa-hotel"></i></div>
+                            <div class="preview-row-text">
+                                <h6>Hospedagens selecionadas</h6>
+                                <span>3 hotéis curados · Tóquio, Kyoto e Osaka</span>
+                            </div>
+                        </div>
+                        <div class="preview-row">
+                            <div class="preview-row-icon" style="background:linear-gradient(135deg,#F59E0B,#D97706)"><i class="fas fa-star"></i></div>
+                            <div class="preview-row-text">
+                                <h6>Experiências</h6>
+                                <span>Cerimônia do chá · Templo Fushimi Inari · Passeio de barco</span>
+                            </div>
+                        </div>
+                        <div class="preview-row">
+                            <div class="preview-row-icon" style="background:linear-gradient(135deg,#10B981,#059669)"><i class="fas fa-map-marked-alt"></i></div>
+                            <div class="preview-row-text">
+                                <h6>Dicas do destino</h6>
+                                <span>Geradas com IA · Gastronomia, transporte, clima, moeda</span>
+                            </div>
+                        </div>
+                        <div class="preview-row">
+                            <div class="preview-row-icon" style="background:linear-gradient(135deg,#06B6D4,#0891B2)"><i class="fas fa-shield-alt"></i></div>
+                            <div class="preview-row-text">
+                                <h6>Seguro viagem</h6>
+                                <span>Cobertura total Ásia · 10 dias</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="preview-footer">
+                        <div class="preview-lock"><i class="fas fa-lock"></i> Acesso com código exclusivo</div>
+                        <button class="preview-access-btn"><i class="fas fa-eye me-1"></i>Visualizar proposta</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
 
-            .mockup-container {
-                transform: none;
-            }
+<!-- ╔══════════════════════════════════════════════════════════╗ -->
+<!--  8. PLANOS E PREÇOS                                          -->
+<!-- ╚══════════════════════════════════════════════════════════╝ -->
+<section class="lp-section" id="planos">
+    <div class="container">
+        <div class="text-center mb-2" data-aos="fade-up">
+            <div class="section-eyebrow">Planos</div>
+            <h2 class="section-title">Escolha o plano ideal para sua operação.</h2>
+            <p class="section-lead">Comece com 29 dias grátis e descubra como o Agent tools pode transformar a apresentação das suas propostas.</p>
+        </div>
 
-            .section-title h2 {
-                font-size: 2rem;
-            }
+        <!-- Toggle Mensal / Anual -->
+        <div class="pricing-toggle" data-aos="fade-up">
+            <span class="toggle-label active" id="lblMensal">Mensal</span>
+            <label class="toggle-switch">
+                <input type="checkbox" id="pricingToggle">
+                <span class="toggle-track"></span>
+            </label>
+            <span class="toggle-label" id="lblAnual">Anual <span class="pricing-badge">Economia</span></span>
+        </div>
 
-            .cta-section h2 {
-                font-size: 2rem;
-            }
-                    btnText.innerHTML = '<i class="fas fa-check me-2"></i>Sucesso! Redirecionando...';
-                    
-                    // Show success message
-                    showNotification(result.message, 'success');
-                    
-                    // Track conversion
-                    trackEvent('conversion', {
-                        type: 'signup_landing',
-                        email: formData.get('Email'),
-                        tipoAgente: formData.get('TipoAgente')
-                    });
-                    
-                    // Redirect after delay
-                    setTimeout(() => {
-                        window.location.href = result.redirectUrl;
-                    }, 1500);
-                    
-                } else {
-                    // Error
-                    btnText.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Erro - Tente novamente';
-                    showNotification(result.message || 'Erro ao criar conta. Tente novamente.', 'error');
-                    
-                    if (result.errors && result.errors.length > 0) {
-                        result.errors.forEach(error => {
-                            showNotification(error, 'error');
-                        });
+        <div class="row g-4 justify-content-center" data-aos="fade-up" data-aos-delay="100">
+
+            <!-- Plano Individual -->
+            <div class="col-md-5">
+                <div class="plan-card">
+                    <div class="plan-name">Individual</div>
+                    <p class="plan-desc">Para consultores independentes e agentes que trabalham sozinhos.</p>
+                    <!-- Preço Mensal -->
+                    <div id="price-individual-mensal">
+                        <div class="plan-price">
+                            <span class="currency">R$</span>
+                            <span class="amount">75</span>
+                            <span class="period">/mês</span>
+                        </div>
+                        <p class="plan-equiv">&nbsp;</p>
+                    </div>
+                    <!-- Preço Anual -->
+                    <div id="price-individual-anual" style="display:none">
+                        <div class="plan-price">
+                            <span class="currency">R$</span>
+                            <span class="amount">876</span>
+                            <span class="period">/ano</span>
+                        </div>
+                        <p class="plan-equiv">Equivale a R$ 73/mês no plano anual.</p>
+                    </div>
+                    <hr class="plan-divider">
+                    <ul class="plan-features">
+                        <li><i class="fas fa-check-circle"></i> 1 usuário</li>
+                        <li><i class="fas fa-check-circle"></i> Propostas digitais premium</li>
+                        <li><i class="fas fa-check-circle"></i> Cadastro de clientes e passageiros</li>
+                        <li><i class="fas fa-check-circle"></i> Destinos com IA</li>
+                        <li><i class="fas fa-check-circle"></i> Voos inteligentes</li>
+                        <li><i class="fas fa-check-circle"></i> Hospedagens, experiências, transportes e seguros</li>
+                        <li><i class="fas fa-check-circle"></i> Link público com código de acesso</li>
+                        <li><i class="fas fa-check-circle"></i> Identidade visual da agência</li>
+                        <li><i class="fas fa-check-circle"></i> Teste grátis de 29 dias</li>
+                    </ul>
+                    <a href="#acesso" class="btn-plan btn-plan-outline">Começar teste grátis</a>
+                </div>
+            </div>
+
+            <!-- Plano Equipe -->
+            <div class="col-md-5">
+                <div class="plan-card featured">
+                    <div class="plan-featured-badge">Mais indicado para agências</div>
+                    <div class="plan-name">Equipe</div>
+                    <p class="plan-desc">Para agências pequenas e times comerciais de 2 a 5 usuários.</p>
+                    <!-- Preço Mensal -->
+                    <div id="price-equipe-mensal">
+                        <div class="plan-price">
+                            <span class="currency">R$</span>
+                            <span class="amount">175</span>
+                            <span class="period">/mês</span>
+                        </div>
+                        <p class="plan-equiv">&nbsp;</p>
+                    </div>
+                    <!-- Preço Anual -->
+                    <div id="price-equipe-anual" style="display:none">
+                        <div class="plan-price">
+                            <span class="currency">R$</span>
+                            <span class="amount">2.040</span>
+                            <span class="period">/ano</span>
+                        </div>
+                        <p class="plan-equiv">Equivale a R$ 170/mês no plano anual.</p>
+                    </div>
+                    <hr class="plan-divider">
+                    <ul class="plan-features">
+                        <li><i class="fas fa-check-circle"></i> De 2 a 5 usuários</li>
+                        <li><i class="fas fa-check-circle"></i> Tudo do plano Individual</li>
+                        <li><i class="fas fa-check-circle"></i> Organização de propostas por equipe</li>
+                        <li><i class="fas fa-check-circle"></i> Padronização visual da agência</li>
+                        <li><i class="fas fa-check-circle"></i> Gestão compartilhada de clientes e propostas</li>
+                        <li><i class="fas fa-check-circle"></i> Identidade visual centralizada</li>
+                        <li><i class="fas fa-check-circle"></i> Melhor custo-benefício para equipes</li>
+                        <li><i class="fas fa-check-circle"></i> Teste grátis de 29 dias</li>
+                    </ul>
+                    <a href="#acesso" class="btn-plan btn-plan-solid">Testar plano Equipe</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="pricing-note" data-aos="fade-up">
+            <p>Todos os planos incluem teste gratuito de 29 dias. Durante o piloto, você poderá validar a criação de propostas, organização dos clientes e experiência digital para o cliente final.</p>
+            <p class="mt-2 text-muted" style="font-size:0.8rem">Valores de lançamento sujeitos a alteração para novos clientes.</p>
+        </div>
+    </div>
+</section>
+
+<!-- ╔══════════════════════════════════════════════════════════╗ -->
+<!--  10. FORMULÁRIO DE CAPTURA                                   -->
+<!-- ╚══════════════════════════════════════════════════════════╝ -->
+<section class="lp-section lp-section-alt" id="acesso">
+    <div class="container">
+        <div class="row align-items-center g-5">
+            <div class="col-lg-5" data-aos="fade-right">
+                <div class="section-eyebrow">Acesso antecipado</div>
+                <h2 class="section-title">Solicite seu acesso ao Agent tools</h2>
+                <p class="section-lead">Preencha seus dados para começar o teste gratuito ou entrar na lista de acesso antecipado.</p>
+                <div class="mt-4 d-flex flex-column gap-3">
+                    <div class="d-flex align-items-center gap-2" style="font-size:0.9rem">
+                        <i class="fas fa-check-circle text-success"></i>
+                        <span>29 dias de teste gratuito, sem cartão</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2" style="font-size:0.9rem">
+                        <i class="fas fa-check-circle text-success"></i>
+                        <span>Acesso imediato após o cadastro</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2" style="font-size:0.9rem">
+                        <i class="fas fa-check-circle text-success"></i>
+                        <span>Cancelamento simples, sem burocracia</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6 offset-lg-1" data-aos="fade-left">
+                <div class="capture-form">
+                    <!-- Formulário -->
+                    <div id="captureFormWrap">
+                        <form id="captureForm" novalidate>
+                            @Html.AntiForgeryToken()
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="form-label">Nome completo <span class="text-danger">*</span></label>
+                                    <input type="text" name="Nome" class="form-control" placeholder="Seu nome" required minlength="2" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">E-mail <span class="text-danger">*</span></label>
+                                    <input type="email" name="Email" class="form-control" placeholder="seu@email.com" required />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">WhatsApp <span class="text-danger">*</span></label>
+                                    <input type="tel" name="Telefone" id="capTelefone" class="form-control" placeholder="(11) 99999-9999" required />
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Nome da agência</label>
+                                    <input type="text" name="NomeAgencia" class="form-control" placeholder="Nome da sua agência (opcional)" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Tipo de atuação <span class="text-danger">*</span></label>
+                                    <select name="TipoAgente" class="form-select" required>
+                                        <option value="" disabled selected>Selecione</option>
+                                        <option>Consultor independente</option>
+                                        <option>Agência pequena</option>
+                                        <option>Agência com equipe</option>
+                                        <option>Outro</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Propostas por mês?</label>
+                                    <select name="PropostasMes" class="form-select">
+                                        <option value="">Selecione</option>
+                                        <option>Até 10</option>
+                                        <option>11 a 30</option>
+                                        <option>31 a 100</option>
+                                        <option>Mais de 100</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Plano de interesse</label>
+                                    <select name="PlanoInteresse" class="form-select">
+                                        <option value="">Selecione</option>
+                                        <option>Individual mensal</option>
+                                        <option>Individual anual</option>
+                                        <option>Equipe mensal</option>
+                                        <option>Equipe anual</option>
+                                        <option>Ainda não sei</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Principal desafio hoje</label>
+                                    <select name="DesafioAtual" class="form-select">
+                                        <option value="">Selecione</option>
+                                        <option>Demora para montar proposta</option>
+                                        <option>Falta de padrão visual</option>
+                                        <option>Organização de clientes</option>
+                                        <option>Uso de IA</option>
+                                        <option>Apresentação pouco profissional</option>
+                                        <option>Outro</option>
+                                    </select>
+                                </div>
+                                <div class="col-12 mt-2">
+                                    <button type="submit" class="btn-capture" id="btnCapture">
+                                        <i class="fas fa-rocket me-2"></i>Começar meu teste grátis
+                                    </button>
+                                    <p class="text-center text-muted mt-2" style="font-size:0.78rem">Sem cartão de crédito · 29 dias grátis · Cancele quando quiser</p>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <!-- Mensagem de sucesso -->
+                    <div class="capture-success" id="captureSuccess">
+                        <i class="fas fa-check-circle"></i>
+                        <h4 class="fw-700 mb-2">Recebemos seu interesse!</h4>
+                        <p class="text-muted">Em breve você receberá as próximas instruções para acessar o Agent tools.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ╔══════════════════════════════════════════════════════════╗ -->
+<!--  11. FAQ                                                     -->
+<!-- ╚══════════════════════════════════════════════════════════╝ -->
+<section class="lp-section" id="faq">
+    <div class="container">
+        <div class="text-center mb-5" data-aos="fade-up">
+            <div class="section-eyebrow">Dúvidas frequentes</div>
+            <h2 class="section-title">Perguntas frequentes</h2>
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-lg-8" data-aos="fade-up">
+                <div class="accordion" id="faqAccordion">
+                    @{
+                        var faqs = new[] {
+                            new { Q = "O teste grátis dura quanto tempo?", A = "O teste gratuito dura 29 dias, para você validar a criação de propostas, organização dos clientes e experiência digital do cliente final. Sem compromisso." },
+                            new { Q = "O Agent tools substitui meu atendimento consultivo?", A = "Não. Ele ajuda a organizar, acelerar e valorizar seu atendimento. A consultoria continua sendo sua; a plataforma melhora a forma como ela é apresentada ao cliente." },
+                            new { Q = "Consigo personalizar a proposta com a identidade da minha agência?", A = "Sim. A proposta pode usar cores, estilo e elementos visuais alinhados à sua marca." },
+                            new { Q = "A plataforma usa IA?", A = "Sim. A IA apoia a criação de descrições, dicas de destino, gastronomia, atrações, informações práticas, cuidados e sugestões para enriquecer a proposta." },
+                            new { Q = "O cliente precisa instalar algo?", A = "Não. O cliente acessa a proposta por link, com uma experiência digital simples e elegante, diretamente no navegador." },
+                            new { Q = "Qual a diferença entre o plano Individual e o plano Equipe?", A = "O plano Individual é ideal para quem trabalha sozinho. O plano Equipe é indicado para agências com 2 a 5 usuários que precisam de organização compartilhada, padronização visual e gestão das propostas em equipe." },
+                            new { Q = "Posso cancelar depois?", A = "Sim. A proposta da plataforma é ser simples e flexível. O cancelamento será tratado de forma direta, sem burocracia." },
+                            new { Q = "Os valores já são definitivos?", A = "Os valores apresentados são condições iniciais de lançamento e podem mudar para novos clientes no futuro. Quem aderir agora garante as condições de lançamento." },
+                        };
                     }
-                }
-                
-            } catch (error) {
-                console.error('Erro:', error);
-                btnText.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Erro de conexão';
-                showNotification('Erro de conexão. Verifique sua internet e tente novamente.', 'error');
-            } finally {
-                // Reset button after delay
-                setTimeout(() => {
-                    submitBtn.disabled = false;
-                    btnText.innerHTML = 'Criar Minha Conta Grátis';
-                }, 3000);
-            }
-        });
-
-        // Notification system
-        function showNotification(message, type) {
-            const notification = document.createElement('div');
-            notification.className = `alert alert-${type === 'success' ? 'success' : 'danger'} position-fixed`;
-            notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px; animation: slideInRight 0.5s ease-out;';
-            notification.innerHTML = `
-                <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>
-                ${message}
-                <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>
-            `;
-            
-            document.body.appendChild(notification);
-            
-            setTimeout(() => {
-                if (notification.parentNode) {
-                    notification.style.animation = 'slideOutRight 0.5s ease-out';
-                    setTimeout(() => notification.remove(), 500);
-                }
-            }, 5000);
-        }
-
-        // Analytics tracking
-        function trackEvent(event, data) {
-            console.log('Analytics:', event, data);
-            
-            // Google Analytics (se configurado)
-            if (typeof gtag !== 'undefined') {
-                gtag('event', event, data);
-            }
-            
-            // Facebook Pixel (se configurado)
-            if (typeof fbq !== 'undefined') {
-                fbq('track', event, data);
-            }
-        }
-
-        // Scroll tracking
-        let maxScroll = 0;
-        window.addEventListener('scroll', () => {
-            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-            const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
-            const scrollPercent = (scrollTop / scrollHeight) * 100;
-            
-            document.getElementById('scrollIndicator').style.width = scrollPercent + '%';
-            
-            // Track scroll depth
-            const currentScroll = Math.round(scrollPercent);
-            if (currentScroll > maxScroll && currentScroll % 25 === 0) {
-                maxScroll = currentScroll;
-                trackEvent('scroll_depth', { percentage: maxScroll });
-            }
-        });
-
-        // Phone mask
-        document.querySelector('input[name="Telefone"]').addEventListener('input', function(e) {
-            let value = e.target.value.replace(/\D/g, '');
-            if (value.length <= 11) {
-                if (value.length <= 10) {
-                    value = value.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
-                } else {
-                    value = value.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
-                }
-                e.target.value = value;
-            }
-        });
-
-        // Load real statistics
-        fetch('@Url.Action("Estatisticas", "Landing")')
-            .then(response => response.json())
-            .then(data => {
-                // Update real numbers if available
-                if (data.agentesAtivos) {
-                    const agentesStat = document.querySelector('.stat-item:nth-child(3) .stat-number');
-                    if (agentesStat) {
-                        agentesStat.textContent = data.agentesAtivos + '+';
+                    @for (int i = 0; i < faqs.Length; i++)
+                    {
+                        var faq = faqs[i];
+                        <div class="faq-item accordion-item">
+                            <h3 class="accordion-header">
+                                <button class="accordion-button @(i > 0 ? "collapsed" : "")" type="button"
+                                        data-bs-toggle="collapse" data-bs-target="#faq@(i)">
+                                    @faq.Q
+                                </button>
+                            </h3>
+                            <div id="faq@(i)" class="accordion-collapse collapse @(i == 0 ? "show" : "")" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">@faq.A</div>
+                            </div>
+                        </div>
                     }
-                }
-            })
-            .catch(console.error);
-    </script>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
 
-    <style>
-        @@keyframes slideInRight {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
+<!-- ╔══════════════════════════════════════════════════════════╗ -->
+<!--  FOOTER                                                      -->
+<!-- ╚══════════════════════════════════════════════════════════╝ -->
+<footer class="lp-footer">
+    <div class="container">
+        <div class="brand-foot mb-1">
+            <img src="/images/logo.png" alt="Agent Tools" width="24" height="24" style="filter:brightness(0) invert(1);opacity:.75;">
+            Agent <strong>Tools</strong>
+        </div>
+        <div>Plataforma operacional para agências de viagem · Propostas digitais premium com IA</div>
+        <div class="mt-2">&copy; @DateTime.Now.Year Agent tools. Todos os direitos reservados.</div>
+    </div>
+</footer>
+
+@section Scripts {
+<script>
+    // ── Navbar scroll ──────────────────────────────────────────
+    const lpNav = document.getElementById('lpNav');
+    window.addEventListener('scroll', () => {
+        lpNav.classList.toggle('scrolled', window.scrollY > 50);
+    });
+
+    // ── Hamburger mobile ───────────────────────────────────────
+    document.getElementById('hamburger').addEventListener('click', () => {
+        document.getElementById('navLinks').classList.toggle('open');
+    });
+    document.getElementById('navLinks').querySelectorAll('a').forEach(a => {
+        a.addEventListener('click', () => document.getElementById('navLinks').classList.remove('open'));
+    });
+
+    // ── Toggle preços ──────────────────────────────────────────
+    const tog = document.getElementById('pricingToggle');
+    const lblM = document.getElementById('lblMensal');
+    const lblA = document.getElementById('lblAnual');
+    const priceIDs = ['individual', 'equipe'];
+
+    tog.addEventListener('change', () => {
+        const anual = tog.checked;
+        lblM.classList.toggle('active', !anual);
+        lblA.classList.toggle('active', anual);
+        priceIDs.forEach(id => {
+            document.getElementById(`price-${id}-mensal`).style.display = anual ? 'none' : 'block';
+            document.getElementById(`price-${id}-anual`).style.display  = anual ? 'block' : 'none';
+        });
+    });
+
+    // ── Máscara de telefone ────────────────────────────────────
+    document.getElementById('capTelefone').addEventListener('input', function () {
+        let v = this.value.replace(/\D/g, '').slice(0, 11);
+        if (v.length <= 10)       v = v.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3');
+        else                      v = v.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3');
+        this.value = v;
+    });
+
+    // ── Envio do formulário ────────────────────────────────────
+    document.getElementById('captureForm').addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        const form    = this;
+        const btn     = document.getElementById('btnCapture');
+        const origTxt = btn.innerHTML;
+
+        // Validação básica HTML5
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
         }
-        @@keyframes slideOutRight {
-            from { transform: translateX(0); opacity: 1; }
-            to { transform: translateX(100%); opacity: 0; }
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Enviando...';
+
+        const formData = new FormData(form);
+
+        try {
+            const res  = await fetch('@Url.Action("Cadastro", "Landing")', { method: 'POST', body: formData });
+            const data = await res.json();
+
+            if (data.success) {
+                document.getElementById('captureFormWrap').style.display = 'none';
+                document.getElementById('captureSuccess').style.display  = 'block';
+                if (data.redirectUrl) {
+                    setTimeout(() => { window.location.href = data.redirectUrl; }, 2500);
+                }
+            } else {
+                alert(data.message || 'Erro ao enviar. Tente novamente.');
+                btn.disabled = false;
+                btn.innerHTML = origTxt;
+            }
+        } catch {
+            alert('Erro de conexão. Verifique sua internet e tente novamente.');
+            btn.disabled = false;
+            btn.innerHTML = origTxt;
         }
-    </style>
-</body>
-</html>
+    });
+</script>
+}

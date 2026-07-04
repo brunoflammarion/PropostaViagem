@@ -1,1823 +1,590 @@
-﻿@model SistemaUsuarios.Models.ViewModels.PropostaFiltroViewModel
+@model SistemaUsuarios.Models.ViewModels.UsuarioViewModel
 @using SistemaUsuarios.Models
 @{
-    ViewData["Title"] = "Propostas de Viagem";
+    ViewData["Title"] = "Configurações";
+
+    var iniciais = string.Join("", (Model.Nome ?? "?").Split(' ', StringSplitOptions.RemoveEmptyEntries)
+        .Take(2).Select(p => char.ToUpper(p[0]).ToString()));
+
+    var statusLabel = Model.Status switch {
+        StatusUsuario.Ativo     => ("Ativo",     "success"),
+        StatusUsuario.Inativo   => ("Inativo",   "secondary"),
+        StatusUsuario.Bloqueado => ("Bloqueado", "danger"),
+        _                       => ("Novo",      "warning")
+    };
+
+    var erraSenha     = TempData["ErraSenha"]         as string;
+    var sucessoSenha  = TempData["SucessoSenha"]      as string;
+    var erroIdent     = TempData["ErroIdentidade"]    as string;
+    var sucessoIdent  = TempData["SucessoIdentidade"] as string;
+
+    var corP = Model.CorPrimaria   ?? "#0A1128";
+    var corS = Model.CorSecundaria ?? "#65a3d4";
+    var corD = Model.CorDestaque   ?? "#2ec4b6";
 }
 
-<!-- Header Executivo Moderno -->
-<div class="executive-header">
-    <div class="header-content">
-        <div class="header-info">
-            <h1 class="executive-title">
-                <i class="fas fa-suitcase-rolling me-2"></i>
-                Propostas de Viagem
-            </h1>
-            <p class="executive-subtitle">
-                @Model.TotalPropostas proposta(s) criada(s) • 
-                @Model.TotalAprovadas aprovada(s) • 
-                @Model.TotalEnviadas aguardando resposta
-            </p>
+@section Styles {
+<style>
+/* ── Header de configurações ─────────────────────────── */
+.cfg-header {
+    background: linear-gradient(135deg, var(--exec-primary) 0%, var(--exec-primary-light, #1a2845) 100%);
+    border-radius: 14px;
+    padding: 28px 32px;
+    color: #fff;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 22px;
+}
+
+.cfg-avatar {
+    width: 76px; height: 76px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    background: rgba(255,255,255,.18);
+    border: 3px solid rgba(255,255,255,.3);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.7rem; font-weight: 700; color: #fff;
+    letter-spacing: .04em; overflow: hidden;
+}
+.cfg-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block; }
+
+.cfg-nome  { font-size: 1.3rem; font-weight: 700; margin: 0 0 3px; }
+.cfg-email { font-size: .87rem; opacity: .72; margin: 0 0 10px; }
+
+/* ── Section cards ───────────────────────────────────── */
+.section-card {
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    padding: 24px;
+    background: #fff;
+    margin-bottom: 20px;
+}
+
+.section-card h6 {
+    font-size: .7rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .08em;
+    color: #6c757d;
+    margin-bottom: 20px; padding-bottom: 10px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+/* ── Foto de perfil ──────────────────────────────────── */
+.foto-current {
+    width: 80px; height: 80px;
+    border-radius: 50%; object-fit: cover;
+    border: 3px solid #e2e8f0;
+}
+
+.foto-initials {
+    width: 80px; height: 80px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.5rem; font-weight: 700; color: #fff;
+}
+
+.foto-drop {
+    border: 2px dashed #dee2e6;
+    border-radius: 10px;
+    padding: 24px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .2s, background .2s;
+    position: relative;
+}
+
+.foto-drop:hover { border-color: var(--exec-secondary, #65a3d4); background: rgba(101,163,212,.04); }
+.foto-drop input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+
+/* ── Seletor de cores ────────────────────────────────── */
+.color-item { display: flex; flex-direction: column; gap: 6px; }
+.color-label { font-size: .8rem; font-weight: 600; color: #374151; }
+.color-desc  { font-size: .73rem; color: #94a3b8; }
+
+.color-picker-wrap {
+    display: flex; align-items: center; gap: 10px;
+    background: #f8f9fa; border: 1px solid #dee2e6;
+    border-radius: 8px; padding: 7px 12px;
+    cursor: pointer; transition: border-color .15s;
+    width: 100%;
+}
+.color-picker-wrap:hover { border-color: #adb5bd; }
+
+.color-swatch {
+    width: 26px; height: 26px; border-radius: 5px;
+    border: 2px solid rgba(0,0,0,.08); flex-shrink: 0;
+}
+
+.color-hex {
+    font-size: .8rem; font-family: 'Courier New', monospace;
+    color: #374151; flex: 1; text-transform: uppercase;
+}
+
+input[type="color"].hidden-picker {
+    position: absolute; opacity: 0; width: 0; height: 0; pointer-events: none;
+}
+
+/* ── Preview do tema ─────────────────────────────────── */
+.theme-preview {
+    border-radius: 10px; overflow: hidden;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 8px rgba(0,0,0,.06);
+}
+
+.preview-navbar {
+    height: 34px; display: flex; align-items: center;
+    padding: 0 12px; gap: 8px;
+}
+
+.preview-dot { width: 5px; height: 5px; border-radius: 50%; background: rgba(255,255,255,.45); }
+.preview-bar { flex: 1; height: 2px; background: rgba(255,255,255,.18); border-radius: 2px; }
+.preview-avatar-nav { width: 16px; height: 16px; border-radius: 50%; background: rgba(255,255,255,.22); }
+
+.preview-body { background: #f1f3f4; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+
+.preview-card {
+    background: #fff; border-radius: 6px;
+    padding: 10px; border: 1px solid #e9ecef;
+    display: flex; flex-direction: column; gap: 6px;
+}
+
+.preview-card-head { height: 7px; border-radius: 3px; width: 55%; }
+.preview-card-line { height: 5px; background: #e2e8f0; border-radius: 2px; }
+.preview-card-line.short { width: 40%; }
+
+.preview-btn {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 5px 10px; border-radius: 4px;
+    font-size: .65rem; font-weight: 600; color: #fff;
+    width: fit-content; margin-top: 2px;
+}
+
+.preview-badges { display: flex; gap: 4px; flex-wrap: wrap; }
+
+.preview-badge {
+    padding: 2px 7px; border-radius: 50px;
+    font-size: .6rem; font-weight: 600;
+}
+
+@@media (max-width: 576px) {
+    .cfg-header { flex-direction: column; text-align: center; }
+    .cfg-avatar { margin: 0 auto; }
+}
+</style>
+}
+
+<div class="at-page">
+
+    @if (TempData["Sucesso"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show mb-3 rounded-3" role="alert">
+            <i class="fas fa-check-circle me-2"></i>@TempData["Sucesso"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
-        <div class="header-actions">
-            <div class="btn-group me-2">
-                <button type="button" class="btn btn-outline-primary" onclick="exportarDados()">
-                    <i class="fas fa-download me-1"></i>Exportar
-                </button>
-                <button type="button" class="btn btn-outline-secondary" onclick="atualizarLista()">
-                    <i class="fas fa-sync me-1"></i>Atualizar
-                </button>
+    }
+    @if (TempData["Erro"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show mb-3 rounded-3" role="alert">
+            <i class="fas fa-exclamation-circle me-2"></i>@TempData["Erro"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (!string.IsNullOrEmpty(sucessoIdent))
+    {
+        <div class="alert alert-success alert-dismissible fade show mb-3 rounded-3" role="alert">
+            <i class="fas fa-palette me-2"></i>@sucessoIdent
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (!string.IsNullOrEmpty(erroIdent))
+    {
+        <div class="alert alert-danger alert-dismissible fade show mb-3 rounded-3" role="alert">
+            <i class="fas fa-exclamation-circle me-2"></i>@erroIdent
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- ── Header do perfil ─────────────────────────────────── -->
+    <div class="cfg-header">
+        <div class="cfg-avatar">
+            @if (!string.IsNullOrEmpty(Model.FotoPath))
+            {
+                <img src="@Model.FotoPath" alt="Foto de perfil" />
+            }
+            else
+            {
+                @iniciais
+            }
+        </div>
+        <div>
+            <p class="cfg-nome">@Model.Nome</p>
+            <p class="cfg-email">@Model.Email</p>
+            <div class="d-flex flex-wrap gap-3 align-items-center">
+                <span style="font-size:.8rem;color:rgba(255,255,255,.65);">
+                    <i class="fas fa-calendar-alt me-1"></i>Membro desde @(Model.DataCriacao?.ToString("MMM/yyyy") ?? "—")
+                </span>
+                <span class="badge bg-@statusLabel.Item2">@statusLabel.Item1</span>
             </div>
-            <a href="/Proposta/Criar" class="btn btn-success btn-create">
-                <i class="fas fa-plus me-1"></i>Nova Proposta
-            </a>
         </div>
     </div>
-</div>
 
-<!-- Dashboard de Estatísticas -->
-<div class="stats-dashboard">
-    <div class="stats-grid">
-        <div class="stat-card stat-primary">
-            <div class="stat-icon">
-                <i class="fas fa-file-alt"></i>
-            </div>
-            <div class="stat-content">
-                <div class="stat-number" data-count="@Model.TotalPropostas">@Model.TotalPropostas</div>
-                <div class="stat-label">Total de Propostas</div>
-                <div class="stat-trend">
-                    <i class="fas fa-arrow-up text-success me-1"></i>
-                    <span class="text-muted">+@((Model.TotalPropostas * 0.12).ToString("F0"))% este mês</span>
+    <!-- ── Dados pessoais ────────────────────────────────────── -->
+    <div class="section-card">
+        <h6><i class="fas fa-user me-2"></i>Dados pessoais</h6>
+        <form asp-controller="Usuario" asp-action="Index" method="post">
+            @Html.AntiForgeryToken()
+            <input asp-for="Id" type="hidden" />
+            <input asp-for="Status" type="hidden" />
+            <input asp-for="DataCriacao" type="hidden" />
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 mb-3 small rounded-3"></div>
+            <div class="row g-3">
+                <div class="col-sm-6">
+                    <label asp-for="Nome" class="form-label fw-semibold" style="font-size:.82rem;"></label>
+                    <input asp-for="Nome" class="form-control" maxlength="100" placeholder="Nome completo" />
+                    <span asp-validation-for="Nome" class="text-danger small"></span>
+                </div>
+                <div class="col-sm-6">
+                    <label asp-for="Email" class="form-label fw-semibold" style="font-size:.82rem;"></label>
+                    <input asp-for="Email" class="form-control" type="email" />
+                    <span asp-validation-for="Email" class="text-danger small"></span>
+                </div>
+                <div class="col-sm-6">
+                    <label asp-for="Telefone" class="form-label fw-semibold" style="font-size:.82rem;"></label>
+                    <input asp-for="Telefone" class="form-control" id="telefoneInput" placeholder="(11) 99999-9999" maxlength="15" />
+                    <span asp-validation-for="Telefone" class="text-danger small"></span>
+                </div>
+                <div class="col-sm-6">
+                    <label asp-for="CPF" class="form-label fw-semibold" style="font-size:.82rem;"></label>
+                    <input asp-for="CPF" class="form-control" id="cpfInput" placeholder="000.000.000-00" maxlength="14" />
+                    <span asp-validation-for="CPF" class="text-danger small"></span>
                 </div>
             </div>
-        </div>
-
-        <div class="stat-card stat-warning">
-            <div class="stat-icon">
-                <i class="fas fa-paper-plane"></i>
-            </div>
-            <div class="stat-content">
-                <div class="stat-number" data-count="@Model.TotalEnviadas">@Model.TotalEnviadas</div>
-                <div class="stat-label">Enviadas</div>
-                <div class="stat-trend">
-                    @if (Model.TotalEnviadas > 0)
-                    {
-                        <i class="fas fa-clock text-warning me-1"></i>
-                        <span class="text-muted">Aguardando resposta</span>
-                    }
-                    else
-                    {
-                        <i class="fas fa-check text-success me-1"></i>
-                        <span class="text-muted">Todas respondidas</span>
-                    }
-                </div>
-            </div>
-        </div>
-
-        <div class="stat-card stat-success">
-            <div class="stat-icon">
-                <i class="fas fa-check-circle"></i>
-            </div>
-            <div class="stat-content">
-                <div class="stat-number" data-count="@Model.TotalAprovadas">@Model.TotalAprovadas</div>
-                <div class="stat-label">Aprovadas</div>
-                <div class="stat-trend">
-                    @if (Model.TotalPropostas > 0)
-                    {
-                        var taxaAprovacao = (double)Model.TotalAprovadas / Model.TotalPropostas * 100;
-                        <i class="fas fa-percentage text-success me-1"></i>
-                        <span class="text-muted">@taxaAprovacao.ToString("F1")% de taxa</span>
-                    }
-                    else
-                    {
-                        <span class="text-muted">-</span>
-                    }
-                </div>
-            </div>
-        </div>
-
-        <div class="stat-card stat-secondary">
-            <div class="stat-icon">
-                <i class="fas fa-edit"></i>
-            </div>
-            <div class="stat-content">
-                <div class="stat-number" data-count="@Model.TotalRascunhos">@Model.TotalRascunhos</div>
-                <div class="stat-label">Rascunhos</div>
-                <div class="stat-trend">
-                    @if (Model.TotalRascunhos > 0)
-                    {
-                        <i class="fas fa-exclamation-triangle text-warning me-1"></i>
-                        <span class="text-muted">Precisam ser finalizados</span>
-                    }
-                    else
-                    {
-                        <i class="fas fa-check text-success me-1"></i>
-                        <span class="text-muted">Todas finalizadas</span>
-                    }
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Filtros Avançados -->
-<div class="filters-section">
-    <div class="filters-card">
-        <div class="filters-header">
-            <h5 class="filters-title">
-                <i class="fas fa-filter me-2"></i>Filtros
-            </h5>
-            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="limparFiltros()">
-                <i class="fas fa-times me-1"></i>Limpar
-            </button>
-        </div>
-        
-        <form method="get" asp-action="Index" id="filtrosForm">
-            <div class="filters-body">
-                <div class="row g-3">
-                    <!-- Busca por texto -->
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            <label class="form-label fw-semibold">
-                                <i class="fas fa-search me-1"></i>Buscar
-                            </label>
-                            <div class="input-group">
-                                <input asp-for="TermoBusca" class="form-control" 
-                                       placeholder="Digite o título da proposta..." />
-                                <button type="button" class="btn btn-outline-secondary" onclick="limparBusca()">
-                                    <i class="fas fa-times"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Status -->
-                    <div class="col-md-2">
-                        <div class="form-group">
-                            <label class="form-label fw-semibold">
-                                <i class="fas fa-flag me-1"></i>Status
-                            </label>
-                            <select asp-for="FiltroStatus" class="form-select">
-                                <option value="">Todos</option>
-                                <option value="1">Rascunho</option>
-                                <option value="2">Enviada</option>
-                                <option value="3">Aprovada</option>
-                                <option value="4">Rejeitada</option>
-                                <option value="5">Cancelada</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- Data início -->
-                    <div class="col-md-2">
-                        <div class="form-group">
-                            <label class="form-label fw-semibold">
-                                <i class="fas fa-calendar-alt me-1"></i>De
-                            </label>
-                            <input asp-for="DataInicioFiltro" class="form-control" type="date" />
-                        </div>
-                    </div>
-
-                    <!-- Data fim -->
-                    <div class="col-md-2">
-                        <div class="form-group">
-                            <label class="form-label fw-semibold">
-                                <i class="fas fa-calendar-check me-1"></i>Até
-                            </label>
-                            <input asp-for="DataFimFiltro" class="form-control" type="date" />
-                        </div>
-                    </div>
-
-                    <!-- Link público -->
-                    <div class="col-md-2">
-                        <div class="form-group">
-                            <label class="form-label fw-semibold">
-                                <i class="fas fa-link me-1"></i>Link Público
-                            </label>
-                            <select asp-for="FiltroLinkAtivo" class="form-select">
-                                <option value="">Todos</option>
-                                <option value="true">Ativo</option>
-                                <option value="false">Inativo</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Usuário (se aplicável) -->
-                @if (Model.Usuarios != null && Model.Usuarios.Any())
-                {
-                    <div class="row g-3 mt-2">
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label class="form-label fw-semibold">
-                                    <i class="fas fa-user me-1"></i>Criado por
-                                </label>
-                                <select asp-for="FiltroUsuario" class="form-select">
-                                    <option value="">Todos os usuários</option>
-                                    @foreach (var usuario in Model.Usuarios)
-                                    {
-                                        <option value="@usuario.Id">@usuario.Nome</option>
-                                    }
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-8 d-flex align-items-end">
-                            <button type="submit" class="btn btn-primary me-2">
-                                <i class="fas fa-filter me-1"></i>Aplicar Filtros
-                            </button>
-                            <button type="button" class="btn btn-outline-secondary" onclick="toggleFiltrosAvancados()">
-                                <i class="fas fa-cog me-1"></i>Mais opções
-                            </button>
-                        </div>
-                    </div>
-                }
+            <div class="mt-4">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save me-2"></i>Salvar dados
+                </button>
             </div>
         </form>
     </div>
-</div>
 
-<!-- Grid de Propostas -->
-@if (Model.Propostas.Any())
-{
-    <div class="proposals-section">
-        <div class="proposals-header">
-            <div class="proposals-count">
-                <span class="count-number">@Model.Propostas.Count</span>
-                <span class="count-label">proposta(s) encontrada(s)</span>
+    <!-- ── Foto de perfil ────────────────────────────────────── -->
+    <div class="section-card">
+        <h6><i class="fas fa-camera me-2"></i>Foto de perfil</h6>
+        <div class="d-flex align-items-start gap-4 flex-wrap">
+            <div class="text-center" style="flex-shrink:0;">
+                @if (!string.IsNullOrEmpty(Model.FotoPath))
+                {
+                    <img src="@Model.FotoPath" alt="Foto atual" class="foto-current" />
+                }
+                else
+                {
+                    <div class="foto-initials" style="background:linear-gradient(135deg,@corP,@corD);">@iniciais</div>
+                }
+                <div class="text-muted mt-1" style="font-size:.73rem;">Foto atual</div>
             </div>
-            <div class="proposals-actions">
-                <div class="btn-group btn-group-sm">
-                    <button type="button" class="btn btn-outline-secondary active" onclick="alterarVisualizacao('grid')" data-view="grid">
-                        <i class="fas fa-th-large"></i>
-                    </button>
-                    <button type="button" class="btn btn-outline-secondary" onclick="alterarVisualizacao('list')" data-view="list">
-                        <i class="fas fa-list"></i>
-                    </button>
-                </div>
-                <select class="form-select form-select-sm ms-2" style="width: auto;" onchange="ordenarPropostas(this.value)">
-                    <option value="recente">Mais recentes</option>
-                    <option value="antigo">Mais antigas</option>
-                    <option value="titulo">Título A-Z</option>
-                    <option value="status">Por status</option>
-                    <option value="modificacao">Última modificação</option>
-                </select>
+            <div class="flex-grow-1">
+                <form asp-controller="Usuario" asp-action="AlterarFoto" method="post" enctype="multipart/form-data">
+                    @Html.AntiForgeryToken()
+                    <div class="foto-drop" id="fotoDropZone">
+                        <input type="file" name="foto" id="fotoInput" accept="image/*" />
+                        <i class="fas fa-cloud-upload-alt" style="font-size:1.6rem;color:#adb5bd;display:block;margin-bottom:8px;"></i>
+                        <div style="font-size:.88rem;font-weight:600;color:#495057;" id="fotoLabel">Clique ou arraste para alterar a foto</div>
+                        <div class="text-muted mt-1" style="font-size:.77rem;">JPG, PNG, WebP · máximo 5 MB</div>
+                    </div>
+                    <div class="mt-3">
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            <i class="fas fa-upload me-1"></i>Salvar foto
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
+    </div>
 
-        <div class="proposals-grid" id="proposalsContainer">
-            @foreach (var proposta in Model.Propostas)
-            {
-                <div class="proposal-card" data-id="@proposta.Id" data-status="@proposta.StatusProposta.ToString().ToLower()">
-                    <!-- Status Badge -->
-                    <div class="proposal-status status-@proposta.StatusProposta.ToString().ToLower()">
-                        @proposta.StatusProposta.ToString()
+    <!-- ── Identidade visual ─────────────────────────────────── -->
+    <div class="section-card">
+        <h6><i class="fas fa-palette me-2"></i>Identidade visual e agência</h6>
+        <p class="text-muted mb-4" style="font-size:.83rem;line-height:1.55;">
+            Configure o nome da sua agência para ativar a captação pública, e personalize
+            as cores da plataforma e das propostas enviadas aos clientes.
+        </p>
+
+        <form asp-controller="Usuario" asp-action="SalvarIdentidade" method="post" id="formIdentidade">
+            @Html.AntiForgeryToken()
+
+            <!-- Nome da agência -->
+            <div class="mb-4 pb-4" style="border-bottom:1px solid #f0f0f0;">
+                <div class="row g-3 align-items-start">
+                    <div class="col-md-7">
+                        <label class="color-label mb-1" for="nomeAgenciaInput">Nome da agência</label>
+                        <div class="color-desc mb-2">Esse nome será exibido na sua página pública de captação de leads.</div>
+                        <input type="text" id="nomeAgenciaInput" name="nomeAgencia"
+                               class="form-control" maxlength="150"
+                               value="@(Model.NomeAgencia ?? "")"
+                               placeholder="Ex: Flammarion Travel & Concierge" />
                     </div>
-
-                    <!-- Link público indicator -->
-                    @if (proposta.LinkPublicoAtivo)
+                    @if (!string.IsNullOrEmpty(Model.SlugAgencia))
                     {
-                        <div class="proposal-public-link">
-                            <i class="fas fa-link" title="Link público ativo"></i>
+                        <div class="col-md-5">
+                            <div class="color-label mb-1">Link público da agência</div>
+                            <div class="color-desc mb-2">Compartilhe com seus clientes para captar leads.</div>
+                            <div class="d-flex align-items-center gap-2">
+                                <a href="/@Model.SlugAgencia" target="_blank"
+                                   class="btn btn-sm btn-outline-primary"
+                                   style="font-size:.77rem;white-space:nowrap;">
+                                    <i class="fas fa-external-link-alt me-1"></i>/@Model.SlugAgencia
+                                </a>
+                            </div>
                         </div>
                     }
+                    else
+                    {
+                        <div class="col-md-5">
+                            <div class="color-label mb-1">Link público</div>
+                            <div class="color-desc">Preencha o nome da agência e salve para gerar seu link público.</div>
+                        </div>
+                    }
+                </div>
+            </div>
+            <div class="row g-4 align-items-start">
 
-                    <!-- Imagem -->
-                    <div class="proposal-image">
-                        @if (!string.IsNullOrEmpty(proposta.FotoCapa))
-                        {
-                            <img src="@proposta.FotoCapa" alt="@proposta.Titulo" class="proposal-cover" loading="lazy" />
-                        }
-                        else
-                        {
-                            <div class="proposal-placeholder">
-                                <i class="fas fa-image fa-2x"></i>
-                                <span>Sem imagem</span>
-                            </div>
-                        }
-                        
-                        <!-- Overlay com ações rápidas -->
-                        <div class="proposal-overlay">
-                            <div class="overlay-actions">
-                                <a href="/Proposta/Detalhes/@proposta.Id" class="btn btn-sm btn-light" title="Visualizar">
-                                    <i class="fas fa-eye"></i>
-                                </a>
-                                @if (proposta.LinkPublicoAtivo)
-                                {
-                                    <a href="/Proposta/Publico/@proposta.Id" target="_blank" class="btn btn-sm btn-success" title="Ver público">
-                                        <i class="fas fa-external-link-alt"></i>
-                                    </a>
-                                }
+                <!-- Seletores de cor -->
+                <div class="col-md-7">
+                    <div class="row g-3">
+
+                        <!-- Cor Primária -->
+                        <div class="col-12">
+                            <div class="color-item">
+                                <div class="color-label">Cor Primária</div>
+                                <div class="color-desc">Navbar, cabeçalhos, elementos de identidade principal</div>
+                                <div class="color-picker-wrap" onclick="document.getElementById('pickPrimaria').click();" style="position:relative;">
+                                    <div class="color-swatch" id="swatchPrimaria" style="background:@corP;"></div>
+                                    <span class="color-hex" id="hexPrimaria">@corP.ToUpper()</span>
+                                    <i class="fas fa-chevron-down text-muted" style="font-size:.6rem;"></i>
+                                    <input type="color" id="pickPrimaria" name="corPrimaria" value="@corP" class="hidden-picker"
+                                           oninput="updateColor('Primaria', this.value)" />
+                                </div>
                             </div>
                         </div>
+
+                        <!-- Cor Secundária -->
+                        <div class="col-12">
+                            <div class="color-item">
+                                <div class="color-label">Cor Secundária</div>
+                                <div class="color-desc">Apoio visual, bordas de foco, elementos complementares</div>
+                                <div class="color-picker-wrap" onclick="document.getElementById('pickSecundaria').click();" style="position:relative;">
+                                    <div class="color-swatch" id="swatchSecundaria" style="background:@corS;"></div>
+                                    <span class="color-hex" id="hexSecundaria">@corS.ToUpper()</span>
+                                    <i class="fas fa-chevron-down text-muted" style="font-size:.6rem;"></i>
+                                    <input type="color" id="pickSecundaria" name="corSecundaria" value="@corS" class="hidden-picker"
+                                           oninput="updateColor('Secundaria', this.value)" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Cor de Destaque -->
+                        <div class="col-12">
+                            <div class="color-item">
+                                <div class="color-label">Cor de Destaque</div>
+                                <div class="color-desc">Botões principais, badges, CTAs, pontos de atenção</div>
+                                <div class="color-picker-wrap" onclick="document.getElementById('pickDestaque').click();" style="position:relative;">
+                                    <div class="color-swatch" id="swatchDestaque" style="background:@corD;"></div>
+                                    <span class="color-hex" id="hexDestaque">@corD.ToUpper()</span>
+                                    <i class="fas fa-chevron-down text-muted" style="font-size:.6rem;"></i>
+                                    <input type="color" id="pickDestaque" name="corDestaque" value="@corD" class="hidden-picker"
+                                           oninput="updateColor('Destaque', this.value)" />
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
 
-                    <!-- Conteúdo -->
-                    <div class="proposal-content">
-                        <div class="proposal-header">
-                            <h5 class="proposal-title" title="@proposta.Titulo">
-                                @(proposta.Titulo.Length > 50 ? proposta.Titulo.Substring(0, 50) + "..." : proposta.Titulo)
-                            </h5>
-                            <div class="proposal-meta">
-                                <small class="text-muted">
-                                    <i class="fas fa-calendar me-1"></i>
-                                    Criada em @proposta.DataCriacao.ToString("dd/MM/yyyy")
-                                </small>
-                            </div>
-                        </div>
-
-                        <!-- Informações principais -->
-                        <div class="proposal-info">
-                            @if (proposta.DataInicio.HasValue && proposta.DataFim.HasValue)
-                            {
-                                var dias = (proposta.DataFim.Value - proposta.DataInicio.Value).Days + 1;
-                                <div class="info-item">
-                                    <i class="fas fa-calendar-alt text-primary"></i>
-                                    <span>@proposta.DataInicio.Value.ToString("dd/MM") - @proposta.DataFim.Value.ToString("dd/MM") (@dias dias)</span>
-                                </div>
-                            }
-                            else if (proposta.DataInicio.HasValue)
-                            {
-                                <div class="info-item">
-                                    <i class="fas fa-calendar-alt text-primary"></i>
-                                    <span>A partir de @proposta.DataInicio.Value.ToString("dd/MM/yyyy")</span>
-                                </div>
-                            }
-
-                            <div class="info-item">
-                                <i class="fas fa-users text-info"></i>
-                                <span>@(proposta.NumeroPassageiros + proposta.NumeroCriancas) pessoa(s)</span>
-                            </div>
-
-                            @if (proposta.DataModificacao.HasValue)
-                            {
-                                <div class="info-item">
-                                    <i class="fas fa-edit text-warning"></i>
-                                    <span>Editada em @proposta.DataModificacao.Value.ToString("dd/MM/yyyy")</span>
-                                </div>
-                            }
-                        </div>
-
-                        <!-- Autor -->
-                        <div class="proposal-author">
-                            <i class="fas fa-user-circle me-1"></i>
-                            <span>@proposta.NomeUsuario</span>
-                        </div>
+                    <div class="mt-4 d-flex flex-wrap gap-2 align-items-center">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-palette me-2"></i>Salvar identidade visual
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="resetarCores()">
+                            <i class="fas fa-undo me-1"></i>Restaurar padrão
+                        </button>
                     </div>
-
-                    <!-- Ações -->
-                    <div class="proposal-actions">
-                        <div class="actions-primary">
-                            <a href="/Proposta/Detalhes/@proposta.Id" class="btn btn-sm btn-outline-primary">
-                                <i class="fas fa-eye me-1"></i>Ver
-                            </a>
-                            <a href="/Proposta/Editar/@proposta.Id" class="btn btn-sm btn-outline-secondary">
-                                <i class="fas fa-edit me-1"></i>Editar
-                            </a>
-                        </div>
-
-                        <div class="actions-secondary">
-                            <!-- Dropdown de ações -->
-                            <div class="dropdown">
-                                <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button" 
-                                        data-bs-toggle="dropdown" aria-expanded="false">
-                                    <i class="fas fa-ellipsis-h"></i>
-                                </button>
-                                <ul class="dropdown-menu dropdown-menu-end">
-                                    <li>
-                                        <a class="dropdown-item" href="/Destino/Gerenciar/@proposta.Id">
-                                            <i class="fas fa-map-marked-alt me-2"></i>Gerenciar Destinos
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item" href="/PropostaAnalyticsData/PropostaDetalhada/@proposta.Id">
-                                            <i class="fas fa-chart-bar me-2"></i>Analytics
-                                        </a>
-                                    </li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    
-                                    @if (proposta.LinkPublicoAtivo)
-                                    {
-                                        <li>
-                                            <a class="dropdown-item" href="/Proposta/Publico/@proposta.Id" target="_blank">
-                                                <i class="fas fa-external-link-alt me-2"></i>Ver Público
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <button class="dropdown-item" onclick="compartilharProposta('@proposta.Id', '@proposta.Titulo')">
-                                                <i class="fas fa-share me-2"></i>Compartilhar
-                                            </button>
-                                        </li>
-                                        <li>
-                                            <button class="dropdown-item" onclick="copiarLinkPublico('@proposta.Id')">
-                                                <i class="fas fa-copy me-2"></i>Copiar Link
-                                            </button>
-                                        </li>
-                                        <li><hr class="dropdown-divider"></li>
-                                    }
-                                    
-                                    <!-- Ações de status -->
-                                    @if (proposta.StatusProposta == StatusProposta.Rascunho)
-                                    {
-                                        <li>
-                                            <button class="dropdown-item text-success" onclick="alterarStatus('@proposta.Id', '2', 'Enviada')">
-                                                <i class="fas fa-paper-plane me-2"></i>Enviar Proposta
-                                            </button>
-                                        </li>
-                                    }
-                                    
-                                    @if (proposta.StatusProposta == StatusProposta.Enviada)
-                                    {
-                                        <li>
-                                            <button class="dropdown-item text-success" onclick="alterarStatus('@proposta.Id', '3', 'Aprovada')">
-                                                <i class="fas fa-check-circle me-2"></i>Marcar como Aprovada
-                                            </button>
-                                        </li>
-                                        <li>
-                                            <button class="dropdown-item text-danger" onclick="alterarStatus('@proposta.Id', '4', 'Rejeitada')">
-                                                <i class="fas fa-times-circle me-2"></i>Marcar como Rejeitada
-                                            </button>
-                                        </li>
-                                    }
-                                    
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li>
-                                        <button class="dropdown-item" onclick="duplicarProposta('@proposta.Id')">
-                                            <i class="fas fa-copy me-2"></i>Duplicar
-                                        </button>
-                                    </li>
-                                    <li>
-                                        <button class="dropdown-item text-danger" onclick="excluirProposta('@proposta.Id', '@proposta.Titulo')">
-                                            <i class="fas fa-trash me-2"></i>Excluir
-                                        </button>
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
+                    <div class="mt-2 text-muted" style="font-size:.76rem;">
+                        <i class="fas fa-info-circle me-1"></i>
+                        As alterações ficam visíveis imediatamente na interface e na próxima abertura de qualquer proposta.
                     </div>
                 </div>
-            }
-        </div>
 
-        <!-- Paginação (se implementada) -->
-        <div class="proposals-pagination">
-            <nav aria-label="Navegação de propostas">
-                <ul class="pagination justify-content-center">
-                    <!-- Implementar paginação se necessário -->
-                </ul>
-            </nav>
-        </div>
+                <!-- Preview -->
+                <div class="col-md-5">
+                    <div class="color-label mb-2">Pré-visualização</div>
+                    <div class="theme-preview">
+                        <div class="preview-navbar" id="previewNavbar" style="background:@corP;">
+                            <div class="preview-dot"></div>
+                            <div class="preview-dot"></div>
+                            <div class="preview-bar"></div>
+                            <div class="preview-dot"></div>
+                            <div class="preview-avatar-nav"></div>
+                        </div>
+                        <div class="preview-body">
+                            <div class="preview-card">
+                                <div class="preview-card-head" id="previewHead" style="background:@corP;"></div>
+                                <div class="preview-card-line"></div>
+                                <div class="preview-card-line short"></div>
+                                <div class="preview-btn" id="previewBtn" style="background:@corD;">
+                                    <i class="fas fa-check" style="font-size:.55rem;"></i>Salvar
+                                </div>
+                                <div class="preview-badges mt-1">
+                                    <span class="preview-badge text-white" id="previewBadge1" style="background:@corP;">Primária</span>
+                                    <span class="preview-badge text-white" id="previewBadge2" style="background:@corS;">Secundária</span>
+                                    <span class="preview-badge text-white" id="previewBadge3" style="background:@corD;">Destaque</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-2 text-center text-muted" style="font-size:.71rem;">
+                        <i class="fas fa-eye me-1"></i>Muda em tempo real conforme você ajusta as cores
+                    </div>
+                </div>
+
+            </div>
+        </form>
     </div>
-}
-else
-{
-    <!-- Estado vazio -->
-    <div class="empty-state">
-        <div class="empty-icon">
-            @if (!string.IsNullOrEmpty(Model.TermoBusca) || Model.FiltroStatus.HasValue)
-            {
-                <i class="fas fa-search"></i>
-            }
-            else
-            {
-                <i class="fas fa-suitcase-rolling"></i>
-            }
-        </div>
-        
-        <h3 class="empty-title">
-            @if (!string.IsNullOrEmpty(Model.TermoBusca) || Model.FiltroStatus.HasValue)
-            {
-                <text>Nenhuma proposta encontrada</text>
-            }
-            else
-            {
-                <text>Nenhuma proposta criada ainda</text>
-            }
-        </h3>
-        
-        <p class="empty-description">
-            @if (!string.IsNullOrEmpty(Model.TermoBusca) || Model.FiltroStatus.HasValue)
-            {
-                <text>Tente ajustar os filtros ou </text>
-            }
-            <a href="/Proposta/Criar" class="text-decoration-none fw-semibold">
-                crie sua primeira proposta de viagem
-            </a>
-        </p>
-        
-        @if (!string.IsNullOrEmpty(Model.TermoBusca) || Model.FiltroStatus.HasValue)
+
+    <!-- ── Alterar senha ─────────────────────────────────────── -->
+    <div class="section-card">
+        <h6><i class="fas fa-lock me-2"></i>Alterar senha</h6>
+        @if (!string.IsNullOrEmpty(erraSenha))
         {
-            <button class="btn btn-outline-secondary" onclick="limparFiltros()">
-                <i class="fas fa-times me-1"></i>Limpar Filtros
-            </button>
+            <div class="alert alert-danger py-2 mb-3 small rounded-3">
+                <i class="fas fa-exclamation-circle me-1"></i>@erraSenha
+            </div>
         }
+        @if (!string.IsNullOrEmpty(sucessoSenha))
+        {
+            <div class="alert alert-success py-2 mb-3 small rounded-3">
+                <i class="fas fa-check-circle me-1"></i>@sucessoSenha
+            </div>
+        }
+        <form asp-controller="Usuario" asp-action="AlterarSenha" method="post">
+            @Html.AntiForgeryToken()
+            <div class="row g-3">
+                <div class="col-sm-4">
+                    <label class="form-label fw-semibold" style="font-size:.82rem;" for="senhaAtual">Senha atual</label>
+                    <input type="password" id="senhaAtual" name="senhaAtual" class="form-control"
+                           placeholder="••••••" autocomplete="current-password" />
+                </div>
+                <div class="col-sm-4">
+                    <label class="form-label fw-semibold" style="font-size:.82rem;" for="novaSenha">Nova senha</label>
+                    <input type="password" id="novaSenha" name="novaSenha" class="form-control"
+                           placeholder="mín. 6 caracteres" autocomplete="new-password" />
+                </div>
+                <div class="col-sm-4">
+                    <label class="form-label fw-semibold" style="font-size:.82rem;" for="confirmarSenha">Confirmar nova senha</label>
+                    <input type="password" id="confirmarSenha" name="confirmarSenha" class="form-control"
+                           placeholder="repita a senha" autocomplete="new-password" />
+                </div>
+            </div>
+            <div class="mt-4">
+                <button type="submit" class="btn btn-outline-secondary">
+                    <i class="fas fa-key me-2"></i>Alterar senha
+                </button>
+            </div>
+        </form>
     </div>
-}
 
-<!-- Modal de confirmação -->
-<div class="modal fade" id="confirmModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Confirmar Ação</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <p id="confirmMessage">Tem certeza que deseja realizar esta ação?</p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-danger" id="confirmButton">Confirmar</button>
-            </div>
-        </div>
-    </div>
 </div>
-
-<!-- Toast container -->
-<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;">
-    <div id="toastTemplate" class="toast" role="alert" style="display: none;">
-        <div class="toast-header">
-            <i class="toast-icon me-2"></i>
-            <strong class="me-auto toast-title">Sistema</strong>
-            <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
-        </div>
-        <div class="toast-body toast-message"></div>
-    </div>
-</div>
-
-@section Styles {
-    <style>
-        /* === DESIGN SYSTEM === */
-        :root {
-            --primary: #0066cc;
-            --primary-dark: #004c99;
-            --secondary: #6c757d;
-            --success: #28a745;
-            --warning: #ffc107;
-            --danger: #dc3545;
-            --info: #17a2b8;
-            --light: #f8f9fa;
-            --dark: #343a40;
-            
-            --border-radius: 8px;
-            --border-radius-lg: 12px;
-            --shadow-sm: 0 2px 4px rgba(0,0,0,0.1);
-            --shadow-md: 0 4px 8px rgba(0,0,0,0.15);
-            --shadow-lg: 0 8px 16px rgba(0,0,0,0.2);
-            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        body {
-            background-color: #f5f7fa;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-        }
-
-        /* === HEADER EXECUTIVO === */
-        .executive-header {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            color: white;
-            padding: 2rem 0;
-            margin: -2rem -15px 2rem -15px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .executive-header::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            right: 0;
-            width: 300px;
-            height: 100%;
-            background: linear-gradient(45deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
-            transform: skewX(-15deg);
-        }
-
-        .header-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 0 2rem;
-            position: relative;
-            z-index: 2;
-        }
-
-        .executive-title {
-            font-size: 2rem;
-            font-weight: 700;
-            margin: 0 0 0.5rem 0;
-            line-height: 1.2;
-        }
-
-        .executive-subtitle {
-            font-size: 1rem;
-            opacity: 0.9;
-            margin: 0;
-            font-weight: 400;
-        }
-
-        .header-actions {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .btn-create {
-            padding: 0.75rem 1.5rem;
-            font-weight: 600;
-            border-radius: var(--border-radius);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-            transition: var(--transition);
-        }
-
-        .btn-create:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
-        }
-
-        /* === DASHBOARD DE ESTATÍSTICAS === */
-        .stats-dashboard {
-            margin-bottom: 2rem;
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
-        }
-
-        .stat-card {
-            background: white;
-            border-radius: var(--border-radius-lg);
-            padding: 1.5rem;
-            box-shadow: var(--shadow-sm);
-            border: 1px solid #e9ecef;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            transition: var(--transition);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .stat-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 4px;
-            height: 100%;
-            background: var(--primary);
-        }
-
-        .stat-card:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-md);
-        }
-
-        .stat-card.stat-primary::before { background: var(--primary); }
-        .stat-card.stat-warning::before { background: var(--warning); }
-        .stat-card.stat-success::before { background: var(--success); }
-        .stat-card.stat-secondary::before { background: var(--secondary); }
-
-        .stat-icon {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            color: white;
-            background: var(--primary);
-            flex-shrink: 0;
-        }
-
-        .stat-primary .stat-icon { background: var(--primary); }
-        .stat-warning .stat-icon { background: var(--warning); }
-        .stat-success .stat-icon { background: var(--success); }
-        .stat-secondary .stat-icon { background: var(--secondary); }
-
-        .stat-content {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .stat-number {
-            font-size: 2rem;
-            font-weight: 800;
-            color: var(--dark);
-            line-height: 1;
-            margin-bottom: 0.25rem;
-        }
-
-        .stat-label {
-            font-size: 0.875rem;
-            font-weight: 600;
-            color: var(--secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 0.5rem;
-        }
-
-        .stat-trend {
-            display: flex;
-            align-items: center;
-            font-size: 0.75rem;
-            font-weight: 500;
-        }
-
-        /* === SEÇÃO DE FILTROS === */
-        .filters-section {
-            margin-bottom: 2rem;
-        }
-
-        .filters-card {
-            background: white;
-            border-radius: var(--border-radius-lg);
-            box-shadow: var(--shadow-sm);
-            border: 1px solid #e9ecef;
-            overflow: hidden;
-        }
-
-        .filters-header {
-            padding: 1rem 1.5rem;
-            background: var(--light);
-            border-bottom: 1px solid #e9ecef;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .filters-title {
-            margin: 0;
-            font-weight: 600;
-            color: var(--dark);
-        }
-
-        .filters-body {
-            padding: 1.5rem;
-        }
-
-        .form-group {
-            margin-bottom: 0;
-        }
-
-        .form-label {
-            margin-bottom: 0.5rem;
-            color: var(--dark);
-            font-size: 0.875rem;
-        }
-
-        .form-control, .form-select {
-            border-radius: var(--border-radius);
-            border: 1px solid #ced4da;
-            transition: var(--transition);
-        }
-
-        .form-control:focus, .form-select:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 0.2rem rgba(0, 102, 204, 0.25);
-        }
-
-        /* === SEÇÃO DE PROPOSTAS === */
-        .proposals-section {
-            margin-bottom: 2rem;
-        }
-
-        .proposals-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-            padding: 0 0.5rem;
-        }
-
-        .proposals-count {
-            display: flex;
-            align-items: baseline;
-            gap: 0.5rem;
-        }
-
-        .count-number {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--primary);
-        }
-
-        .count-label {
-            color: var(--secondary);
-            font-weight: 500;
-        }
-
-        .proposals-actions {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        /* === GRID DE PROPOSTAS === */
-        .proposals-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-            gap: 1.5rem;
-        }
-
-        .proposal-card {
-            background: white;
-            border-radius: var(--border-radius-lg);
-            box-shadow: var(--shadow-sm);
-            border: 1px solid #e9ecef;
-            overflow: hidden;
-            transition: var(--transition);
-            position: relative;
-        }
-
-        .proposal-card:hover {
-            transform: translateY(-4px);
-            box-shadow: var(--shadow-lg);
-            border-color: var(--primary);
-        }
-
-        /* Status badge */
-        .proposal-status {
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
-            padding: 0.375rem 0.75rem;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            z-index: 2;
-            backdrop-filter: blur(10px);
-        }
-
-        .status-rascunho { background: rgba(108, 117, 125, 0.9); color: white; }
-        .status-enviada { background: rgba(255, 193, 7, 0.9); color: #212529; }
-        .status-aprovada { background: rgba(40, 167, 69, 0.9); color: white; }
-        .status-rejeitada { background: rgba(220, 53, 69, 0.9); color: white; }
-        .status-cancelada { background: rgba(52, 58, 64, 0.9); color: white; }
-
-        /* Link público indicator */
-        .proposal-public-link {
-            position: absolute;
-            top: 1rem;
-            left: 1rem;
-            width: 32px;
-            height: 32px;
-            background: rgba(40, 167, 69, 0.9);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 0.875rem;
-            z-index: 2;
-            backdrop-filter: blur(10px);
-        }
-
-        /* Imagem */
-        .proposal-image {
-            height: 200px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .proposal-cover {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 0.5s ease;
-        }
-
-        .proposal-card:hover .proposal-cover {
-            transform: scale(1.05);
-        }
-
-        .proposal-placeholder {
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: var(--secondary);
-            gap: 0.5rem;
-        }
-
-        /* Overlay com ações */
-        .proposal-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.6);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            transition: var(--transition);
-        }
-
-        .proposal-card:hover .proposal-overlay {
-            opacity: 1;
-        }
-
-        .overlay-actions {
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        /* Conteúdo */
-        .proposal-content {
-            padding: 1.5rem;
-        }
-
-        .proposal-header {
-            margin-bottom: 1rem;
-        }
-
-        .proposal-title {
-            font-size: 1.125rem;
-            font-weight: 600;
-            color: var(--dark);
-            margin: 0 0 0.5rem 0;
-            line-height: 1.3;
-        }
-
-        .proposal-meta {
-            color: var(--secondary);
-        }
-
-        .proposal-info {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-            margin-bottom: 1rem;
-        }
-
-        .info-item {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 0.875rem;
-            color: var(--secondary);
-        }
-
-        .proposal-author {
-            padding-top: 1rem;
-            border-top: 1px solid #f1f3f4;
-            font-size: 0.875rem;
-            color: var(--secondary);
-            display: flex;
-            align-items: center;
-        }
-
-        /* Ações */
-        .proposal-actions {
-            padding: 1rem 1.5rem;
-            background: var(--light);
-            border-top: 1px solid #f1f3f4;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .actions-primary {
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        /* === ESTADO VAZIO === */
-        .empty-state {
-            text-align: center;
-            padding: 4rem 2rem;
-            background: white;
-            border-radius: var(--border-radius-lg);
-            box-shadow: var(--shadow-sm);
-            border: 1px solid #e9ecef;
-        }
-
-        .empty-icon {
-            font-size: 4rem;
-            color: var(--secondary);
-            margin-bottom: 1.5rem;
-            opacity: 0.7;
-        }
-
-        .empty-title {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: var(--dark);
-            margin-bottom: 1rem;
-        }
-
-        .empty-description {
-            font-size: 1rem;
-            color: var(--secondary);
-            margin-bottom: 2rem;
-            max-width: 500px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        /* === DROPDOWN CUSTOMIZADO === */
-        .dropdown-menu {
-            border: none;
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow-lg);
-            padding: 0.5rem 0;
-            min-width: 200px;
-        }
-
-        .dropdown-item {
-            padding: 0.75rem 1rem;
-            font-size: 0.875rem;
-            transition: var(--transition);
-            display: flex;
-            align-items: center;
-        }
-
-        .dropdown-item:hover {
-            background: var(--light);
-            color: var(--dark);
-        }
-
-        .dropdown-item.text-success:hover {
-            background: rgba(40, 167, 69, 0.1);
-            color: var(--success);
-        }
-
-        .dropdown-item.text-danger:hover {
-            background: rgba(220, 53, 69, 0.1);
-            color: var(--danger);
-        }
-
-        /* === RESPONSIVO === */
-        @@media (max-width: 1200px) {
-            .proposals-grid {
-                grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-                gap: 1rem;
-            }
-        }
-
-        @@media (max-width: 768px) {
-            .executive-header {
-                padding: 1.5rem 0;
-                margin: -1rem -15px 1.5rem -15px;
-            }
-
-            .header-content {
-                flex-direction: column;
-                gap: 1.5rem;
-                padding: 0 1rem;
-                text-align: center;
-            }
-
-            .executive-title {
-                font-size: 1.5rem;
-            }
-
-            .header-actions {
-                width: 100%;
-                justify-content: center;
-                flex-wrap: wrap;
-            }
-
-            .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 1rem;
-            }
-
-            .stat-card {
-                padding: 1rem;
-                flex-direction: column;
-                text-align: center;
-                gap: 0.75rem;
-            }
-
-            .stat-number {
-                font-size: 1.5rem;
-            }
-
-            .filters-body .row {
-                row-gap: 1rem;
-            }
-
-            .proposals-header {
-                flex-direction: column;
-                gap: 1rem;
-                align-items: stretch;
-            }
-
-            .proposals-actions {
-                justify-content: space-between;
-            }
-
-            .proposals-grid {
-                grid-template-columns: 1fr;
-                gap: 1rem;
-            }
-
-            .proposal-actions {
-                flex-direction: column;
-                gap: 0.75rem;
-            }
-
-            .actions-primary {
-                width: 100%;
-                justify-content: space-between;
-            }
-
-            .empty-state {
-                padding: 2rem 1rem;
-            }
-
-            .empty-icon {
-                font-size: 3rem;
-            }
-
-            .empty-title {
-                font-size: 1.25rem;
-            }
-        }
-
-        @@media (max-width: 576px) {
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .stat-card {
-                padding: 1rem;
-            }
-
-            .proposals-actions {
-                flex-direction: column;
-                gap: 0.75rem;
-            }
-
-            .empty-state {
-                padding: 1.5rem 0.75rem;
-            }
-        }
-
-        /* === ANIMAÇÕES === */
-        .proposal-card {
-            animation: fadeInUp 0.4s ease-out;
-        }
-
-        .proposal-card:nth-child(1) { animation-delay: 0.05s; }
-        .proposal-card:nth-child(2) { animation-delay: 0.1s; }
-        .proposal-card:nth-child(3) { animation-delay: 0.15s; }
-        .proposal-card:nth-child(4) { animation-delay: 0.2s; }
-        .proposal-card:nth-child(5) { animation-delay: 0.25s; }
-        .proposal-card:nth-child(6) { animation-delay: 0.3s; }
-
-        @@keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .stat-card {
-            animation: slideInLeft 0.6s ease-out;
-        }
-
-        .stat-card:nth-child(1) { animation-delay: 0.1s; }
-        .stat-card:nth-child(2) { animation-delay: 0.2s; }
-        .stat-card:nth-child(3) { animation-delay: 0.3s; }
-        .stat-card:nth-child(4) { animation-delay: 0.4s; }
-
-        @@keyframes slideInLeft {
-            from {
-                opacity: 0;
-                transform: translateX(-30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-
-        /* === LOADING STATES === */
-        .loading {
-            opacity: 0.6;
-            pointer-events: none;
-        }
-
-        .loading::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 20px;
-            height: 20px;
-            margin: -10px 0 0 -10px;
-            border: 2px solid #f3f3f3;
-            border-top: 2px solid var(--primary);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @@keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        /* === TOAST CUSTOMIZADO === */
-        .toast {
-            border: none;
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow-lg);
-        }
-
-        .toast-header {
-            border-bottom: 1px solid #f1f3f4;
-            background: var(--light);
-        }
-
-        .toast.toast-success .toast-header {
-            background: rgba(40, 167, 69, 0.1);
-            color: var(--success);
-        }
-
-        .toast.toast-error .toast-header {
-            background: rgba(220, 53, 69, 0.1);
-            color: var(--danger);
-        }
-
-        .toast.toast-warning .toast-header {
-            background: rgba(255, 193, 7, 0.1);
-            color: #856404;
-        }
-
-        /* === UTILITÁRIOS === */
-        .text-truncate-2 {
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-
-        .fade-in {
-            animation: fadeIn 0.3s ease-in;
-        }
-
-        @@keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        .slide-up {
-            animation: slideUp 0.3s ease-out;
-        }
-
-        @@keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        /* === MELHORIAS VISUAIS === */
-        .btn {
-            transition: var(--transition);
-            border-radius: var(--border-radius);
-        }
-
-        .btn:hover {
-            transform: translateY(-1px);
-        }
-
-        .btn-sm:hover {
-            transform: translateY(-0.5px);
-        }
-
-        .form-control::placeholder {
-            color: #adb5bd;
-        }
-
-        .badge {
-            font-weight: 500;
-        }
-
-        /* === DARK MODE SUPPORT === */
-        @@media (prefers-color-scheme: dark) {
-            :root {
-                --light: #343a40;
-                --dark: #f8f9fa;
-            }
-        }
-    </style>
-}
 
 @section Scripts {
-    <script>
-        // === VARIÁVEIS GLOBAIS ===
-        let currentView = 'grid';
-        let currentSort = 'recente';
-        let isLoading = false;
-
-        // === INICIALIZAÇÃO ===
-        $(document).ready(function() {
-            inicializarEventos();
-            animarEstatisticas();
-            aplicarFiltrosIniciais();
+<script>
+(function () {
+    // Máscara de telefone
+    var tel = document.getElementById('telefoneInput');
+    if (tel) {
+        tel.addEventListener('input', function () {
+            var v = this.value.replace(/\D/g, '').slice(0, 11);
+            if (v.length > 6)
+                this.value = '(' + v.slice(0,2) + ') ' + v.slice(2, v.length > 10 ? 7 : 6) + '-' + v.slice(v.length > 10 ? 7 : 6);
+            else if (v.length > 2)
+                this.value = '(' + v.slice(0,2) + ') ' + v.slice(2);
+            else if (v.length > 0)
+                this.value = '(' + v;
         });
+    }
 
-        function inicializarEventos() {
-            // Auto-submit nos filtros
-            $('#filtrosForm select, #filtrosForm input[type="date"]').on('change', function() {
-                if (!isLoading) {
-                    debounce(aplicarFiltros, 300)();
-                }
-            });
+    // Máscara de CPF
+    var cpf = document.getElementById('cpfInput');
+    if (cpf) {
+        cpf.addEventListener('input', function () {
+            var v = this.value.replace(/\D/g, '').slice(0, 11);
+            if (v.length > 9)
+                this.value = v.slice(0,3) + '.' + v.slice(3,6) + '.' + v.slice(6,9) + '-' + v.slice(9);
+            else if (v.length > 6)
+                this.value = v.slice(0,3) + '.' + v.slice(3,6) + '.' + v.slice(6);
+            else if (v.length > 3)
+                this.value = v.slice(0,3) + '.' + v.slice(3);
+            else
+                this.value = v;
+        });
+    }
 
-            // Busca com debounce
-            $('#TermoBusca').on('input', function() {
-                debounce(aplicarFiltros, 500)();
-            });
-
-            // Atalhos de teclado
-            $(document).on('keydown', function(e) {
-                if (e.ctrlKey && e.key === 'f') {
-                    e.preventDefault();
-                    $('#TermoBusca').focus();
-                }
-                if (e.key === 'Escape') {
-                    $('.modal').modal('hide');
-                }
-            });
-        }
-
-        // === ANIMAÇÕES ===
-        function animarEstatisticas() {
-            $('.stat-number').each(function() {
-                const $this = $(this);
-                const countTo = parseInt($this.attr('data-count')) || 0;
-                
-                $({ countNum: 0 }).animate({
-                    countNum: countTo
-                }, {
-                    duration: 1500,
-                    easing: 'easeOutCubic',
-                    step: function() {
-                        $this.text(Math.floor(this.countNum));
-                    },
-                    complete: function() {
-                        $this.text(countTo);
-                    }
-                });
-            });
-        }
-
-        // === FILTROS ===
-        function aplicarFiltros() {
-            if (isLoading) return;
-            
-            isLoading = true;
-            $('#proposalsContainer').addClass('loading');
-            
-            // Simular loading
-            setTimeout(() => {
-                $('#filtrosForm').submit();
-            }, 300);
-        }
-
-        function limparFiltros() {
-            $('#filtrosForm')[0].reset();
-            window.location.href = '/Proposta';
-        }
-
-        function limparBusca() {
-            $('#TermoBusca').val('').trigger('input');
-        }
-
-        function aplicarFiltrosIniciais() {
-            // Aplicar filtros salvos no localStorage se existirem
-            const savedFilters = localStorage.getItem('propostaFilters');
-            if (savedFilters) {
-                try {
-                    const filters = JSON.parse(savedFilters);
-                    Object.keys(filters).forEach(key => {
-                        const element = $(`[name="${key}"]`);
-                        if (element.length) {
-                            element.val(filters[key]);
-                        }
-                    });
-                } catch (e) {
-                    console.warn('Erro ao carregar filtros salvos:', e);
-                }
-            }
-        }
-
-        // === VISUALIZAÇÃO ===
-        function alterarVisualizacao(view) {
-            if (currentView === view) return;
-            
-            currentView = view;
-            
-            // Atualizar botões
-            $('.proposals-actions button[data-view]').removeClass('active');
-            $(`.proposals-actions button[data-view="${view}"]`).addClass('active');
-            
-            // Aplicar classe CSS
-            const container = $('#proposalsContainer');
-            container.removeClass('view-grid view-list').addClass(`view-${view}`);
-            
-            // Salvar preferência
-            localStorage.setItem('proposalView', view);
-            
-            // Animação
-            container.addClass('fade-in');
-            setTimeout(() => container.removeClass('fade-in'), 300);
-        }
-
-        // === ORDENAÇÃO ===
-        function ordenarPropostas(ordem) {
-            if (currentSort === ordem) return;
-            
-            currentSort = ordem;
-            const container = $('#proposalsContainer');
-            const cards = container.children('.proposal-card').toArray();
-            
-            cards.sort((a, b) => {
-                switch(ordem) {
-                    case 'recente':
-                        return new Date($(b).data('created')) - new Date($(a).data('created'));
-                    case 'antigo':
-                        return new Date($(a).data('created')) - new Date($(b).data('created'));
-                    case 'titulo':
-                        return $(a).find('.proposal-title').text().localeCompare($(b).find('.proposal-title').text());
-                    case 'status':
-                        return $(a).data('status').localeCompare($(b).data('status'));
-                    default:
-                        return 0;
-                }
-            });
-            
-            container.empty().append(cards);
-            
-            // Reanimar cards
-            cards.forEach((card, index) => {
-                $(card).css('animation-delay', `${index * 0.05}s`);
-            });
-            
-            showToast('Propostas reordenadas', 'success');
-        }
-
-        // === AÇÕES DAS PROPOSTAS ===
-        function alterarStatus(propostaId, novoStatus, nomeStatus) {
-            const confirmMsg = `Tem certeza que deseja alterar o status para "${nomeStatus}"?`;
-            
-            if (confirm(confirmMsg)) {
-                showLoading();
-                
-                fetch('/Proposta/AlterarStatus', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
-                    },
-                    body: JSON.stringify({
-                        id: propostaId,
-                        status: parseInt(novoStatus)
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    hideLoading();
-                    if (data.success) {
-                        showToast(`Status alterado para ${nomeStatus}`, 'success');
-                        setTimeout(() => location.reload(), 1000);
-                    } else {
-                        showToast('Erro ao alterar status', 'error');
-                    }
-                })
-                .catch(error => {
-                    hideLoading();
-                    showToast('Erro de conexão', 'error');
-                    console.error('Erro:', error);
-                });
-            }
-        }
-
-        function duplicarProposta(propostaId) {
-            if (confirm('Deseja criar uma cópia desta proposta?')) {
-                showLoading();
-                
-                fetch(`/api/proposta/${propostaId}/duplicar`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    hideLoading();
-                    if (data.success) {
-                        showToast(data.message, 'success');
-                        if (data.redirect) {
-                            setTimeout(() => window.location.href = data.redirect, 2000);
-                        }
-                    } else {
-                        showToast('Erro ao duplicar proposta', 'error');
-                    }
-                })
-                .catch(error => {
-                    hideLoading();
-                    showToast('Erro de conexão', 'error');
-                    console.error('Erro:', error);
-                });
-            }
-        }
-
-        function excluirProposta(propostaId, titulo) {
-            const confirmMsg = `Tem certeza que deseja excluir a proposta "${titulo}"?\n\nEsta ação não pode ser desfeita.`;
-            
-            if (confirm(confirmMsg)) {
-                showLoading();
-                
-                fetch('/Proposta/Excluir', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: `id=${encodeURIComponent(propostaId)}&__RequestVerificationToken=${encodeURIComponent($('input[name="__RequestVerificationToken"]').val())}`
-                })
-                .then(response => {
-                    hideLoading();
-                    if (response.ok) {
-                        showToast('Proposta excluída com sucesso', 'success');
-                        setTimeout(() => location.reload(), 1000);
-                    } else {
-                        showToast('Erro ao excluir proposta', 'error');
-                    }
-                })
-                .catch(error => {
-                    hideLoading();
-                    showToast('Erro de conexão', 'error');
-                    console.error('Erro:', error);
-                });
-            }
-        }
-
-        function compartilharProposta(propostaId, titulo) {
-            const link = `${window.location.origin}/Proposta/Publico/${propostaId}`;
-            const texto = `Confira esta proposta de viagem: ${titulo}`;
-            
-            if (navigator.share) {
-                navigator.share({
-                    title: titulo,
-                    text: texto,
-                    url: link
-                }).catch(console.error);
-            } else {
-                const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(texto + ' ' + link)}`;
-                window.open(whatsappUrl, '_blank');
-            }
-        }
-
-        function copiarLinkPublico(propostaId) {
-            const link = `${window.location.origin}/Proposta/Publico/${propostaId}`;
-            
-            if (navigator.clipboard) {
-                navigator.clipboard.writeText(link).then(() => {
-                    showToast('Link copiado para a área de transferência', 'success');
-                }).catch(() => {
-                    fallbackCopyText(link);
-                });
-            } else {
-                fallbackCopyText(link);
-            }
-        }
-
-        function fallbackCopyText(text) {
-            const textArea = document.createElement('textarea');
-            textArea.value = text;
-            document.body.appendChild(textArea);
-            textArea.select();
-            try {
-                document.execCommand('copy');
-                showToast('Link copiado para a área de transferência', 'success');
-            } catch (err) {
-                showToast('Não foi possível copiar o link', 'error');
-            }
-            document.body.removeChild(textArea);
-        }
-
-        // === UTILITÁRIOS ===
-        function exportarDados() {
-            showLoading();
-            
-            // Simular exportação
-            setTimeout(() => {
-                hideLoading();
-                showToast('Dados exportados com sucesso', 'success');
-                
-                // Aqui você implementaria a exportação real
-                // window.location.href = '/Proposta/Exportar';
-            }, 2000);
-        }
-
-        function atualizarLista() {
-            showLoading();
-            setTimeout(() => {
-                location.reload();
-            }, 500);
-        }
-
-        function showLoading() {
-            isLoading = true;
-            const btn = event?.target;
-            if (btn) {
-                const originalText = btn.innerHTML;
-                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Carregando...';
-                btn.disabled = true;
-                btn.dataset.originalText = originalText;
-            }
-        }
-
-        function hideLoading() {
-            isLoading = false;
-            const btn = document.querySelector('[data-original-text]');
-            if (btn) {
-                btn.innerHTML = btn.dataset.originalText;
-                btn.disabled = false;
-                delete btn.dataset.originalText;
-            }
-        }
-
-        function showToast(message, type = 'info') {
-            const toastContainer = $('.toast-container');
-            const template = $('#toastTemplate').clone();
-            
-            template.attr('id', '').removeClass('d-none').addClass(`toast-${type}`).show();
-            template.find('.toast-message').text(message);
-            
-            const iconClass = type === 'success' ? 'fas fa-check-circle text-success' :
-                            type === 'error' ? 'fas fa-exclamation-circle text-danger' :
-                            type === 'warning' ? 'fas fa-exclamation-triangle text-warning' :
-                            'fas fa-info-circle text-info';
-            
-            template.find('.toast-icon').attr('class', `toast-icon me-2 ${iconClass}`);
-            
-            toastContainer.append(template);
-            
-            const bsToast = new bootstrap.Toast(template[0], {
-                autohide: true,
-                delay: type === 'error' ? 5000 : 3000
-            });
-            
-            bsToast.show();
-            
-            template[0].addEventListener('hidden.bs.toast', () => {
-                template.remove();
-            });
-        }
-
-        function debounce(func, wait) {
-            let timeout;
-            return function executedFunction(...args) {
-                const later = () => {
-                    clearTimeout(timeout);
-                    func(...args);
-                };
-                clearTimeout(timeout);
-                timeout = setTimeout(later, wait);
-            };
-        }
-
-        // === ATALHOS DE TECLADO ===
-        function setupKeyboardShortcuts() {
-            document.addEventListener('keydown', (e) => {
-                // Ctrl + N = Nova proposta
-                if (e.ctrlKey && e.key === 'n') {
-                    e.preventDefault();
-                    window.location.href = '/Proposta/Criar';
-                }
-                
-                // Ctrl + F = Focar na busca
-                if (e.ctrlKey && e.key === 'f') {
-                    e.preventDefault();
-                    document.getElementById('TermoBusca').focus();
-                }
-                
-                // Ctrl + R = Atualizar
-                if (e.ctrlKey && e.key === 'r') {
-                    e.preventDefault();
-                    atualizarLista();
-                }
-            });
-        }
-
-        // Inicializar atalhos
-        setupKeyboardShortcuts();
-
-        // === PERFORMANCE ===
-        // Lazy loading para imagens
-        function setupLazyLoading() {
-            if ('IntersectionObserver' in window) {
-                const imageObserver = new IntersectionObserver((entries, observer) => {
-                    entries.forEach(entry => {
-                        if (entry.isIntersecting) {
-                            const img = entry.target;
-                            img.src = img.dataset.src;
-                            img.classList.remove('lazy');
-                            observer.unobserve(img);
-                        }
-                    });
-                });
-
-                document.querySelectorAll('img[data-src]').forEach(img => {
-                    imageObserver.observe(img);
-                });
-            }
-        }
-
-        // Otimização de scroll
-        let ticking = false;
-        function updateScrollPosition() {
-            // Implementar efeitos de scroll se necessário
-            ticking = false;
-        }
-
-        function onScroll() {
-            if (!ticking) {
-                requestAnimationFrame(updateScrollPosition);
-                ticking = true;
-            }
-        }
-
-        window.addEventListener('scroll', onScroll, { passive: true });
-
-        // === SERVICE WORKER ===
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js')
-                    .then(registration => {
-                        console.log('SW registrado:', registration);
-                    })
-                    .catch(error => {
-                        console.log('Falha no registro do SW:', error);
-                    });
-            });
-        }
-
-        // === ANALYTICS ===
-        function trackEvent(eventName, properties = {}) {
-            // Implementar tracking de eventos
-            console.log('Track event:', eventName, properties);
-            
-            // Exemplo com Google Analytics
-            // gtag('event', eventName, properties);
-        }
-
-        // Tracking de interações
-        document.addEventListener('click', (e) => {
-            const target = e.target.closest('[data-track]');
-            if (target) {
-                const eventName = target.dataset.track;
-                const properties = {
-                    element: target.tagName.toLowerCase(),
-                    text: target.textContent.trim(),
-                    url: target.href || null
-                };
-                trackEvent(eventName, properties);
+    // Foto: nome do arquivo selecionado
+    var fotoInput = document.getElementById('fotoInput');
+    var fotoLabel = document.getElementById('fotoLabel');
+    if (fotoInput) {
+        fotoInput.addEventListener('change', function () {
+            if (this.files && this.files[0]) {
+                fotoLabel.textContent = this.files[0].name;
+                fotoLabel.style.color = 'var(--exec-primary, #0A1128)';
+                fotoLabel.style.fontWeight = '600';
             }
         });
+    }
+})();
 
-        // === ERROR HANDLING ===
-        window.addEventListener('error', (e) => {
-            console.error('Erro capturado:', e.error);
-            showToast('Ocorreu um erro inesperado', 'error');
-        });
+// ── Helpers de cor ────────────────────────────────────────
+function lightenHex(hex, amount) {
+    if (!hex || hex.length !== 7) return hex;
+    var r = Math.min(255, parseInt(hex.slice(1, 3), 16) + amount);
+    var g = Math.min(255, parseInt(hex.slice(3, 5), 16) + amount);
+    var b = Math.min(255, parseInt(hex.slice(5, 7), 16) + amount);
+    return '#' + [r, g, b].map(function(v) { return Math.max(0,v).toString(16).padStart(2, '0'); }).join('');
+}
 
-        window.addEventListener('unhandledrejection', (e) => {
-            console.error('Promise rejeitada:', e.reason);
-            showToast('Erro de conexão', 'error');
-        });
+// ── Atualizar preview e CSS vars em tempo real ────────────
+function updateColor(tipo, value) {
+    document.getElementById('swatch' + tipo).style.background = value;
+    document.getElementById('hex' + tipo).textContent = value.toUpperCase();
 
-        // === CLEANUP ===
-        window.addEventListener('beforeunload', () => {
-            // Salvar estado atual
-            const formData = new FormData(document.getElementById('filtrosForm'));
-            const filters = {};
-            for (let [key, value] of formData.entries()) {
-                if (value) filters[key] = value;
-            }
-            localStorage.setItem('propostaFilters', JSON.stringify(filters));
-        });
-    </script>
+    var p = document.getElementById('pickPrimaria').value;
+    var s = document.getElementById('pickSecundaria').value;
+    var d = document.getElementById('pickDestaque').value;
+
+    // Atualiza preview visual
+    document.getElementById('previewNavbar').style.background = p;
+    document.getElementById('previewHead').style.background   = p;
+    document.getElementById('previewBtn').style.background    = d;
+    document.getElementById('previewBadge1').style.background = p;
+    document.getElementById('previewBadge2').style.background = s;
+    document.getElementById('previewBadge3').style.background = d;
+
+    // Aplica CSS vars globais (live preview de toda a interface)
+    var pLight = lightenHex(p, 28);
+    var dDark  = lightenHex(d, -18);
+    var root   = document.documentElement;
+    root.style.setProperty('--exec-primary',          p);
+    root.style.setProperty('--exec-primary-light',    pLight);
+    root.style.setProperty('--exec-secondary',        s);
+    root.style.setProperty('--exec-accent',           d);
+    root.style.setProperty('--exec-gradient-primary', 'linear-gradient(135deg, ' + p + ' 0%, ' + pLight + ' 100%)');
+    root.style.setProperty('--exec-gradient-accent',  'linear-gradient(135deg, ' + d + ' 0%, ' + dDark  + ' 100%)');
+}
+
+function resetarCores() {
+    var def = { p: '#0A1128', s: '#65a3d4', d: '#2ec4b6' };
+    document.getElementById('pickPrimaria').value   = def.p;
+    document.getElementById('pickSecundaria').value = def.s;
+    document.getElementById('pickDestaque').value   = def.d;
+    updateColor('Primaria',   def.p);
+    updateColor('Secundaria', def.s);
+    updateColor('Destaque',   def.d);
+}
+</script>
 }

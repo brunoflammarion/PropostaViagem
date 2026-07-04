@@ -1,0 +1,84 @@
+@model SistemaUsuarios.Models.ViewModels.ClienteDetalheViewModel
+@using SistemaUsuarios.Models
+@{
+    ViewData["Title"] = "Novo cliente";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/cliente.css" />
+}
+
+<!-- ── Breadcrumb ────────────────────────────────────────────────── -->
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb" style="font-size:.82rem;">
+        <li class="breadcrumb-item"><a href="@Url.Action("Index","Cliente")">Clientes</a></li>
+        <li class="breadcrumb-item active">Novo cliente</li>
+    </ol>
+</nav>
+
+<!-- ── TempData ──────────────────────────────────────────────────── -->
+@if (TempData["Sucesso"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show mb-3" role="alert">
+        <i class="fas fa-check-circle me-2"></i>@TempData["Sucesso"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["Erro"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
+        <i class="fas fa-exclamation-circle me-2"></i>@TempData["Erro"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- ── Header ────────────────────────────────────────────────────── -->
+<div class="cd-header mb-4">
+    <div class="cd-header-inner">
+        <!-- Avatar -->
+        <div class="cd-avatar-wrap">
+            <div class="cd-avatar-initials" style="background:linear-gradient(135deg,#155724,#28a745);">
+                <i class="fas fa-user-plus" style="font-size:1.4rem;"></i>
+            </div>
+        </div>
+
+        <!-- Info principal -->
+        <div class="cd-header-info">
+            <h2 class="cd-nome">Novo cliente</h2>
+            <div class="cd-meta">
+                <span class="cd-meta-chip">Cadastre um cliente para organizar propostas, passageiros e viagens.</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Conteúdo principal ─────────────────────────────────────────── -->
+<div class="row g-4">
+    <div class="col-lg-7">
+        <form asp-controller="Cliente" asp-action="Criar" method="post" enctype="multipart/form-data">
+            @Html.AntiForgeryToken()
+
+            @await Html.PartialAsync("_ClienteForm", Model)
+
+            <div class="d-flex gap-2 mb-4">
+                <button type="submit" class="btn btn-primary" style="border-radius:8px;font-weight:600;">
+                    <i class="fas fa-user-plus me-2"></i>Criar cliente
+                </button>
+                <a href="@Url.Action("Index","Cliente")" class="btn btn-outline-secondary" style="border-radius:8px;">
+                    Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="cd-section-card">
+            <div class="cd-section-title"><i class="fas fa-lightbulb me-2"></i>Próximos passos</div>
+            <ul class="text-muted" style="font-size:.84rem;padding-left:1.2rem;line-height:1.8;">
+                <li>Após criar o cliente, você poderá vincular propostas.</li>
+                <li>Use a aba <strong>Propostas</strong> no detalhe do cliente para acompanhar o histórico.</li>
+                <li>O campo <strong>Indicação</strong> registra quem indicou este cliente.</li>
+            </ul>
+        </div>
+    </div>
+</div>

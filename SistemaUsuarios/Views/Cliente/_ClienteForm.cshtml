@@ -1,0 +1,204 @@
+@model SistemaUsuarios.Models.ViewModels.ClienteDetalheViewModel
+@using SistemaUsuarios.Models
+
+@{
+    var fDisabled = Model.IsDeleted ? "disabled" : null;
+    var generoVal = Model.Genero.HasValue ? ((int)Model.Genero.Value).ToString() : "";
+    var dataEntradaVal = Model.DataEntradaCliente ?? (Model.DataCriacao == default ? DateTime.Today : Model.DataCriacao);
+}
+
+<!-- Card: Dados Pessoais -->
+<div class="cd-section-card mb-3">
+    <div class="cd-section-title">
+        <i class="fas fa-edit me-2"></i>Dados Pessoais
+    </div>
+
+    @if (!Model.IsDeleted)
+    {
+        <!-- Foto -->
+        <div class="mb-3 d-flex align-items-center gap-3">
+            @if (!string.IsNullOrEmpty(Model.FotoPath))
+            {
+                <img src="@Model.FotoPath" class="rounded-circle"
+                     style="width:60px;height:60px;object-fit:cover;border:2px solid #dee2e6;" />
+            }
+            else if (Model.Id != Guid.Empty)
+            {
+                <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold"
+                     style="width:60px;height:60px;background:linear-gradient(135deg,#1E4E8C,#0D2B45);font-size:1rem;flex-shrink:0;">
+                    @Model.Iniciais
+                </div>
+            }
+            <div>
+                <label class="form-label form-label-sm mb-1 text-muted small fw-semibold">Foto</label>
+                <input type="file" name="foto" class="form-control form-control-sm"
+                       accept="image/*" style="max-width:250px;" />
+            </div>
+        </div>
+    }
+
+    <div class="row g-3">
+        <div class="col-12">
+            <label class="form-label form-label-sm fw-semibold">Nome <span class="text-danger">*</span></label>
+            <input type="text" name="nome" value="@Model.Nome" class="form-control"
+                   required maxlength="200" disabled="@fDisabled" />
+        </div>
+        <div class="col-sm-6">
+            <label class="form-label form-label-sm fw-semibold">E-mail</label>
+            <input type="email" name="email" value="@Model.Email" class="form-control"
+                   maxlength="200" placeholder="email@exemplo.com" disabled="@fDisabled" />
+        </div>
+        <div class="col-sm-6">
+            <label class="form-label form-label-sm fw-semibold">Telefone</label>
+            <input type="text" name="telefone" value="@Model.Telefone" class="form-control"
+                   maxlength="30" placeholder="(11) 99999-9999" disabled="@fDisabled" />
+        </div>
+        <div class="col-sm-6">
+            <label class="form-label form-label-sm fw-semibold">Data de Nascimento</label>
+            <input type="date" name="dataNascimento"
+                   value="@(Model.DataNascimento?.ToString("yyyy-MM-dd"))"
+                   class="form-control" disabled="@fDisabled" />
+        </div>
+        <div class="col-sm-6">
+            <label class="form-label form-label-sm fw-semibold">Gênero</label>
+            <select name="genero" class="form-select" disabled="@fDisabled">
+                @Html.Raw("<option value=\"\""  + (generoVal == ""  ? " selected" : "") + ">— Não informado —</option>")
+                @Html.Raw("<option value=\"1\"" + (generoVal == "1" ? " selected" : "") + ">Masculino</option>")
+                @Html.Raw("<option value=\"2\"" + (generoVal == "2" ? " selected" : "") + ">Feminino</option>")
+                @Html.Raw("<option value=\"3\"" + (generoVal == "3" ? " selected" : "") + ">Outro</option>")
+            </select>
+        </div>
+        <div class="col-sm-6">
+            <label class="form-label form-label-sm fw-semibold">CPF</label>
+            <input type="text" name="cpf" value="@Model.Cpf" class="form-control"
+                   maxlength="20" placeholder="000.000.000-00" disabled="@fDisabled" />
+        </div>
+        <div class="col-sm-6">
+            <label class="form-label form-label-sm fw-semibold">Data de entrada</label>
+            <input type="date" name="dataEntradaCliente"
+                   value="@dataEntradaVal.ToString("yyyy-MM-dd")"
+                   class="form-control" disabled="@fDisabled" />
+        </div>
+    </div>
+</div>
+
+<!-- Card: Endereço -->
+<div class="cd-section-card mb-3">
+    <div class="cd-section-title">
+        <i class="fas fa-map-marker-alt me-2"></i>Endereço
+    </div>
+    <div class="row g-3">
+        <div class="col-sm-4">
+            <label class="form-label form-label-sm fw-semibold">CEP</label>
+            <input type="text" name="cep" value="@Model.Cep" class="form-control"
+                   maxlength="20" placeholder="00000-000" disabled="@fDisabled" />
+        </div>
+        <div class="col-sm-8">
+            <label class="form-label form-label-sm fw-semibold">Logradouro</label>
+            <input type="text" name="logradouro" value="@Model.Logradouro" class="form-control"
+                   maxlength="255" placeholder="Rua, número, complemento" disabled="@fDisabled" />
+        </div>
+        <div class="col-sm-8">
+            <label class="form-label form-label-sm fw-semibold">Cidade</label>
+            <input type="text" name="cidade" value="@Model.Cidade" class="form-control"
+                   maxlength="120" disabled="@fDisabled" />
+        </div>
+        <div class="col-sm-4">
+            <label class="form-label form-label-sm fw-semibold">Estado (UF)</label>
+            <input type="text" name="estado" value="@Model.Estado" class="form-control"
+                   maxlength="2" placeholder="SP" style="text-transform:uppercase;" disabled="@fDisabled" />
+        </div>
+    </div>
+</div>
+
+<!-- Card: Indicação -->
+<div class="cd-section-card mb-3">
+    <div class="cd-section-title">
+        <i class="fas fa-user-tag me-2"></i>Indicação
+    </div>
+    <input type="hidden" name="clienteIndicadorId" id="clienteIndicadorId"
+           value="@Model.ClienteIndicadorId" />
+    <div class="cd-indicador-atual mb-2" id="indicadorAtualBox"
+         style="@(string.IsNullOrEmpty(Model.ClienteIndicadorNome) ? "display:none;" : "")">
+        <div class="d-flex align-items-center justify-content-between gap-2">
+            <span style="font-size:.84rem;" id="indicadorNomeDisplay">
+                @if (!string.IsNullOrEmpty(Model.ClienteIndicadorNome))
+                {
+                    <i class="fas fa-user me-1 text-muted"></i><strong>@Model.ClienteIndicadorNome</strong>
+                }
+            </span>
+            @if (!Model.IsDeleted)
+            {
+                <button type="button" class="btn btn-xs btn-outline-secondary"
+                        onclick="limparIndicador()">
+                    <i class="fas fa-times"></i> Remover
+                </button>
+            }
+        </div>
+    </div>
+    @if (!Model.IsDeleted)
+    {
+        <div class="cd-indicador-search" id="indicadorSearchBox">
+            <input type="text" id="indicadorBusca" class="form-control form-control-sm"
+                   placeholder="Buscar cliente indicador…" autocomplete="off" />
+            <div id="indicadorResultados" class="cd-autocomplete-list" style="display:none;"></div>
+        </div>
+        <p class="text-muted mt-2" style="font-size:.75rem;">
+            Qual cliente indicou este contato? Apenas clientes ativos da sua carteira.
+        </p>
+    }
+</div>
+
+<script>
+(function() {
+    var input = document.getElementById('indicadorBusca');
+    if (!input) return;
+    var resultados = document.getElementById('indicadorResultados');
+    var hiddenId   = document.getElementById('clienteIndicadorId');
+    var atualBox   = document.getElementById('indicadorAtualBox');
+    var nomeDisplay = document.getElementById('indicadorNomeDisplay');
+    var excluirId   = '@Model.Id';
+    var timer;
+    input.addEventListener('input', function() {
+        clearTimeout(timer);
+        var termo = input.value.trim();
+        if (termo.length < 2) { resultados.style.display = 'none'; return; }
+        timer = setTimeout(function() {
+            fetch('/Cliente/BuscarIndicador?termo=' + encodeURIComponent(termo) + '&excluirId=' + excluirId)
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    resultados.innerHTML = '';
+                    if (!data.length) { resultados.style.display = 'none'; return; }
+                    data.forEach(function(c) {
+                        var el = document.createElement('div');
+                        el.className = 'cd-ac-item';
+                        el.innerHTML = '<strong>' + escHtml(c.nome) + '</strong>' +
+                            (c.email ? '<small>' + escHtml(c.email) + '</small>' : '');
+                        el.addEventListener('click', function() { selecionarIndicador(c.id, c.nome); });
+                        resultados.appendChild(el);
+                    });
+                    resultados.style.display = 'block';
+                });
+        }, 250);
+    });
+    document.addEventListener('click', function(e) {
+        if (!resultados.contains(e.target) && e.target !== input)
+            resultados.style.display = 'none';
+    });
+    function selecionarIndicador(id, nome) {
+        hiddenId.value = id;
+        if (nomeDisplay) nomeDisplay.innerHTML = '<i class="fas fa-user me-1 text-muted"></i><strong>' + escHtml(nome) + '</strong>';
+        if (atualBox) atualBox.style.display = '';
+        input.value = '';
+        resultados.style.display = 'none';
+    }
+    function escHtml(s) {
+        var d = document.createElement('div'); d.textContent = s; return d.innerHTML;
+    }
+})();
+function limparIndicador() {
+    document.getElementById('clienteIndicadorId').value = '';
+    var box = document.getElementById('indicadorAtualBox');
+    if (box) box.style.display = 'none';
+}
+</script>

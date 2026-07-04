@@ -17,6 +17,17 @@ namespace SistemaUsuarios.Models
         [Required(ErrorMessage = "Usuário é obrigatório")]
         public Guid UsuarioId { get; set; }
 
+        /// <summary>Master ao qual esta proposta pertence. Para usuários Master, igual ao UsuarioId.
+        /// Para Associados, aponta para o Master que gerencia o grupo.</summary>
+        public Guid? UsuarioMasterId { get; set; }
+
+        /// <summary>
+        /// Responsável atual pela proposta. Começa igual ao UsuarioId (criador),
+        /// mas pode ser transferida pelo master para outro membro da equipe.
+        /// UsuarioId nunca muda — preserva o histórico de autoria.
+        /// </summary>
+        public Guid? UsuarioResponsavelId { get; set; }
+
         [Display(Name = "Data de Início")]
         public DateTime? DataInicio { get; set; }
 
@@ -51,8 +62,27 @@ namespace SistemaUsuarios.Models
         [Display(Name = "Data de Expiração do Link")]
         public DateTime? DataExpiracaoLink { get; set; }
 
+        /// <summary>Código curto de acesso (ex: MAR-724). Null = sem proteção por código.</summary>
+        [MaxLength(10)]
+        public string? CodigoAcesso { get; set; }
+
+        /// <summary>Resumo/fechamento da proposta escrito pelo agente (HTML do editor rico).</summary>
+        public string? ResumoProposta { get; set; }
+
+        // ── Configuração de avaliação pelo cliente ───────────────────────────
+        /// <summary>Quando true e houver +1 hospedagem, exibe avaliação comparativa na proposta pública.</summary>
+        public bool SolicitarAvaliacaoHospedagem { get; set; } = false;
+
+        /// <summary>Quando true e houver +1 acomodação, exibe avaliação comparativa na proposta pública.</summary>
+        public bool SolicitarAvaliacaoAcomodacao { get; set; } = false;
+
+        /// <summary>Quando true e houver +1 experiência, exibe avaliação comparativa na proposta pública.</summary>
+        public bool SolicitarAvaliacaoExperiencia { get; set; } = false;
+
         // Navigation Properties
         public virtual Usuario Usuario { get; set; }
+        public virtual Usuario? UsuarioMaster { get; set; }
+        public virtual Usuario? UsuarioResponsavel { get; set; }
         public virtual Layout Layout { get; set; }
 
         // ✅ RELACIONAMENTO COM DESTINOS (1:N)
@@ -60,6 +90,19 @@ namespace SistemaUsuarios.Models
 
         // ✅ RELACIONAMENTO COM VISUALIZAÇÕES (1:N)
         public virtual ICollection<PropostaVisualizacao> PropostaVisualizacoes { get; set; } = new List<PropostaVisualizacao>();
+
+        // ✅ RELACIONAMENTO COM VOOS (1:N)
+        public virtual ICollection<Voo> Voos { get; set; } = new List<Voo>();
+
+        // ✅ RELACIONAMENTO COM SEGUROS (1:N)
+        public virtual ICollection<Seguro> Seguros { get; set; } = new List<Seguro>();
+
+        // ✅ RELACIONAMENTO COM CLIENTE PRINCIPAL (N:1 — cliente é entidade própria)
+        public Guid? ClienteId { get; set; }
+        public virtual Cliente? Cliente { get; set; }
+
+        // ✅ RELACIONAMENTO COM PASSAGEIROS ADICIONAIS (1:N)
+        public virtual ICollection<PassageiroProposta> PassageirosProposta { get; set; } = new List<PassageiroProposta>();
     }
 
     public enum StatusProposta

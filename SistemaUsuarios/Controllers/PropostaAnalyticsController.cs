@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using SistemaUsuarios.Data;
 using SistemaUsuarios.Models;
+using SistemaUsuarios.Services;
 using System.Text.Json;
 
 namespace SistemaUsuarios.Controllers.Api
@@ -11,10 +12,14 @@ namespace SistemaUsuarios.Controllers.Api
     public class PropostaAnalyticsController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
+        private readonly ITarefaService _tarefaService;
+        private readonly ILogger<PropostaAnalyticsController> _logger;
 
-        public PropostaAnalyticsController(ApplicationDbContext context)
+        public PropostaAnalyticsController(ApplicationDbContext context, ITarefaService tarefaService, ILogger<PropostaAnalyticsController> logger)
         {
-            _context = context;
+            _context      = context;
+            _tarefaService = tarefaService;
+            _logger       = logger;
         }
 
         // Método de teste para verificar se a API está funcionando
@@ -59,6 +64,10 @@ namespace SistemaUsuarios.Controllers.Api
                 await _context.SaveChangesAsync();
 
                 Console.WriteLine($"✅ Analytics: Salvo com sucesso! Session: {request.SessionToken}");
+
+                // Gerar tarefa de follow-up (idempotente — não cria duplicata se já existe pendente)
+                try { await _tarefaService.GerarTarefaFollowUpVisualizacaoAsync(request.PropostaId); }
+                catch (Exception ex) { _logger.LogWarning(ex, "Follow-up tarefa não gerado para proposta {Id}", request.PropostaId); }
 
                 return Ok(new { success = true, sessionToken = request.SessionToken });
             }

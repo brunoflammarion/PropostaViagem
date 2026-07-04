@@ -9,7 +9,7 @@ html {
 }
 
 .btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+  box-shadow: 0 0 0 0.1rem #258cfb, 0 0 0 0.25rem white;
 }
 .is-valid {
     border-color: #28a745 !important;
@@ -38,7 +38,7 @@ html {
     vertical-align: middle;
 }
 
-/* Animações suaves */
+/* Animaï¿½ï¿½es suaves */
 .btn {
     transition: all 0.3s ease;
 }
@@ -56,7 +56,7 @@ html {
         box-shadow: 0 8px 25px rgba(0,0,0,0.1);
     }
 
-/* Loading state para botões */
+/* Loading state para botï¿½es */
 .btn-loading {
     position: relative;
     color: transparent !important;
@@ -125,7 +125,7 @@ html {
     background-color: rgba(0,0,0,0.02);
 }
 
-/* Melhorias na barra de força da senha */
+/* Melhorias na barra de forï¿½a da senha */
 .progress {
     height: 4px;
     border-radius: 2px;
@@ -149,7 +149,7 @@ html {
         box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
     }
 
-/* Feedback de validação melhorado */
+/* Feedback de validaï¿½ï¿½o melhorado */
 .invalid-feedback {
     display: block;
     font-size: 0.875em;

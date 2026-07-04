@@ -30,6 +30,41 @@ namespace SistemaUsuarios.Models
         public DateTime DataCriacao { get; set; } = DateTime.Now;
 
         public StatusUsuario Status { get; set; } = StatusUsuario.Novo;
+
+        // Foto e identidade visual
+        public string? FotoPath { get; set; }
+        public string? CorPrimaria { get; set; }
+        public string? CorSecundaria { get; set; }
+        public string? CorDestaque { get; set; }
+
+        // Preferências de UI
+        /// <summary>"lista" ou "kanban" — persiste a visão preferida do usuário na tela de propostas.</summary>
+        [MaxLength(20)]
+        public string PreferenciaVisualizacao { get; set; } = "lista";
+
+        // ── Agência ──────────────────────────────────────────────────────────────
+        [StringLength(150)]
+        public string? NomeAgencia { get; set; }
+
+        [StringLength(100)]
+        public string? SlugAgencia { get; set; }
+
+        // ── Hierarquia Master / Associado ────────────────────────────────────────
+        /// <summary>Master cria associados e vê todas as propostas do grupo. Associado vê apenas as próprias.</summary>
+        public TipoUsuario TipoUsuario { get; set; } = TipoUsuario.Master;
+
+        /// <summary>Nulo para usuários Master; aponta para o Master responsável para usuários Associados.</summary>
+        public Guid? UsuarioMasterId { get; set; }
+
+        // Navigation properties de hierarquia
+        public virtual Usuario? UsuarioMaster { get; set; }
+        public virtual ICollection<Usuario> Associados { get; set; } = new List<Usuario>();
+    }
+
+    public enum TipoUsuario
+    {
+        Master    = 1,
+        Associado = 2
     }
 
     public enum StatusUsuario

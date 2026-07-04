@@ -43,6 +43,23 @@ namespace SistemaUsuarios.Models.ViewModels
 
         public DateTime? DataCriacao { get; set; }
 
+        public string? FotoPath { get; set; }
+
+        [RegularExpression(@"^#[0-9A-Fa-f]{6}$", ErrorMessage = "Use formato hexadecimal (#RRGGBB)")]
+        public string? CorPrimaria { get; set; }
+
+        [RegularExpression(@"^#[0-9A-Fa-f]{6}$", ErrorMessage = "Use formato hexadecimal (#RRGGBB)")]
+        public string? CorSecundaria { get; set; }
+
+        [RegularExpression(@"^#[0-9A-Fa-f]{6}$", ErrorMessage = "Use formato hexadecimal (#RRGGBB)")]
+        public string? CorDestaque { get; set; }
+
+        [StringLength(150, ErrorMessage = "Nome da agência deve ter no máximo 150 caracteres")]
+        [Display(Name = "Nome da agência")]
+        public string? NomeAgencia { get; set; }
+
+        public string? SlugAgencia { get; set; }
+
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {
             var results = new List<ValidationResult>();

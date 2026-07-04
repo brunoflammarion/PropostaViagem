@@ -27,10 +27,16 @@ namespace SistemaUsuarios.Models.ViewModels
         [Display(Name = "Status")]
         public StatusProposta StatusProposta { get; set; }
 
-        [Display(Name = "Nome do Usuário")]
+        /// <summary>Nome do criador original da proposta (imutável).</summary>
+        [Display(Name = "Criador")]
         public string NomeUsuario { get; set; } = string.Empty;
 
+        /// <summary>Nome do responsável atual (pode mudar via transferência pelo master).</summary>
+        [Display(Name = "Responsável")]
+        public string NomeResponsavel { get; set; } = string.Empty;
+
         public Guid UsuarioId { get; set; }
+        public Guid? UsuarioResponsavelId { get; set; }
 
         [Display(Name = "Link Público Ativo")]
         public bool LinkPublicoAtivo { get; set; }

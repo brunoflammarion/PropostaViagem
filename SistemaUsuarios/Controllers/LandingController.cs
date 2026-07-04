@@ -76,7 +76,6 @@ namespace SistemaUsuarios.Controllers
                 _context.Usuarios.Add(usuario);
                 await _context.SaveChangesAsync();
 
-                // Log da conversão para analytics
                 await LogConversaoLanding(model);
 
                 return Json(new
@@ -231,7 +230,7 @@ namespace SistemaUsuarios.Controllers
                 };
 
                 // Log para console (em produção, usar logger apropriado)
-                Console.WriteLine($"🎯 Nova conversão landing: {model.Email} - {model.TipoAgente}");
+                Console.WriteLine($"[Landing] Conversão: {model.Email} | Tipo: {model.TipoAgente} | Agência: {model.NomeAgencia} | Propostas/mês: {model.PropostasMes} | Plano: {model.PlanoInteresse} | Desafio: {model.DesafioAtual}");
             }
             catch (Exception ex)
             {
