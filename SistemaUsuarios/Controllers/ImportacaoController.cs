@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SistemaUsuarios.Data;
+using SistemaUsuarios.Models;
 using SistemaUsuarios.Models.Dto;
 using SistemaUsuarios.Services;
 
@@ -30,6 +31,49 @@ namespace SistemaUsuarios.Controllers
 
         private bool SessaoIsMaster() =>
             HttpContext.Session.GetString("TipoUsuario") != "Associado";
+
+        // POST: /Importacao/CriarRascunho
+        // Creates a blank draft proposta and returns its ID (used by "Criar com IA" flow in Index)
+        [HttpPost]
+        public async Task<IActionResult> CriarRascunho()
+        {
+            if (!UsuarioLogado())
+                return Unauthorized(new { erro = "Não autenticado." });
+
+            var usuarioId = ObterUsuarioId();
+            var isMaster  = SessaoIsMaster();
+
+            Guid masterUsuarioId;
+            Guid responsavelId;
+
+            if (isMaster)
+            {
+                masterUsuarioId = usuarioId;
+                responsavelId   = usuarioId;
+            }
+            else
+            {
+                var masterIdStr = HttpContext.Session.GetString("UsuarioMasterId");
+                if (string.IsNullOrEmpty(masterIdStr))
+                    return Unauthorized(new { erro = "Sessão inválida." });
+                masterUsuarioId = Guid.Parse(masterIdStr);
+                responsavelId   = usuarioId;
+            }
+
+            var proposta = new Proposta
+            {
+                Titulo               = "Nova Proposta",
+                StatusProposta       = StatusProposta.Rascunho,
+                UsuarioMasterId      = masterUsuarioId,
+                UsuarioResponsavelId = responsavelId,
+                DataCriacao          = DateTime.UtcNow,
+            };
+
+            _context.Propostas.Add(proposta);
+            await _context.SaveChangesAsync();
+
+            return Json(new { propostaId = proposta.Id });
+        }
 
         // GET: /Importacao/Iniciar/{propostaId}
         public async Task<IActionResult> Iniciar(Guid propostaId)

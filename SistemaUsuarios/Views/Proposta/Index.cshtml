@@ -49,9 +49,147 @@
             <a href="/Proposta/Criar" class="btn btn-primary exec-btn-create">
                 <i class="fas fa-plus me-1"></i>Nova Proposta
             </a>
+            <button id="btnCriarComIA" class="btn btn-outline-primary exec-btn-create" onclick="abrirCriarComIA()">
+                <i class="fas fa-magic me-1"></i>Criar com IA
+            </button>
         </div>
     </div>
 </div>
+
+<!-- ── Overlay "Criar com IA" ─────────────────────────────────────────── -->
+<div id="criarIAOverlay" style="display:none;position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.55);align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:14px;padding:28px 32px;max-width:480px;width:90%;box-shadow:0 16px 56px rgba(0,0,0,.25);">
+        <div id="criarIA-step-pick">
+            <h5 style="margin:0 0 6px;font-weight:700;">Criar proposta com IA</h5>
+            <p style="font-size:.87rem;color:#6c757d;margin:0 0 20px;">Envie um voucher, PDF, imagem ou e-mail de reserva. A IA extrai os dados e monta a proposta para você.</p>
+            <div id="criarIA-dropzone" onclick="document.getElementById('criarIAFileInput').click()"
+                 style="border:2px dashed #b6d4fe;border-radius:10px;padding:32px;text-align:center;cursor:pointer;background:#f0f7ff;transition:background .15s;"
+                 ondragover="event.preventDefault();this.style.background='#dbeafe'"
+                 ondragleave="this.style.background='#f0f7ff'"
+                 ondrop="criarIADrop(event)">
+                <i class="fas fa-cloud-upload-alt" style="font-size:2rem;color:#6ea8fe;margin-bottom:8px;"></i>
+                <div style="font-weight:600;color:#084298;">Arraste arquivos aqui</div>
+                <div style="font-size:.78rem;color:#6c757d;margin-top:4px;">ou clique para selecionar · PDF, imagens, DOCX, TXT</div>
+            </div>
+            <input type="file" id="criarIAFileInput" hidden multiple accept=".pdf,.jpg,.jpeg,.png,.gif,.webp,.docx,.txt,.eml,.html"
+                   onchange="criarIAFilesSelected(this.files)">
+            <div id="criarIAFileList" style="margin-top:12px;display:flex;flex-wrap:wrap;gap:6px;"></div>
+            <div style="display:flex;gap:8px;margin-top:20px;justify-content:flex-end;">
+                <button class="btn btn-outline-secondary" onclick="fecharCriarComIA()">Cancelar</button>
+                <button id="btnIAAnalisar" class="btn btn-primary" onclick="iniciarCriarComIA()" disabled>
+                    <i class="fas fa-magic me-1"></i>Criar proposta
+                </button>
+            </div>
+        </div>
+        <div id="criarIA-step-loading" style="display:none;text-align:center;padding:16px 0;">
+            <div class="spinner-border text-primary" style="width:2.5rem;height:2.5rem;"></div>
+            <p id="criarIA-loading-msg" style="margin:14px 0 0;font-weight:500;color:#084298;">Criando proposta…</p>
+            <p style="font-size:.8rem;color:#6c757d;margin:4px 0 0;">Aguarde, isso pode levar alguns segundos</p>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    var selectedFiles = [];
+
+    window.abrirCriarComIA = function () {
+        selectedFiles = [];
+        document.getElementById('criarIAFileList').innerHTML = '';
+        document.getElementById('btnIAAnalisar').disabled = true;
+        document.getElementById('criarIA-step-pick').style.display = '';
+        document.getElementById('criarIA-step-loading').style.display = 'none';
+        var ov = document.getElementById('criarIAOverlay');
+        ov.style.display = 'flex';
+    };
+
+    window.fecharCriarComIA = function () {
+        document.getElementById('criarIAOverlay').style.display = 'none';
+    };
+
+    window.criarIADrop = function (e) {
+        e.preventDefault();
+        document.getElementById('criarIA-dropzone').style.background = '#f0f7ff';
+        criarIAFilesSelected(e.dataTransfer.files);
+    };
+
+    window.criarIAFilesSelected = function (files) {
+        Array.from(files).forEach(function (f) {
+            if (!selectedFiles.find(function (x) { return x.name === f.name && x.size === f.size; }))
+                selectedFiles.push(f);
+        });
+        renderIAFileList();
+    };
+
+    window.removeIAFile = function (idx) {
+        selectedFiles.splice(idx, 1);
+        renderIAFileList();
+    };
+
+    function renderIAFileList() {
+        var list = document.getElementById('criarIAFileList');
+        list.innerHTML = selectedFiles.map(function (f, i) {
+            var ext = f.name.split('.').pop().toLowerCase();
+            var icon = {pdf:'📄',jpg:'🖼',jpeg:'🖼',png:'🖼',gif:'🖼',webp:'🖼',docx:'📝',doc:'📝',txt:'📃',eml:'📧',html:'🌐'}[ext] || '📎';
+            return '<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;background:rgba(0,81,151,.08);border-radius:20px;font-size:.72rem;color:#005197;font-weight:500;">'
+                + icon + ' ' + escHTML(f.name)
+                + '<button onclick="removeIAFile(' + i + ')" style="background:none;border:none;padding:0;cursor:pointer;color:inherit;font-size:.65rem;line-height:1;margin-left:2px;">✕</button>'
+                + '</span>';
+        }).join('');
+        document.getElementById('btnIAAnalisar').disabled = selectedFiles.length === 0;
+    }
+
+    function escHTML(t) {
+        var d = document.createElement('div');
+        d.textContent = t;
+        return d.innerHTML;
+    }
+
+    window.iniciarCriarComIA = async function () {
+        if (!selectedFiles.length) return;
+
+        document.getElementById('criarIA-step-pick').style.display = 'none';
+        document.getElementById('criarIA-step-loading').style.display = '';
+        document.getElementById('criarIA-loading-msg').textContent = 'Criando proposta rascunho…';
+
+        try {
+            // 1. Criar rascunho
+            var res1 = await fetch('/Importacao/CriarRascunho', { method: 'POST' });
+            if (!res1.ok) throw new Error('Erro ao criar proposta');
+            var d1 = await res1.json();
+            var propostaId = d1.propostaId;
+
+            // 2. Analisar documentos
+            document.getElementById('criarIA-loading-msg').textContent = 'Analisando documentos com IA…';
+            var fd = new FormData();
+            fd.append('propostaId', propostaId);
+            selectedFiles.forEach(function (f) { fd.append('arquivos', f); });
+
+            var res2 = await fetch('/AiCopilot/AnalisarArquivos', { method: 'POST', body: fd });
+            if (!res2.ok) throw new Error('Erro na análise');
+            var analise = await res2.json();
+
+            // 3. Salvar preview no sessionStorage
+            if (analise.preview) {
+                sessionStorage.setItem('pendingImport_' + propostaId, JSON.stringify(analise));
+            }
+
+            // 4. Redirecionar para Editar com pendingImport=1
+            window.location.href = '/Proposta/Editar/' + propostaId + '?pendingImport=1';
+
+        } catch (err) {
+            document.getElementById('criarIA-step-loading').style.display = 'none';
+            document.getElementById('criarIA-step-pick').style.display = '';
+            alert('Ocorreu um erro: ' + err.message + '. Tente novamente.');
+        }
+    };
+
+    // Close overlay on backdrop click
+    document.getElementById('criarIAOverlay').addEventListener('click', function (e) {
+        if (e.target === this) fecharCriarComIA();
+    });
+})();
+</script>
 
 <!-- ═══════════════════════════════════════════════════════
      DASHBOARD (estatísticas)

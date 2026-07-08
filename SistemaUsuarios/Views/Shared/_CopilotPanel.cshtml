@@ -193,7 +193,7 @@
     border-top: 1px solid #dee2e6;
     flex-shrink: 0;
 }
-.cp-input-wrap { display: flex; align-items: flex-end; gap: 8px; }
+.cp-input-wrap { display: flex; align-items: flex-end; gap: 6px; }
 .cp-textarea {
     flex: 1; resize: none;
     border: 1px solid #dee2e6;
@@ -216,7 +216,33 @@
     display: flex; align-items: center; justify-content: center;
     font-size: .85rem;
 }
+.cp-attach-btn {
+    width: 34px; height: 34px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .8rem; border-radius: 6px; padding: 0;
+    color: var(--bs-secondary); border-color: var(--bs-border-color);
+}
+.cp-attach-btn:hover { color: var(--bs-primary); border-color: var(--bs-primary); }
 .cp-hint { font-size: .67rem; color: #adb5bd; margin-top: 5px; }
+/* Chips de anexo */
+.cp-attachments {
+    display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 6px;
+}
+.cp-attach-chip {
+    display: flex; align-items: center; gap: 5px; padding: 3px 8px;
+    background: rgba(var(--bs-primary-rgb),.08); border-radius: 20px;
+    font-size: .72rem; color: var(--bs-primary); font-weight: 500;
+    max-width: 180px;
+}
+.cp-attach-chip .chip-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cp-attach-chip button { background: none; border: none; padding: 0; color: inherit; cursor: pointer; line-height: 1; flex-shrink: 0; font-size: .65rem; }
+/* Cartão de análise de importação */
+.cp-import-card { background: #f0f7ff; border: 1px solid #b6d4fe; border-radius: 10px; padding: 12px 14px; margin-top: 6px; }
+.cp-import-card .import-title { font-weight: 700; font-size: .82rem; color: #084298; margin-bottom: 6px; }
+.cp-import-counts { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0; }
+.cp-import-counts .badge { font-size: .72rem; }
+.cp-import-actions { display: flex; gap: 6px; margin-top: 10px; }
+.cp-import-actions .btn { font-size: .78rem; }
 
 /* Scrollbar das mensagens */
 .copilot-messages::-webkit-scrollbar { width: 4px; }
@@ -275,7 +301,14 @@
 
     <!-- Input -->
     <div id="copilotInputArea" class="cp-input-area">
+        <div id="cpAttachments" class="cp-attachments"></div>
         <div class="cp-input-wrap">
+            @if (Model.HasValue)
+            {
+                <button type="button" id="cpAttachBtn" class="btn btn-sm btn-outline-secondary cp-attach-btn" title="Anexar documento para importar">
+                    <i class="fas fa-paperclip"></i>
+                </button>
+            }
             <textarea id="copilotInput"
                       class="cp-textarea"
                       placeholder="@(Model.HasValue ? "Pergunte sobre a proposta, o destino, o cliente..." : "Me conte: para onde é a viagem, quando e quem vai?")"
@@ -284,6 +317,15 @@
                 <i class="fas fa-paper-plane"></i>
             </button>
         </div>
-        <div class="cp-hint">Enter para enviar · Shift+Enter para nova linha</div>
+        @if (Model.HasValue)
+        {
+            <div class="cp-hint">Enter para enviar &bull; Shift+Enter nova linha &bull; <i class="fas fa-paperclip"></i> para importar documento</div>
+        }
+        else
+        {
+            <div class="cp-hint">Enter para enviar · Shift+Enter para nova linha</div>
+        }
+        <input type="file" id="cpFileInput" hidden multiple
+               accept=".pdf,.jpg,.jpeg,.png,.gif,.webp,.docx,.txt,.eml,.html">
     </div>
 </div>
