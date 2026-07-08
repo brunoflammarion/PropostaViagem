@@ -37,6 +37,10 @@ builder.Services.AddHttpClient<IFlightLookupService, AeroDataBoxService>();
 // AI Copilot
 builder.Services.AddHttpClient<AiCopilotService>();
 
+// Importação Inteligente
+builder.Services.AddHttpClient<ImportacaoIAService>();
+builder.Services.AddScoped<ImportacaoPersistenciaService>();
+
 // Módulo Tarefas
 builder.Services.AddScoped<ITarefaService, TarefaService>();
 

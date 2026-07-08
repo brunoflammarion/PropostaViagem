@@ -207,19 +207,24 @@
             <h3 class="mb-0"><i class="fas fa-edit me-2 text-primary"></i>@Model.Titulo</h3>
             <small class="text-muted">Edite os dados, destinos e hospedagens da proposta</small>
         </div>
-        <div class="btn-group">
-            <a href="/Proposta/Detalhes/@Model.Id" class="btn btn-sm btn-outline-info">
-                <i class="fas fa-eye me-1"></i>Visualizar
+        <div class="d-flex gap-2 flex-wrap justify-content-end">
+            <a href="/Importacao/Iniciar/@Model.Id" class="btn btn-sm btn-primary">
+                <i class="fas fa-file-import me-1"></i>Importar via IA
             </a>
-            @if (Model.LinkPublicoAtivo)
-            {
-                <a href="/Proposta/Publico/@Model.Id" target="_blank" class="btn btn-sm btn-outline-success">
-                    <i class="fas fa-external-link-alt me-1"></i>Público
+            <div class="btn-group">
+                <a href="/Proposta/Detalhes/@Model.Id" class="btn btn-sm btn-outline-info">
+                    <i class="fas fa-eye me-1"></i>Visualizar
                 </a>
-            }
-            <a href="/Proposta" class="btn btn-sm btn-outline-secondary">
-                <i class="fas fa-arrow-left me-1"></i>Propostas
-            </a>
+                @if (Model.LinkPublicoAtivo)
+                {
+                    <a href="/Proposta/Publico/@Model.Id" target="_blank" class="btn btn-sm btn-outline-success">
+                        <i class="fas fa-external-link-alt me-1"></i>Público
+                    </a>
+                }
+                <a href="/Proposta" class="btn btn-sm btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>Propostas
+                </a>
+            </div>
         </div>
     </div>
 

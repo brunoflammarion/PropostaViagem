@@ -1,0 +1,627 @@
+@{
+    var proposta = ViewBag.Proposta as SistemaUsuarios.Models.Proposta;
+    ViewData["Title"] = "Importar Documentos";
+}
+
+@section Styles {
+<style>
+/* ── Wizard states ── */
+.wz-state { display: none; }
+.wz-state.active { display: block; }
+
+/* ── Upload zone ── */
+.upload-zone {
+    border: 2px dashed var(--bs-border-color);
+    border-radius: 12px;
+    padding: 3rem 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .2s, background .2s;
+    background: transparent;
+}
+.upload-zone:hover, .upload-zone.drag-over {
+    border-color: var(--bs-primary);
+    background: rgba(var(--bs-primary-rgb), .04);
+}
+.upload-zone .upload-icon { font-size: 3rem; color: var(--bs-secondary); margin-bottom: 1rem; }
+#fileInput { display: none; }
+
+/* ── File list ── */
+.file-item {
+    display: flex; align-items: center; gap: .6rem;
+    padding: .5rem .75rem; border-radius: 8px;
+    background: rgba(var(--bs-secondary-rgb), .08);
+    margin-bottom: .4rem; font-size: .88rem;
+}
+.file-item .file-icon { color: var(--bs-primary); font-size: 1.1rem; }
+.file-item .file-size { color: var(--bs-secondary); font-size: .75rem; margin-left: auto; }
+
+/* ── Progress steps ── */
+.wz-steps {
+    display: flex; align-items: center; gap: 0;
+    margin-bottom: 2rem; padding: 0 1rem;
+}
+.wz-step {
+    display: flex; flex-direction: column; align-items: center;
+    flex: 1; position: relative; font-size: .78rem;
+    color: var(--bs-secondary);
+}
+.wz-step::after {
+    content: ''; position: absolute; top: 16px; left: calc(50% + 16px);
+    right: calc(-50% + 16px); height: 2px;
+    background: var(--bs-border-color);
+}
+.wz-step:last-child::after { display: none; }
+.wz-step .step-dot {
+    width: 32px; height: 32px; border-radius: 50%;
+    border: 2px solid var(--bs-border-color);
+    background: var(--bs-body-bg);
+    display: flex; align-items: center; justify-content: center;
+    font-size: .8rem; font-weight: 600; margin-bottom: .35rem;
+    transition: border-color .2s, background .2s, color .2s;
+    position: relative; z-index: 1;
+}
+.wz-step.done .step-dot  { border-color: var(--bs-success); background: var(--bs-success); color: #fff; }
+.wz-step.active .step-dot { border-color: var(--bs-primary); background: var(--bs-primary); color: #fff; }
+.wz-step.done::after  { background: var(--bs-success); }
+
+/* ── Spinner ── */
+.processing-wrap { text-align: center; padding: 3rem 0; }
+.processing-wrap .spinner-ring {
+    width: 56px; height: 56px; margin: 0 auto 1.5rem;
+    border: 4px solid rgba(var(--bs-primary-rgb), .15);
+    border-top-color: var(--bs-primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+@@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Preview cards ── */
+.preview-section { margin-bottom: 1.5rem; }
+.preview-section-title {
+    font-size: .72rem; font-weight: 700; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--bs-secondary);
+    margin-bottom: .75rem;
+}
+.preview-card {
+    border: 1px solid var(--bs-border-color);
+    border-radius: 10px; padding: .9rem 1rem;
+    margin-bottom: .5rem;
+    transition: border-color .15s, opacity .15s;
+}
+.preview-card.excluded { opacity: .45; }
+.preview-card .pc-header {
+    display: flex; align-items: flex-start; gap: .75rem;
+}
+.preview-card .pc-toggle { margin-top: 2px; cursor: pointer; flex-shrink: 0; }
+.preview-card .pc-title { font-weight: 600; font-size: .92rem; }
+.preview-card .pc-sub { font-size: .8rem; color: var(--bs-secondary); margin-top: .1rem; }
+.preview-card .pc-meta { font-size: .75rem; color: var(--bs-secondary); margin-top: .25rem; }
+.nested-list { margin-left: 1.5rem; margin-top: .5rem; border-left: 2px solid var(--bs-border-color); padding-left: .75rem; }
+.nested-item { font-size: .82rem; padding: .35rem 0; color: var(--bs-body-color); display: flex; align-items: flex-start; gap: .5rem; }
+.nested-item i { color: var(--bs-secondary); margin-top: 2px; flex-shrink: 0; font-size: .75rem; }
+
+/* ── Summary badges ── */
+.summary-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: .75rem; margin-bottom: 1.5rem; }
+.summary-badge {
+    border: 1px solid var(--bs-border-color); border-radius: 10px;
+    padding: .9rem .75rem; text-align: center;
+}
+.summary-badge .sb-count { font-size: 1.6rem; font-weight: 700; color: var(--bs-primary); line-height: 1; }
+.summary-badge .sb-label { font-size: .75rem; color: var(--bs-secondary); margin-top: .25rem; }
+
+/* ── Done state ── */
+.done-wrap { text-align: center; padding: 2.5rem 1rem; }
+.done-icon { font-size: 3.5rem; color: var(--bs-success); margin-bottom: 1rem; }
+.done-counts { display: flex; flex-wrap: wrap; justify-content: center; gap: .5rem; margin: 1.5rem 0; }
+.done-counts .badge { font-size: .82rem; padding: .4em .75em; }
+
+@@media (max-width: 576px) {
+    .wz-steps { display: none; }
+    .upload-zone { padding: 2rem 1rem; }
+}
+</style>
+}
+
+<div class="container-fluid py-4" style="max-width:860px;">
+
+    <!-- Cabeçalho -->
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <a href="/Proposta/Editar/@proposta?.Id" class="btn btn-sm btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <div>
+            <h4 class="mb-0"><i class="fas fa-file-import me-2 text-primary"></i>Importar via IA</h4>
+            <small class="text-muted">@proposta?.Titulo</small>
+        </div>
+    </div>
+
+    <!-- Barra de progresso -->
+    <div class="wz-steps" id="wzSteps">
+        <div class="wz-step active" id="step-upload">
+            <div class="step-dot">1</div><span>Upload</span>
+        </div>
+        <div class="wz-step" id="step-processing">
+            <div class="step-dot">2</div><span>Processando</span>
+        </div>
+        <div class="wz-step" id="step-preview">
+            <div class="step-dot">3</div><span>Revisão</span>
+        </div>
+        <div class="wz-step" id="step-done">
+            <div class="step-dot"><i class="fas fa-check" style="font-size:.65rem"></i></div><span>Concluído</span>
+        </div>
+    </div>
+
+    <!-- ── Estado 1: Upload ── -->
+    <div class="wz-state active" id="state-upload">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <p class="text-muted mb-4">
+                    Envie um ou mais documentos de viagem — PDF, imagens, Word, e-mails ou vouchers —
+                    e a IA vai extrair automaticamente todos os dados para a proposta.
+                </p>
+
+                <div class="upload-zone" id="uploadZone">
+                    <div class="upload-icon"><i class="fas fa-cloud-upload-alt"></i></div>
+                    <div class="fw-semibold mb-1">Arraste os arquivos aqui</div>
+                    <div class="text-muted small mb-3">ou clique para selecionar</div>
+                    <button type="button" class="btn btn-primary btn-sm" onclick="document.getElementById('fileInput').click()">
+                        <i class="fas fa-plus me-1"></i>Selecionar arquivos
+                    </button>
+                    <div class="text-muted" style="font-size:.72rem; margin-top:.75rem;">
+                        PDF, JPG, PNG, DOCX, TXT &bull; Até 10 arquivos &bull; 20 MB por arquivo
+                    </div>
+                    <input type="file" id="fileInput" multiple accept=".pdf,.jpg,.jpeg,.png,.gif,.webp,.docx,.txt,.eml,.html">
+                </div>
+
+                <div id="fileList" class="mt-3"></div>
+
+                <div id="uploadError" class="alert alert-danger mt-3 d-none"></div>
+
+                <div class="d-flex justify-content-end mt-4">
+                    <button type="button" class="btn btn-primary" id="btnAnalisar" onclick="iniciarAnalise()" disabled>
+                        <i class="fas fa-wand-magic-sparkles me-2"></i>Analisar com IA
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Estado 2: Processando ── -->
+    <div class="wz-state" id="state-processing">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="processing-wrap">
+                    <div class="spinner-ring"></div>
+                    <h5 class="mb-2">Interpretando os documentos...</h5>
+                    <p class="text-muted" id="processingMsg">A IA está lendo e extraindo todas as informações. Isso pode levar até 30 segundos.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Estado 3: Preview / Revisão ── -->
+    <div class="wz-state" id="state-preview">
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-body p-4">
+                <h6 class="mb-1">O que foi encontrado</h6>
+                <p class="text-muted small mb-3">Revise os itens identificados. Desmarque o que não quiser importar.</p>
+                <div class="summary-grid" id="summaryGrid"></div>
+            </div>
+        </div>
+
+        <div id="previewContent"></div>
+
+        <div id="previewError" class="alert alert-danger d-none"></div>
+
+        <div class="d-flex justify-content-between mt-4">
+            <button type="button" class="btn btn-outline-secondary" onclick="voltarUpload()">
+                <i class="fas fa-arrow-left me-1"></i>Novo upload
+            </button>
+            <button type="button" class="btn btn-success btn-lg" id="btnImportar" onclick="confirmarImportacao()">
+                <i class="fas fa-check me-2"></i>Importar para a proposta
+            </button>
+        </div>
+    </div>
+
+    <!-- ── Estado 4: Importando ── -->
+    <div class="wz-state" id="state-confirming">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="processing-wrap">
+                    <div class="spinner-ring"></div>
+                    <h5 class="mb-2">Criando itens na proposta...</h5>
+                    <p class="text-muted">Aguarde enquanto os dados são salvos.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Estado 5: Concluído ── -->
+    <div class="wz-state" id="state-done">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="done-wrap">
+                    <div class="done-icon"><i class="fas fa-circle-check"></i></div>
+                    <h4 class="mb-1">Importação concluída!</h4>
+                    <p class="text-muted">Os itens foram adicionados à proposta com sucesso.</p>
+                    <div class="done-counts" id="doneCounts"></div>
+                    <a id="btnVerProposta" href="/Proposta/Editar/@proposta?.Id" class="btn btn-primary btn-lg mt-2">
+                        <i class="fas fa-eye me-2"></i>Ver proposta
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+<script>
+(function () {
+    var propostaId = '@proposta?.Id';
+    var selectedFiles = [];
+    var previewData = null;
+
+    // ── File input / drag-and-drop ──────────────────────────────────────────
+    var fileInput = document.getElementById('fileInput');
+    var uploadZone = document.getElementById('uploadZone');
+
+    fileInput.addEventListener('change', function () {
+        adicionarArquivos(Array.from(this.files));
+        this.value = '';
+    });
+
+    uploadZone.addEventListener('dragover', function (e) {
+        e.preventDefault();
+        this.classList.add('drag-over');
+    });
+    uploadZone.addEventListener('dragleave', function () {
+        this.classList.remove('drag-over');
+    });
+    uploadZone.addEventListener('drop', function (e) {
+        e.preventDefault();
+        this.classList.remove('drag-over');
+        adicionarArquivos(Array.from(e.dataTransfer.files));
+    });
+
+    function adicionarArquivos(novos) {
+        novos.forEach(function (f) {
+            if (selectedFiles.length >= 10) return;
+            if (!selectedFiles.find(function (x) { return x.name === f.name && x.size === f.size; }))
+                selectedFiles.push(f);
+        });
+        renderFileList();
+    }
+
+    function removerArquivo(idx) {
+        selectedFiles.splice(idx, 1);
+        renderFileList();
+    }
+
+    function renderFileList() {
+        var list = document.getElementById('fileList');
+        var icons = { pdf: 'fa-file-pdf', jpg: 'fa-file-image', jpeg: 'fa-file-image',
+                      png: 'fa-file-image', gif: 'fa-file-image', webp: 'fa-file-image',
+                      docx: 'fa-file-word', doc: 'fa-file-word', txt: 'fa-file-alt',
+                      eml: 'fa-envelope', html: 'fa-file-code' };
+        list.innerHTML = selectedFiles.map(function (f, i) {
+            var ext = f.name.split('.').pop().toLowerCase();
+            var icon = icons[ext] || 'fa-file';
+            return '<div class="file-item">'
+                + '<i class="fas ' + icon + ' file-icon"></i>'
+                + '<span class="text-truncate" style="max-width:320px">' + esc(f.name) + '</span>'
+                + '<span class="file-size">' + fmtSize(f.size) + '</span>'
+                + '<button type="button" class="btn btn-link btn-sm p-0 ms-2 text-danger" onclick="removerArquivo(' + i + ')">'
+                + '<i class="fas fa-times"></i></button></div>';
+        }).join('');
+        document.getElementById('btnAnalisar').disabled = selectedFiles.length === 0;
+        document.getElementById('uploadError').classList.add('d-none');
+    }
+
+    window.removerArquivo = removerArquivo;
+
+    // ── Análise ─────────────────────────────────────────────────────────────
+    window.iniciarAnalise = function () {
+        if (!selectedFiles.length) return;
+        mudarEstado('processing');
+
+        var formData = new FormData();
+        formData.append('propostaId', propostaId);
+        selectedFiles.forEach(function (f) { formData.append('arquivos', f); });
+
+        fetch('/Importacao/AnalisarDocumentos', { method: 'POST', body: formData })
+            .then(function (r) {
+                if (!r.ok) return r.json().then(function (e) { throw new Error(e.erro || 'Erro na análise.'); });
+                return r.json();
+            })
+            .then(function (data) {
+                previewData = data;
+                renderPreview(data);
+                mudarEstado('preview');
+            })
+            .catch(function (err) {
+                mudarEstado('upload');
+                document.getElementById('uploadError').textContent = err.message;
+                document.getElementById('uploadError').classList.remove('d-none');
+            });
+    };
+
+    window.voltarUpload = function () {
+        mudarEstado('upload');
+    };
+
+    // ── Preview ─────────────────────────────────────────────────────────────
+    function renderPreview(data) {
+        renderSummary(data);
+
+        var html = '';
+
+        // Proposta
+        if (data.proposta && (data.proposta.titulo || data.proposta.observacoesGerais)) {
+            html += section('Dados da proposta', [card(
+                'check-circle', data.proposta.titulo || 'Dados gerais',
+                data.proposta.observacoesGerais,
+                data.proposta.operadora ? 'Operadora: ' + data.proposta.operadora : null,
+                'proposta', null, 'proposta_0'
+            )]);
+        }
+
+        // Passageiros
+        if (data.passageiros && data.passageiros.length) {
+            html += section('Passageiros (' + data.passageiros.length + ')',
+                data.passageiros.map(function (p, i) {
+                    var sub = [p.dataNascimento, p.genero, p.relacionamento].filter(Boolean).join(' · ');
+                    return card('user', p.nome, sub, null, 'passageiro', i, 'passageiro_' + i);
+                }).join(''));
+        }
+
+        // Voos
+        if (data.voos && data.voos.length) {
+            html += section('Voos (' + data.voos.length + ')',
+                data.voos.map(function (v, i) {
+                    var rota = v.origem + ' → ' + v.destino;
+                    var horario = '';
+                    if (v.horarioSaida) horario = fmtDt(v.horarioSaida);
+                    if (v.horarioChegada) horario += ' → ' + fmtDt(v.horarioChegada);
+                    var meta = [v.tipoVoo, v.classe, v.duracao].filter(Boolean).join(' · ');
+                    var bagagem = [];
+                    if (v.bagagemMaoPeso) bagagem.push('Mão: ' + v.bagagemMaoPeso + ' kg');
+                    if (v.bagagemDespachadaPeso) bagagem.push('Despachada: ' + v.bagagemDespachadaPeso + ' kg');
+                    return card('plane', v.companhia + ' ' + v.numeroVoo, rota + (horario ? ' · ' + horario : ''),
+                        [meta, bagagem.join(' · ')].filter(Boolean).join('<br>'), 'voo', i, 'voo_' + i);
+                }).join(''));
+        }
+
+        // Destinos
+        if (data.destinos && data.destinos.length) {
+            var destsHtml = data.destinos.map(function (d, di) {
+                var nested = '';
+
+                if (d.hospedagens && d.hospedagens.length) {
+                    nested += '<div class="nested-list">';
+                    nested += '<div class="preview-section-title" style="margin:0 0 .3rem 0">Hospedagens</div>';
+                    d.hospedagens.forEach(function (h, hi) {
+                        var dates = '';
+                        if (h.checkIn) dates = fmtD(h.checkIn) + (h.checkOut ? ' → ' + fmtD(h.checkOut) : '');
+                        nested += toggleItem('hotel', h.nome, [h.categoria, h.tipoPensao, dates].filter(Boolean).join(' · '),
+                            'hospedagem_' + di + '_' + hi, 'hospedagem', di, hi);
+                    });
+                    nested += '</div>';
+                }
+
+                if (d.experiencias && d.experiencias.length) {
+                    nested += '<div class="nested-list">';
+                    nested += '<div class="preview-section-title" style="margin:0 0 .3rem 0">Experiências</div>';
+                    d.experiencias.forEach(function (e, ei) {
+                        var dt = e.dataInicio ? fmtDt(e.dataInicio) : '';
+                        nested += toggleItem('star', e.tipoPasseio, [dt, e.valor ? 'R$ ' + fmtNum(e.valor) : ''].filter(Boolean).join(' · '),
+                            'experiencia_' + di + '_' + ei, 'experiencia', di, ei);
+                    });
+                    nested += '</div>';
+                }
+
+                if (d.transportes && d.transportes.length) {
+                    nested += '<div class="nested-list">';
+                    nested += '<div class="preview-section-title" style="margin:0 0 .3rem 0">Transportes</div>';
+                    d.transportes.forEach(function (t, ti) {
+                        nested += toggleItem('car', t.titulo, t.valor ? 'R$ ' + fmtNum(t.valor) : '',
+                            'transporte_' + di + '_' + ti, 'transporte', di, ti);
+                    });
+                    nested += '</div>';
+                }
+
+                var datas = '';
+                if (d.dataChegada) datas = fmtD(d.dataChegada) + (d.dataSaida ? ' → ' + fmtD(d.dataSaida) : '');
+                return card('map-marker-alt', d.nome,
+                    [d.cidade, d.pais].filter(Boolean).join(', '),
+                    datas,
+                    'destino', di, 'destino_' + di,
+                    nested);
+            }).join('');
+            html += section('Destinos (' + data.destinos.length + ')', destsHtml);
+        }
+
+        // Seguros
+        if (data.seguros && data.seguros.length) {
+            html += section('Seguros (' + data.seguros.length + ')',
+                data.seguros.map(function (s, i) {
+                    return card('shield-alt', s.titulo, s.descricao,
+                        s.valor ? 'R$ ' + fmtNum(s.valor) : null,
+                        'seguro', i, 'seguro_' + i);
+                }).join(''));
+        }
+
+        // Valores
+        if (data.valoresFinanceiros && (data.valoresFinanceiros.valorTotal || data.valoresFinanceiros.observacoes)) {
+            var vf = data.valoresFinanceiros;
+            html += section('Valores financeiros', card('dollar-sign',
+                vf.valorTotal ? 'Total: R$ ' + fmtNum(vf.valorTotal) : 'Resumo financeiro',
+                vf.observacoes, null,
+                'valores', null, 'valores_0'));
+        }
+
+        document.getElementById('previewContent').innerHTML = html || '<p class="text-muted text-center py-4">Nenhuma informação foi identificada nos documentos.</p>';
+    }
+
+    function section(title, content) {
+        return '<div class="preview-section"><div class="preview-section-title">' + esc(title) + '</div>' + content + '</div>';
+    }
+
+    function card(icon, title, sub, meta, type, idx, cbId, extraHtml) {
+        var subHtml = sub ? '<div class="pc-sub">' + esc(sub) + '</div>' : '';
+        var metaHtml = meta ? '<div class="pc-meta">' + meta + '</div>' : '';
+        return '<div class="preview-card" id="card-' + cbId + '">'
+            + '<div class="pc-header">'
+            + '<input type="checkbox" class="form-check-input pc-toggle" id="cb-' + cbId + '" checked '
+            + 'onchange="toggleItem(this, \'' + cbId + '\', \'' + type + '\', ' + (idx !== null ? idx : 'null') + ')">'
+            + '<div class="flex-1">'
+            + '<div class="d-flex align-items-center gap-2">'
+            + '<i class="fas fa-' + icon + ' text-primary" style="font-size:.9rem;width:16px"></i>'
+            + '<div class="pc-title">' + esc(title) + '</div>'
+            + '</div>'
+            + subHtml + metaHtml
+            + '</div></div>'
+            + (extraHtml || '')
+            + '</div>';
+    }
+
+    function toggleItem(icon, title, sub, cbId, type, parentIdx, childIdx) {
+        return '<div class="nested-item">'
+            + '<input type="checkbox" class="form-check-input" id="cb-' + cbId + '" checked style="margin-top:0;flex-shrink:0" '
+            + 'onchange="toggleNested(this, \'' + type + '\', ' + parentIdx + ', ' + childIdx + ')">'
+            + '<i class="fas fa-' + icon + '"></i>'
+            + '<div><div style="font-weight:500">' + esc(title) + '</div>'
+            + (sub ? '<div style="font-size:.75rem;color:var(--bs-secondary)">' + esc(sub) + '</div>' : '')
+            + '</div></div>';
+    }
+
+    function renderSummary(data) {
+        var items = [];
+        if (data.passageiros?.length) items.push({ count: data.passageiros.length, label: 'Passageiros', icon: 'users' });
+        if (data.voos?.length) items.push({ count: data.voos.length, label: 'Voos', icon: 'plane' });
+        if (data.destinos?.length) {
+            items.push({ count: data.destinos.length, label: 'Destinos', icon: 'map-marker-alt' });
+            var hosp = data.destinos.reduce(function (s, d) { return s + (d.hospedagens?.length || 0); }, 0);
+            var exp = data.destinos.reduce(function (s, d) { return s + (d.experiencias?.length || 0); }, 0);
+            var transp = data.destinos.reduce(function (s, d) { return s + (d.transportes?.length || 0); }, 0);
+            if (hosp) items.push({ count: hosp, label: 'Hospedagens', icon: 'bed' });
+            if (exp) items.push({ count: exp, label: 'Experiências', icon: 'star' });
+            if (transp) items.push({ count: transp, label: 'Transportes', icon: 'car' });
+        }
+        if (data.seguros?.length) items.push({ count: data.seguros.length, label: 'Seguros', icon: 'shield-alt' });
+
+        document.getElementById('summaryGrid').innerHTML = items.map(function (it) {
+            return '<div class="summary-badge">'
+                + '<div class="sb-count">' + it.count + '</div>'
+                + '<div class="sb-label"><i class="fas fa-' + it.icon + ' me-1"></i>' + it.label + '</div>'
+                + '</div>';
+        }).join('');
+    }
+
+    // ── Toggle handlers ──────────────────────────────────────────────────────
+    window.toggleItem = function (cb, cbId, type, idx) {
+        var card = document.getElementById('card-' + cbId);
+        if (card) card.classList.toggle('excluded', !cb.checked);
+        if (!previewData) return;
+        if (type === 'proposta' && previewData.proposta) previewData.proposta.incluir = cb.checked;
+        else if (type === 'passageiro' && idx !== null) previewData.passageiros[idx].incluir = cb.checked;
+        else if (type === 'voo' && idx !== null) previewData.voos[idx].incluir = cb.checked;
+        else if (type === 'destino' && idx !== null) previewData.destinos[idx].incluir = cb.checked;
+        else if (type === 'seguro' && idx !== null) previewData.seguros[idx].incluir = cb.checked;
+    };
+
+    window.toggleNested = function (cb, type, parentIdx, childIdx) {
+        if (!previewData) return;
+        var d = previewData.destinos[parentIdx];
+        if (!d) return;
+        if (type === 'hospedagem') d.hospedagens[childIdx].incluir = cb.checked;
+        else if (type === 'experiencia') d.experiencias[childIdx].incluir = cb.checked;
+        else if (type === 'transporte') d.transportes[childIdx].incluir = cb.checked;
+    };
+
+    // ── Confirmação ─────────────────────────────────────────────────────────
+    window.confirmarImportacao = function () {
+        mudarEstado('confirming');
+
+        fetch('/Importacao/Confirmar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ propostaId: propostaId, preview: previewData })
+        })
+        .then(function (r) {
+            if (!r.ok) return r.json().then(function (e) { throw new Error(e.erro || 'Erro ao importar.'); });
+            return r.json();
+        })
+        .then(function (res) {
+            renderDone(res.resumo);
+            mudarEstado('done');
+        })
+        .catch(function (err) {
+            mudarEstado('preview');
+            document.getElementById('previewError').textContent = err.message;
+            document.getElementById('previewError').classList.remove('d-none');
+        });
+    };
+
+    function renderDone(r) {
+        var badges = [];
+        if (r.passageiros) badges.push({ n: r.passageiros, l: 'Passageiros' });
+        if (r.voos) badges.push({ n: r.voos, l: 'Voos' });
+        if (r.destinos) badges.push({ n: r.destinos, l: 'Destinos' });
+        if (r.hospedagens) badges.push({ n: r.hospedagens, l: 'Hospedagens' });
+        if (r.experiencias) badges.push({ n: r.experiencias, l: 'Experiências' });
+        if (r.transportes) badges.push({ n: r.transportes, l: 'Transportes' });
+        if (r.seguros) badges.push({ n: r.seguros, l: 'Seguros' });
+        document.getElementById('doneCounts').innerHTML = badges
+            .map(function (b) { return '<span class="badge bg-success fs-6">' + b.n + ' ' + b.l + '</span>'; })
+            .join('');
+    }
+
+    // ── Helpers UI ───────────────────────────────────────────────────────────
+    var stateOrder = ['upload', 'processing', 'preview', 'confirming', 'done'];
+    var stepMap = { upload: 'step-upload', processing: 'step-processing', preview: 'step-preview', done: 'step-done', confirming: 'step-done' };
+
+    function mudarEstado(state) {
+        stateOrder.forEach(function (s) {
+            document.getElementById('state-' + s).classList.toggle('active', s === state);
+        });
+        var idx = stateOrder.indexOf(state);
+        ['step-upload', 'step-processing', 'step-preview', 'step-done'].forEach(function (sid, i) {
+            var el = document.getElementById(sid);
+            if (!el) return;
+            el.classList.remove('active', 'done');
+            if (i < idx) el.classList.add('done');
+            else if (sid === stepMap[state]) el.classList.add('active');
+        });
+    }
+
+    function esc(s) {
+        if (!s) return '';
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function fmtSize(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1048576) return (bytes / 1024).toFixed(0) + ' KB';
+        return (bytes / 1048576).toFixed(1) + ' MB';
+    }
+
+    function fmtNum(n) {
+        return parseFloat(n).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function fmtD(s) {
+        if (!s) return '';
+        var d = new Date(s + 'T00:00:00');
+        return isNaN(d) ? s : d.toLocaleDateString('pt-BR');
+    }
+
+    function fmtDt(s) {
+        if (!s) return '';
+        var d = new Date(s);
+        return isNaN(d) ? s : d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    }
+})();
+</script>
+}
