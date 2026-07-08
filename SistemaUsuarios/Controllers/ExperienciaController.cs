@@ -49,7 +49,9 @@ namespace SistemaUsuarios.Controllers
             string tipoPasseio,
             string? descricao,
             string? videoUrl,
-            decimal? valor)
+            decimal? valor,
+            DateTime? dataInicio,
+            DateTime? dataFim)
         {
             if (!UsuarioLogado())
                 return RedirectToAction("Login", "Auth");
@@ -70,6 +72,12 @@ namespace SistemaUsuarios.Controllers
                 return RedirectToEditar(propostaId);
             }
 
+            if (dataInicio.HasValue && dataFim.HasValue && dataFim < dataInicio)
+            {
+                TempData["Erro"] = "Data/hora de fim não pode ser anterior ao início da experiência.";
+                return RedirectToEditar(propostaId);
+            }
+
             var maxOrdem = await _context.Experiencias
                 .Where(e => e.DestinoId == destinoId)
                 .MaxAsync(e => (int?)e.Ordem) ?? 0;
@@ -82,6 +90,8 @@ namespace SistemaUsuarios.Controllers
                 Descricao = descricao?.Trim(),
                 VideoUrl = string.IsNullOrWhiteSpace(videoUrl) ? null : videoUrl.Trim(),
                 Valor = valor,
+                DataInicio = dataInicio,
+                DataFim = dataFim,
                 Ordem = maxOrdem + 1,
                 DataCriacao = DateTime.Now
             };
@@ -101,7 +111,9 @@ namespace SistemaUsuarios.Controllers
             string tipoPasseio,
             string? descricao,
             string? videoUrl,
-            decimal? valor)
+            decimal? valor,
+            DateTime? dataInicio,
+            DateTime? dataFim)
         {
             if (!UsuarioLogado())
                 return RedirectToAction("Login", "Auth");
@@ -126,10 +138,18 @@ namespace SistemaUsuarios.Controllers
                 return RedirectToEditar(experiencia.Destino.PropostaId);
             }
 
+            if (dataInicio.HasValue && dataFim.HasValue && dataFim < dataInicio)
+            {
+                TempData["Erro"] = "Data/hora de fim não pode ser anterior ao início da experiência.";
+                return RedirectToEditar(experiencia.Destino.PropostaId);
+            }
+
             experiencia.TipoPasseio = tipoPasseio.Trim();
             experiencia.Descricao = descricao?.Trim();
             experiencia.VideoUrl = string.IsNullOrWhiteSpace(videoUrl) ? null : videoUrl.Trim();
             experiencia.Valor = valor;
+            experiencia.DataInicio = dataInicio;
+            experiencia.DataFim = dataFim;
 
             await _context.SaveChangesAsync();
 

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NetTopologySuite.Geometries;
 using SistemaUsuarios.Data;
@@ -12,9 +13,11 @@ using SistemaUsuarios.Data;
 namespace SistemaUsuarios.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260704213229_AddExperienciaDataHora")]
+    partial class AddExperienciaDataHora
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1074,9 +1077,6 @@ namespace SistemaUsuarios.Migrations
                         .HasMaxLength(10)
                         .HasColumnType("nvarchar(10)");
 
-                    b.Property<string>("CondicoesPropostaHtml")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<DateTime>("DataCriacao")
                         .HasColumnType("datetime2");
 
@@ -1139,9 +1139,6 @@ namespace SistemaUsuarios.Migrations
 
                     b.Property<Guid?>("UsuarioResponsavelId")
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("ValoresPropostaHtml")
-                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 

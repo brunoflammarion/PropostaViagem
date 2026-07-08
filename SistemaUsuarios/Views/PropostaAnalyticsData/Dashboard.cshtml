@@ -167,7 +167,7 @@
                         <h6 class="analytics-section-title">
                             <i class="fas fa-trophy me-2" style="color:#f59e0b;"></i>Propostas com maior interesse
                         </h6>
-                        <p class="analytics-section-subtitle">Ordenadas por número de visualizações</p>
+                        <p class="analytics-section-subtitle">Ordenadas pela última visita mais recente</p>
                     </div>
                     <span class="badge bg-light text-secondary" id="contadorLinhas" style="font-size:.75rem;"></span>
                 </div>
@@ -192,6 +192,7 @@
                                     <th>Proposta</th>
                                     <th>Status</th>
                                     <th class="text-center">Visualizações</th>
+                                    <th class="text-center">Avaliações</th>
                                     <th>Última visita</th>
                                     <th></th>
                                 </tr>
@@ -231,6 +232,12 @@
                                                 @p.TotalVisualizacoes
                                             </span>
                                         </td>
+                                        <td class="text-center">
+                                            <span class="viz-badge">
+                                                <i class="fas fa-star" style="color:#f59e0b; font-size:.75rem;"></i>
+                                                @p.TotalAvaliacoes
+                                            </span>
+                                        </td>
                                         <td>
                                             <span style="font-size:.8125rem; color:@(p.UltimaVisualizacao >= DateTime.Now.AddDays(-2) ? "#16a34a" : "#6b7280");">
                                                 @FormatarData(p.UltimaVisualizacao)
@@ -240,6 +247,10 @@
                                             <a href="/Proposta/Editar/@p.PropostaId"
                                                class="btn btn-outline-primary btn-sm" title="Editar proposta">
                                                 <i class="fas fa-edit me-1"></i>Abrir
+                                            </a>
+                                            <a href="/PropostaAnalyticsData/PropostaDetalhada/@p.PropostaId"
+                                               class="btn btn-outline-secondary btn-sm ms-1" title="Ver analytics detalhado">
+                                                <i class="fas fa-chart-line"></i>
                                             </a>
                                             @if (p.ClienteId.HasValue)
                                             {

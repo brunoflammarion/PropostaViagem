@@ -566,6 +566,42 @@ namespace SistemaUsuarios.Controllers
             return Json(new { ok = true });
         }
 
+        /// <summary>Salva apenas o CondicoesPropostaHtml via AJAX (auto-save do editor rico na aba Condições).</summary>
+        [HttpPost]
+        public async Task<IActionResult> SalvarCondicoesProposta(Guid id, string? conteudo)
+        {
+            if (!UsuarioLogado())
+                return Json(new { ok = false, erro = "Não autenticado" });
+
+            var proposta = await _context.Propostas.FindAsync(id);
+            if (proposta == null || proposta.UsuarioId != ObterUsuarioLogadoId())
+                return Json(new { ok = false, erro = "Proposta não encontrada" });
+
+            proposta.CondicoesPropostaHtml = string.IsNullOrWhiteSpace(conteudo) ? null : conteudo;
+            proposta.DataModificacao = DateTime.Now;
+            await _context.SaveChangesAsync();
+
+            return Json(new { ok = true });
+        }
+
+        /// <summary>Salva apenas o ValoresPropostaHtml via AJAX (auto-save do editor rico na aba Condições).</summary>
+        [HttpPost]
+        public async Task<IActionResult> SalvarValoresProposta(Guid id, string? conteudo)
+        {
+            if (!UsuarioLogado())
+                return Json(new { ok = false, erro = "Não autenticado" });
+
+            var proposta = await _context.Propostas.FindAsync(id);
+            if (proposta == null || proposta.UsuarioId != ObterUsuarioLogadoId())
+                return Json(new { ok = false, erro = "Proposta não encontrada" });
+
+            proposta.ValoresPropostaHtml = string.IsNullOrWhiteSpace(conteudo) ? null : conteudo;
+            proposta.DataModificacao = DateTime.Now;
+            await _context.SaveChangesAsync();
+
+            return Json(new { ok = true });
+        }
+
         [HttpPost]
         public async Task<IActionResult> AlterarStatus(Guid id, StatusProposta status)
         {
@@ -682,8 +718,21 @@ namespace SistemaUsuarios.Controllers
             if (proposta == null)
                 return NotFound();
 
+            var avaliacoes = await _context.AvaliacoesCliente
+                .AsNoTracking()
+                .Where(a => a.PropostaId == id)
+                .ToListAsync();
+            ViewBag.AvaliacoesPorItem = avaliacoes.ToDictionary(
+                a => $"{(int)a.TipoItem}_{a.ItemId}",
+                a => a);
+
             ViewBag.Title = proposta.Titulo;
             ViewBag.GoogleApiKey = _configuration["GoogleApiKey"] ?? "";
+            var layoutDispatch = (proposta.Layout?.Nome ?? "Padrão").ToLower();
+            if (layoutDispatch.Contains("executivo"))
+                return View("PublicoExecutivo", proposta);
+            else if (layoutDispatch.Contains("familiar"))
+                return View("PublicoFamiliar", proposta);
             return View(proposta);
         }
 

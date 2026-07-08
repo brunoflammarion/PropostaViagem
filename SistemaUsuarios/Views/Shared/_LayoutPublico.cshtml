@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <meta charset="utf-8" />
@@ -7,6 +7,57 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 
+    <style>
+    /* ── Gallery Lightbox ── */
+    #glb {
+        display:none; position:fixed; inset:0; z-index:99999;
+        background:rgba(0,0,0,.92);
+        align-items:center; justify-content:center; gap:8px;
+    }
+    #glb.glb-open { display:flex; }
+    .glb-close {
+        position:fixed; top:14px; right:14px;
+        width:44px; height:44px; border-radius:50%;
+        background:rgba(255,255,255,.13); border:1.5px solid rgba(255,255,255,.22);
+        color:#fff; font-size:1.1rem; line-height:1; cursor:pointer;
+        display:flex; align-items:center; justify-content:center;
+        transition:background .17s; z-index:2;
+    }
+    .glb-close:hover,.glb-close:focus-visible { background:rgba(255,255,255,.28); outline:none; }
+    .glb-nav {
+        width:54px; height:54px; flex-shrink:0; border-radius:50%;
+        background:rgba(255,255,255,.1); border:1.5px solid rgba(255,255,255,.18);
+        color:#fff; font-size:2.3rem; line-height:1; cursor:pointer;
+        display:flex; align-items:center; justify-content:center;
+        transition:background .17s;
+    }
+    .glb-nav:hover,.glb-nav:focus-visible { background:rgba(255,255,255,.25); outline:none; }
+    .glb-nav[hidden] { visibility:hidden; pointer-events:none; }
+    .glb-content {
+        flex:1; min-width:0; display:flex; flex-direction:column;
+        align-items:center; justify-content:center;
+        padding:52px 12px 20px; max-width:calc(100vw - 148px);
+        box-sizing:border-box;
+    }
+    #glbImg {
+        max-width:100%; max-height:78vh; width:auto; height:auto;
+        object-fit:contain; border-radius:6px;
+        display:block; user-select:none; -webkit-user-drag:none;
+    }
+    .glb-bottom { text-align:center; margin-top:10px; }
+    .glb-caption {
+        color:rgba(255,255,255,.82); font-size:.88rem; font-weight:500;
+        line-height:1.4; max-width:560px; margin:0 auto;
+    }
+    .glb-counter { color:rgba(255,255,255,.45); font-size:.75rem; margin-top:4px; }
+    @@media (max-width:600px){
+        .glb-nav { width:42px; height:42px; font-size:1.8rem; }
+        .glb-content { max-width:calc(100vw - 96px); padding:48px 6px 14px; }
+        #glbImg { max-height:70vh; }
+        .glb-close { top:10px; right:10px; width:40px; height:40px; }
+    }
+    </style>
+
     @await RenderSectionAsync("Styles", required: false)
 </head>
 <body>
@@ -14,7 +65,119 @@
         @RenderBody()
     </main>
 
+    <!-- GALLERY LIGHTBOX -->
+    <div id="glb" role="dialog" aria-modal="true" aria-label="Galeria de imagens">
+        <button class="glb-close" id="glbClose" onclick="closeLightbox()" aria-label="Fechar imagem" type="button">&#10005;</button>
+        <button class="glb-nav" id="glbPrev" onclick="__glb.prev()" aria-label="Imagem anterior" type="button">&#8249;</button>
+        <div class="glb-content" onclick="event.stopPropagation()">
+            <img id="glbImg" src="" alt="" />
+            <div class="glb-bottom">
+                <div class="glb-caption" id="glbCaption"></div>
+                <div class="glb-counter" id="glbCounter"></div>
+            </div>
+        </div>
+        <button class="glb-nav" id="glbNext" onclick="__glb.next()" aria-label="Pr&#243;xima imagem" type="button">&#8250;</button>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+    /* ── Gallery Lightbox ── */
+    var __galReg = {};
+    function registerGallery(id, imgs) { __galReg[id] = imgs; }
+
+    var __glb = {
+        grp: null, idx: 0,
+        open: function(grp, idx) {
+            this.grp = grp; this.idx = idx || 0;
+            this.render();
+            document.getElementById('glb').classList.add('glb-open');
+            document.body.style.overflow = 'hidden';
+        },
+        close: function() {
+            document.getElementById('glb').classList.remove('glb-open');
+            document.body.style.overflow = '';
+        },
+        imgs: function() { return __galReg[this.grp] || []; },
+        prev: function() {
+            var a = this.imgs(); if (!a.length) return;
+            this.idx = (this.idx - 1 + a.length) % a.length; this.render();
+        },
+        next: function() {
+            var a = this.imgs(); if (!a.length) return;
+            this.idx = (this.idx + 1) % a.length; this.render();
+        },
+        render: function() {
+            var a = this.imgs(), item = a[this.idx];
+            if (!item) return;
+            var img = document.getElementById('glbImg');
+            img.src = item.src; img.alt = item.caption || '';
+            document.getElementById('glbCaption').textContent = item.caption || '';
+            document.getElementById('glbCounter').textContent = a.length > 1 ? (this.idx + 1) + ' de ' + a.length : '';
+            var mult = a.length > 1;
+            document.getElementById('glbPrev')[mult ? 'removeAttribute' : 'setAttribute']('hidden', '');
+            document.getElementById('glbNext')[mult ? 'removeAttribute' : 'setAttribute']('hidden', '');
+        }
+    };
+
+    function openGallery(grp, idx) { __glb.open(grp, idx); }
+    function closeLightbox() { __glb.close(); }
+    function openLightbox(src, alt) {
+        var t = '_t' + Date.now();
+        __galReg[t] = [{ src: src, caption: alt || '' }];
+        __glb.open(t, 0);
+    }
+
+    (function () {
+        var el = document.getElementById('glb');
+
+        /* overlay click → fechar */
+        el.addEventListener('click', function (e) { if (e.target === this) closeLightbox(); });
+
+        /* teclado */
+        document.addEventListener('keydown', function (e) {
+            if (!el.classList.contains('glb-open')) return;
+            if (e.key === 'Escape') closeLightbox();
+            else if (e.key === 'ArrowLeft') __glb.prev();
+            else if (e.key === 'ArrowRight') __glb.next();
+        });
+
+        /* swipe */
+        var sx = 0, sy = 0;
+        el.addEventListener('touchstart', function (e) {
+            sx = e.touches[0].clientX; sy = e.touches[0].clientY;
+        }, { passive: true });
+        el.addEventListener('touchend', function (e) {
+            var dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy;
+            if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 40) {
+                if (dx < 0) __glb.next(); else __glb.prev();
+            }
+        }, { passive: true });
+
+        /* auto-registra grupos a partir dos atributos data-gallery-* no DOM */
+        var seen = {};
+        document.querySelectorAll('[data-gallery-group][data-gallery-src]').forEach(function (e) {
+            var g = e.getAttribute('data-gallery-group');
+            var s = e.getAttribute('data-gallery-src');
+            var k = g + '|' + s;
+            if (seen[k]) return; seen[k] = 1;
+            if (!__galReg[g]) __galReg[g] = [];
+            __galReg[g].push({ src: s, caption: e.getAttribute('data-gallery-caption') || e.alt || '' });
+        });
+
+        /* delegação de cliques para imagens de galeria */
+        document.addEventListener('click', function (ev) {
+            var t = ev.target.closest('[data-gallery-group]');
+            if (!t) return;
+            var g = t.getAttribute('data-gallery-group');
+            var s = t.getAttribute('data-gallery-src');
+            var imgs = __galReg[g] || [];
+            var idx = imgs.findIndex(function (i) { return i.src === s; });
+            __glb.open(g, Math.max(0, idx));
+        });
+    })();
+    </script>
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

@@ -278,6 +278,13 @@
             </button>
         </li>
         <li class="nav-item" role="presentation">
+            <button class="nav-link @(activeTab == "condicoes" ? "active" : "")"
+                    id="tab-condicoes" data-bs-toggle="pill" data-bs-target="#pane-condicoes"
+                    type="button" role="tab">
+                <i class="fas fa-file-contract me-1"></i>Condições da Proposta
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
             <button class="nav-link @(activeTab == "revisao" ? "active" : "")"
                     id="tab-revisao" data-bs-toggle="pill" data-bs-target="#pane-revisao"
                     type="button" role="tab">
@@ -1450,6 +1457,17 @@
                                                                        class="form-control form-control-sm"
                                                                        placeholder="https://youtube.com/watch?v=..." />
                                                             </div>
+                                                            <div class="col-sm-6">
+                                                                <label class="form-label form-label-sm mb-0">Início da experiência</label>
+                                                                <input type="datetime-local" name="dataInicio"
+                                                                       class="form-control form-control-sm" />
+                                                                <small class="text-muted" style="font-size:.7rem;">Opcional — use para montar o roteiro dia a dia.</small>
+                                                            </div>
+                                                            <div class="col-sm-6">
+                                                                <label class="form-label form-label-sm mb-0">Fim da experiência</label>
+                                                                <input type="datetime-local" name="dataFim"
+                                                                       class="form-control form-control-sm" />
+                                                            </div>
                                                             <div class="col-12">
                                                                 <label class="form-label form-label-sm mb-0">Descrição</label>
                                                                 <textarea name="descricao"
@@ -1499,6 +1517,17 @@
                                                             {
                                                                 <span class="badge bg-danger ms-1">
                                                                     <i class="fab fa-youtube me-1"></i>Vídeo
+                                                                </span>
+                                                            }
+                                                            @if (exp.DataInicio.HasValue)
+                                                            {
+                                                                <span class="badge bg-info text-dark ms-1" title="Horário da experiência">
+                                                                    <i class="fas fa-clock me-1"></i>
+                                                                    @exp.DataInicio.Value.ToString("dd/MM • HH:mm")
+                                                                    @if (exp.DataFim.HasValue)
+                                                                    {
+                                                                        <text> às @exp.DataFim.Value.ToString("HH:mm")</text>
+                                                                    }
                                                                 </span>
                                                             }
                                                             <span class="badge bg-light text-dark border ms-1">
@@ -1555,6 +1584,19 @@
                                                                                    class="form-control form-control-sm"
                                                                                    value="@exp.VideoUrl"
                                                                                    placeholder="https://youtube.com/..." />
+                                                                        </div>
+                                                                        <div class="col-sm-6">
+                                                                            <label class="form-label form-label-sm mb-0">Início da experiência</label>
+                                                                            <input type="datetime-local" name="dataInicio"
+                                                                                   class="form-control form-control-sm"
+                                                                                   value="@exp.DataInicio?.ToString("yyyy-MM-ddTHH:mm")" />
+                                                                            <small class="text-muted" style="font-size:.7rem;">Opcional — use para montar o roteiro dia a dia.</small>
+                                                                        </div>
+                                                                        <div class="col-sm-6">
+                                                                            <label class="form-label form-label-sm mb-0">Fim da experiência</label>
+                                                                            <input type="datetime-local" name="dataFim"
+                                                                                   class="form-control form-control-sm"
+                                                                                   value="@exp.DataFim?.ToString("yyyy-MM-ddTHH:mm")" />
                                                                         </div>
                                                                         <div class="col-12">
                                                                             <label class="form-label form-label-sm mb-0">Descrição</label>
@@ -3560,7 +3602,70 @@
         </div><!-- /pane-seguro -->
 
         <!-- ============================================================ -->
-        <!-- TAB 5: REVISÃO                                                -->
+        <!-- TAB 6: CONDIÇÕES DA PROPOSTA                                  -->
+        <!-- ============================================================ -->
+        <div class="tab-pane fade @(activeTab == "condicoes" ? "show active" : "")"
+             id="pane-condicoes" role="tabpanel">
+
+            <style>
+            #condicoes-save-bar, #valores-save-bar { height: 32px; display: flex; align-items: center; }
+            </style>
+
+            @if (proposta != null)
+            {
+                <div class="row">
+                    <div class="col-12 mb-4">
+                        <div class="card border-0 shadow-sm overflow-hidden">
+                            <div class="card-header border-0 py-3 d-flex justify-content-between align-items-center"
+                                 style="background:linear-gradient(135deg,#1a1a2e 0%,#0f3460 100%);">
+                                <h5 class="mb-0 text-white">
+                                    <i class="fas fa-file-contract me-2"></i>Condições da Proposta
+                                </h5>
+                                <div id="condicoes-save-bar" class="gap-2">
+                                    <small id="condicoes-status" class="text-white-50 me-2"></small>
+                                    <button type="button" id="btn-salvar-condicoes" class="btn btn-light btn-sm px-3">
+                                        <i class="fas fa-save me-1"></i>Salvar
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="condicoes-editor"></div>
+                            <div class="card-footer border-0 bg-light py-2 px-3">
+                                <small class="text-muted">
+                                    <i class="fas fa-eye me-1 text-primary"></i>
+                                    Quando preenchido, aparece na proposta pública com as condições gerais da viagem.
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="card border-0 shadow-sm overflow-hidden">
+                            <div class="card-header border-0 py-3 d-flex justify-content-between align-items-center"
+                                 style="background:linear-gradient(135deg,#1a1a2e 0%,#0f3460 100%);">
+                                <h5 class="mb-0 text-white">
+                                    <i class="fas fa-dollar-sign me-2"></i>Valores da Proposta
+                                </h5>
+                                <div id="valores-save-bar" class="gap-2">
+                                    <small id="valores-status" class="text-white-50 me-2"></small>
+                                    <button type="button" id="btn-salvar-valores" class="btn btn-light btn-sm px-3">
+                                        <i class="fas fa-save me-1"></i>Salvar
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="valores-editor"></div>
+                            <div class="card-footer border-0 bg-light py-2 px-3">
+                                <small class="text-muted">
+                                    <i class="fas fa-eye me-1 text-primary"></i>
+                                    Quando preenchido, aparece na proposta pública com os valores, formas de pagamento e observações.
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div><!-- /pane-condicoes -->
+
+        <!-- ============================================================ -->
+        <!-- TAB 7: REVISÃO                                                -->
         <!-- ============================================================ -->
         <div class="tab-pane fade @(activeTab == "revisao" ? "show active" : "")"
              id="pane-revisao" role="tabpanel">
@@ -3630,7 +3735,6 @@
             .ql-snow .ql-picker { color: #495057; }
             .ql-snow .ql-stroke { stroke: #495057; }
             .ql-snow .ql-fill { fill: #495057; }
-            #resumo-save-bar { height: 32px; display: flex; align-items: center; }
             </style>
 
             @if (proposta != null)
@@ -4025,35 +4129,6 @@
 
                 </div><!-- /row -->
 
-                <!-- ════════════════════════════════════════════════════ -->
-                <!--   RESUMO DA PROPOSTA — editor rico                  -->
-                <!-- ════════════════════════════════════════════════════ -->
-                <div class="row mt-4">
-                    <div class="col-12">
-                        <div class="card border-0 shadow-sm overflow-hidden">
-                            <div class="card-header border-0 py-3 d-flex justify-content-between align-items-center"
-                                 style="background:linear-gradient(135deg,#1a1a2e 0%,#0f3460 100%);">
-                                <h5 class="mb-0 text-white">
-                                    <i class="fas fa-pen-fancy me-2"></i>Resumo da Proposta
-                                </h5>
-                                <div id="resumo-save-bar" class="gap-2">
-                                    <small id="resumo-status" class="text-white-50 me-2"></small>
-                                    <button type="button" id="btn-salvar-resumo" class="btn btn-light btn-sm px-3">
-                                        <i class="fas fa-save me-1"></i>Salvar
-                                    </button>
-                                </div>
-                            </div>
-                            <!-- Quill monta a toolbar automaticamente acima deste div -->
-                            <div id="resumo-editor"></div>
-                            <div class="card-footer border-0 bg-light py-2 px-3">
-                                <small class="text-muted">
-                                    <i class="fas fa-eye me-1 text-primary"></i>
-                                    Quando preenchido, esse texto aparece na visualização pública da proposta como mensagem de fechamento.
-                                </small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
             }
         </div>
@@ -4120,7 +4195,7 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title"><i class="fas fa-plane me-2 text-primary"></i>Adicionar Voo</h5>
+                <h5 class="modal-title"><i class="fas fa-plane me-2 text-white"></i>Adicionar Voo</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form asp-controller="Voo" asp-action="Adicionar" method="post" id="formNovoVoo">
@@ -5055,9 +5130,9 @@
                     if (!this.files || this.files.length === 0) return;
                     var form = this.closest('form');
                     if (!form) return;
-                    // Desabilita input para evitar duplo envio
-                    this.disabled = true;
-                    // Mostra loading se houver spinner associado
+                    // Indicador visual — não usar disabled pois inputs disabled são excluídos da submissão (HTML spec)
+                    this.style.pointerEvents = 'none';
+                    this.style.opacity = '0.5';
                     var spinner = form.querySelector('.upload-spinner');
                     if (spinner) spinner.style.display = 'inline-block';
                     form.submit();
@@ -5421,19 +5496,18 @@
             });
         })();
 
-        // ── Quill — Resumo da Proposta ───────────────────────────────────────
-        (function () {
-            const editorEl = document.getElementById('resumo-editor');
+        // ── Quill — fábrica reutilizável para editores da aba Condições ──────
+        function criarEditorCondicoes(editorId, btnId, statusId, actionUrl, placeholder, conteudoInicial) {
+            const editorEl = document.getElementById(editorId);
             if (!editorEl || typeof Quill === 'undefined') return;
 
             const propostaId = '@(proposta?.Id)';
-            const statusEl   = document.getElementById('resumo-status');
-            const btnSalvar  = document.getElementById('btn-salvar-resumo');
-            const conteudoInicial = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(proposta?.ResumoProposta));
+            const statusEl   = document.getElementById(statusId);
+            const btnSalvar  = document.getElementById(btnId);
 
-            const quill = new Quill('#resumo-editor', {
+            const quill = new Quill('#' + editorId, {
                 theme: 'snow',
-                placeholder: 'Escreva aqui o resumo e fechamento da proposta para o cliente...',
+                placeholder: placeholder,
                 modules: {
                     toolbar: [
                         [{ header: [2, 3, false] }],
@@ -5441,13 +5515,13 @@
                         [{ color: [] }, { background: [] }],
                         [{ list: 'ordered' }, { list: 'bullet' }],
                         ['blockquote', 'link'],
+                        [{ table: [] }],
                         ['image'],
                         ['clean']
                     ]
                 }
             });
 
-            // Carrega conteúdo existente
             if (conteudoInicial) {
                 quill.clipboard.dangerouslyPasteHTML(0, conteudoInicial);
             }
@@ -5464,7 +5538,7 @@
                 setStatus('Salvando…', 'text-white-50');
                 try {
                     const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
-                    const resp = await fetch('@Url.Action("SalvarResumoProposta","Proposta")', {
+                    const resp = await fetch(actionUrl, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                         body: new URLSearchParams({ id: propostaId, conteudo, __RequestVerificationToken: token })
@@ -5477,7 +5551,6 @@
                 }
             }
 
-            // Auto-save com debounce de 2 s
             let _debounce;
             quill.on('text-change', function () {
                 setStatus('Não salvo', 'text-warning');
@@ -5485,12 +5558,44 @@
                 _debounce = setTimeout(salvar, 2000);
             });
 
-            // Salvar manual
             if (btnSalvar) btnSalvar.addEventListener('click', function () {
                 clearTimeout(_debounce);
                 salvar();
             });
+        }
+
+        criarEditorCondicoes(
+            'condicoes-editor', 'btn-salvar-condicoes', 'condicoes-status',
+            '@Url.Action("SalvarCondicoesProposta","Proposta")',
+            'Escreva aqui as condições gerais da proposta: cancelamento, documentação, inclusões, exclusões…',
+            @Html.Raw(System.Text.Json.JsonSerializer.Serialize(proposta?.CondicoesPropostaHtml))
+        );
+
+        criarEditorCondicoes(
+            'valores-editor', 'btn-salvar-valores', 'valores-status',
+            '@Url.Action("SalvarValoresProposta","Proposta")',
+            'Informe valores, formas de pagamento, parcelamento, observações financeiras…',
+            @Html.Raw(System.Text.Json.JsonSerializer.Serialize(proposta?.ValoresPropostaHtml))
+        );
+
+        @{
+            var novoDestinoId = TempData["NovoDestinoId"]?.ToString();
+        }
+        @if (!string.IsNullOrEmpty(novoDestinoId))
+        {
+            <text>
+        // Auto-expand do destino recém-adicionado
+        (function () {
+            var collapseEl = document.getElementById('detalhes-@novoDestinoId');
+            if (!collapseEl) return;
+            var bsCollapse = bootstrap.Collapse.getOrCreateInstance(collapseEl, { toggle: false });
+            bsCollapse.show();
+            collapseEl.addEventListener('shown.bs.collapse', function () {
+                collapseEl.closest('.list-group-item')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, { once: true });
         })();
+            </text>
+        }
     </script>
 }
 

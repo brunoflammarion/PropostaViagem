@@ -41,6 +41,10 @@
     bool temVoos        = Model.Voos.Any();
     bool temSeguros     = Model.Seguros.Any();
     bool temResumo      = !string.IsNullOrWhiteSpace(Model.ResumoProposta);
+    bool temCondicoes   = !string.IsNullOrWhiteSpace(Model.CondicoesPropostaHtml);
+    bool temValores     = !string.IsNullOrWhiteSpace(Model.ValoresPropostaHtml);
+    // Jornada/calendário: existe quando há datas definidas (o mapa é bônus se houver coordenadas)
+    bool temJornada     = Model.DataInicio.HasValue && Model.DataFim.HasValue;
 
     // ── Avaliação comparativa ─────────────────────────────────────────────────
     var todasHospedagens = Model.Destinos.SelectMany(d => d.Hospedagens).ToList();
@@ -378,6 +382,25 @@ body {
     padding:3px 12px; font-size:.8rem; font-weight:600;
 }
 
+/* ── SUB-HEADINGS dentro de destino (Hospedagem, Experiências, etc.) ── */
+.destino-sub-head {
+    color: var(--c-h2);
+    font-family: var(--ff-display);
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-bottom: .75rem;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+}
+.theme-executivo .destino-sub-head { font-size: .95rem; }
+
+/* Separador entre destinos */
+.destino-sep {
+    border: none; border-top: 1px solid var(--c-divider);
+    margin: 56px 0; opacity: .4;
+}
+
 /* ── CARROSSÉIS ── */
 /* Botões de controle mais visíveis */
 .carousel-control-prev,
@@ -413,18 +436,30 @@ body {
 .acomoda-card .carousel-item img { display: block; }
 
 /* ── SEGUROS ── */
-.seguro-card { padding:24px; border-radius: var(--radius-md); background:#fff; border:1px solid #edf2f7; box-shadow: var(--shadow-sm); }
-.seguro-icon { width:48px; height:48px; border-radius: var(--radius-sm); background:linear-gradient(135deg,var(--c-hero-from),var(--c-hero-to)); color:#fff; display:flex; align-items:center; justify-content:center; font-size:1.2rem; flex-shrink:0; }
+.seguro-card {
+    padding:24px; border-radius: var(--radius-lg); background:#fff;
+    border:1.5px solid #edf2f7; box-shadow: var(--shadow-md);
+    transition: transform var(--transition), box-shadow var(--transition);
+}
+.seguro-card:hover { transform:translateY(-3px); box-shadow: var(--shadow-lg); }
+.theme-executivo .seguro-card { border-radius: var(--radius-sm); box-shadow: 0 2px 12px rgba(0,0,0,.08); border:1px solid #e8ecf0; }
+.theme-executivo .seguro-card:hover { transform:none; box-shadow: 0 4px 20px rgba(0,0,0,.12); }
+.theme-familiar  .seguro-card { border-radius: var(--radius-lg); }
+.seguro-icon { width:48px; height:48px; border-radius: var(--radius-sm); background: var(--c-accent); color:#fff; display:flex; align-items:center; justify-content:center; font-size:1.2rem; flex-shrink:0; }
 
-/* ── RESUMO DA PROPOSTA ── */
+/* ── RICH TEXT (Resumo / Condições / Valores) ── */
 .resumo-proposta-body {
     font-size: 1.02rem; line-height: 1.8; color: #374151;
     background: #fff; border-radius: var(--radius-md);
     padding: 32px 36px; box-shadow: var(--shadow-sm);
     border: 1px solid #e5e7eb;
+    overflow-x: hidden; /* previne scroll horizontal na seção */
+}
+@@media (max-width: 767px) {
+    .resumo-proposta-body { padding: 22px 20px; font-size: .97rem; }
 }
 .resumo-proposta-body h1, .resumo-proposta-body h2, .resumo-proposta-body h3 {
-    color: var(--c-hero-from); margin-bottom: .5em; margin-top: 1.2em; font-weight: 700;
+    color: var(--c-h2); margin-bottom: .5em; margin-top: 1.2em; font-weight: 700;
 }
 .resumo-proposta-body h2 { font-size: 1.25rem; }
 .resumo-proposta-body h3 { font-size: 1.05rem; }
@@ -435,9 +470,23 @@ body {
     padding: 10px 16px; background: var(--c-section-alt);
     border-radius: 0 var(--radius-sm) var(--radius-sm) 0; color: #4b5563;
 }
-.resumo-proposta-body strong { color: var(--c-hero-from); }
-.resumo-proposta-body a { color: var(--c-accent); }
-.resumo-proposta-body img { max-width: 100%; border-radius: var(--radius-sm); margin: 8px 0; }
+.resumo-proposta-body strong { color: var(--c-h2); }
+.resumo-proposta-body a { color: var(--c-accent); text-decoration: underline; }
+.resumo-proposta-body img { max-width: 100%; height: auto; border-radius: var(--radius-sm); margin: 8px 0; display: block; }
+/* Tabelas responsivas dentro do rich text */
+.resumo-proposta-body table {
+    border-collapse: collapse; width: 100%; margin-bottom: 1.2em;
+    font-size: .9rem; display: block; overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+.resumo-proposta-body table th,
+.resumo-proposta-body table td {
+    border: 1px solid #e5e7eb; padding: 9px 14px; text-align: left; white-space: nowrap;
+}
+.resumo-proposta-body table th {
+    background: var(--c-section-alt); font-weight: 700; color: var(--c-h2);
+}
+.resumo-proposta-body table tr:nth-child(even) td { background: #fafafa; }
 
 /* ── CTA ── */
 .cta-section {
@@ -481,15 +530,7 @@ body {
 footer { background:#0f172a; color:#94a3b8; padding:32px 0; font-size:.85rem; }
 footer a { color:#94a3b8; }
 
-/* ── LIGHTBOX ── */
-.lightbox-overlay {
-    display:none; position:fixed; inset:0; background:rgba(0,0,0,.92);
-    z-index:9999; align-items:center; justify-content:center;
-}
-.lightbox-overlay.active { display:flex; }
-.lightbox-overlay img { max-width:90vw; max-height:90vh; border-radius: var(--radius-md); }
-.lightbox-close { position:absolute; top:20px; right:28px; color:#fff; font-size:2rem; cursor:pointer; line-height:1; }
-.lightbox-close:hover { opacity:.7; }
+/* lightbox → _LayoutPublico.cshtml */
 
 /* ── STICKY CTA BTN mobile ── */
 .floating-cta {
@@ -588,10 +629,15 @@ footer a { color:#94a3b8; }
 
 /* ── TRANSPORTE ── */
 .transporte-card {
-    background: #fff; border-radius: var(--radius-md);
-    border: 1px solid #edf2f7; box-shadow: var(--shadow-sm);
+    background: #fff; border-radius: var(--radius-lg);
+    border: 1.5px solid #edf2f7; box-shadow: var(--shadow-md);
     overflow: hidden; margin-bottom: 16px;
+    transition: transform var(--transition), box-shadow var(--transition);
 }
+.transporte-card:hover { transform:translateY(-3px); box-shadow: var(--shadow-lg); }
+.theme-executivo .transporte-card { border-radius: var(--radius-sm); box-shadow: 0 2px 12px rgba(0,0,0,.08); border:1px solid #e8ecf0; }
+.theme-executivo .transporte-card:hover { transform:none; box-shadow: 0 4px 20px rgba(0,0,0,.12); }
+.theme-familiar  .transporte-card { border-radius: var(--radius-lg); }
 .transporte-header {
     background: linear-gradient(90deg, var(--c-hero-from), var(--c-hero-to));
     color: #fff; padding: 11px 18px;
@@ -824,7 +870,6 @@ footer a { color:#94a3b8; }
 }
 @@media (max-width: 900px) {
     .journey-grid { grid-template-columns: 1fr; gap: 24px; }
-    .jrn-map-side { order: -1; }
     #journeyMap { height: 280px !important; }
 }
 
@@ -969,6 +1014,53 @@ footer a { color:#94a3b8; }
 .theme-familiar  .jrn-map-wrap { border-radius: 20px; }
 .theme-executivo #journeyMap   { filter: grayscale(15%); }
 
+/* ── LINHA DO TEMPO ── */
+.jrn-tl-title {
+    font-size: .68rem; font-weight: 700; color: var(--c-accent);
+    text-transform: uppercase; letter-spacing: .7px; margin-bottom: 10px;
+}
+.jrn-timeline { display: flex; flex-direction: column; gap: 14px; }
+.jrn-tl-block { }
+.jrn-tl-dest-hdr {
+    display: flex; align-items: center; gap: 7px; margin-bottom: 5px;
+}
+.jrn-tl-dest-dot {
+    width: 9px; height: 9px; border-radius: 3px;
+    background: var(--dest-cor, var(--c-accent)); flex-shrink: 0;
+}
+.jrn-tl-dest-name {
+    font-size: .8rem; font-weight: 700; color: #1e293b; flex: 1; min-width: 0;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.jrn-tl-dest-dur {
+    font-size: .68rem; color: #94a3b8;
+    background: #f1f5f9; border-radius: 50px; padding: 1px 7px; flex-shrink: 0;
+}
+.jrn-tl-events {
+    list-style: none; padding: 0; margin: 0;
+    padding-left: 12px;
+    border-left: 2px solid var(--dest-cor, var(--c-accent));
+    display: flex; flex-direction: column; gap: 2px;
+}
+.jrn-tl-event {
+    display: flex; align-items: flex-start; gap: 7px;
+    font-size: .75rem; padding: 3px 0;
+}
+.jrn-tl-ev-icon {
+    color: var(--dest-cor, var(--c-accent)); font-size: .63rem;
+    width: 13px; text-align: center; flex-shrink: 0; margin-top: 2px;
+}
+.jrn-tl-ev-body { flex: 1; min-width: 0; }
+.jrn-tl-ev-label {
+    display: block; font-weight: 600; color: #334155;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.jrn-tl-ev-detail { display: block; font-size: .68rem; color: #94a3b8; margin-top: 1px; }
+.jrn-tl-ev-date {
+    font-size: .67rem; color: #94a3b8; flex-shrink: 0;
+    font-variant-numeric: tabular-nums; white-space: nowrap; padding-top: 2px;
+}
+
 /* ── HIGHLIGHTS BAR (what's included, shown below hero) ── */
 .prop-highlights {
     background: #fff; border-bottom: 1px solid #edf2f7;
@@ -1038,19 +1130,19 @@ footer a { color:#94a3b8; }
 .fam-intro {
     background: var(--c-section-alt);
     padding: 20px 0 10px;
-    border-bottom: 1px solid #fde8dd;
+    border-bottom: 1px solid rgba(0,0,0,.07);
 }
 .fam-intro-chips {
     display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;
 }
 .fam-intro-chip {
     display: flex; flex-direction: column; align-items: center; gap: 4px;
-    background: #fff; border: 1px solid #fde8dd; border-radius: 14px;
+    background: #fff; border: 1.5px solid transparent; border-radius: 14px;
     padding: 14px 20px; min-width: 80px; cursor: pointer;
-    transition: transform .15s, box-shadow .15s;
-    text-decoration: none;
+    transition: transform .15s, box-shadow .15s, border-color .15s;
+    text-decoration: none; box-shadow: var(--shadow-sm);
 }
-.fam-intro-chip:hover { transform: translateY(-2px); box-shadow: var(--shadow-sm); }
+.fam-intro-chip:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); border-color: var(--c-accent); }
 .fam-intro-chip-icon { font-size: 1.4rem; }
 .fam-intro-chip-label { font-size: .7rem; font-weight: 700; color: var(--c-h2); text-align: center; white-space: nowrap; }
 
@@ -1156,12 +1248,15 @@ body.has-preview-bar { padding-top: 46px; }
         <div class="d-flex align-items-center justify-content-between gap-3">
             <span class="prop-nav-brand text-truncate">@Model.Titulo</span>
             <ul class="nav nav-pills flex-nowrap overflow-auto gap-1">
+                @if (temJornada)     { <li class="nav-item"><a class="nav-link" href="#sec-jornada">Período da viagem</a></li> }
                 @if (temPassageiros) { <li class="nav-item"><a class="nav-link" href="#sec-passageiros">Passageiros</a></li> }
                 @if (temVoos)        { <li class="nav-item"><a class="nav-link" href="#sec-voos">Voos</a></li> }
-                @if (Model.Destinos.Any()) { <li class="nav-item"><a class="nav-link" href="#sec-roteiro">Roteiro</a></li> }
+                @if (Model.Destinos.Any()) { <li class="nav-item"><a class="nav-link" href="#sec-roteiro">Destinos</a></li> }
                 @if (Model.Destinos.Any(d => d.Transportes.Any())) { <li class="nav-item"><a class="nav-link" href="#sec-transportes">Transportes</a></li> }
                 @if (temSeguros)     { <li class="nav-item"><a class="nav-link" href="#sec-seguro">Seguro</a></li> }
                 @if (temResumo)      { <li class="nav-item"><a class="nav-link" href="#sec-resumo">Resumo</a></li> }
+                @if (temCondicoes)   { <li class="nav-item"><a class="nav-link" href="#sec-condicoes">Condições</a></li> }
+                @if (temValores)     { <li class="nav-item"><a class="nav-link" href="#sec-valores">Valores</a></li> }
                 @if (temAvaliacao)   { <li class="nav-item"><a class="nav-link" href="#sec-avaliacao">Avaliação</a></li> }
                 <li class="nav-item"><a class="nav-link" href="#sec-cta">Contato</a></li>
             </ul>
@@ -1333,6 +1428,13 @@ body.has-preview-bar { padding-top: 46px; }
     <div class="fam-intro">
         <div class="container">
             <div class="fam-intro-chips">
+                @if (temJornada)
+                {
+                    <a class="fam-intro-chip" href="#sec-jornada">
+                        <span class="fam-intro-chip-icon">📅</span>
+                        <span class="fam-intro-chip-label">Calendário</span>
+                    </a>
+                }
                 @if (Model.Destinos.Any())
                 {
                     foreach (var _fiDest in Model.Destinos.OrderBy(d => d.Ordem).Take(4))
@@ -1416,13 +1518,7 @@ body.has-preview-bar { padding-top: 46px; }
     <div class="container">
 
         <div class="section-head">
-            @if (isExecutivo) {
-                <h2 style="font-size:1.3rem;"><i class="fas fa-route me-2" style="color:var(--c-accent);font-size:.9em;"></i>Visão Geral da Viagem</h2>
-            } else if (isFamiliar) {
-                <h2><i class="fas fa-route me-2" style="color:var(--c-accent);"></i>A Jornada da Família</h2>
-            } else {
-                <h2><i class="fas fa-route me-2" style="color:var(--c-accent);"></i>Sua Jornada</h2>
-            }
+            <h2><i class="fas fa-route me-2" style="color:var(--c-accent);"></i>Visão da viagem</h2>
             <div class="section-divider"></div>
         </div>
 
@@ -1459,10 +1555,26 @@ body.has-preview-bar { padding-top: 46px; }
             </div>
         }
 
-        @* ── Grid: calendário | mapa ── *@
+        @* ── Grid: mapa | calendário+timeline ── *@
+        @{
+            bool _jrnHasDates = _jrnDestOrd.Any(d =>
+                d.DataChegada.HasValue || d.DataSaida.HasValue ||
+                d.Hospedagens.Any(h => h.CheckIn.HasValue) ||
+                d.Experiencias.Any(e => e.DataInicio.HasValue));
+        }
         <div class="journey-grid" style="@(!(_jrnTemTimeline && _jrnTemMapa) ? "grid-template-columns:1fr;" : "")">
 
-            @* ── Calendário — coluna esquerda ── *@
+            @* ── Google Maps — coluna esquerda (topo no mobile) ── *@
+            @if (_jrnTemMapa)
+            {
+                <div class="jrn-map-side" style="@(!_jrnTemTimeline ? "max-width:700px;margin:0 auto;width:100%;" : "")">
+                    <div class="jrn-map-wrap">
+                        <div id="journeyMap"></div>
+                    </div>
+                </div>
+            }
+
+            @* ── Calendário + Linha do tempo — coluna direita ── *@
             @if (_jrnTemTimeline)
             {
                 <div class="jrn-cal-side">
@@ -1474,16 +1586,76 @@ body.has-preview-bar { padding-top: 46px; }
                         <div class="jrn-cal-wrap" id="journeyCalendar"></div>
                         <div class="jrn-cal-sep" id="jrnCalSep" style="display:none;"></div>
                         <div class="jrn-legend" id="journeyLegend"></div>
-                    </div>
-                </div>
-            }
 
-            @* ── Google Maps — coluna direita ── *@
-            @if (_jrnTemMapa)
-            {
-                <div class="jrn-map-side" style="@(!_jrnTemTimeline ? "max-width:700px;margin:0 auto;width:100%;" : "")">
-                    <div class="jrn-map-wrap">
-                        <div id="journeyMap"></div>
+                        @* ── Linha do tempo detalhada por destino ── *@
+                        @if (_jrnHasDates)
+                        {
+                            <div class="jrn-cal-sep" style="display:block;margin-top:16px;"></div>
+                            <div class="jrn-tl-title"><i class="fas fa-map-marked-alt me-1"></i>Períodos por destino</div>
+                            <div class="jrn-timeline">
+                                @foreach (var _dest in _jrnDestOrd)
+                                {
+                                    var _destCor2 = _jrnCores.TryGetValue(_dest.Id, out var _dcCor2) ? _dcCor2 : "#667eea";
+
+                                    @* Build sorted events for this destination *@
+                                    var _tlEv = new List<(DateTime Date, string Icon, string Label, string? Detail)>();
+
+                                    if (_dest.DataChegada.HasValue)
+                                        _tlEv.Add((_dest.DataChegada.Value, "fa-plane-arrival", "Chegada", null));
+
+                                    foreach (var _hTl in _dest.Hospedagens.Where(h => h.CheckIn.HasValue).OrderBy(h => h.CheckIn))
+                                    {
+                                        var _hDet = "Check-in: " + _hTl.CheckIn!.Value.ToString("dd MMM", _jrnPtBR);
+                                        if (_hTl.CheckOut.HasValue)
+                                            _hDet += " · Saída: " + _hTl.CheckOut.Value.ToString("dd MMM", _jrnPtBR);
+                                        _tlEv.Add((_hTl.CheckIn!.Value, "fa-bed", _hTl.Nome, _hDet));
+                                    }
+
+                                    foreach (var _eTl in _dest.Experiencias.Where(e => e.DataInicio.HasValue).OrderBy(e => e.DataInicio))
+                                    {
+                                        string? _eDet = null;
+                                        if (_eTl.DataInicio!.Value.Hour != 0 || _eTl.DataInicio.Value.Minute != 0)
+                                            _eDet = _eTl.DataInicio.Value.ToString("HH:mm");
+                                        _tlEv.Add((_eTl.DataInicio!.Value, "fa-star", _eTl.TipoPasseio, _eDet));
+                                    }
+
+                                    if (_dest.DataSaida.HasValue)
+                                        _tlEv.Add((_dest.DataSaida.Value, "fa-plane-departure", "Partida", null));
+
+                                    if (_tlEv.Count == 0) { continue; }
+
+                                    _tlEv.Sort((a, b) => a.Date.CompareTo(b.Date));
+
+                                    <div class="jrn-tl-block" style="--dest-cor:@_destCor2;">
+                                        <div class="jrn-tl-dest-hdr">
+                                            <span class="jrn-tl-dest-dot"></span>
+                                            <span class="jrn-tl-dest-name">@_dest.Nome</span>
+                                            @if (_dest.DataChegada.HasValue && _dest.DataSaida.HasValue)
+                                            {
+                                                var _noites2 = (int)(_dest.DataSaida.Value.Date - _dest.DataChegada.Value.Date).TotalDays;
+                                                <span class="jrn-tl-dest-dur">@_noites2 @(_noites2 == 1 ? "noite" : "noites")</span>
+                                            }
+                                        </div>
+                                        <ul class="jrn-tl-events">
+                                            @foreach (var _ev in _tlEv)
+                                            {
+                                                <li class="jrn-tl-event">
+                                                    <i class="fas @_ev.Icon jrn-tl-ev-icon"></i>
+                                                    <div class="jrn-tl-ev-body">
+                                                        <span class="jrn-tl-ev-label">@_ev.Label</span>
+                                                        @if (_ev.Detail != null)
+                                                        {
+                                                            <span class="jrn-tl-ev-detail">@_ev.Detail</span>
+                                                        }
+                                                    </div>
+                                                    <span class="jrn-tl-ev-date">@_ev.Date.ToString("dd MMM", _jrnPtBR)</span>
+                                                </li>
+                                            }
+                                        </ul>
+                                    </div>
+                                }
+                            </div>
+                        }
                     </div>
                 </div>
             }
@@ -1865,14 +2037,18 @@ body.has-preview-bar { padding-top: 46px; }
                 <div class="section-divider"></div>
             </div>
 
-            @foreach (var destino in Model.Destinos.OrderBy(d => d.Ordem))
+            @{ var _destinoOrd = Model.Destinos.OrderBy(d => d.Ordem).ToList(); }
+            @for (int _di = 0; _di < _destinoOrd.Count; _di++)
             {
+                var destino = _destinoOrd[_di];
                 var fotoPrincipal = destino.Fotos.FirstOrDefault(f => f.Principal) ?? destino.Fotos.OrderBy(f => f.Ordem).FirstOrDefault();
                 var outrasfotos   = destino.Fotos.OrderBy(f => f.Ordem).Where(f => f != fotoPrincipal).ToList();
                 bool temHosp = destino.Hospedagens.Any();
                 bool temExp  = destino.Experiencias.Any();
+                var _destGallId = "gal-d-" + destino.Id.ToString("N");
 
-                <div class="destino-wrap">
+                @if (_di > 0) { <hr class="destino-sep" /> }
+                <div class="destino-wrap" style="margin-bottom:0;">
                     <!-- Cabeçalho do destino -->
                     <div class="d-flex align-items-center gap-3 mb-4">
                         <div class="destino-num">@destino.Ordem</div>
@@ -1893,7 +2069,11 @@ body.has-preview-bar { padding-top: 46px; }
                     @if (isFamiliar && fotoPrincipal != null)
                     {
                         <!-- FAMILIAR: full-bleed hero image with caption overlay -->
-                        <div class="fam-destino-fullbleed" onclick="openLightbox('@fotoPrincipal.CaminhoFoto','@destino.Nome')">
+                        <div class="fam-destino-fullbleed"
+                             data-gallery-group="@_destGallId"
+                             data-gallery-src="@fotoPrincipal.CaminhoFoto"
+                             data-gallery-caption="@destino.Nome"
+                             style="cursor:zoom-in;">
                             <img src="@fotoPrincipal.CaminhoFoto" alt="@destino.Nome" loading="lazy" />
                             <div class="fam-destino-caption">
                                 @if (!string.IsNullOrEmpty(destino.Descricao))
@@ -1909,7 +2089,11 @@ body.has-preview-bar { padding-top: 46px; }
                             <div class="photo-grid mb-4">
                                 @foreach (var f in outrasfotos.Take(8))
                                 {
-                                    <div class="photo-grid-item" onclick="openLightbox('@f.CaminhoFoto','@(f.Descricao ?? destino.Nome)')">
+                                    <div class="photo-grid-item"
+                                         data-gallery-group="@_destGallId"
+                                         data-gallery-src="@f.CaminhoFoto"
+                                         data-gallery-caption="@(f.Descricao ?? destino.Nome)"
+                                         style="cursor:zoom-in;">
                                         <img src="@f.CaminhoFoto" alt="@f.Descricao" loading="lazy" />
                                     </div>
                                 }
@@ -1925,7 +2109,9 @@ body.has-preview-bar { padding-top: 46px; }
                                 <div class="col-lg-@(string.IsNullOrEmpty(destino.Descricao) && !outrasfotos.Any() ? "12" : "6")">
                                     <img src="@fotoPrincipal.CaminhoFoto" alt="@destino.Nome"
                                          class="destino-hero-img" loading="lazy"
-                                         onclick="openLightbox('@fotoPrincipal.CaminhoFoto','@destino.Nome')"
+                                         data-gallery-group="@_destGallId"
+                                         data-gallery-src="@fotoPrincipal.CaminhoFoto"
+                                         data-gallery-caption="@destino.Nome"
                                          style="cursor:zoom-in;" />
                                 </div>
                             }
@@ -1943,7 +2129,11 @@ body.has-preview-bar { padding-top: 46px; }
                                         <div class="photo-grid">
                                             @foreach (var f in outrasfotos.Take(6))
                                             {
-                                                <div class="photo-grid-item" onclick="openLightbox('@f.CaminhoFoto','@(f.Descricao ?? destino.Nome)')">
+                                                <div class="photo-grid-item"
+                                                     data-gallery-group="@_destGallId"
+                                                     data-gallery-src="@f.CaminhoFoto"
+                                                     data-gallery-caption="@(f.Descricao ?? destino.Nome)"
+                                                     style="cursor:zoom-in;">
                                                     <img src="@f.CaminhoFoto" alt="@f.Descricao" loading="lazy" />
                                                 </div>
                                             }
@@ -1958,8 +2148,8 @@ body.has-preview-bar { padding-top: 46px; }
                     @if (temHosp)
                     {
                         <div class="mt-5">
-                            <h4 class="fw-700 mb-3" style="color:var(--c-h2);font-family:var(--ff-display);">
-                                <i class="fas fa-hotel me-2" style="color:var(--c-accent);"></i>
+                            <h4 class="destino-sub-head">
+                                <i class="fas fa-hotel" style="color:var(--c-accent);"></i>
                                 @(destino.Hospedagens.Count == 1 ? "Hospedagem" : "Hospedagens")
                             </h4>
 
@@ -1967,6 +2157,7 @@ body.has-preview-bar { padding-top: 46px; }
                             {
                                 var hospFotos    = hosp.Fotos.OrderBy(f => f.Ordem).ToList();
                                 var hospCarId    = $"ch-{hosp.Id:N}";
+                                var hospGallId   = "gal-h-" + hosp.Id.ToString("N");
                                 var temHospFotos = hospFotos.Any();
                                 <div class="p-card hotel-card">
                                     <div class="row g-0">
@@ -1977,7 +2168,9 @@ body.has-preview-bar { padding-top: 46px; }
                                                 {
                                                     <img src="@hospFotos[0].CaminhoFoto" alt="@hosp.Nome" class="hotel-img" loading="lazy"
                                                          style="height:100%;min-height:200px;cursor:zoom-in;"
-                                                         onclick="openLightbox('@hospFotos[0].CaminhoFoto','@hosp.Nome')" />
+                                                         data-gallery-group="@hospGallId"
+                                                         data-gallery-src="@hospFotos[0].CaminhoFoto"
+                                                         data-gallery-caption="@hosp.Nome" />
                                                 }
                                                 else
                                                 {
@@ -1989,7 +2182,9 @@ body.has-preview-bar { padding-top: 46px; }
                                                                     <img src="@hospFotos[fi].CaminhoFoto" alt="@hosp.Nome"
                                                                          class="d-block w-100"
                                                                          style="height:100%;min-height:200px;object-fit:cover;cursor:zoom-in;"
-                                                                         onclick="openLightbox('@hospFotos[fi].CaminhoFoto','@hosp.Nome')" />
+                                                                         data-gallery-group="@hospGallId"
+                                                                         data-gallery-src="@hospFotos[fi].CaminhoFoto"
+                                                                         data-gallery-caption="@hosp.Nome" />
                                                                 </div>
                                                             }
                                                         </div>
@@ -2047,11 +2242,11 @@ body.has-preview-bar { padding-top: 46px; }
                                                     <div class="d-flex gap-4 mb-3">
                                                         @if (hosp.CheckIn.HasValue)
                                                         {
-                                                            <div><small class="text-muted d-block">Check-in</small><strong>@hosp.CheckIn.Value.ToString("dd/MM/yyyy hh:mm")</strong></div>
+                                                            <div><small class="text-muted d-block">Check-in</small><strong>@hosp.CheckIn.Value.ToString("dd/MM/yyyy HH:mm")</strong></div>
                                                         }
                                                         @if (hosp.CheckOut.HasValue)
                                                         {
-                                                            <div><small class="text-muted d-block">Check-out</small><strong>@hosp.CheckOut.Value.ToString("dd/MM/yyyy hh:mm")</strong></div>
+                                                            <div><small class="text-muted d-block">Check-out</small><strong>@hosp.CheckOut.Value.ToString("dd/MM/yyyy HH:mm")</strong></div>
                                                         }
                                                     </div>
                                                 }
@@ -2094,13 +2289,16 @@ body.has-preview-bar { padding-top: 46px; }
                                             <div class="acomoda-row">
                                                 @foreach (var ac in hosp.Acomodacoes.OrderBy(a => a.Ordem))
                                                 {
-                                                    var acFotos = ac.Fotos.OrderBy(f => f.Ordem).ToList();
-                                                    var acCarId = $"ca-{ac.Id:N}";
+                                                    var acFotos  = ac.Fotos.OrderBy(f => f.Ordem).ToList();
+                                                    var acCarId  = $"ca-{ac.Id:N}";
+                                                    var acGallId = "gal-ac-" + ac.Id.ToString("N");
                                                     <div class="acomoda-card">
                                                         @if (acFotos.Count == 1)
                                                         {
                                                             <img src="@acFotos[0].CaminhoFoto" alt="@ac.Nome" class="acomoda-img" loading="lazy"
-                                                                 onclick="openLightbox('@acFotos[0].CaminhoFoto','@ac.Nome')"
+                                                                 data-gallery-group="@acGallId"
+                                                                 data-gallery-src="@acFotos[0].CaminhoFoto"
+                                                                 data-gallery-caption="@ac.Nome"
                                                                  style="cursor:zoom-in;" />
                                                         }
                                                         else if (acFotos.Count > 1)
@@ -2112,7 +2310,9 @@ body.has-preview-bar { padding-top: 46px; }
                                                                         <div class="carousel-item @(fi == 0 ? "active" : "")">
                                                                             <img src="@acFotos[fi].CaminhoFoto" alt="@ac.Nome"
                                                                                  class="d-block w-100 acomoda-img"
-                                                                                 onclick="openLightbox('@acFotos[fi].CaminhoFoto','@ac.Nome')"
+                                                                                 data-gallery-group="@acGallId"
+                                                                                 data-gallery-src="@acFotos[fi].CaminhoFoto"
+                                                                                 data-gallery-caption="@ac.Nome"
                                                                                  style="cursor:zoom-in;" />
                                                                         </div>
                                                                     }
@@ -2160,75 +2360,200 @@ body.has-preview-bar { padding-top: 46px; }
                     <!-- EXPERIÊNCIAS -->
                     @if (temExp)
                     {
+                        // Separa experiências com e sem data, ordena com data por DataInicio
+                        var expComData   = destino.Experiencias.Where(e => e.DataInicio.HasValue)
+                                                               .OrderBy(e => e.DataInicio).ToList();
+                        var expSemData   = destino.Experiencias.Where(e => !e.DataInicio.HasValue)
+                                                               .OrderBy(e => e.Ordem).ToList();
+                        var expPorDia    = expComData.GroupBy(e => e.DataInicio!.Value.Date)
+                                                     .OrderBy(g => g.Key).ToList();
+                        bool temDayByDay = expPorDia.Any();
                         <div class="mt-5">
-                            <h4 class="fw-700 mb-3" style="color:var(--c-h2);font-family:var(--ff-display);">
-                                <i class="fas fa-star me-2" style="color:var(--c-accent);"></i>
+                            <h4 class="destino-sub-head">
+                                <i class="fas fa-star" style="color:var(--c-accent);"></i>
                                 @(isFamiliar ? "Aventuras & Experiências" : "Experiências")
                             </h4>
-                            <div class="row g-3">
-                                @foreach (var exp in destino.Experiencias.OrderBy(e => e.Ordem))
-                                {
-                                    var expFotos = exp.Imagens.OrderBy(i => i.Ordem).ToList();
-                                    var embedUrl = EmbedUrl(exp.VideoUrl);
-                                    var expCarId = $"ce-{exp.Id:N}";
-                                    <div class="col-md-6 col-lg-4">
-                                        <div class="p-card exp-card h-100 d-flex flex-column">
-                                            @if (expFotos.Count == 1)
-                                            {
-                                                <img src="@expFotos[0].CaminhoImagem" alt="@exp.TipoPasseio"
-                                                     class="exp-img" loading="lazy"
-                                                     onclick="openLightbox('@expFotos[0].CaminhoImagem','@exp.TipoPasseio')"
-                                                     style="cursor:zoom-in;" />
-                                            }
-                                            else if (expFotos.Count > 1)
-                                            {
-                                                <div id="@expCarId" class="carousel slide" data-bs-ride="false" style="position:relative;">
-                                                    <div class="carousel-inner">
-                                                        @for (int fi = 0; fi < expFotos.Count; fi++)
-                                                        {
-                                                            <div class="carousel-item @(fi == 0 ? "active" : "")">
-                                                                <img src="@expFotos[fi].CaminhoImagem" alt="@exp.TipoPasseio"
-                                                                     class="d-block w-100 exp-img"
-                                                                     onclick="openLightbox('@expFotos[fi].CaminhoImagem','@exp.TipoPasseio')"
-                                                                     style="cursor:zoom-in;" />
-                                                            </div>
-                                                        }
-                                                    </div>
-                                                    <button class="carousel-control-prev" type="button" data-bs-target="#@expCarId" data-bs-slide="prev">
-                                                        <span class="carousel-control-prev-icon"></span>
-                                                    </button>
-                                                    <button class="carousel-control-next" type="button" data-bs-target="#@expCarId" data-bs-slide="next">
-                                                        <span class="carousel-control-next-icon"></span>
-                                                    </button>
-                                                    <div class="carousel-counter">
-                                                        <span class="cur-slide">1</span>/<span>@expFotos.Count</span>
-                                                    </div>
-                                                </div>
-                                            }
-                                            else if (!string.IsNullOrEmpty(embedUrl))
-                                            {
-                                                <div style="position:relative;padding-top:56%;overflow:hidden;">
-                                                    <iframe src="@embedUrl" frameborder="0" allowfullscreen
-                                                            style="position:absolute;top:0;left:0;width:100%;height:100%;"></iframe>
-                                                </div>
-                                            }
-                                            <div class="p-3 flex-grow-1 d-flex flex-column">
-                                                <div class="d-flex justify-content-between align-items-start mb-2">
-                                                    <h6 class="fw-700 mb-0">@exp.TipoPasseio</h6>
-                                                    @if (exp.Valor.HasValue)
-                                                    {
-                                                        <span class="exp-valor"><i class="fas fa-tag" style="font-size:.65rem;"></i>R$ @exp.Valor.Value.ToString("N2")</span>
-                                                    }
-                                                </div>
-                                                @if (!string.IsNullOrEmpty(exp.Descricao))
+
+                            @* ── Day by day: experiências com data agrupadas por dia ── *@
+                            @if (temDayByDay)
+                            {
+                                <div class="mb-4">
+                                    @foreach (var dia in expPorDia)
+                                    {
+                                        <div class="mb-4">
+                                            <div class="d-flex align-items-center gap-2 mb-3">
+                                                <span class="badge rounded-pill px-3 py-2"
+                                                      style="background:var(--c-accent);color:#fff;font-size:.8rem;font-weight:700;letter-spacing:.02em;">
+                                                    <i class="fas fa-calendar-day me-1"></i>
+                                                    @dia.Key.ToString("dd 'de' MMMM", new System.Globalization.CultureInfo("pt-BR"))
+                                                </span>
+                                                <hr class="flex-grow-1 m-0" style="border-color:var(--c-divider);opacity:.3;" />
+                                            </div>
+                                            <div class="row g-3">
+                                                @foreach (var exp in dia.OrderBy(e => e.DataInicio))
                                                 {
-                                                    <p class="text-muted small mb-0 flex-grow-1">@exp.Descricao</p>
+                                                    var expFotos  = exp.Imagens.OrderBy(i => i.Ordem).ToList();
+                                                    var embedUrl  = EmbedUrl(exp.VideoUrl);
+                                                    var expCarId  = $"ce-{exp.Id:N}";
+                                                    var expGallId = "gal-e-" + exp.Id.ToString("N");
+                                                    <div class="col-md-6 col-lg-4">
+                                                        <div class="p-card exp-card h-100 d-flex flex-column">
+                                                            @if (expFotos.Count == 1)
+                                                            {
+                                                                <img src="@expFotos[0].CaminhoImagem" alt="@exp.TipoPasseio"
+                                                                     class="exp-img" loading="lazy"
+                                                                     data-gallery-group="@expGallId"
+                                                                     data-gallery-src="@expFotos[0].CaminhoImagem"
+                                                                     data-gallery-caption="@exp.TipoPasseio"
+                                                                     style="cursor:zoom-in;" />
+                                                            }
+                                                            else if (expFotos.Count > 1)
+                                                            {
+                                                                <div id="@expCarId" class="carousel slide" data-bs-ride="false" style="position:relative;">
+                                                                    <div class="carousel-inner">
+                                                                        @for (int fi = 0; fi < expFotos.Count; fi++)
+                                                                        {
+                                                                            <div class="carousel-item @(fi == 0 ? "active" : "")">
+                                                                                <img src="@expFotos[fi].CaminhoImagem" alt="@exp.TipoPasseio"
+                                                                                     class="d-block w-100 exp-img"
+                                                                                     data-gallery-group="@expGallId"
+                                                                                     data-gallery-src="@expFotos[fi].CaminhoImagem"
+                                                                                     data-gallery-caption="@exp.TipoPasseio"
+                                                                                     style="cursor:zoom-in;" />
+                                                                            </div>
+                                                                        }
+                                                                    </div>
+                                                                    <button class="carousel-control-prev" type="button" data-bs-target="#@expCarId" data-bs-slide="prev">
+                                                                        <span class="carousel-control-prev-icon"></span>
+                                                                    </button>
+                                                                    <button class="carousel-control-next" type="button" data-bs-target="#@expCarId" data-bs-slide="next">
+                                                                        <span class="carousel-control-next-icon"></span>
+                                                                    </button>
+                                                                    <div class="carousel-counter">
+                                                                        <span class="cur-slide">1</span>/<span>@expFotos.Count</span>
+                                                                    </div>
+                                                                </div>
+                                                            }
+                                                            else if (!string.IsNullOrEmpty(embedUrl))
+                                                            {
+                                                                <div style="position:relative;padding-top:56%;overflow:hidden;">
+                                                                    <iframe src="@embedUrl" frameborder="0" allowfullscreen
+                                                                            style="position:absolute;top:0;left:0;width:100%;height:100%;"></iframe>
+                                                                </div>
+                                                            }
+                                                            <div class="p-3 flex-grow-1 d-flex flex-column">
+                                                                <div class="d-flex justify-content-between align-items-start mb-1">
+                                                                    <h6 class="fw-700 mb-0">@exp.TipoPasseio</h6>
+                                                                    @if (exp.Valor.HasValue)
+                                                                    {
+                                                                        <span class="exp-valor"><i class="fas fa-tag" style="font-size:.65rem;"></i>R$ @exp.Valor.Value.ToString("N2")</span>
+                                                                    }
+                                                                </div>
+                                                                <div class="mb-2" style="font-size:.78rem;color:var(--c-accent);font-weight:600;">
+                                                                    <i class="fas fa-clock me-1" style="font-size:.7rem;"></i>
+                                                                    @exp.DataInicio!.Value.ToString("HH:mm")
+                                                                    @if (exp.DataFim.HasValue)
+                                                                    {
+                                                                        <text> — @exp.DataFim.Value.ToString("HH:mm")</text>
+                                                                    }
+                                                                </div>
+                                                                @if (!string.IsNullOrEmpty(exp.Descricao))
+                                                                {
+                                                                    <p class="text-muted small mb-0 flex-grow-1">@exp.Descricao</p>
+                                                                }
+                                                            </div>
+                                                        </div>
+                                                    </div>
                                                 }
                                             </div>
                                         </div>
+                                    }
+                                </div>
+                            }
+
+                            @* ── Experiências sem data (ou todas, se nenhuma tem data) ── *@
+                            @if (expSemData.Any())
+                            {
+                                @if (temDayByDay)
+                                {
+                                    <div class="d-flex align-items-center gap-2 mb-3">
+                                        <span class="badge rounded-pill px-3 py-2"
+                                              style="background:#6c757d;color:#fff;font-size:.8rem;font-weight:700;">
+                                            <i class="fas fa-star me-1"></i>Outras experiências
+                                        </span>
+                                        <hr class="flex-grow-1 m-0" style="border-color:var(--c-divider);opacity:.3;" />
                                     </div>
                                 }
-                            </div>
+                                <div class="row g-3">
+                                    @foreach (var exp in expSemData)
+                                    {
+                                        var expFotos  = exp.Imagens.OrderBy(i => i.Ordem).ToList();
+                                        var embedUrl  = EmbedUrl(exp.VideoUrl);
+                                        var expCarId  = $"ce-{exp.Id:N}";
+                                        var expGallId = "gal-e-" + exp.Id.ToString("N");
+                                        <div class="col-md-6 col-lg-4">
+                                            <div class="p-card exp-card h-100 d-flex flex-column">
+                                                @if (expFotos.Count == 1)
+                                                {
+                                                    <img src="@expFotos[0].CaminhoImagem" alt="@exp.TipoPasseio"
+                                                         class="exp-img" loading="lazy"
+                                                         data-gallery-group="@expGallId"
+                                                         data-gallery-src="@expFotos[0].CaminhoImagem"
+                                                         data-gallery-caption="@exp.TipoPasseio"
+                                                         style="cursor:zoom-in;" />
+                                                }
+                                                else if (expFotos.Count > 1)
+                                                {
+                                                    <div id="@expCarId" class="carousel slide" data-bs-ride="false" style="position:relative;">
+                                                        <div class="carousel-inner">
+                                                            @for (int fi = 0; fi < expFotos.Count; fi++)
+                                                            {
+                                                                <div class="carousel-item @(fi == 0 ? "active" : "")">
+                                                                    <img src="@expFotos[fi].CaminhoImagem" alt="@exp.TipoPasseio"
+                                                                         class="d-block w-100 exp-img"
+                                                                         data-gallery-group="@expGallId"
+                                                                         data-gallery-src="@expFotos[fi].CaminhoImagem"
+                                                                         data-gallery-caption="@exp.TipoPasseio"
+                                                                         style="cursor:zoom-in;" />
+                                                                </div>
+                                                            }
+                                                        </div>
+                                                        <button class="carousel-control-prev" type="button" data-bs-target="#@expCarId" data-bs-slide="prev">
+                                                            <span class="carousel-control-prev-icon"></span>
+                                                        </button>
+                                                        <button class="carousel-control-next" type="button" data-bs-target="#@expCarId" data-bs-slide="next">
+                                                            <span class="carousel-control-next-icon"></span>
+                                                        </button>
+                                                        <div class="carousel-counter">
+                                                            <span class="cur-slide">1</span>/<span>@expFotos.Count</span>
+                                                        </div>
+                                                    </div>
+                                                }
+                                                else if (!string.IsNullOrEmpty(embedUrl))
+                                                {
+                                                    <div style="position:relative;padding-top:56%;overflow:hidden;">
+                                                        <iframe src="@embedUrl" frameborder="0" allowfullscreen
+                                                                style="position:absolute;top:0;left:0;width:100%;height:100%;"></iframe>
+                                                    </div>
+                                                }
+                                                <div class="p-3 flex-grow-1 d-flex flex-column">
+                                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                                        <h6 class="fw-700 mb-0">@exp.TipoPasseio</h6>
+                                                        @if (exp.Valor.HasValue)
+                                                        {
+                                                            <span class="exp-valor"><i class="fas fa-tag" style="font-size:.65rem;"></i>R$ @exp.Valor.Value.ToString("N2")</span>
+                                                        }
+                                                    </div>
+                                                    @if (!string.IsNullOrEmpty(exp.Descricao))
+                                                    {
+                                                        <p class="text-muted small mb-0 flex-grow-1">@exp.Descricao</p>
+                                                    }
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            }
                         </div>
                     }
 
@@ -2419,6 +2744,50 @@ body.has-preview-bar { padding-top: 46px; }
             <div class="col-lg-8">
                 <div class="resumo-proposta-body">
                     @Html.Raw(Model.ResumoProposta)
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+}
+
+@if (temCondicoes)
+{
+<!-- ═══════════════════════════════════════════
+     CONDIÇÕES DA PROPOSTA
+═══════════════════════════════════════════ -->
+<section class="prop-section" id="sec-condicoes">
+    <div class="container">
+        <div class="section-head">
+            <h2><i class="fas fa-file-contract me-2" style="color:var(--c-accent);"></i>Condições da Proposta</h2>
+            <div class="section-divider"></div>
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="resumo-proposta-body">
+                    @Html.Raw(Model.CondicoesPropostaHtml)
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+}
+
+@if (temValores)
+{
+<!-- ═══════════════════════════════════════════
+     VALORES DA PROPOSTA
+═══════════════════════════════════════════ -->
+<section class="prop-section bg-alt" id="sec-valores">
+    <div class="container">
+        <div class="section-head">
+            <h2><i class="fas fa-dollar-sign me-2" style="color:var(--c-accent);"></i>Valores da Proposta</h2>
+            <div class="section-divider"></div>
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="resumo-proposta-body">
+                    @Html.Raw(Model.ValoresPropostaHtml)
                 </div>
             </div>
         </div>
@@ -2717,7 +3086,16 @@ body.has-preview-bar { padding-top: 46px; }
             </div>
             <div class="text-center" style="color:rgba(255,255,255,.9);">
                 <div class="fw-700" style="font-size:1.05rem;">@Model.Usuario.Nome</div>
-                <div style="font-size:.85rem;color:rgba(255,255,255,.65);margin-top:2px;">Consultor de Viagens</div>
+                <div style="font-size:.85rem;color:rgba(255,255,255,.65);margin-top:2px;">
+                    @if (!string.IsNullOrEmpty(Model.Usuario.NomeAgencia))
+                    {
+                        @Model.Usuario.NomeAgencia
+                    }
+                    else
+                    {
+                        <text>Consultor de Viagens</text>
+                    }
+                </div>
                 <div class="d-flex justify-content-center gap-4 mt-3 flex-wrap" style="font-size:.85rem;">
                     @if (!string.IsNullOrEmpty(Model.Usuario.Email))
                     {
@@ -2739,9 +3117,14 @@ body.has-preview-bar { padding-top: 46px; }
 <footer>
     <div class="container">
         <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+            @{
+                var _dataAtualizacao = Model.DataModificacao ?? Model.DataCriacao;
+                var _isAtualizada    = Model.DataModificacao.HasValue;
+            }
             <div>
                 <div style="color:#e2e8f0;font-weight:600;">@Model.Titulo</div>
-                <small>Criada em @Model.DataCriacao.ToString("dd/MM/yyyy")
+                <small>
+                    @(_isAtualizada ? "Atualizada em" : "Criada em") @_dataAtualizacao.ToString("dd/MM/yyyy 'às' HH:mm")
                     @if (Model.DataExpiracaoLink.HasValue)
                     {
                         <text> · válida até @Model.DataExpiracaoLink.Value.ToString("dd/MM/yyyy")</text>
@@ -2772,11 +3155,7 @@ body.has-preview-bar { padding-top: 46px; }
     </div>
 }
 
-<!-- LIGHTBOX -->
-<div class="lightbox-overlay" id="lightbox" onclick="closeLightbox()">
-    <span class="lightbox-close" onclick="closeLightbox()">&times;</span>
-    <img id="lightboxImage" src="" alt="" onclick="event.stopPropagation()" />
-</div>
+<!-- lightbox → _LayoutPublico.cshtml -->
 
 
 </div><!-- /.theme-xxx -->
@@ -3025,18 +3404,7 @@ document.querySelectorAll('.carousel').forEach(function (car) {
     });
 });
 
-/* ── lightbox ── */
-function openLightbox(src, alt) {
-    document.getElementById('lightboxImage').src = src;
-    document.getElementById('lightboxImage').alt = alt;
-    document.getElementById('lightbox').classList.add('active');
-    document.body.style.overflow = 'hidden';
-}
-function closeLightbox() {
-    document.getElementById('lightbox').classList.remove('active');
-    document.body.style.overflow = '';
-}
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
+/* lightbox → _LayoutPublico.cshtml */
 
 /* ── share ── */
 function compartilharWhatsApp() {
@@ -3056,6 +3424,16 @@ function showNotif(msg, type) {
 }
 
 /* ── Avaliação do cliente ── */
+@{
+    var avalDict = ViewBag.AvaliacoesPorItem as Dictionary<string, SistemaUsuarios.Models.AvaliacaoCliente>
+                  ?? new Dictionary<string, SistemaUsuarios.Models.AvaliacaoCliente>();
+    var avalSerializable = avalDict.ToDictionary(
+        kvp => kvp.Key,
+        kvp => new { nota = kvp.Value.Nota, favorito = kvp.Value.Favorito, comentario = kvp.Value.Comentario ?? "" });
+    var avalJson = System.Text.Json.JsonSerializer.Serialize(avalSerializable);
+}
+var __avals = @Html.Raw(avalJson);
+
 (function () {
     // Favorito toggle
     document.querySelectorAll('.aval-fav-btn').forEach(function (btn) {
@@ -3120,6 +3498,33 @@ function showNotif(msg, type) {
 
     // Map from string name to int enum value (matches TipoItemAvaliacao)
     var tipoMap = { Hospedagem: 1, Acomodacao: 2, Experiencia: 3 };
+})();
+
+// Pre-fill saved evaluations
+(function () {
+    if (!__avals || !Object.keys(__avals).length) return;
+    var tipoMap = { Hospedagem: 1, Acomodacao: 2, Experiencia: 3 };
+
+    document.querySelectorAll('.star-rating').forEach(function (el) {
+        var tipo   = el.dataset.tipo;
+        var itemId = el.dataset.id;
+        var key    = tipoMap[tipo] + '_' + itemId;
+        var a      = __avals[key];
+        if (!a) return;
+
+        var radio = el.querySelector('input[value="' + a.nota + '"]');
+        if (radio) radio.checked = true;
+
+        if (a.favorito) {
+            var favBtn = document.querySelector('.aval-fav-btn[data-fav="' + itemId + '"]');
+            if (favBtn) favBtn.classList.add('active');
+        }
+
+        if (a.comentario) {
+            var commentEl = document.querySelector('.aval-comment[data-comment="' + itemId + '"]');
+            if (commentEl) commentEl.value = a.comentario;
+        }
+    });
 })();
 
 /* ── Analytics ── */

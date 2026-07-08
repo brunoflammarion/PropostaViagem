@@ -521,8 +521,9 @@ private static string ExtrairJsonDeMarkdown(string raw)
             _context.Destinos.Add(destino);
             await _context.SaveChangesAsync();
 
-            TempData["Sucesso"] = $"Destino '{nome}' adicionado com sucesso!";
-            return RedirectToAction("Gerenciar", new { propostaId });
+            TempData["Sucesso"] = $"Destino '{nome}' adicionado. Agora você pode incluir fotos, hospedagens e experiências.";
+            TempData["NovoDestinoId"] = destino.Id.ToString();
+            return RedirectToEditar(propostaId);
         }
         private double NormalizarCoordenada(object valor)
         {
@@ -591,7 +592,7 @@ private static string ExtrairJsonDeMarkdown(string raw)
             await _context.SaveChangesAsync();
 
             TempData["Sucesso"] = $"Destino '{nome}' editado com sucesso!";
-            return RedirectToAction("Gerenciar", new { propostaId = destino.PropostaId });
+            return RedirectToEditar(destino.PropostaId);
         }
 
         // POST: Destino/ExcluirDestino
@@ -644,8 +645,8 @@ private static string ExtrairJsonDeMarkdown(string raw)
 
             await _context.SaveChangesAsync();
 
-            TempData["Sucesso"] = $"Destino '{nomeDestino}' excluído com sucesso!";
-            return RedirectToAction("Gerenciar", new { propostaId });
+            TempData["Sucesso"] = $"Destino '{nomeDestino}' excluído com sucesso.";
+            return RedirectToEditar(propostaId);
         }
 
         // POST: Destino/ReordenarDestinos

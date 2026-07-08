@@ -535,13 +535,32 @@
     min-height: 60px;
 }
 
-/* Card dentro do kanban: sem animação de entrada, cursor grab */
+/* Card dentro do kanban: sem animação, cursor grab */
 .kanban-col-body .exec-proposta-card {
     animation: none !important;
     cursor: grab;
     margin: 0;
+    /* overflow: visible é obrigatório para o dropdown do Bootstrap escapar
+       do container com overflow-y:auto; a imagem ainda fica recortada pelo
+       seu próprio container (.exec-image-container já tem overflow:hidden) */
+    overflow: visible !important;
 }
 .kanban-col-body .exec-proposta-card:active { cursor: grabbing; }
+
+/* Imagem ainda precisa de clip — reaplica border-radius no container */
+.kanban-col-body .exec-image-container {
+    overflow: hidden;
+    border-radius: var(--exec-radius-lg) var(--exec-radius-lg) 0 0;
+}
+
+/* Botões mais compactos para colunas de 300 px */
+.kanban-col-body .exec-actions { gap: 5px; }
+.kanban-col-body .exec-action-btn {
+    width: 30px !important;
+    height: 30px !important;
+    font-size: .73rem;
+    border-radius: 7px !important;
+}
 
 /* Ghost durante drag */
 .kanban-ghost {
@@ -679,6 +698,9 @@ document.addEventListener('DOMContentLoaded', function () {
             animation: 180,
             ghostClass: 'kanban-ghost',
             dragClass: 'kanban-dragging',
+            // Impede que cliques em botões/links/dropdowns iniciem um drag
+            filter: '.exec-actions, .exec-action-btn, .dropdown, .dropdown-toggle, .dropdown-menu, .dropdown-item, button, a',
+            preventOnFilter: true,
             // Highlight na drop-zone ao entrar
             onDragEnter: function (evt) { evt.to.classList.add('sortable-over'); },
             onDragLeave: function (evt) { evt.to.classList.remove('sortable-over'); },
@@ -722,6 +744,19 @@ document.addEventListener('DOMContentLoaded', function () {
                     showKanbanToast('Erro de conexão — revertendo', '⚠');
                     revertDrag(card, evt.from, evt.oldIndex);
                 });
+            }
+        });
+    });
+
+    // Re-inicializa dropdowns do kanban com strategy:'fixed' para escapar
+    // de qualquer container com overflow:hidden ou overflow-y:auto.
+    // Sem isso, o menu fica invisível recortado pela coluna.
+    document.querySelectorAll('.kanban-col-body .dropdown-toggle').forEach(function (toggle) {
+        const existing = bootstrap.Dropdown.getInstance(toggle);
+        if (existing) existing.dispose();
+        new bootstrap.Dropdown(toggle, {
+            popperConfig: function (defaultConfig) {
+                return Object.assign({}, defaultConfig, { strategy: 'fixed' });
             }
         });
     });

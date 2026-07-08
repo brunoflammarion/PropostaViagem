@@ -69,6 +69,12 @@ namespace SistemaUsuarios.Models
         /// <summary>Resumo/fechamento da proposta escrito pelo agente (HTML do editor rico).</summary>
         public string? ResumoProposta { get; set; }
 
+        /// <summary>HTML com condições gerais da proposta, editado pelo agente (editor rico na aba Condições).</summary>
+        public string? CondicoesPropostaHtml { get; set; }
+
+        /// <summary>HTML com valores e forma de pagamento da proposta, editado pelo agente (editor rico na aba Condições).</summary>
+        public string? ValoresPropostaHtml { get; set; }
+
         // ── Configuração de avaliação pelo cliente ───────────────────────────
         /// <summary>Quando true e houver +1 hospedagem, exibe avaliação comparativa na proposta pública.</summary>
         public bool SolicitarAvaliacaoHospedagem { get; set; } = false;

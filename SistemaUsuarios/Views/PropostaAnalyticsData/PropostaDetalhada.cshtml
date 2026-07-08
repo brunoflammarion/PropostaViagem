@@ -595,6 +595,113 @@ else
     </div>
 }
 
+<!-- Avaliação do cliente -->
+@{
+    var av = Model.AvaliacoesCliente;
+    var grupos = av.Itens.GroupBy(i => i.TipoItemNome).OrderBy(g => g.Key).ToList();
+}
+<div class="executive-card mb-4 mt-2">
+    <div class="card-header">
+        <h3><i class="fas fa-star me-2"></i>Avaliação do cliente</h3>
+        <span class="card-badge">@av.TotalAvaliacoes avaliação@(av.TotalAvaliacoes != 1 ? "ões" : "")</span>
+    </div>
+    <div class="card-content">
+        @if (av.TotalAvaliacoes == 0)
+        {
+            <div class="empty-state">
+                <i class="far fa-star fa-2x mb-2 d-block"></i>
+                <h4>Nenhuma avaliação recebida ainda</h4>
+                <p>Quando o cliente avaliar hospedagens, acomodações ou experiências na proposta pública, os resultados aparecerão aqui.</p>
+                <a href="/Proposta/Publico/@Model.Proposta.Id" target="_blank" class="btn btn-outline-primary btn-sm mt-1">
+                    <i class="fas fa-external-link-alt me-1"></i>Abrir proposta pública
+                </a>
+            </div>
+        }
+        else
+        {
+            <!-- Resumo — 4 colunas reutilizando padrão location-item -->
+            <div class="row g-3 mb-4">
+                <div class="col-6 col-md-3">
+                    <div class="location-item flex-column align-items-start gap-1">
+                        <span class="detail-label"><i class="fas fa-star me-1 text-warning"></i>Avaliações</span>
+                        <span style="font-size:1.5rem;font-weight:700;color:var(--exec-primary);">@av.TotalAvaliacoes</span>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="location-item flex-column align-items-start gap-1">
+                        <span class="detail-label"><i class="fas fa-heart me-1" style="color:#e83e6c;"></i>Favoritos</span>
+                        <span style="font-size:1.5rem;font-weight:700;color:var(--exec-primary);">@av.TotalFavoritos</span>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="location-item flex-column align-items-start gap-1">
+                        <span class="detail-label"><i class="fas fa-chart-bar me-1"></i>Nota média</span>
+                        <span style="font-size:1.5rem;font-weight:700;color:var(--exec-primary);">@(av.NotaMedia.HasValue ? av.NotaMedia.Value.ToString("F1") : "—")</span>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="location-item flex-column align-items-start gap-1">
+                        <span class="detail-label"><i class="fas fa-comment me-1"></i>Comentários</span>
+                        <span style="font-size:1.5rem;font-weight:700;color:var(--exec-primary);">@av.TotalComentarios</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lista por tipo -->
+            @foreach (var grupo in grupos)
+            {
+                <div class="avaliacao-tipo-heading">
+                    @if (grupo.Key == "Hospedagem") { <i class="fas fa-hotel me-1"></i> }
+                    else if (grupo.Key == "Acomodação") { <i class="fas fa-bed me-1"></i> }
+                    else if (grupo.Key == "Experiência") { <i class="fas fa-map-marker-alt me-1"></i> }
+                    @grupo.Key — @grupo.Count() @(grupo.Count() != 1 ? "itens" : "item")
+                </div>
+
+                @foreach (var item in grupo)
+                {
+                    <div class="traffic-item mb-2">
+                        <div class="traffic-icon">
+                            @if (grupo.Key == "Hospedagem") { <i class="fas fa-hotel"></i> }
+                            else if (grupo.Key == "Acomodação") { <i class="fas fa-bed"></i> }
+                            else { <i class="fas fa-compass"></i> }
+                        </div>
+                        <div class="traffic-info" style="flex:1;">
+                            <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
+                                <span class="traffic-name">@item.ItemNome</span>
+                                @if (item.Favorito)
+                                {
+                                    <span class="avaliacao-favorito"><i class="fas fa-heart me-1"></i>Favorito</span>
+                                }
+                            </div>
+                            <div class="avaliacao-stars mb-1">
+                                @for (int s = 1; s <= 5; s++)
+                                {
+                                    if (s <= item.Nota)
+                                    {
+                                        <i class="fas fa-star"></i>
+                                    }
+                                    else
+                                    {
+                                        <i class="far fa-star"></i>
+                                    }
+                                }
+                                <span class="ms-1" style="font-size:.75rem;color:var(--exec-text-muted);">@item.Nota/5</span>
+                            </div>
+                            @if (!string.IsNullOrWhiteSpace(item.Comentario))
+                            {
+                                <div class="avaliacao-comment">"@item.Comentario"</div>
+                            }
+                            <div class="traffic-stats mt-1">
+                                <span class="traffic-time"><i class="fas fa-clock me-1"></i>@item.DataCriacao.ToString("dd/MM/yyyy HH:mm")</span>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+        }
+    </div>
+</div>
+
 <!-- Scripts -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -2136,6 +2243,50 @@ else
 .text-danger { color: var(--exec-danger) !important; }
 .text-primary { color: var(--exec-info) !important; }
 .text-muted { color: var(--exec-text-muted) !important; }
+
+/* === AVALIAÇÃO DO CLIENTE === */
+.avaliacao-tipo-heading {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--exec-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 0.75rem 0 0.5rem;
+    margin-top: 0.5rem;
+    border-top: 1px solid var(--exec-border);
+}
+.avaliacao-tipo-heading:first-of-type { border-top: none; margin-top: 0; }
+
+.avaliacao-stars {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.15rem;
+    font-size: 0.875rem;
+    color: #f59e0b;
+}
+.avaliacao-stars .far.fa-star { color: var(--exec-border); }
+
+.avaliacao-favorito {
+    display: inline-flex;
+    align-items: center;
+    background: #e83e6c;
+    color: white;
+    padding: 0.15rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+.avaliacao-comment {
+    margin: 0.35rem 0 0;
+    padding: 0.45rem 0.75rem;
+    background: var(--exec-light);
+    border-left: 3px solid var(--exec-primary);
+    border-radius: 0 var(--exec-radius) var(--exec-radius) 0;
+    font-style: italic;
+    color: var(--exec-text-muted);
+    font-size: 0.825rem;
+}
 
 .badge.bg-info { background-color: var(--exec-info) !important; }
 .badge.bg-success { background-color: var(--exec-success) !important; }

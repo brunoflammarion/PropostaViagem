@@ -34,6 +34,7 @@ namespace SistemaUsuarios.Models.ViewModels.Analytics
         public DateTime? UltimaVisualizacao { get; set; }
         public bool LinkPublicoAtivo { get; set; }
         public double TaxaInteracao { get; set; }
+        public int TotalAvaliacoes { get; set; }
     }
 
     // ATIVIDADE RECENTE — feed de visualizações individuais
@@ -74,6 +75,28 @@ namespace SistemaUsuarios.Models.ViewModels.Analytics
         public List<TempoSessaoViewModel> TemposPorSessao { get; set; } = new();
         public List<ReferenciaTrafegoViewModel> ReferenciasTrafico { get; set; } = new();
         public AnaliseAgenteViewModel AnaliseAgente { get; set; } = new();
+        public AvaliacoesClienteAnalyticsViewModel AvaliacoesCliente { get; set; } = new();
+    }
+
+    public class AvaliacoesClienteAnalyticsViewModel
+    {
+        public int TotalAvaliacoes { get; set; }
+        public int TotalFavoritos { get; set; }
+        public decimal? NotaMedia { get; set; }
+        public int TotalComentarios { get; set; }
+        public List<AvaliacaoClienteResumoViewModel> Itens { get; set; } = new();
+    }
+
+    public class AvaliacaoClienteResumoViewModel
+    {
+        public Guid Id { get; set; }
+        public string TipoItemNome { get; set; } = "";
+        public Guid ItemId { get; set; }
+        public string ItemNome { get; set; } = "";
+        public int Nota { get; set; }
+        public string? Comentario { get; set; }
+        public bool Favorito { get; set; }
+        public DateTime DataCriacao { get; set; }
     }
 
     // ANÁLISE PARA O AGENTE

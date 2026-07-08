@@ -1,0 +1,1951 @@
+@{
+    Layout = "_LayoutPublico";
+    ViewData["Title"] = Model.Titulo;
+}
+@model SistemaUsuarios.Models.Proposta
+@using SistemaUsuarios.Models
+@using System.Text.RegularExpressions
+@functions {
+    static string EmbedUrl(string? url) {
+        if (string.IsNullOrWhiteSpace(url)) return "";
+        var yt = Regex.Match(url, @"(?:youtube\.com/watch\?v=|youtu\.be/)([A-Za-z0-9_\-]{11})");
+        if (yt.Success) return $"https://www.youtube.com/embed/{yt.Groups[1].Value}";
+        var vimeo = Regex.Match(url, @"vimeo\.com/(\d+)");
+        if (vimeo.Success) return $"https://player.vimeo.com/video/{vimeo.Groups[1].Value}";
+        return url;
+    }
+    static string LightenPub(string hex, int amt) {
+        if (string.IsNullOrEmpty(hex) || !hex.StartsWith("#") || hex.Length != 7) return hex;
+        try {
+            int r = Math.Clamp(Convert.ToInt32(hex.Substring(1,2),16)+amt,0,255);
+            int g = Math.Clamp(Convert.ToInt32(hex.Substring(3,2),16)+amt,0,255);
+            int b = Math.Clamp(Convert.ToInt32(hex.Substring(5,2),16)+amt,0,255);
+            return $"#{r:X2}{g:X2}{b:X2}";
+        } catch { return hex; }
+    }
+}
+@{
+    var layoutNome = (Model.Layout?.Nome ?? "Familiar").ToLower();
+    var waPhone  = Model.Usuario.Telefone?.Replace("(","").Replace(")","").Replace("-","").Replace(" ","") ?? "";
+    var waMsgRaw = $"Olá! Vi a proposta \"{Model.Titulo}\" e tenho interesse!";
+
+    bool temPassageiros = Model.Cliente != null || Model.PassageirosProposta.Any();
+    bool temVoos        = Model.Voos.Any();
+    bool temSeguros     = Model.Seguros.Any();
+    bool temResumo      = !string.IsNullOrWhiteSpace(Model.ResumoProposta);
+    bool temCondicoes   = !string.IsNullOrWhiteSpace(Model.CondicoesPropostaHtml);
+    bool temValores     = !string.IsNullOrWhiteSpace(Model.ValoresPropostaHtml);
+    bool temJornada     = Model.DataInicio.HasValue && Model.DataFim.HasValue;
+
+    var todasHospedagens  = Model.Destinos.SelectMany(d => d.Hospedagens).ToList();
+    var todasAcomodacoes  = Model.Destinos.SelectMany(d => d.Hospedagens).SelectMany(h => h.Acomodacoes).ToList();
+    var todasExperiencias = Model.Destinos.SelectMany(d => d.Experiencias).ToList();
+
+    bool mostrarAvalHospedagem  = Model.SolicitarAvaliacaoHospedagem  && todasHospedagens.Count  > 1;
+    bool mostrarAvalAcomodacao  = Model.SolicitarAvaliacaoAcomodacao  && todasAcomodacoes.Count  > 1;
+    bool mostrarAvalExperiencia = Model.SolicitarAvaliacaoExperiencia && todasExperiencias.Count > 1;
+    bool temAvaliacao = mostrarAvalHospedagem || mostrarAvalAcomodacao || mostrarAvalExperiencia;
+
+    var uCorP  = Model.Usuario.CorPrimaria;
+    var uCorD  = Model.Usuario.CorDestaque;
+    bool uTemCores  = !string.IsNullOrEmpty(uCorP) && !string.IsNullOrEmpty(uCorD);
+    var uCorPLight  = uTemCores ? LightenPub(uCorP!, 22)  : "";
+    var uCorDAlt    = uTemCores ? LightenPub(uCorD!, -15) : "";
+
+    bool isPreview     = (bool)(ViewBag.IsPreview ?? false);
+    string linkPublico = isPreview ? (string)(ViewBag.LinkPublico ?? "") : "";
+    var layoutsPreview = isPreview
+        ? (ViewBag.Layouts as IEnumerable<SistemaUsuarios.Models.Layout>
+           ?? Enumerable.Empty<SistemaUsuarios.Models.Layout>())
+        : Enumerable.Empty<SistemaUsuarios.Models.Layout>();
+
+    // ── Períodos por destino ──────────────────────────────────────────────────
+    var famPtBR   = new System.Globalization.CultureInfo("pt-BR");
+    var famPaleta = new[] { "#2A7B9B","#e07b39","#2e9c57","#9b3d9b","#c44b4b","#00828c","#c27c10","#3B4E9B" };
+    var famDestOrd  = Model.Destinos.OrderBy(d => d.Ordem).ToList();
+    var famDestCores = new Dictionary<Guid, string>();
+    for (int _fi = 0; _fi < famDestOrd.Count; _fi++)
+        famDestCores[famDestOrd[_fi].Id] = famPaleta[_fi % famPaleta.Length];
+
+    bool famTemHospedagem   = famDestOrd.Any(d => d.Hospedagens.Any());
+    bool famTemExperiencias = famDestOrd.Any(d => d.Experiencias.Any());
+    bool famTemTransporte   = famDestOrd.Any(d => d.Transportes.Any());
+
+    // ── Mapa de hospedagens ───────────────────────────────────────────────────
+    var _famApiKey = ViewBag.GoogleApiKey as string ?? "";
+    var _famIc = System.Globalization.CultureInfo.InvariantCulture;
+
+    var _famMapHoteis = famDestOrd
+        .SelectMany(d => d.Hospedagens
+            .Where(h => h.Latitude.HasValue && h.Longitude.HasValue)
+            .Select(h => new {
+                h.Latitude, h.Longitude, h.Nome, h.Endereco, h.CheckIn, h.CheckOut,
+                DestNome = d.Nome,
+                Cor = famDestCores.TryGetValue(d.Id, out var _fmc) ? _fmc : famPaleta[0]
+            }))
+        .OrderBy(h => h.CheckIn ?? DateTime.MaxValue)
+        .ToList();
+
+    var _famListaHosp = famDestOrd
+        .SelectMany(d => d.Hospedagens
+            .Select(h => new {
+                h.Nome, h.Endereco, h.CheckIn, h.CheckOut, h.Latitude, h.Longitude,
+                DestNome = d.Nome,
+                Cor = famDestCores.TryGetValue(d.Id, out var _fmc2) ? _fmc2 : famPaleta[0]
+            }))
+        .OrderBy(h => h.CheckIn ?? DateTime.MaxValue)
+        .ToList();
+
+    bool _famTemMapa      = _famMapHoteis.Any() && !string.IsNullOrEmpty(_famApiKey);
+    bool _famTemMapSecao  = _famTemMapa || _famListaHosp.Any(h =>
+        !string.IsNullOrEmpty(h.Endereco) || h.Latitude.HasValue);
+}
+
+@section Styles {
+<style>
+/* ═══════════════════════════════════════════
+   TOKENS
+═══════════════════════════════════════════ */
+:root {
+    --c-accent:    #2A7B9B;
+    --c-accent-lt: #3B9DC0;
+    --c-warm:      #F59E0B;
+    --c-hero-from: #0f2d4a;
+    --c-hero-to:   #1a5272;
+    --c-bg:        #F8F6F3;
+    --c-bg-card:   #FFFFFF;
+    --c-bg-alt:    #EEF4F7;
+    --c-text:      #1A2B3C;
+    --c-text-mid:  #475569;
+    --c-line:      rgba(0,0,0,.09);
+    --c-shadow:    0 4px 18px rgba(0,0,0,.09);
+    --c-shadow-sm: 0 1px 6px rgba(0,0,0,.08);
+    --radius:      16px;
+    --radius-sm:   10px;
+    --ff-display:  'Georgia', 'Times New Roman', serif;
+    --ff-body:     'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+@if (uTemCores)
+{
+    <text>
+:root {
+    --c-accent:    @uCorP;
+    --c-accent-lt: @uCorPLight;
+    --c-warm:      @uCorD;
+    --c-hero-from: @uCorDAlt;
+    --c-hero-to:   @uCorP;
+}
+    </text>
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--ff-body); background: var(--c-bg); color: var(--c-text); line-height: 1.6; }
+
+/* ── Scroll bar ── */
+#scrollBar {
+    position: fixed; top: 0; left: 0; height: 3px; width: 0;
+    background: linear-gradient(90deg, var(--c-accent), var(--c-warm));
+    z-index: 10000; transition: width .1s linear;
+}
+
+/* ── NAV ── */
+.fam-nav {
+    position: sticky; top: 0; z-index: 900;
+    background: rgba(255,255,255,.96); backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--c-line);
+    padding: 0 16px;
+}
+.fam-nav-inner {
+    max-width: 1100px; margin: 0 auto;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    height: 54px;
+}
+.fam-nav-brand {
+    font-weight: 700; font-size: .88rem; color: var(--c-text);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px;
+}
+.fam-nav-links {
+    display: flex; align-items: center; gap: 4px; overflow-x: auto;
+    scrollbar-width: none; list-style: none;
+}
+.fam-nav-links::-webkit-scrollbar { display: none; }
+.fam-nav-links a {
+    display: block; padding: 6px 14px; border-radius: 50px;
+    font-size: .8rem; font-weight: 600; color: var(--c-text-mid);
+    text-decoration: none; white-space: nowrap;
+    transition: background .15s, color .15s;
+}
+.fam-nav-links a:hover, .fam-nav-links a.active {
+    background: var(--c-accent); color: #fff;
+}
+
+/* ── HERO ── */
+.fam-hero {
+    position: relative; min-height: 75vh; display: flex; align-items: center;
+    overflow: hidden;
+}
+.fam-hero-bg {
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, var(--c-hero-from) 0%, var(--c-hero-to) 100%);
+}
+.fam-hero-photo {
+    position: absolute; inset: 0;
+    background-size: cover; background-position: center;
+    opacity: .45;
+}
+.fam-hero-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(to top, rgba(10,22,36,.75) 0%, rgba(10,22,36,.1) 100%);
+}
+.fam-hero-content {
+    position: relative; z-index: 2;
+    width: 100%; max-width: 1100px; margin: 0 auto;
+    padding: 80px 24px 60px;
+}
+.fam-hero-pill {
+    display: inline-flex; align-items: center; gap: 7px;
+    background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.3);
+    color: #fff; font-size: .75rem; font-weight: 700; letter-spacing: .08em;
+    padding: 5px 14px; border-radius: 50px; margin-bottom: 20px; text-transform: uppercase;
+}
+.fam-hero h1 {
+    font-family: var(--ff-display); font-size: clamp(2rem, 5vw, 3.4rem);
+    font-weight: 700; color: #fff; line-height: 1.15; margin-bottom: 16px;
+    text-shadow: 0 2px 16px rgba(0,0,0,.4);
+}
+.fam-hero-sub {
+    font-size: 1.05rem; color: rgba(255,255,255,.82); max-width: 500px; margin-bottom: 28px;
+}
+.fam-hero-stats {
+    display: flex; flex-wrap: wrap; gap: 12px;
+}
+.fam-hero-stat {
+    background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2);
+    border-radius: 12px; padding: 12px 18px; color: #fff; text-align: center;
+    backdrop-filter: blur(4px);
+}
+.fam-hero-stat strong { display: block; font-size: 1.5rem; font-weight: 800; line-height: 1; }
+.fam-hero-stat small  { font-size: .75rem; opacity: .8; }
+
+/* ── HIGHLIGHTS ── */
+.fam-highlights {
+    background: var(--c-bg-card); border-bottom: 1px solid var(--c-line);
+    padding: 14px 16px;
+}
+.fam-highlights-inner {
+    max-width: 1100px; margin: 0 auto;
+    display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center;
+}
+.fam-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--c-bg-alt); border-radius: 50px;
+    padding: 5px 13px; font-size: .78rem; font-weight: 600; color: var(--c-accent);
+}
+.fam-chip i { color: var(--c-accent); }
+
+/* ── SECTIONS ── */
+.fam-section {
+    padding: 64px 16px;
+}
+.fam-section:nth-child(even) { background: var(--c-bg-card); }
+.fam-container {
+    max-width: 900px; margin: 0 auto;
+}
+.fam-section-h2 {
+    font-family: var(--ff-display); font-size: 1.7rem; font-weight: 700;
+    color: var(--c-text); margin-bottom: 8px; display: flex; align-items: center; gap: 10px;
+}
+.fam-section-sub {
+    font-size: .95rem; color: var(--c-text-mid); margin-bottom: 32px;
+}
+.fam-section-divider {
+    width: 48px; height: 3px;
+    background: linear-gradient(90deg, var(--c-accent), var(--c-warm));
+    border-radius: 3px; margin: 12px 0 32px;
+}
+
+/* ── PERÍODOS POR DESTINO ── */
+.fam-dest-periods { display: flex; flex-direction: column; gap: 24px; }
+.fam-dest-period {
+    display: flex; gap: 20px; align-items: flex-start;
+    background: var(--c-bg-card); border-radius: var(--radius);
+    box-shadow: var(--c-shadow); overflow: hidden;
+    border-left: 4px solid var(--dest-cor, var(--c-accent));
+    padding: 24px 24px 24px 20px;
+}
+.fam-dp-num {
+    width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+    background: var(--dest-cor, var(--c-accent)); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .85rem; font-weight: 800;
+}
+.fam-dp-body { flex: 1; min-width: 0; }
+.fam-dp-header {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 16px; flex-wrap: wrap; margin-bottom: 16px;
+}
+.fam-dp-name {
+    font-size: 1.15rem; font-weight: 800; color: var(--c-text);
+    margin-bottom: 4px; font-family: var(--ff-display);
+}
+.fam-dp-location {
+    font-size: .82rem; color: var(--c-text-mid);
+    display: flex; align-items: center; gap: 5px;
+}
+.fam-dp-location i { color: var(--dest-cor, var(--c-accent)); font-size: .75rem; }
+.fam-dp-period {
+    font-size: .88rem; font-weight: 700; color: var(--c-accent);
+    background: var(--c-bg-alt); border-radius: var(--radius-sm);
+    padding: 6px 14px; white-space: nowrap; flex-shrink: 0;
+    display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+}
+.fam-dp-noites {
+    font-size: .72rem; font-weight: 600; color: var(--c-text-mid);
+    background: rgba(0,0,0,.07); border-radius: 50px;
+    padding: 2px 8px;
+}
+.fam-dp-block { margin-top: 12px; }
+.fam-dp-block-label {
+    font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+    color: var(--c-text-mid); display: flex; align-items: center; gap: 5px; margin-bottom: 8px;
+}
+.fam-dp-block-label i { color: var(--dest-cor, var(--c-accent)); }
+.fam-dp-items { display: flex; flex-direction: column; gap: 8px; }
+.fam-dp-item {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--c-bg-alt); border-radius: var(--radius-sm);
+    padding: 8px 12px;
+}
+.fam-dp-thumb {
+    width: 44px; height: 44px; border-radius: 8px;
+    object-fit: cover; flex-shrink: 0;
+}
+.fam-dp-item-name {
+    display: block; font-weight: 600; font-size: .88rem; color: var(--c-text);
+}
+.fam-dp-item-sub {
+    display: block; font-size: .75rem; color: var(--c-text-mid); margin-top: 2px;
+}
+@@media (max-width: 600px) {
+    .fam-dest-period { flex-direction: row; padding: 18px 16px 18px 14px; }
+    .fam-dp-header { flex-direction: column; gap: 8px; }
+    .fam-dp-period { font-size: .82rem; padding: 4px 10px; }
+}
+
+/* ── HOSPEDAGEM ── */
+.fam-hotel-card {
+    background: var(--c-bg-card); border-radius: var(--radius);
+    box-shadow: var(--c-shadow); overflow: hidden; margin-bottom: 28px;
+}
+.fam-hotel-gallery {
+    width: 100%; height: 260px; position: relative; overflow: hidden;
+}
+.fam-hotel-gallery img { width: 100%; height: 100%; object-fit: cover; }
+.fam-hotel-gallery .carousel { height: 100%; }
+.fam-hotel-gallery .carousel-inner { height: 100%; }
+.fam-hotel-gallery .carousel-item  { height: 100%; }
+.fam-hotel-gallery .carousel-item img { height: 260px; object-fit: cover; }
+.fam-hotel-body { padding: 20px 24px 24px; }
+.fam-hotel-dest-tag {
+    display: inline-block; font-size: .7rem; font-weight: 700; letter-spacing: .06em;
+    text-transform: uppercase; color: var(--c-accent);
+    background: var(--c-bg-alt); border-radius: 50px; padding: 3px 10px; margin-bottom: 10px;
+}
+.fam-hotel-name { font-size: 1.3rem; font-weight: 800; color: var(--c-text); margin-bottom: 6px; }
+.fam-hotel-address {
+    font-size: .83rem; color: var(--c-text-mid); margin-bottom: 14px;
+    display: flex; align-items: center; gap: 5px;
+}
+.fam-hotel-meta {
+    display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px;
+}
+.fam-hotel-chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: .77rem; font-weight: 600; color: var(--c-text-mid);
+    background: var(--c-bg-alt); border-radius: 50px; padding: 4px 12px;
+}
+.fam-hotel-chip i { color: var(--c-accent); }
+.fam-hotel-dates {
+    font-size: .82rem; color: var(--c-text-mid);
+    border-top: 1px solid var(--c-line); padding-top: 12px; margin-top: 4px;
+    display: flex; gap: 16px; flex-wrap: wrap;
+}
+.fam-hotel-dates span { display: flex; align-items: center; gap: 5px; }
+.fam-hotel-dates strong { color: var(--c-text); }
+.fam-hotel-desc {
+    font-size: .88rem; color: var(--c-text-mid); margin-top: 12px; line-height: 1.65;
+}
+
+/* ── MAPA DE HOSPEDAGENS ── */
+.fam-map-section { }
+.fam-map-wrap {
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--c-shadow);
+    width: 100%;
+    height: 380px;
+    margin-bottom: 24px;
+    position: relative;
+    background: #e8eff5;
+}
+#famHotelMap { width: 100%; height: 100%; display: block; }
+.fam-hotel-pins {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 14px;
+}
+.fam-hotel-pin-card {
+    display: flex; align-items: flex-start; gap: 12px;
+    background: var(--c-bg-card); border-radius: var(--radius-sm);
+    box-shadow: var(--c-shadow-sm); padding: 14px 16px;
+    border-left: 3px solid var(--pin-cor, var(--c-accent));
+}
+.fam-pin-num {
+    width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+    background: var(--pin-cor, var(--c-accent)); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .75rem; font-weight: 800;
+}
+.fam-pin-body { flex: 1; min-width: 0; }
+.fam-pin-name {
+    display: block; font-weight: 700; font-size: .9rem;
+    color: var(--c-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.fam-pin-dest { font-size: .77rem; color: var(--c-accent); font-weight: 600; margin-top: 2px; }
+.fam-pin-addr { font-size: .76rem; color: var(--c-text-mid); margin-top: 2px; display: flex; align-items: center; gap: 4px; }
+.fam-pin-period {
+    font-size: .75rem; color: var(--c-text-mid); margin-top: 4px;
+    display: flex; align-items: center; gap: 5px; flex-wrap: wrap;
+}
+.fam-pin-period strong { color: var(--c-text); font-weight: 600; }
+/* lista-only (sem mapa) */
+.fam-hotel-addr-list { display: flex; flex-direction: column; gap: 12px; }
+.fam-addr-row {
+    display: flex; align-items: center; gap: 14px;
+    background: var(--c-bg-card); border-radius: var(--radius-sm);
+    box-shadow: var(--c-shadow-sm); padding: 14px 16px;
+}
+@@media (max-width: 700px) {
+    .fam-map-wrap { height: 260px; border-radius: var(--radius-sm); }
+    .fam-hotel-pins { grid-template-columns: 1fr; }
+}
+
+/* Acomodações dentro do hotel */
+.fam-acmd-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 14px; margin-top: 18px;
+}
+.fam-acmd-card {
+    border: 1px solid var(--c-line); border-radius: var(--radius-sm);
+    overflow: hidden; background: var(--c-bg);
+}
+.fam-acmd-card img { width: 100%; height: 130px; object-fit: cover; }
+.fam-acmd-body { padding: 12px 14px; }
+.fam-acmd-name { font-weight: 700; font-size: .88rem; color: var(--c-text); margin-bottom: 4px; }
+.fam-acmd-sub  { font-size: .77rem; color: var(--c-text-mid); }
+
+/* ── EXPERIÊNCIAS ── */
+.fam-exp-list { display: flex; flex-direction: column; gap: 24px; }
+.fam-exp-card {
+    background: var(--c-bg-card); border-radius: var(--radius);
+    box-shadow: var(--c-shadow); overflow: hidden;
+    display: grid; grid-template-columns: 280px 1fr;
+}
+.fam-exp-card-media { position: relative; overflow: hidden; min-height: 200px; }
+.fam-exp-card-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.fam-exp-card-media iframe { width: 100%; height: 100%; min-height: 200px; border: none; }
+.fam-exp-card-body { padding: 22px 24px; }
+.fam-exp-card-tag {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: .7rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
+    color: var(--c-warm); margin-bottom: 8px;
+}
+.fam-exp-card-title { font-size: 1.15rem; font-weight: 800; color: var(--c-text); margin-bottom: 8px; }
+.fam-exp-card-desc  { font-size: .88rem; color: var(--c-text-mid); line-height: 1.65; }
+.fam-exp-card-meta  { margin-top: 14px; display: flex; gap: 10px; flex-wrap: wrap; }
+.fam-exp-chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: .77rem; font-weight: 600;
+    background: var(--c-bg-alt); border-radius: 50px; padding: 4px 12px; color: var(--c-text-mid);
+}
+.fam-exp-chip i { color: var(--c-accent); }
+
+/* ── PASSSAGEIROS ── */
+.fam-pax-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 12px;
+}
+.fam-pax-card {
+    background: var(--c-bg-card); border-radius: var(--radius-sm);
+    box-shadow: var(--c-shadow-sm); padding: 14px 16px;
+    display: flex; align-items: center; gap: 12px;
+}
+.fam-pax-avatar {
+    width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
+    background: var(--c-accent); color: #fff;
+    display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: .9rem;
+}
+.fam-pax-name { font-weight: 700; font-size: .9rem; color: var(--c-text); }
+.fam-pax-sub  { font-size: .75rem; color: var(--c-text-mid); }
+
+/* ── VOOS ── */
+.fam-flight-card {
+    background: var(--c-bg-card); border-radius: var(--radius-sm);
+    box-shadow: var(--c-shadow-sm); overflow: hidden; margin-bottom: 16px;
+}
+.fam-flight-header {
+    background: linear-gradient(135deg, var(--c-hero-from), var(--c-accent));
+    padding: 16px 20px; color: #fff;
+}
+.fam-flight-route {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+.fam-flight-iata { font-size: 1.4rem; font-weight: 800; }
+.fam-flight-arrow { text-align: center; opacity: .7; font-size: 1.1rem; flex: 1; }
+.fam-flight-sub   { font-size: .75rem; opacity: .8; margin-top: 2px; }
+.fam-flight-body  { padding: 14px 20px; }
+.fam-flight-meta  { display: flex; flex-wrap: wrap; gap: 10px 20px; }
+.fam-flight-meta-item { display: flex; flex-direction: column; }
+.fam-flight-meta-item small { font-size: .7rem; color: var(--c-text-mid); text-transform: uppercase; letter-spacing: .04em; }
+.fam-flight-meta-item span  { font-size: .85rem; font-weight: 600; color: var(--c-text); }
+.fam-voo-group-title {
+    font-size: .8rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+    margin: 20px 0 10px; display: flex; align-items: center; gap: 6px;
+}
+
+/* ── TRANSPORTE ── */
+.fam-transp-list { display: flex; flex-direction: column; gap: 12px; }
+.fam-transp-card {
+    background: var(--c-bg-card); border-radius: var(--radius-sm); box-shadow: var(--c-shadow-sm);
+    padding: 16px 20px; display: flex; align-items: flex-start; gap: 14px;
+}
+.fam-transp-icon {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: var(--c-accent); color: #fff;
+    display: flex; align-items: center; justify-content: center; font-size: .9rem; flex-shrink: 0;
+}
+.fam-transp-name { font-weight: 700; font-size: .95rem; color: var(--c-text); }
+.fam-transp-desc { font-size: .83rem; color: var(--c-text-mid); margin-top: 4px; }
+
+/* ── SEGURO ── */
+.fam-seguro-card {
+    background: var(--c-bg-card); border-radius: var(--radius-sm); box-shadow: var(--c-shadow-sm);
+    padding: 20px 22px; margin-bottom: 14px;
+    border-left: 4px solid var(--c-accent);
+    display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: start;
+}
+.fam-seguro-icon {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: var(--c-accent); color: #fff;
+    display: flex; align-items: center; justify-content: center; font-size: 1rem;
+}
+.fam-seguro-name { font-weight: 800; font-size: 1rem; color: var(--c-text); margin-bottom: 4px; }
+.fam-seguro-sub  { font-size: .82rem; color: var(--c-text-mid); }
+
+/* ── RESUMO / CONDIÇÕES / VALORES ── */
+.fam-richtext { font-size: .92rem; line-height: 1.7; color: var(--c-text-mid); }
+.fam-richtext h1, .fam-richtext h2, .fam-richtext h3 { color: var(--c-text); margin: 12px 0 6px; }
+.fam-richtext ul, .fam-richtext ol { padding-left: 1.4em; }
+.fam-richtext table { width: 100%; border-collapse: collapse; }
+.fam-richtext td, .fam-richtext th { padding: 8px 10px; border: 1px solid var(--c-line); }
+.fam-richtext th { background: var(--c-bg-alt); font-weight: 700; }
+
+/* ── AVALIAÇÃO ── */
+.aval-section .fam-container { max-width: 900px; }
+.aval-group-title {
+    font-size: .82rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--c-accent); margin-bottom: 14px;
+}
+.aval-card {
+    background: var(--c-bg); border-radius: var(--radius-sm);
+    border: 1px solid var(--c-line); padding: 16px; height: 100%;
+}
+.aval-card-img { width: 100%; height: 120px; object-fit: cover; border-radius: 8px; margin-bottom: 10px; }
+.aval-card-name { font-weight: 700; font-size: .9rem; color: var(--c-text); margin-bottom: 4px; }
+.aval-card-sub  { font-size: .77rem; color: var(--c-text-mid); margin-bottom: 10px; }
+.aval-comment {
+    width: 100%; border: 1px solid var(--c-line); border-radius: 8px;
+    padding: 8px 10px; font-size: .82rem; font-family: var(--ff-body);
+    resize: vertical; margin-top: 8px; background: var(--c-bg-card);
+}
+.star-rating {
+    display: flex; flex-direction: row-reverse; justify-content: flex-end;
+    gap: 2px; margin: 8px 0;
+}
+.star-rating input { display: none; }
+.star-rating label {
+    font-size: 1.3rem; color: #d1d5db; cursor: pointer;
+    transition: color .1s;
+}
+.star-rating label::before { content: '★'; }
+.star-rating input:checked ~ label,
+.star-rating label:hover,
+.star-rating label:hover ~ label { color: var(--c-warm); }
+.aval-fav-btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: transparent; border: 1.5px solid var(--c-line);
+    border-radius: 50px; padding: 5px 12px; font-size: .77rem; font-weight: 600;
+    color: var(--c-text-mid); cursor: pointer; margin-top: 8px; transition: all .15s;
+}
+.aval-fav-btn:hover { border-color: #e11d48; color: #e11d48; }
+.aval-fav-btn.active { background: #fee2e2; border-color: #e11d48; color: #e11d48; }
+.aval-submit-wrap { margin-top: 28px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.btn-aval-submit {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--c-accent); color: #fff; border: none; border-radius: 50px;
+    padding: 13px 32px; font-size: .9rem; font-weight: 700; cursor: pointer; transition: opacity .2s;
+}
+.btn-aval-submit:hover { opacity: .88; }
+.aval-submitted-msg {
+    display: none; color: #16a34a; font-weight: 600; font-size: .9rem;
+    background: #dcfce7; border-radius: 8px; padding: 10px 20px;
+}
+
+/* ── CTA ── */
+.fam-cta {
+    background: linear-gradient(135deg, var(--c-hero-from) 0%, var(--c-accent) 100%);
+    padding: 72px 16px; text-align: center;
+}
+.fam-cta-emoji { font-size: 2.8rem; margin-bottom: 12px; }
+.fam-cta h2 { font-family: var(--ff-display); font-size: 2rem; color: #fff; font-weight: 800; margin-bottom: 12px; }
+.fam-cta p  { color: rgba(255,255,255,.82); max-width: 480px; margin: 0 auto 32px; font-size: 1rem; }
+.fam-cta-btns { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-bottom: 40px; }
+.btn-wa {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: #22c55e; color: #fff;
+    border-radius: 50px; padding: 14px 28px; font-size: .92rem; font-weight: 700;
+    text-decoration: none; transition: opacity .2s;
+}
+.btn-wa:hover { opacity: .88; }
+.btn-email {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(255,255,255,.15); border: 1.5px solid rgba(255,255,255,.4);
+    color: #fff; border-radius: 50px; padding: 14px 28px; font-size: .92rem; font-weight: 700;
+    text-decoration: none; transition: opacity .2s;
+}
+.btn-email:hover { opacity: .82; }
+.fam-agent-card {
+    display: inline-flex; flex-direction: column; align-items: center; gap: 10px;
+    background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2);
+    border-radius: 20px; padding: 20px 28px; color: rgba(255,255,255,.9);
+}
+.fam-agent-avatar {
+    width: 60px; height: 60px; border-radius: 50%;
+    background: rgba(255,255,255,.15); border: 2px solid rgba(255,255,255,.4);
+    display: flex; align-items: center; justify-content: center; font-size: 1.4rem; overflow: hidden;
+}
+.fam-agent-name   { font-weight: 800; font-size: 1rem; }
+.fam-agent-agency { font-size: .82rem; opacity: .7; }
+.fam-agent-contact { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; font-size: .82rem; }
+.fam-agent-contact span { display: flex; align-items: center; gap: 5px; }
+.fam-agent-contact i { color: var(--c-warm); }
+
+/* ── FOOTER ── */
+footer {
+    background: #0f1f2e; color: rgba(255,255,255,.6);
+    padding: 28px 16px; font-size: .82rem; text-align: center;
+}
+footer a { color: rgba(255,255,255,.6); }
+footer .fam-share-btns { display: flex; justify-content: center; gap: 8px; margin-top: 12px; }
+.fam-share-btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.15);
+    color: rgba(255,255,255,.7); border-radius: 8px; padding: 6px 14px;
+    font-size: .77rem; font-weight: 600; cursor: pointer; text-decoration: none; transition: opacity .2s;
+}
+.fam-share-btn:hover { opacity: .75; }
+
+/* lightbox → _LayoutPublico.cshtml */
+
+/* ── PREVIEW BAR ── */
+.preview-bar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 9999;
+    background: #1A2B3C; color: #fff;
+    padding: .55rem 1rem; display: flex; align-items: center; gap: .75rem; flex-wrap: wrap;
+    box-shadow: 0 2px 12px rgba(0,0,0,.35); font-size: .82rem;
+}
+.preview-bar-left  { display: flex; align-items: center; gap: .6rem; flex: 1; min-width: 0; }
+.preview-bar-right { display: flex; align-items: center; gap: .45rem; flex-wrap: wrap; margin-left: auto; }
+.preview-badge {
+    background: #F59E0B; color: #1A2B3C; font-size: .7rem; font-weight: 700;
+    padding: .18rem .55rem; border-radius: 50px; white-space: nowrap; letter-spacing: .05em;
+}
+.preview-bar select {
+    background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.25);
+    color: #fff; border-radius: 6px; padding: .28rem .55rem; font-size: .78rem; cursor: pointer;
+}
+.preview-bar select option { background: #1A2B3C; }
+.btn-pb {
+    display: inline-flex; align-items: center; gap: .3rem;
+    padding: .3rem .75rem; border-radius: 6px; font-size: .77rem; font-weight: 600;
+    text-decoration: none; border: none; cursor: pointer; transition: opacity .2s;
+}
+.btn-pb:hover { opacity: .82; }
+.btn-pb-outline { background: transparent; border: 1.5px solid rgba(255,255,255,.35) !important; color: #fff !important; }
+.btn-pb-blue    { background: #005197; color: #fff !important; }
+.btn-pb-teal    { background: #2ec4b6; color: #fff !important; }
+body.has-preview-bar { padding-top: 46px; }
+@@media (max-width: 600px) {
+    .preview-bar { padding: .45rem .6rem; gap: .4rem; }
+    .btn-pb .pb-label { display: none; }
+}
+
+/* ── RESPONSIVO ── */
+@@media (max-width: 768px) {
+    .fam-exp-card { grid-template-columns: 1fr; }
+    .fam-exp-card-media { min-height: 180px; }
+    .fam-hero { min-height: 60vh; }
+    .fam-hero h1 { font-size: 1.9rem; }
+    .fam-hotel-gallery { height: 200px; }
+    .fam-hotel-gallery .carousel-item img { height: 200px; }
+    .fam-section { padding: 48px 16px; }
+}
+@@media (max-width: 480px) {
+    .fam-hero-stats { gap: 8px; }
+    .fam-hero-stat { padding: 10px 14px; }
+    .fam-hero-stat strong { font-size: 1.2rem; }
+    .fam-acmd-grid { grid-template-columns: 1fr; }
+}
+</style>
+}
+
+<div id="scrollBar"></div>
+
+@if (isPreview)
+{
+<div class="preview-bar" id="previewBar">
+    <div class="preview-bar-left">
+        <span class="preview-badge">PRÉVIA</span>
+        <span class="d-none d-sm-inline" style="opacity:.72;">Esta visualização não é contabilizada como acesso do cliente.</span>
+    </div>
+    <div class="preview-bar-right">
+        @if (layoutsPreview.Any())
+        {
+            <select id="layoutSelector" title="Trocar layout">
+                <option value="">Padrão</option>
+                @foreach (var lyt in layoutsPreview)
+                {
+                    if (Model.LayoutId == lyt.Id) { <option value="@lyt.Id" selected>@lyt.Nome</option> }
+                    else { <option value="@lyt.Id">@lyt.Nome</option> }
+                }
+            </select>
+            <button id="btnSalvarLayout" class="btn-pb btn-pb-teal" style="display:none">
+                <i class="fas fa-save"></i><span class="pb-label"> Salvar layout</span>
+            </button>
+        }
+        <a href="/Proposta/Editar/@Model.Id" class="btn-pb btn-pb-outline">
+            <i class="fas fa-pen"></i><span class="pb-label"> Editar</span>
+        </a>
+        @if (!string.IsNullOrEmpty(linkPublico))
+        {
+            <button class="btn-pb btn-pb-outline" id="btnCopiarLink" title="Copiar link">
+                <i class="fas fa-copy"></i><span class="pb-label"> Copiar link</span>
+            </button>
+            <a href="@linkPublico" target="_blank" rel="noopener" class="btn-pb btn-pb-blue">
+                <i class="fas fa-external-link-alt"></i><span class="pb-label"> Link do cliente</span>
+            </a>
+        }
+        else { <span style="opacity:.5;font-size:.75rem;"><i class="fas fa-lock me-1"></i>Link inativo</span> }
+    </div>
+</div>
+}
+
+<!-- NAV -->
+<nav class="fam-nav">
+    <div class="fam-nav-inner">
+        <span class="fam-nav-brand">@Model.Titulo</span>
+        <ul class="fam-nav-links">
+            @if (famDestOrd.Any()) { <li><a href="#sec-roteiro">A viagem</a></li> }
+            @if (_famTemMapSecao)                     { <li><a href="#sec-mapa-hoteis">No mapa</a></li> }
+            @if (famTemHospedagem)                   { <li><a href="#sec-hospedagem">Onde ficar</a></li> }
+            @if (famTemExperiencias)                  { <li><a href="#sec-experiencias">O que fazer</a></li> }
+            @if (temPassageiros)                      { <li><a href="#sec-passageiros">Passageiros</a></li> }
+            @if (temVoos)                             { <li><a href="#sec-voos">Voos</a></li> }
+            @if (temSeguros)                          { <li><a href="#sec-seguro">Seguro</a></li> }
+            @if (temResumo)                           { <li><a href="#sec-resumo">Resumo</a></li> }
+            @if (temCondicoes || temValores)          { <li><a href="#sec-valores">Valores</a></li> }
+            @if (temAvaliacao)                        { <li><a href="#sec-avaliacao">Avaliação</a></li> }
+            <li><a href="#sec-cta">Fale conosco</a></li>
+        </ul>
+    </div>
+</nav>
+
+<!-- HERO -->
+<section class="fam-hero" id="top">
+    <div class="fam-hero-bg"></div>
+    @if (!string.IsNullOrEmpty(Model.FotoCapa))
+    {
+        <div class="fam-hero-photo" style="background-image:url('@Model.FotoCapa');"></div>
+    }
+    <div class="fam-hero-overlay"></div>
+    <div class="fam-hero-content">
+        <div class="fam-hero-pill">
+            <i class="fas fa-map-marked-alt"></i>
+            <span>Proposta Familiar</span>
+            &nbsp;·&nbsp;<span>@Model.Usuario.Nome</span>
+        </div>
+        <h1>@Model.Titulo</h1>
+        @if (!string.IsNullOrEmpty(Model.ObservacoesGerais))
+        {
+            <p class="fam-hero-sub">@(Model.ObservacoesGerais.Length > 140 ? Model.ObservacoesGerais.Substring(0,140) + "…" : Model.ObservacoesGerais)</p>
+        }
+        <div class="fam-hero-stats">
+            @if (Model.DataInicio.HasValue && Model.DataFim.HasValue)
+            {
+                var _dias = (Model.DataFim.Value - Model.DataInicio.Value).Days + 1;
+                <div class="fam-hero-stat">
+                    <strong>@_dias</strong>
+                    <small>@(_dias == 1 ? "dia" : "dias") · @Model.DataInicio.Value.ToString("dd/MM") a @Model.DataFim.Value.ToString("dd/MM/yy")</small>
+                </div>
+            }
+            @{ var _totalPax = Model.NumeroPassageiros + Model.NumeroCriancas; }
+            <div class="fam-hero-stat">
+                <strong>@_totalPax</strong>
+                <small>@(_totalPax == 1 ? "passageiro" : "passageiros")@(Model.NumeroCriancas > 0 ? $" ({Model.NumeroCriancas} crianças)" : "")</small>
+            </div>
+            @if (famDestOrd.Any())
+            {
+                <div class="fam-hero-stat">
+                    <strong>@famDestOrd.Count</strong>
+                    <small>@(famDestOrd.Count == 1 ? "destino" : "destinos")</small>
+                </div>
+            }
+            @if (temVoos)
+            {
+                <div class="fam-hero-stat">
+                    <strong>@Model.Voos.Count</strong>
+                    <small>@(Model.Voos.Count == 1 ? "voo" : "voos")</small>
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+<!-- HIGHLIGHTS -->
+@{
+    bool _hTemTransp2 = famDestOrd.Any(d => d.Transportes.Any());
+}
+<div class="fam-highlights">
+    <div class="fam-highlights-inner">
+        @if (famDestOrd.Any())
+        {
+            <span class="fam-chip"><i class="fas fa-map-marked-alt"></i>@famDestOrd.Count @(famDestOrd.Count == 1 ? "destino" : "destinos")</span>
+        }
+        @if (temVoos) { <span class="fam-chip"><i class="fas fa-plane"></i>@Model.Voos.Count @(Model.Voos.Count == 1 ? "voo" : "voos")</span> }
+        @if (famTemHospedagem)
+        {
+            var _nh = todasHospedagens.Count;
+            <span class="fam-chip"><i class="fas fa-hotel"></i>@_nh @(_nh == 1 ? "hospedagem" : "hospedagens")</span>
+        }
+        @if (famTemExperiencias)
+        {
+            var _ne = todasExperiencias.Count;
+            <span class="fam-chip"><i class="fas fa-hiking"></i>@_ne @(_ne == 1 ? "experiência" : "experiências")</span>
+        }
+        @if (_hTemTransp2) { <span class="fam-chip"><i class="fas fa-car"></i>Transportes</span> }
+        @if (temSeguros)   { <span class="fam-chip"><i class="fas fa-shield-alt"></i>Seguro incluído</span> }
+    </div>
+</div>
+
+<!-- ═══ VISÃO DA VIAGEM — períodos por destino ═══ -->
+@if (famDestOrd.Any())
+{
+<section class="fam-section" id="sec-roteiro">
+    <div class="fam-container">
+        <h2 class="fam-section-h2"><i class="fas fa-map-marked-alt" style="color:var(--c-accent);"></i>Como a viagem está organizada</h2>
+        <p class="fam-section-sub">Cada destino, período e o que está previsto para vocês.</p>
+        <div class="fam-section-divider"></div>
+
+        <div class="fam-dest-periods">
+        @for (int _di = 0; _di < famDestOrd.Count; _di++)
+        {
+            var _d  = famDestOrd[_di];
+            var _dc = famDestCores.GetValueOrDefault(_d.Id, famPaleta[0]);
+
+            DateTime? _dInicio = _d.DataChegada;
+            DateTime? _dFim    = _d.DataSaida;
+            if (!_dInicio.HasValue && _d.Hospedagens.Any(h => h.CheckIn.HasValue))
+                _dInicio = _d.Hospedagens.Where(h => h.CheckIn.HasValue).Min(h => h.CheckIn);
+            if (!_dFim.HasValue && _d.Hospedagens.Any(h => h.CheckOut.HasValue))
+                _dFim = _d.Hospedagens.Where(h => h.CheckOut.HasValue).Max(h => h.CheckOut);
+
+            bool _dTemPeriodo = _dInicio.HasValue || _dFim.HasValue;
+            int? _dNoites = (_dInicio.HasValue && _dFim.HasValue)
+                ? (int?)(_dFim.Value.Date - _dInicio.Value.Date).TotalDays : null;
+
+            var _dHosp = _d.Hospedagens.OrderBy(h => h.CheckIn ?? DateTime.MaxValue).ToList();
+            var _dExps = _d.Experiencias.OrderBy(e => e.Ordem).ToList();
+
+            <div class="fam-dest-period" style="--dest-cor: @_dc;">
+                <div class="fam-dp-num">@(_di + 1)</div>
+                <div class="fam-dp-body">
+                    <div class="fam-dp-header">
+                        <div>
+                            <h3 class="fam-dp-name">@_d.Nome</h3>
+                            @{
+                                var _locParts = new[]{ _d.Cidade, _d.Pais }.Where(s => !string.IsNullOrEmpty(s));
+                                var _locStr = string.Join(", ", _locParts);
+                            }
+                            @if (!string.IsNullOrEmpty(_locStr))
+                            {
+                                <div class="fam-dp-location"><i class="fas fa-map-marker-alt"></i>@_locStr</div>
+                            }
+                        </div>
+                        @if (_dTemPeriodo)
+                        {
+                            <div class="fam-dp-period">
+                                @if (_dInicio.HasValue) { <text>@_dInicio.Value.ToString("dd/MM", famPtBR)</text> }
+                                @if (_dInicio.HasValue && _dFim.HasValue) { <text> a </text> }
+                                @if (_dFim.HasValue) { <text>@_dFim.Value.ToString("dd/MM/yy", famPtBR)</text> }
+                                @if (_dNoites.HasValue && _dNoites > 0)
+                                {
+                                    <span class="fam-dp-noites">@_dNoites @(_dNoites == 1 ? "noite" : "noites")</span>
+                                }
+                            </div>
+                        }
+                    </div>
+
+                    @if (_dHosp.Any())
+                    {
+                        <div class="fam-dp-block">
+                            <span class="fam-dp-block-label"><i class="fas fa-bed"></i>Onde ficar</span>
+                            <div class="fam-dp-items">
+                                @foreach (var _h in _dHosp)
+                                {
+                                    var _hThumb = _h.Fotos.OrderBy(f => f.Ordem).FirstOrDefault()?.CaminhoFoto;
+                                    <div class="fam-dp-item">
+                                        @if (!string.IsNullOrEmpty(_hThumb))
+                                        {
+                                            <img class="fam-dp-thumb" src="@_hThumb" alt="@_h.Nome" loading="lazy" />
+                                        }
+                                        <div>
+                                            <span class="fam-dp-item-name">@_h.Nome</span>
+                                            @if (_h.TipoPensao != TipoPensao.SemPensao)
+                                            {
+                                                var _tp = _h.TipoPensao switch {
+                                                    TipoPensao.CafeDaManha     => "Café da manhã",
+                                                    TipoPensao.MeiaPensao      => "Meia pensão",
+                                                    TipoPensao.PensaoCompleta  => "Pensão completa",
+                                                    TipoPensao.AllInclusive    => "All inclusive",
+                                                    _                          => _h.TipoPensao.ToString()
+                                                };
+                                                <span class="fam-dp-item-sub">@_tp</span>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    @if (_dExps.Any())
+                    {
+                        <div class="fam-dp-block">
+                            <span class="fam-dp-block-label"><i class="fas fa-star"></i>O que fazer</span>
+                            <div class="fam-dp-items">
+                                @foreach (var _e in _dExps)
+                                {
+                                    var _eThumb = _e.Imagens.OrderBy(i => i.Ordem).FirstOrDefault()?.CaminhoImagem;
+                                    <div class="fam-dp-item">
+                                        @if (!string.IsNullOrEmpty(_eThumb))
+                                        {
+                                            <img class="fam-dp-thumb" src="@_eThumb" alt="@_e.TipoPasseio" loading="lazy" />
+                                        }
+                                        <div>
+                                            <span class="fam-dp-item-name">@_e.TipoPasseio</span>
+                                            @if (!string.IsNullOrEmpty(_e.Descricao))
+                                            {
+                                                <span class="fam-dp-item-sub">@(_e.Descricao!.Length > 60 ? _e.Descricao.Substring(0,60) + "…" : _e.Descricao)</span>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+        </div>
+    </div>
+</section>
+}
+
+<!-- ═══ MAPA DE HOSPEDAGENS ═══ -->
+@if (_famTemMapSecao)
+{
+<section class="fam-section fam-map-section" id="sec-mapa-hoteis">
+    <div class="fam-container">
+        <h2 class="fam-section-h2"><i class="fas fa-map-marked-alt" style="color:var(--c-accent);"></i>Onde vocês vão ficar no mapa</h2>
+        <p class="fam-section-sub">Uma visão simples das hospedagens previstas para a viagem.</p>
+        <div class="fam-section-divider"></div>
+
+        @if (_famTemMapa)
+        {
+            <div class="fam-map-wrap">
+                <div id="famHotelMap"></div>
+            </div>
+        }
+
+        @if (_famListaHosp.Any())
+        {
+            <div class="fam-hotel-pins">
+            @for (int _mi = 0; _mi < _famListaHosp.Count; _mi++)
+            {
+                var _mh = _famListaHosp[_mi];
+                string _mPeriodo = "";
+                if (_mh.CheckIn.HasValue && _mh.CheckOut.HasValue)
+                    _mPeriodo = _mh.CheckIn.Value.ToString("dd/MM", famPtBR) + " a " + _mh.CheckOut.Value.ToString("dd/MM/yy", famPtBR);
+                else if (_mh.CheckIn.HasValue)
+                    _mPeriodo = "Check-in: " + _mh.CheckIn.Value.ToString("dd/MM/yy", famPtBR);
+
+                <div class="fam-hotel-pin-card" style="--pin-cor: @_mh.Cor;">
+                    <div class="fam-pin-num">@(_mi + 1)</div>
+                    <div class="fam-pin-body">
+                        <span class="fam-pin-name">@_mh.Nome</span>
+                        <div class="fam-pin-dest">@_mh.DestNome</div>
+                        @if (!string.IsNullOrEmpty(_mh.Endereco))
+                        {
+                            <div class="fam-pin-addr"><i class="fas fa-map-marker-alt" style="color:var(--pin-cor);font-size:.7rem;"></i>@_mh.Endereco</div>
+                        }
+                        @if (!string.IsNullOrEmpty(_mPeriodo))
+                        {
+                            <div class="fam-pin-period"><i class="fas fa-calendar-alt" style="color:var(--c-text-mid);font-size:.7rem;"></i><strong>@_mPeriodo</strong></div>
+                        }
+                    </div>
+                </div>
+            }
+            </div>
+        }
+    </div>
+</section>
+}
+
+<!-- ═══ HOSPEDAGEM ═══ -->
+@if (famTemHospedagem)
+{
+<section class="fam-section" id="sec-hospedagem">
+    <div class="fam-container">
+        <h2 class="fam-section-h2"><i class="fas fa-bed" style="color:var(--c-accent);"></i>Hospedagem</h2>
+        <p class="fam-section-sub">Acomodações selecionadas para o conforto de todos.</p>
+        <div class="fam-section-divider"></div>
+
+        @foreach (var dest in famDestOrd)
+        {
+            var _destCor3 = famDestCores.GetValueOrDefault(dest.Id, famPaleta[0]);
+            foreach (var hosp in dest.Hospedagens.OrderBy(h => h.CheckIn ?? DateTime.MaxValue))
+            {
+                var _hospFotos = hosp.Fotos.OrderBy(f => f.Ordem).ToList();
+                var _noites = (hosp.CheckIn.HasValue && hosp.CheckOut.HasValue)
+                    ? (int)(hosp.CheckOut.Value.Date - hosp.CheckIn.Value.Date).TotalDays
+                    : 0;
+                <div class="fam-hotel-card">
+                    @if (_hospFotos.Any())
+                    {
+                        var _cid     = "hospCar_" + hosp.Id.ToString("N");
+                var _hospGid = "gal-h-" + hosp.Id.ToString("N");
+                        <div class="fam-hotel-gallery">
+                            @if (_hospFotos.Count == 1)
+                            {
+                                <img src="@_hospFotos[0].CaminhoFoto" alt="@hosp.Nome"
+                                     data-gallery-group="@_hospGid"
+                                     data-gallery-src="@_hospFotos[0].CaminhoFoto"
+                                     data-gallery-caption="@hosp.Nome"
+                                     style="cursor:zoom-in;" />
+                            }
+                            else
+                            {
+                                <div id="@_cid" class="carousel slide" data-bs-ride="false">
+                                    <div class="carousel-inner">
+                                        @for (int _fi2 = 0; _fi2 < _hospFotos.Count; _fi2++)
+                                        {
+                                            <div class="carousel-item @(_fi2==0?"active":"")">
+                                                <img src="@_hospFotos[_fi2].CaminhoFoto" alt="@hosp.Nome"
+                                                     data-gallery-group="@_hospGid"
+                                                     data-gallery-src="@_hospFotos[_fi2].CaminhoFoto"
+                                                     data-gallery-caption="@hosp.Nome"
+                                                     style="cursor:zoom-in;" />
+                                            </div>
+                                        }
+                                    </div>
+                                    <button class="carousel-control-prev" type="button" data-bs-target="#@_cid" data-bs-slide="prev">
+                                        <span class="carousel-control-prev-icon"></span>
+                                    </button>
+                                    <button class="carousel-control-next" type="button" data-bs-target="#@_cid" data-bs-slide="next">
+                                        <span class="carousel-control-next-icon"></span>
+                                    </button>
+                                </div>
+                            }
+                        </div>
+                    }
+                    <div class="fam-hotel-body">
+                        <span class="fam-hotel-dest-tag" style="color:@_destCor3;">@dest.Nome</span>
+                        <div class="fam-hotel-name">@hosp.Nome</div>
+                        @if (!string.IsNullOrEmpty(hosp.Endereco))
+                        {
+                            <div class="fam-hotel-address"><i class="fas fa-map-marker-alt" style="color:var(--c-accent);"></i>@hosp.Endereco</div>
+                        }
+                        <div class="fam-hotel-meta">
+                            <span class="fam-hotel-chip"><i class="fas fa-star"></i>@hosp.Categoria.ToString()</span>
+                            @if (_noites > 0) { <span class="fam-hotel-chip"><i class="fas fa-moon"></i>@_noites @(_noites == 1 ? "noite" : "noites")</span> }
+                            @if (hosp.TipoPensao != TipoPensao.SemPensao) { <span class="fam-hotel-chip"><i class="fas fa-utensils"></i>@hosp.TipoPensao.ToString()</span> }
+                        </div>
+                        @if (hosp.CheckIn.HasValue || hosp.CheckOut.HasValue)
+                        {
+                            <div class="fam-hotel-dates">
+                                @if (hosp.CheckIn.HasValue)
+                                {
+                                    <span><i class="fas fa-sign-in-alt" style="color:var(--c-accent);"></i>
+                                        Check-in: <strong>@hosp.CheckIn.Value.ToString("dd 'de' MMM 'de' yyyy", famPtBR) @hosp.CheckIn.Value.ToString("HH:mm")</strong>
+                                    </span>
+                                }
+                                @if (hosp.CheckOut.HasValue)
+                                {
+                                    <span><i class="fas fa-sign-out-alt" style="color:var(--c-accent);"></i>
+                                        Check-out: <strong>@hosp.CheckOut.Value.ToString("dd 'de' MMM 'de' yyyy", famPtBR) @hosp.CheckOut.Value.ToString("HH:mm")</strong>
+                                    </span>
+                                }
+                            </div>
+                        }
+                        @if (!string.IsNullOrEmpty(hosp.Descricao))
+                        {
+                            <div class="fam-hotel-desc">@hosp.Descricao</div>
+                        }
+                        @if (hosp.Acomodacoes.Any())
+                        {
+                            <div class="fam-acmd-grid">
+                                @foreach (var acmd in hosp.Acomodacoes.OrderBy(a => a.Ordem))
+                                {
+                                    var _acFoto = acmd.Fotos.OrderBy(f => f.Ordem).FirstOrDefault();
+                                    <div class="fam-acmd-card">
+                                        @if (_acFoto != null)
+                                        {
+                                            <img src="@_acFoto.CaminhoFoto" alt="@acmd.Nome"
+                                                 onclick="openLightbox('@_acFoto.CaminhoFoto','@acmd.Nome')" style="cursor:zoom-in;" />
+                                        }
+                                        <div class="fam-acmd-body">
+                                            <div class="fam-acmd-name">@acmd.Nome</div>
+                                            @if (!string.IsNullOrEmpty(acmd.Descricao))
+                                            {
+                                                <div class="fam-acmd-sub">@(acmd.Descricao.Length > 90 ? acmd.Descricao.Substring(0,90) + "…" : acmd.Descricao)</div>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</section>
+}
+
+<!-- ═══ EXPERIÊNCIAS ═══ -->
+@if (famTemExperiencias)
+{
+<section class="fam-section" id="sec-experiencias">
+    <div class="fam-container">
+        <h2 class="fam-section-h2"><i class="fas fa-hiking" style="color:var(--c-accent);"></i>Experiências</h2>
+        <p class="fam-section-sub">Experiências e passeios preparados para criar memórias únicas.</p>
+        <div class="fam-section-divider"></div>
+
+        <div class="fam-exp-list">
+            @foreach (var dest in famDestOrd)
+            {
+                var _destCor4 = famDestCores.GetValueOrDefault(dest.Id, famPaleta[0]);
+                @foreach (var exp in dest.Experiencias.OrderBy(e => e.Ordem))
+                {
+                    var _expImgs  = exp.Imagens.OrderBy(i => i.Ordem).ToList();
+                    var _expImg   = _expImgs.FirstOrDefault();
+                    bool _hasVid  = !string.IsNullOrEmpty(exp.VideoUrl);
+                    bool _hasMedia = _expImg != null || _hasVid;
+                    var _expGid   = "gal-e-" + exp.Id.ToString("N");
+                    <div class="fam-exp-card">
+                        @if (_hasMedia)
+                        {
+                            <div class="fam-exp-card-media">
+                                @if (_hasVid)
+                                {
+                                    <iframe src="@EmbedUrl(exp.VideoUrl)" allowfullscreen title="@exp.TipoPasseio"></iframe>
+                                }
+                                else if (_expImg != null)
+                                {
+                                    <img src="@_expImg.CaminhoImagem" alt="@exp.TipoPasseio"
+                                         data-gallery-group="@_expGid"
+                                         data-gallery-src="@_expImg.CaminhoImagem"
+                                         data-gallery-caption="@exp.TipoPasseio"
+                                         style="cursor:zoom-in;" />
+                                }
+                            </div>
+                        }
+                        <div class="fam-exp-card-body">
+                            <div class="fam-exp-card-tag" style="color:@_destCor4;">
+                                <i class="fas fa-map-marker-alt"></i>@dest.Nome
+                            </div>
+                            <div class="fam-exp-card-title">@exp.TipoPasseio</div>
+                            @if (!string.IsNullOrEmpty(exp.Descricao))
+                            {
+                                <div class="fam-exp-card-desc">@exp.Descricao</div>
+                            }
+                            <div class="fam-exp-card-meta">
+                                @if (exp.DataInicio.HasValue)
+                                {
+                                    <span class="fam-exp-chip"><i class="fas fa-calendar"></i>@exp.DataInicio.Value.ToString("dd/MM/yyyy", famPtBR)@(exp.DataInicio.Value.Hour != 0 ? " " + exp.DataInicio.Value.ToString("HH:mm") : "")</span>
+                                }
+                                @if (exp.Valor.HasValue && exp.Valor.Value > 0)
+                                {
+                                    <span class="fam-exp-chip"><i class="fas fa-tag"></i>R$ @exp.Valor.Value.ToString("N2")</span>
+                                }
+                            </div>
+                            @if (_expImgs.Count > 1)
+                            {
+                                var _expCarId = "expCar_" + exp.Id.ToString("N");
+                                <div id="@_expCarId" class="carousel slide mt-3" data-bs-ride="false" style="border-radius:10px;overflow:hidden;">
+                                    <div class="carousel-inner">
+                                        @for (int _ei = 0; _ei < _expImgs.Count; _ei++)
+                                        {
+                                            <div class="carousel-item @(_ei==0?"active":"")">
+                                                <img src="@_expImgs[_ei].CaminhoImagem" alt="@exp.TipoPasseio"
+                                                     data-gallery-group="@_expGid"
+                                                     data-gallery-src="@_expImgs[_ei].CaminhoImagem"
+                                                     data-gallery-caption="@exp.TipoPasseio"
+                                                     style="width:100%;height:160px;object-fit:cover;cursor:zoom-in;" />
+                                            </div>
+                                        }
+                                    </div>
+                                    <button class="carousel-control-prev" type="button" data-bs-target="#@_expCarId" data-bs-slide="prev">
+                                        <span class="carousel-control-prev-icon"></span>
+                                    </button>
+                                    <button class="carousel-control-next" type="button" data-bs-target="#@_expCarId" data-bs-slide="next">
+                                        <span class="carousel-control-next-icon"></span>
+                                    </button>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</section>
+}
+
+<!-- ═══ PASSAGEIROS ═══ -->
+@if (temPassageiros)
+{
+<section class="fam-section" id="sec-passageiros">
+    <div class="fam-container">
+        <h2 class="fam-section-h2"><i class="fas fa-users" style="color:var(--c-accent);"></i>Quem vai nessa aventura</h2>
+        <div class="fam-section-divider"></div>
+        <div class="fam-pax-grid">
+            @if (Model.Cliente != null)
+            {
+                var _ini = Model.Cliente.Nome.Length > 0 ? Model.Cliente.Nome.Substring(0,1).ToUpper() : "?";
+                <div class="fam-pax-card">
+                    <div class="fam-pax-avatar">@_ini</div>
+                    <div>
+                        <div class="fam-pax-name">@Model.Cliente.Nome</div>
+                        <div class="fam-pax-sub">Titular</div>
+                    </div>
+                </div>
+            }
+            @foreach (var pax in Model.PassageirosProposta.OrderBy(p => p.Ordem))
+            {
+                var _ini2 = pax.Nome.Length > 0 ? pax.Nome.Substring(0,1).ToUpper() : "?";
+                <div class="fam-pax-card">
+                    <div class="fam-pax-avatar">@_ini2</div>
+                    <div>
+                        <div class="fam-pax-name">@pax.Nome</div>
+                        <div class="fam-pax-sub">
+                            @if (pax.DataNascimento.HasValue)
+                            {
+                                var _age = (DateTime.Today - pax.DataNascimento.Value).Days / 365;
+                                <text>@_age anos</text>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</section>
+}
+
+<!-- ═══ VOOS ═══ -->
+@if (temVoos)
+{
+    var gruposVooFam = new[] {
+        new { Titulo = "Voos de Ida",    Cor = "#3B82F6", Icone = "fas fa-plane",          Voos = Model.Voos.Where(v => v.TipoVoo == TipoVoo.Ida).OrderBy(v => v.Ordem).ToList() },
+        new { Titulo = "Voos Internos",  Cor = "#8B5CF6", Icone = "fas fa-plane-departure", Voos = Model.Voos.Where(v => v.TipoVoo == TipoVoo.Interno).OrderBy(v => v.Ordem).ToList() },
+        new { Titulo = "Voos de Volta",  Cor = "#10B981", Icone = "fas fa-plane-arrival",   Voos = Model.Voos.Where(v => v.TipoVoo == TipoVoo.Volta).OrderBy(v => v.Ordem).ToList() },
+    };
+<section class="fam-section" id="sec-voos">
+    <div class="fam-container">
+        <h2 class="fam-section-h2"><i class="fas fa-plane-departure" style="color:var(--c-accent);"></i>Os voos da família</h2>
+        <div class="fam-section-divider"></div>
+        @foreach (var _gv in gruposVooFam)
+        {
+            if (!_gv.Voos.Any()) { continue; }
+            <div class="fam-voo-group-title" style="color:@_gv.Cor;">
+                <i class="@_gv.Icone"></i>@_gv.Titulo
+            </div>
+            <div class="row g-3 mb-4">
+                @foreach (var _v in _gv.Voos)
+                {
+                    var _vPartida = _v.HorarioSaida?.ToString("dd/MM/yyyy") ?? "—";
+                    var _vChegada = _v.HorarioChegada?.ToString("dd/MM/yyyy") ?? "—";
+                    var _vHoraP   = _v.HorarioSaida?.ToString(@"HH\:mm") ?? "";
+                    var _vHoraC   = _v.HorarioChegada?.ToString(@"HH\:mm") ?? "";
+                    <div class="col-md-6">
+                        <div class="fam-flight-card">
+                            <div class="fam-flight-header">
+                                <div class="fam-flight-route">
+                                    <div>
+                                        <div class="fam-flight-iata">@(_v.Origem ?? "—")</div>
+                                        <div class="fam-flight-sub">@_vPartida @_vHoraP</div>
+                                    </div>
+                                    <div class="fam-flight-arrow"><i class="fas fa-long-arrow-alt-right fa-lg"></i></div>
+                                    <div class="text-end">
+                                        <div class="fam-flight-iata">@(_v.Destino ?? "—")</div>
+                                        <div class="fam-flight-sub">@_vChegada @_vHoraC</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="fam-flight-body">
+                                <div class="fam-flight-meta">
+                                    @if (!string.IsNullOrEmpty(_v.Companhia))
+                                    {
+                                        <div class="fam-flight-meta-item"><small>Companhia</small><span>@_v.Companhia @(!string.IsNullOrEmpty(_v.NumeroVoo) ? "· " + _v.NumeroVoo : "")</span></div>
+                                    }
+                                    @if (!string.IsNullOrEmpty(_v.Classe))
+                                    {
+                                        <div class="fam-flight-meta-item"><small>Classe</small><span>@_v.Classe</span></div>
+                                    }
+                                    @if (!string.IsNullOrEmpty(_v.Duracao))
+                                    {
+                                        <div class="fam-flight-meta-item"><small>Duração</small><span>@_v.Duracao</span></div>
+                                    }
+                                    @{
+                                        bool _vTemBag = _v.BagagemItemPessoalDescricao != null || _v.BagagemMaoPeso.HasValue || _v.BagagemDespachadaPeso.HasValue;
+                                    }
+                                    @if (_vTemBag)
+                                    {
+                                        <div class="fam-flight-meta-item">
+                                            <small>Bagagem</small>
+                                            <span>
+                                                @if (_v.BagagemItemPessoalDescricao != null) { <text>Item pessoal · </text> }
+                                                @if (_v.BagagemMaoPeso.HasValue) { <text>Mão @(_v.BagagemMaoPeso.Value.ToString("0"))kg · </text> }
+                                                @if (_v.BagagemDespachadaPeso.HasValue) { <text>Desp. @(_v.BagagemDespachadaPeso.Value.ToString("0"))kg</text> }
+                                            </span>
+                                        </div>
+                                    }
+                                </div>
+                                @if (_v.Passageiros.Any())
+                                {
+                                    <div style="margin-top:8px;font-size:.78rem;color:var(--c-text-mid);">
+                                        <i class="fas fa-user me-1" style="color:var(--c-accent);"></i>@string.Join(", ", _v.Passageiros.Select(p => p.Nome))
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</section>
+}
+
+<!-- ═══ TRANSPORTES ═══ -->
+@if (famTemTransporte)
+{
+<section class="fam-section" id="sec-transportes">
+    <div class="fam-container">
+        <h2 class="fam-section-h2"><i class="fas fa-car" style="color:var(--c-accent);"></i>Transportes</h2>
+        <div class="fam-section-divider"></div>
+        @foreach (var dest in famDestOrd)
+        {
+            if (!dest.Transportes.Any()) { continue; }
+            <div class="fam-transp-list">
+                @foreach (var tr in dest.Transportes.OrderBy(t => t.Ordem))
+                {
+                    <div class="fam-transp-card">
+                        <div class="fam-transp-icon"><i class="fas fa-car"></i></div>
+                        <div>
+                            <div class="fam-transp-name">@tr.Titulo</div>
+                            @if (!string.IsNullOrEmpty(tr.Descricao))
+                            {
+                                <div class="fam-transp-desc">@tr.Descricao</div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</section>
+}
+
+<!-- ═══ SEGURO ═══ -->
+@if (temSeguros)
+{
+<section class="fam-section" id="sec-seguro">
+    <div class="fam-container">
+        <h2 class="fam-section-h2"><i class="fas fa-shield-alt" style="color:var(--c-accent);"></i>Seguro de viagem</h2>
+        <p class="fam-section-sub">A família viaja com toda a proteção necessária.</p>
+        <div class="fam-section-divider"></div>
+        @foreach (var seg in Model.Seguros.OrderBy(s => s.Ordem))
+        {
+            <div class="fam-seguro-card">
+                <div class="fam-seguro-icon"><i class="fas fa-shield-alt"></i></div>
+                <div>
+                    <div class="fam-seguro-name">@seg.Titulo</div>
+                    @if (!string.IsNullOrEmpty(seg.Descricao)) { <div class="fam-seguro-sub">@seg.Descricao</div> }
+                </div>
+            </div>
+        }
+    </div>
+</section>
+}
+
+<!-- ═══ RESUMO ═══ -->
+@if (temResumo)
+{
+<section class="fam-section" id="sec-resumo">
+    <div class="fam-container">
+        <h2 class="fam-section-h2"><i class="fas fa-file-alt" style="color:var(--c-accent);"></i>Resumo da proposta</h2>
+        <div class="fam-section-divider"></div>
+        <div class="fam-richtext">@Html.Raw(Model.ResumoProposta)</div>
+    </div>
+</section>
+}
+
+<!-- ═══ CONDIÇÕES ═══ -->
+@if (temCondicoes)
+{
+<section class="fam-section" id="sec-condicoes">
+    <div class="fam-container">
+        <h2 class="fam-section-h2"><i class="fas fa-file-contract" style="color:var(--c-accent);"></i>Condições gerais</h2>
+        <div class="fam-section-divider"></div>
+        <div class="fam-richtext">@Html.Raw(Model.CondicoesPropostaHtml)</div>
+    </div>
+</section>
+}
+
+<!-- ═══ VALORES ═══ -->
+@if (temValores)
+{
+<section class="fam-section" id="sec-valores">
+    <div class="fam-container">
+        <h2 class="fam-section-h2"><i class="fas fa-hand-holding-usd" style="color:var(--c-accent);"></i>Investimento</h2>
+        <div class="fam-section-divider"></div>
+        <div class="fam-richtext">@Html.Raw(Model.ValoresPropostaHtml)</div>
+    </div>
+</section>
+}
+
+<!-- ═══ AVALIAÇÃO ═══ -->
+@if (temAvaliacao)
+{
+<section class="fam-section aval-section" id="sec-avaliacao">
+    <div class="fam-container">
+        <h2 class="fam-section-h2"><i class="fas fa-star" style="color:var(--c-warm);"></i>O que a família achou?</h2>
+        <p class="fam-section-sub">Sua avaliação nos ajuda a personalizar ainda mais a viagem.</p>
+        <div class="fam-section-divider"></div>
+
+        @if (mostrarAvalHospedagem)
+        {
+            <p class="aval-group-title"><i class="fas fa-hotel me-1"></i>Hospedagens</p>
+            <div class="row g-3 mb-4">
+                @foreach (var _ah in todasHospedagens)
+                {
+                    var _ahId = _ah.Id.ToString();
+                    <div class="col-sm-6 col-lg-4">
+                        <div class="aval-card">
+                            <div class="aval-card-name">@_ah.Nome</div>
+                            @if (!string.IsNullOrEmpty(_ah.Endereco))
+                            {
+                                <div class="aval-card-sub"><i class="fas fa-map-marker-alt me-1"></i>@_ah.Endereco</div>
+                            }
+                            <div class="aval-card-sub">@_ah.Categoria.ToString()</div>
+                            <div class="star-rating" data-tipo="Hospedagem" data-id="@_ahId">
+                                @for (int s = 5; s >= 1; s--) {
+                                    <input type="radio" name="aval-hosp-@_ahId" id="aval-hosp-@(_ahId)-@s" value="@s" />
+                                    <label for="aval-hosp-@(_ahId)-@s" title="@s estrelas"></label>
+                                }
+                            </div>
+                            <button class="aval-fav-btn" data-fav="@_ahId"><i class="fas fa-heart"></i><span>Favorito</span></button>
+                            <textarea class="aval-comment" data-comment="@_ahId" rows="2" placeholder="Comentário opcional..."></textarea>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+
+        @if (mostrarAvalAcomodacao)
+        {
+            <p class="aval-group-title @(mostrarAvalHospedagem ? "mt-4" : "")"><i class="fas fa-bed me-1"></i>Acomodações</p>
+            <div class="row g-3 mb-4">
+                @foreach (var _ac in todasAcomodacoes)
+                {
+                    var _acId   = _ac.Id.ToString();
+                    var _acFoto = _ac.Fotos.OrderBy(f => f.Ordem).FirstOrDefault();
+                    <div class="col-sm-6 col-lg-4">
+                        <div class="aval-card">
+                            @if (_acFoto != null) {
+                                <img src="@_acFoto.CaminhoFoto" alt="@_ac.Nome" class="aval-card-img"
+                                     onclick="openLightbox('@_acFoto.CaminhoFoto','@_ac.Nome')" style="cursor:zoom-in;" />
+                            }
+                            <div class="aval-card-name">@_ac.Nome</div>
+                            @if (!string.IsNullOrEmpty(_ac.Descricao)) {
+                                <div class="aval-card-sub">@(_ac.Descricao.Length > 80 ? _ac.Descricao.Substring(0,80) + "…" : _ac.Descricao)</div>
+                            }
+                            <div class="star-rating" data-tipo="Acomodacao" data-id="@_acId">
+                                @for (int s = 5; s >= 1; s--) {
+                                    <input type="radio" name="aval-acmd-@_acId" id="aval-acmd-@(_acId)-@s" value="@s" />
+                                    <label for="aval-acmd-@(_acId)-@s" title="@s estrelas"></label>
+                                }
+                            </div>
+                            <button class="aval-fav-btn" data-fav="@_acId"><i class="fas fa-heart"></i><span>Favorito</span></button>
+                            <textarea class="aval-comment" data-comment="@_acId" rows="2" placeholder="Comentário opcional..."></textarea>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+
+        @if (mostrarAvalExperiencia)
+        {
+            <p class="aval-group-title @(mostrarAvalHospedagem || mostrarAvalAcomodacao ? "mt-4" : "")"><i class="fas fa-hiking me-1"></i>Experiências</p>
+            <div class="row g-3 mb-4">
+                @foreach (var _ae in todasExperiencias)
+                {
+                    var _aeId  = _ae.Id.ToString();
+                    var _aeImg = _ae.Imagens.OrderBy(i => i.Ordem).FirstOrDefault();
+                    <div class="col-sm-6 col-lg-4">
+                        <div class="aval-card">
+                            @if (_aeImg != null) {
+                                <img src="@_aeImg.CaminhoImagem" alt="@_ae.TipoPasseio" class="aval-card-img"
+                                     onclick="openLightbox('@_aeImg.CaminhoImagem','@_ae.TipoPasseio')" style="cursor:zoom-in;" />
+                            }
+                            <div class="aval-card-name">@_ae.TipoPasseio</div>
+                            @if (!string.IsNullOrEmpty(_ae.Descricao)) {
+                                <div class="aval-card-sub">@(_ae.Descricao.Length > 80 ? _ae.Descricao.Substring(0,80) + "…" : _ae.Descricao)</div>
+                            }
+                            <div class="star-rating" data-tipo="Experiencia" data-id="@_aeId">
+                                @for (int s = 5; s >= 1; s--) {
+                                    <input type="radio" name="aval-exp-@_aeId" id="aval-exp-@(_aeId)-@s" value="@s" />
+                                    <label for="aval-exp-@(_aeId)-@s" title="@s estrelas"></label>
+                                }
+                            </div>
+                            <button class="aval-fav-btn" data-fav="@_aeId"><i class="fas fa-heart"></i><span>Favorito</span></button>
+                            <textarea class="aval-comment" data-comment="@_aeId" rows="2" placeholder="Comentário opcional..."></textarea>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+
+        <div class="aval-submit-wrap">
+            <div class="aval-submitted-msg" id="avalSubmittedMsg">
+                <i class="fas fa-check-circle me-2"></i>Avaliação enviada! Obrigado pelo feedback da família.
+            </div>
+            <button class="btn-aval-submit" id="btnEnviarAvaliacao" onclick="enviarAvaliacao('@Model.Id')">
+                <i class="fas fa-paper-plane"></i>Enviar Avaliação
+            </button>
+        </div>
+    </div>
+</section>
+}
+
+<!-- ═══ CTA ═══ -->
+<section class="fam-cta" id="sec-cta">
+    <div class="fam-cta-emoji">✈️🌍</div>
+    <h2>Adorou? Vamos confirmar!</h2>
+    <p>Fale com a gente agora e transforme essa proposta na viagem mais incrível da família!</p>
+    <div class="fam-cta-btns">
+        @if (!string.IsNullOrEmpty(waPhone))
+        {
+            <a href="https://wa.me/55@waPhone?text=@Uri.EscapeDataString(waMsgRaw)"
+               class="btn-wa" data-track="whatsapp" target="_blank">
+                <i class="fab fa-whatsapp fa-lg"></i>Conversar no WhatsApp
+            </a>
+        }
+        @if (!string.IsNullOrEmpty(Model.Usuario.Email))
+        {
+            <a href="mailto:@Model.Usuario.Email?subject=Proposta: @Model.Titulo"
+               class="btn-email" data-track="email">
+                <i class="fas fa-envelope"></i>Enviar E-mail
+            </a>
+        }
+    </div>
+    <div class="fam-agent-card">
+        <div class="fam-agent-avatar">
+            @if (!string.IsNullOrEmpty(Model.Usuario.FotoPath))
+            {
+                <img src="@Model.Usuario.FotoPath" alt="@Model.Usuario.Nome"
+                     style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />
+            }
+            else { <i class="fas fa-user-tie"></i> }
+        </div>
+        <div class="fam-agent-name">@Model.Usuario.Nome</div>
+        <div class="fam-agent-agency">
+            @(string.IsNullOrEmpty(Model.Usuario.NomeAgencia) ? "Consultor de Viagens" : Model.Usuario.NomeAgencia)
+        </div>
+        <div class="fam-agent-contact">
+            @if (!string.IsNullOrEmpty(Model.Usuario.Email))
+            {
+                <span><i class="fas fa-envelope"></i>@Model.Usuario.Email</span>
+            }
+            @if (!string.IsNullOrEmpty(Model.Usuario.Telefone))
+            {
+                <span><i class="fas fa-phone"></i>@Model.Usuario.Telefone</span>
+            }
+        </div>
+    </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+    <div>
+        @{
+            var _fStatus = Model.StatusProposta == StatusProposta.Aprovada ? "Aprovada" :
+                           Model.StatusProposta == StatusProposta.Enviada  ? "Enviada"  :
+                           Model.StatusProposta == StatusProposta.Rejeitada ? "Rejeitada" : "Em elaboração";
+            var _fDataAtual = Model.DataModificacao ?? Model.DataCriacao;
+            var _fAtualizada = Model.DataModificacao.HasValue;
+        }
+        Proposta <strong style="color:rgba(255,255,255,.8);">@Model.Titulo</strong> · Status: @_fStatus
+        &nbsp;·&nbsp; <span id="viewCount"></span>
+    </div>
+    <div style="font-size:.78rem;color:rgba(255,255,255,.55);margin-top:6px;display:flex;align-items:center;justify-content:center;gap:5px;">
+        <i class="fas fa-clock" style="font-size:.72rem;"></i>
+        @(_fAtualizada ? "Esta proposta foi atualizada em" : "Proposta criada em")
+        @_fDataAtual.ToString("dd/MM/yyyy 'às' HH:mm")
+        @if (Model.DataExpiracaoLink.HasValue)
+        {
+            <text> · válida até @Model.DataExpiracaoLink.Value.ToString("dd/MM/yyyy")</text>
+        }
+    </div>
+    <div class="fam-share-btns">
+        <button class="fam-share-btn" onclick="compartilharWhatsApp()"><i class="fab fa-whatsapp"></i>Compartilhar</button>
+        <button class="fam-share-btn" onclick="copiarLink()"><i class="fas fa-copy"></i>Copiar link</button>
+    </div>
+</footer>
+
+<!-- lightbox → _LayoutPublico.cshtml -->
+
+@section Scripts {
+<script>
+/* ── scroll bar ── */
+window.addEventListener('scroll', () => {
+    const docH = document.documentElement.scrollHeight - window.innerHeight;
+    document.getElementById('scrollBar').style.width = (docH > 0 ? Math.min((window.scrollY/docH)*100,100) : 0) + '%';
+});
+
+/* ── nav active ── */
+const _famNavLinks = document.querySelectorAll('.fam-nav-links a');
+const _famSections = [];
+_famNavLinks.forEach(a => {
+    a.addEventListener('click', e => {
+        e.preventDefault();
+        document.querySelector(a.getAttribute('href'))?.scrollIntoView({ behavior:'smooth' });
+    });
+    const href = a.getAttribute('href');
+    if (href && href.startsWith('#')) {
+        const el = document.querySelector(href);
+        if (el) _famSections.push({ el, a });
+    }
+});
+const _famObs = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+        const f = _famSections.find(s => s.el === entry.target);
+        if (f) f.a.classList.toggle('active', entry.isIntersecting);
+    });
+}, { threshold: .25 });
+_famSections.forEach(s => _famObs.observe(s.el));
+
+/* lightbox → _LayoutPublico.cshtml */
+
+/* ── share ── */
+function compartilharWhatsApp() {
+    const url = window.location.href;
+    window.open('https://wa.me/?text=' + encodeURIComponent('Confira esta proposta de viagem: @Model.Titulo — ' + url), '_blank');
+}
+function copiarLink() {
+    navigator.clipboard.writeText(window.location.href)
+        .then(() => showNotif('Link copiado!', 'success'))
+        .catch(() => showNotif('Erro ao copiar.', 'danger'));
+}
+function showNotif(msg, type) {
+    const el = document.createElement('div');
+    el.className = 'alert alert-' + type + ' position-fixed';
+    el.style.cssText = 'top:20px;right:20px;z-index:99999;min-width:260px;';
+    el.innerHTML = msg + ' <button type="button" class="btn-close float-end" onclick="this.parentElement.remove()"></button>';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 4000);
+}
+
+/* ── Avaliação ── */
+@{
+    var _famAvalDict = ViewBag.AvaliacoesPorItem as Dictionary<string, SistemaUsuarios.Models.AvaliacaoCliente>
+                      ?? new Dictionary<string, SistemaUsuarios.Models.AvaliacaoCliente>();
+    var _famAvalSer  = _famAvalDict.ToDictionary(
+        kvp => kvp.Key,
+        kvp => new { nota = kvp.Value.Nota, favorito = kvp.Value.Favorito, comentario = kvp.Value.Comentario ?? "" });
+    var _famAvalJson = System.Text.Json.JsonSerializer.Serialize(_famAvalSer);
+}
+var __avals = @Html.Raw(_famAvalJson);
+
+(function () {
+    document.querySelectorAll('.aval-fav-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () { this.classList.toggle('active'); });
+    });
+
+    window.enviarAvaliacao = function (propostaId) {
+        var btn = document.getElementById('btnEnviarAvaliacao');
+        var tipoMap = { Hospedagem: 1, Acomodacao: 2, Experiencia: 3 };
+        var itens = [];
+        document.querySelectorAll('.star-rating').forEach(function (el) {
+            var tipo   = el.dataset.tipo;
+            var itemId = el.dataset.id;
+            var checked = el.querySelector('input:checked');
+            if (!checked) return;
+            var nota     = parseInt(checked.value, 10);
+            var favBtn   = document.querySelector('.aval-fav-btn[data-fav="' + itemId + '"]');
+            var favorito = favBtn ? favBtn.classList.contains('active') : false;
+            var commentEl = document.querySelector('.aval-comment[data-comment="' + itemId + '"]');
+            var comentario = commentEl ? commentEl.value.trim() : '';
+            itens.push({ tipoItem: tipoMap[tipo], itemId: itemId, nota: nota, comentario: comentario || null, favorito: favorito });
+        });
+        if (itens.length === 0) { showNotif('Avalie pelo menos uma opção antes de enviar.', 'warning'); return; }
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
+        fetch('/Avaliacao/Salvar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ propostaId: propostaId, itens: itens })
+        }).then(function (r) { return r.json(); })
+          .then(function (data) {
+            if (data.ok) {
+                btn.style.display = 'none';
+                var msg = document.getElementById('avalSubmittedMsg');
+                if (msg) msg.style.display = 'block';
+            } else {
+                showNotif(data.erro || 'Erro ao enviar avaliação.', 'danger');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-paper-plane"></i>Enviar Avaliação';
+            }
+        }).catch(function () {
+            showNotif('Erro de conexão. Tente novamente.', 'danger');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-paper-plane"></i>Enviar Avaliação';
+        });
+    };
+
+    var tipoMap = { Hospedagem: 1, Acomodacao: 2, Experiencia: 3 };
+    if (__avals && Object.keys(__avals).length) {
+        document.querySelectorAll('.star-rating').forEach(function (el) {
+            var tipo   = el.dataset.tipo;
+            var itemId = el.dataset.id;
+            var key    = tipoMap[tipo] + '_' + itemId;
+            var a      = __avals[key];
+            if (!a) return;
+            var radio = el.querySelector('input[value="' + a.nota + '"]');
+            if (radio) radio.checked = true;
+            if (a.favorito) {
+                var favBtn = document.querySelector('.aval-fav-btn[data-fav="' + itemId + '"]');
+                if (favBtn) favBtn.classList.add('active');
+            }
+            if (a.comentario) {
+                var commentEl = document.querySelector('.aval-comment[data-comment="' + itemId + '"]');
+                if (commentEl) commentEl.value = a.comentario;
+            }
+        });
+    }
+})();
+
+/* ── Analytics ── */
+class PropostaAnalytics {
+    constructor(propostaId) {
+        this.propostaId = propostaId;
+        this.sessionToken = 'sess_' + Date.now() + '_' + Math.random().toString(36).substr(2,9);
+        this.startTime = new Date();
+        this.maxScroll = 0; this.clicks = 0;
+        this.interactions = { whatsapp: false, email: false };
+        this.init();
+    }
+    init() { this.trackPageLoad(); this.setupScrollTracking(); this.setupClickTracking(); this.setupBeforeUnload(); this.sendHeartbeat(); }
+    async trackPageLoad() {
+        const data = await this.collectDeviceData();
+        try { await fetch('/api/proposta/analytics/start', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ propostaId: this.propostaId, sessionToken: this.sessionToken, ...data }) }); } catch {}
+    }
+    async collectDeviceData() {
+        const data = {
+            dataHoraInicio: new Date().toISOString(),
+            tipoDispositivo: window.innerWidth <= 768 ? 'Mobile' : window.innerWidth <= 1024 ? 'Tablet' : 'Desktop',
+            navegador: navigator.userAgent.includes('Chrome') ? 'Chrome' : navigator.userAgent.includes('Firefox') ? 'Firefox' : navigator.userAgent.includes('Safari') ? 'Safari' : 'Other',
+            sistemaOperacional: navigator.userAgent.includes('Windows') ? 'Windows' : navigator.userAgent.includes('Mac') ? 'macOS' : navigator.userAgent.includes('Android') ? 'Android' : (navigator.userAgent.includes('iPhone') || navigator.userAgent.includes('iPad')) ? 'iOS' : 'Linux',
+            resolucaoTela: screen.width + 'x' + screen.height,
+            idiomaNavegador: navigator.language || 'pt-BR',
+            urlReferenciador: document.referrer,
+            tipoReferenciador: document.referrer.includes('whatsapp') ? 'WhatsApp' : document.referrer.includes('google') ? 'Google' : document.referrer ? 'Website' : 'Direto',
+            userAgent: navigator.userAgent,
+            deviceFingerprint: 'fp_' + Math.abs([navigator.userAgent, navigator.language, screen.width, screen.height].join('|').split('').reduce((h,c) => ((h<<5)-h)+c.charCodeAt(0)|0, 0)).toString(36)
+        };
+        try {
+            const pos = await new Promise((res,rej) => navigator.geolocation ? navigator.geolocation.getCurrentPosition(p => res(p.coords), rej, {timeout:5000}) : rej());
+            data.latitude = pos.latitude; data.longitude = pos.longitude;
+        } catch {}
+        return data;
+    }
+    setupScrollTracking() {
+        window.addEventListener('scroll', () => {
+            const pct = Math.round((window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100);
+            if (pct > this.maxScroll) this.maxScroll = Math.min(pct, 100);
+        }, { passive: true });
+    }
+    setupClickTracking() {
+        document.querySelectorAll('[data-track="whatsapp"]').forEach(el => el.addEventListener('click', () => { this.interactions.whatsapp = true; this.clicks++; this.sendInteraction('whatsapp_click'); }));
+        document.querySelectorAll('[data-track="email"]').forEach(el => el.addEventListener('click', () => { this.interactions.email = true; this.clicks++; this.sendInteraction('email_click'); }));
+        document.addEventListener('click', () => this.clicks++);
+    }
+    setupBeforeUnload() {
+        window.addEventListener('beforeunload', () => this.sendFinalData());
+        document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') this.sendFinalData(); });
+    }
+    sendHeartbeat() { setInterval(() => this.sendUpdateData(), 30000); }
+    async sendInteraction(type) {
+        try { await fetch('/api/proposta/analytics/interaction', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ sessionToken: this.sessionToken, interactionType: type, timestamp: new Date().toISOString() }) }); } catch {}
+    }
+    async sendUpdateData() {
+        const t = Math.round((new Date() - this.startTime) / 1000);
+        try { await fetch('/api/proposta/analytics/update', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ sessionToken: this.sessionToken, tempoVisualizacaoSegundos: t, scrollMaximoPercentual: this.maxScroll, numeroCliques: this.clicks, clicouWhatsApp: this.interactions.whatsapp, clicouEmail: this.interactions.email }) }); } catch {}
+    }
+    sendFinalData() {
+        const data = { sessionToken: this.sessionToken, dataHoraFim: new Date().toISOString(), tempoVisualizacaoSegundos: Math.round((new Date()-this.startTime)/1000), scrollMaximoPercentual: this.maxScroll, numeroCliques: this.clicks, clicouWhatsApp: this.interactions.whatsapp, clicouEmail: this.interactions.email };
+        if (navigator.sendBeacon) navigator.sendBeacon('/api/proposta/analytics/finish', JSON.stringify(data));
+        else fetch('/api/proposta/analytics/finish', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data), keepalive:true }).catch(()=>{});
+    }
+}
+
+var isPreviewMode = @(isPreview ? "true" : "false");
+document.addEventListener('DOMContentLoaded', () => {
+    if (!isPreviewMode) window.analytics = new PropostaAnalytics('@Model.Id');
+    document.getElementById('viewCount').textContent = '';
+    if (isPreviewMode) document.body.classList.add('has-preview-bar');
+});
+
+@if (isPreview)
+{
+<text>
+(function () {
+    var _layoutOrig = '@(Model.LayoutId?.ToString() ?? "")';
+    var sel = document.getElementById('layoutSelector');
+    var btnSalvar = document.getElementById('btnSalvarLayout');
+    if (sel && btnSalvar) {
+        sel.addEventListener('change', function () {
+            btnSalvar.style.display = sel.value !== _layoutOrig ? 'inline-flex' : 'none';
+        });
+        btnSalvar.addEventListener('click', function () {
+            btnSalvar.disabled = true;
+            btnSalvar.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span class="pb-label"> Salvando…</span>';
+            fetch('/api/proposta/@Model.Id/layout', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ layoutId: sel.value ? parseInt(sel.value) : null }) })
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+                if (d.success) { _layoutOrig = sel.value; btnSalvar.style.display='none'; btnSalvar.disabled=false; btnSalvar.innerHTML='<i class="fas fa-save"></i><span class="pb-label"> Salvar layout</span>'; window.location.reload(); }
+                else { alert('Erro ao salvar layout.'); btnSalvar.disabled=false; btnSalvar.innerHTML='<i class="fas fa-save"></i><span class="pb-label"> Salvar layout</span>'; }
+            }).catch(function () { alert('Erro de conexão.'); btnSalvar.disabled=false; btnSalvar.innerHTML='<i class="fas fa-save"></i><span class="pb-label"> Salvar layout</span>'; });
+        });
+    }
+    var btnCopiar = document.getElementById('btnCopiarLink');
+    if (btnCopiar) {
+        btnCopiar.addEventListener('click', function () {
+            var url = '@linkPublico';
+            if (!url) return;
+            navigator.clipboard.writeText(url)
+                .then(function () { var orig = btnCopiar.innerHTML; btnCopiar.innerHTML = '<i class="fas fa-check"></i><span class="pb-label"> Copiado!</span>'; setTimeout(function () { btnCopiar.innerHTML = orig; }, 2000); })
+                .catch(function () { prompt('Copie o link manualmente:', url); });
+        });
+    }
+})();
+</text>
+}
+
+@if (_famTemMapa)
+{
+<text>
+/* ── Mapa de hospedagens ── */
+var famHoteis = [
+    @for (int _mi2 = 0; _mi2 < _famMapHoteis.Count; _mi2++)
+    {
+        var _mh2 = _famMapHoteis[_mi2];
+        string _mhPer = "";
+        if (_mh2.CheckIn.HasValue && _mh2.CheckOut.HasValue)
+            _mhPer = _mh2.CheckIn.Value.ToString("dd/MM", famPtBR) + " a " + _mh2.CheckOut.Value.ToString("dd/MM/yy", famPtBR);
+        <text>{ lat: @_mh2.Latitude!.Value.ToString("G17", _famIc), lng: @_mh2.Longitude!.Value.ToString("G17", _famIc), nome: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(_mh2.Nome)), dest: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(_mh2.DestNome)), cor: "@_mh2.Cor", idx: @(_mi2 + 1), periodo: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(_mhPer)) },</text>
+    }
+];
+
+window.initFamHotelMap = function () {
+    var mapEl = document.getElementById('famHotelMap');
+    if (!mapEl || !famHoteis.length) return;
+
+    var map = new google.maps.Map(mapEl, {
+        center:            { lat: famHoteis[0].lat, lng: famHoteis[0].lng },
+        zoom:              14,
+        mapTypeControl:    false,
+        streetViewControl: false,
+        fullscreenControl: true,
+        zoomControl:       true,
+        gestureHandling:   'cooperative',
+        styles: [{ featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] }]
+    });
+
+    var bounds = new google.maps.LatLngBounds();
+
+    famHoteis.forEach(function (h) {
+        var pos = { lat: h.lat, lng: h.lng };
+        bounds.extend(pos);
+
+        var marker = new google.maps.Marker({
+            position: pos,
+            map:      map,
+            title:    h.nome,
+            label:    { text: String(h.idx), color: '#fff', fontWeight: '800', fontSize: '11px' },
+            icon: {
+                path:          google.maps.SymbolPath.CIRCLE,
+                scale:         16,
+                fillColor:     h.cor,
+                fillOpacity:   1,
+                strokeColor:   '#ffffff',
+                strokeWeight:  2.5
+            }
+        });
+
+        var infoContent = '<div style="font-family:sans-serif;padding:6px 2px;min-width:160px;">' +
+            '<div style="font-weight:700;font-size:.88rem;color:#1e293b;">' + h.nome + '</div>' +
+            '<div style="font-size:.74rem;color:' + h.cor + ';font-weight:600;margin-top:3px;">' + h.dest + '</div>' +
+            (h.periodo ? '<div style="font-size:.72rem;color:#64748b;margin-top:3px;">' + h.periodo + '</div>' : '') +
+            '</div>';
+
+        var info = new google.maps.InfoWindow({ content: infoContent });
+        marker.addListener('click', function () { info.open(map, marker); });
+    });
+
+    if (famHoteis.length > 1) {
+        map.fitBounds(bounds);
+        google.maps.event.addListenerOnce(map, 'bounds_changed', function () {
+            if (map.getZoom() > 15) map.setZoom(15);
+        });
+    }
+};
+</text>
+}
+</script>
+@if (_famTemMapa)
+{
+    <text><script async defer src="https://maps.googleapis.com/maps/api/js?key=@_famApiKey&callback=initFamHotelMap&language=pt-BR&region=BR&loading=async"></script></text>
+}
+}

@@ -118,7 +118,8 @@ namespace SistemaUsuarios.Controllers
                 InteracoesUsuarios = await ObterInteracoesUsuarios(propostaId),
                 MapaVisualizacoes = await ObterMapaVisualizacoes(propostaId),
                 TemposPorSessao = await ObterTemposPorSessao(propostaId),
-                ReferenciasTrafico = await ObterReferenciasTrafico(propostaId)
+                ReferenciasTrafico = await ObterReferenciasTrafico(propostaId),
+                AvaliacoesCliente = await ObterAvaliacoesCliente(propostaId)
             };
 
             return View(viewModel);
@@ -505,9 +506,87 @@ namespace SistemaUsuarios.Controllers
                 .ToListAsync();
         }
 
+        private async Task<AvaliacoesClienteAnalyticsViewModel> ObterAvaliacoesCliente(Guid propostaId)
+        {
+            var avaliacoes = await _context.AvaliacoesCliente
+                .Where(a => a.PropostaId == propostaId)
+                .AsNoTracking()
+                .ToListAsync();
+
+            if (!avaliacoes.Any())
+                return new AvaliacoesClienteAnalyticsViewModel();
+
+            // Batch-fetch nomes por tipo
+            var hospIds = avaliacoes.Where(a => a.TipoItem == TipoItemAvaliacao.Hospedagem).Select(a => a.ItemId).ToHashSet();
+            var acmdIds = avaliacoes.Where(a => a.TipoItem == TipoItemAvaliacao.Acomodacao).Select(a => a.ItemId).ToHashSet();
+            var expIds  = avaliacoes.Where(a => a.TipoItem == TipoItemAvaliacao.Experiencia).Select(a => a.ItemId).ToHashSet();
+
+            var hospNomes = hospIds.Any()
+                ? await _context.Hospedagens.Where(h => hospIds.Contains(h.Id))
+                    .Select(h => new { h.Id, h.Nome }).AsNoTracking()
+                    .ToDictionaryAsync(h => h.Id, h => h.Nome)
+                : new Dictionary<Guid, string>();
+
+            var acmdNomes = acmdIds.Any()
+                ? await _context.Acomodacoes.Where(a => acmdIds.Contains(a.Id))
+                    .Select(a => new { a.Id, a.Nome }).AsNoTracking()
+                    .ToDictionaryAsync(a => a.Id, a => a.Nome)
+                : new Dictionary<Guid, string>();
+
+            var expNomes = expIds.Any()
+                ? await _context.Experiencias.Where(e => expIds.Contains(e.Id))
+                    .Select(e => new { e.Id, e.TipoPasseio }).AsNoTracking()
+                    .ToDictionaryAsync(e => e.Id, e => e.TipoPasseio)
+                : new Dictionary<Guid, string>();
+
+            static string TipoNome(TipoItemAvaliacao tipo) => tipo switch
+            {
+                TipoItemAvaliacao.Hospedagem  => "Hospedagem",
+                TipoItemAvaliacao.Acomodacao  => "Acomodação",
+                TipoItemAvaliacao.Experiencia => "Experiência",
+                _                             => tipo.ToString()
+            };
+
+            string ResolverNome(AvaliacaoCliente a) => a.TipoItem switch
+            {
+                TipoItemAvaliacao.Hospedagem  => hospNomes.GetValueOrDefault(a.ItemId, "Item não encontrado"),
+                TipoItemAvaliacao.Acomodacao  => acmdNomes.GetValueOrDefault(a.ItemId, "Item não encontrado"),
+                TipoItemAvaliacao.Experiencia => expNomes.GetValueOrDefault(a.ItemId, "Item não encontrado"),
+                _                             => "Item não encontrado"
+            };
+
+            var itens = avaliacoes
+                .OrderByDescending(a => a.Favorito)
+                .ThenByDescending(a => a.Nota)
+                .ThenByDescending(a => a.DataCriacao)
+                .ThenBy(a => a.TipoItem)
+                .Select(a => new AvaliacaoClienteResumoViewModel
+                {
+                    Id           = a.Id,
+                    TipoItemNome = TipoNome(a.TipoItem),
+                    ItemId       = a.ItemId,
+                    ItemNome     = ResolverNome(a),
+                    Nota         = a.Nota,
+                    Comentario   = a.Comentario,
+                    Favorito     = a.Favorito,
+                    DataCriacao  = a.DataCriacao
+                })
+                .ToList();
+
+            var notas = avaliacoes.Select(a => a.Nota).ToList();
+            return new AvaliacoesClienteAnalyticsViewModel
+            {
+                TotalAvaliacoes  = avaliacoes.Count,
+                TotalFavoritos   = avaliacoes.Count(a => a.Favorito),
+                NotaMedia        = notas.Any() ? Math.Round((decimal)notas.Average(), 1) : null,
+                TotalComentarios = avaliacoes.Count(a => !string.IsNullOrWhiteSpace(a.Comentario)),
+                Itens            = itens
+            };
+        }
+
         private async Task<List<PropostaRadarViewModel>> ObterPropostasRadar(Guid usuarioId, bool isMaster)
         {
-            return await _context.Propostas
+            var lista = await _context.Propostas
                 .Where(p =>
                     (isMaster ? p.UsuarioMasterId == usuarioId : p.UsuarioResponsavelId == usuarioId)
                     && p.PropostaVisualizacoes.Any())
@@ -527,10 +606,28 @@ namespace SistemaUsuarios.Controllers
                           / (double)p.PropostaVisualizacoes.Count() * 100
                         : 0
                 })
-                .OrderByDescending(x => x.TotalVisualizacoes)
-                .ThenByDescending(x => x.UltimaVisualizacao)
+                .OrderByDescending(x => x.UltimaVisualizacao)
+                .ThenByDescending(x => x.TotalVisualizacoes)
                 .Take(25)
                 .ToListAsync();
+
+            // Batch: contagem de avaliações por proposta (evita N+1)
+            var ids = lista.Select(x => x.PropostaId).ToList();
+            var avaliacoesPorProposta = await _context.AvaliacoesCliente
+                .AsNoTracking()
+                .Where(a => ids.Contains(a.PropostaId))
+                .GroupBy(a => a.PropostaId)
+                .Select(g => new { PropostaId = g.Key, Total = g.Count() })
+                .ToDictionaryAsync(x => x.PropostaId, x => x.Total);
+
+            foreach (var item in lista)
+                item.TotalAvaliacoes = avaliacoesPorProposta.GetValueOrDefault(item.PropostaId, 0);
+
+            return lista
+                .OrderByDescending(x => x.UltimaVisualizacao)
+                .ThenByDescending(x => x.TotalVisualizacoes)
+                .ThenByDescending(x => x.TotalAvaliacoes)
+                .ToList();
         }
 
         private async Task<List<AtividadeRecenteViewModel>> ObterAtividadeRecente(Guid usuarioId, bool isMaster)

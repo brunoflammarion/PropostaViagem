@@ -28,6 +28,12 @@ namespace SistemaUsuarios.Models
         [Display(Name = "Valor (R$)")]
         public decimal? Valor { get; set; }
 
+        [Display(Name = "Início da experiência")]
+        public DateTime? DataInicio { get; set; }
+
+        [Display(Name = "Fim da experiência")]
+        public DateTime? DataFim { get; set; }
+
         public int Ordem { get; set; } = 1;
 
         public DateTime DataCriacao { get; set; } = DateTime.Now;
