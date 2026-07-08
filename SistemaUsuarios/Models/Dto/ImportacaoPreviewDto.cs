@@ -245,6 +245,90 @@ namespace SistemaUsuarios.Models.Dto
         public ImportacaoPreviewDto Preview { get; set; } = new();
     }
 
+    // ── Camada intermediária de interpretação da IA ───────────────────────────
+    // Representa o ENTENDIMENTO da IA sobre o documento, nunca persistido diretamente.
+    // O chat trabalha sobre este objeto; a persistência só ocorre após confirmação.
+    public class TravelProposalDraft
+    {
+        [JsonPropertyName("mensagemInicial")]
+        public string MensagemInicial { get; set; } = "";
+
+        [JsonPropertyName("pendentes")]
+        public List<string> Pendentes { get; set; } = new();
+
+        [JsonPropertyName("alertas")]
+        public List<string> Alertas { get; set; } = new();
+
+        [JsonPropertyName("confiancaGeral")]
+        public int ConfiancaGeral { get; set; } = 80;
+
+        [JsonPropertyName("proposta")]
+        public PropostaImportDto? Proposta { get; set; }
+
+        [JsonPropertyName("passageiros")]
+        public List<PassageiroImportDto> Passageiros { get; set; } = new();
+
+        [JsonPropertyName("voos")]
+        public List<VooImportDto> Voos { get; set; } = new();
+
+        [JsonPropertyName("destinos")]
+        public List<DestinoImportDto> Destinos { get; set; } = new();
+
+        [JsonPropertyName("seguros")]
+        public List<SeguroImportDto> Seguros { get; set; } = new();
+
+        [JsonPropertyName("valoresFinanceiros")]
+        public ValoresFinanceirosImportDto? ValoresFinanceiros { get; set; }
+
+        public ImportacaoPreviewDto ToPreview() => new()
+        {
+            Proposta = Proposta,
+            Passageiros = Passageiros,
+            Voos = Voos,
+            Destinos = Destinos,
+            Seguros = Seguros,
+            ValoresFinanceiros = ValoresFinanceiros
+        };
+    }
+
+    // ── Confirmação bloco a bloco ─────────────────────────────────────────────
+    public class ConfirmarBlocoRequest
+    {
+        [JsonPropertyName("propostaId")]
+        public Guid PropostaId { get; set; }
+
+        // "proposta" | "passageiros" | "voos" | "destinos" | "seguros" | "todos"
+        [JsonPropertyName("bloco")]
+        public string Bloco { get; set; } = "";
+
+        [JsonPropertyName("proposta")]
+        public PropostaImportDto? Proposta { get; set; }
+
+        [JsonPropertyName("passageiros")]
+        public List<PassageiroImportDto>? Passageiros { get; set; }
+
+        [JsonPropertyName("voos")]
+        public List<VooImportDto>? Voos { get; set; }
+
+        [JsonPropertyName("destinos")]
+        public List<DestinoImportDto>? Destinos { get; set; }
+
+        [JsonPropertyName("seguros")]
+        public List<SeguroImportDto>? Seguros { get; set; }
+
+        [JsonPropertyName("valoresFinanceiros")]
+        public ValoresFinanceirosImportDto? ValoresFinanceiros { get; set; }
+    }
+
+    public class ResultadoBloco
+    {
+        public bool Ok { get; set; }
+        public string? Erro { get; set; }
+        public string Bloco { get; set; } = "";
+        public int Itens { get; set; }
+        public string Mensagem { get; set; } = "";
+    }
+
     public class ResultadoImportacao
     {
         public bool Ok { get; set; }

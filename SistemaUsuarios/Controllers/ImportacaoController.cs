@@ -109,12 +109,34 @@ namespace SistemaUsuarios.Controllers
             if (arquivos == null || !arquivos.Any())
                 return BadRequest(new { erro = "Nenhum arquivo enviado." });
 
-            var (preview, erro) = await _ia.AnalisarAsync(arquivos);
+            var (draft, erro) = await _ia.AnalisarAsync(arquivos);
 
             if (erro != null)
                 return StatusCode(500, new { erro });
 
-            return Json(preview);
+            return Json(draft?.ToPreview());
+        }
+
+        // POST: /Importacao/ConfirmarBloco — confirmação incremental bloco a bloco
+        [HttpPost]
+        public async Task<IActionResult> ConfirmarBloco([FromBody] ConfirmarBlocoRequest request)
+        {
+            if (!UsuarioLogado())
+                return Unauthorized(new { erro = "Não autenticado." });
+
+            if (request == null || string.IsNullOrWhiteSpace(request.Bloco))
+                return BadRequest(new { erro = "Bloco não especificado." });
+
+            var usuarioId = ObterUsuarioId();
+            var isMaster  = SessaoIsMaster();
+
+            var resultado = await _persistencia.ImportarBlocoAsync(
+                request.PropostaId, usuarioId, isMaster, request);
+
+            if (!resultado.Ok)
+                return StatusCode(500, new { erro = resultado.Erro });
+
+            return Json(new { ok = true, bloco = resultado.Bloco, itens = resultado.Itens, mensagem = resultado.Mensagem });
         }
 
         // POST: /Importacao/Confirmar

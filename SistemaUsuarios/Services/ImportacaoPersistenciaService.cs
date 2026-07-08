@@ -228,6 +228,175 @@ namespace SistemaUsuarios.Services
             return resultado;
         }
 
+        // ── Confirmação incremental (bloco a bloco) ───────────────────────────────
+        public async Task<ResultadoBloco> ImportarBlocoAsync(
+            Guid propostaId, Guid usuarioId, bool isMaster, ConfirmarBlocoRequest req)
+        {
+            var proposta = await _context.Propostas
+                .FirstOrDefaultAsync(p => p.Id == propostaId &&
+                    (isMaster ? p.UsuarioMasterId == usuarioId : p.UsuarioResponsavelId == usuarioId));
+
+            if (proposta == null)
+                return BlocoErro(req.Bloco, "Proposta não encontrada ou sem permissão.");
+
+            var resultado = new ResultadoBloco { Ok = true, Bloco = req.Bloco };
+
+            switch (req.Bloco.ToLowerInvariant())
+            {
+                case "proposta":
+                    if (req.Proposta != null)
+                    {
+                        if (!string.IsNullOrWhiteSpace(req.Proposta.Titulo) &&
+                            (string.IsNullOrWhiteSpace(proposta.Titulo) || proposta.Titulo == "Nova Proposta"))
+                            proposta.Titulo = req.Proposta.Titulo.Trim();
+
+                        if (!string.IsNullOrWhiteSpace(req.Proposta.ObservacoesGerais) &&
+                            string.IsNullOrWhiteSpace(proposta.ObservacoesGerais))
+                            proposta.ObservacoesGerais = req.Proposta.ObservacoesGerais.Trim();
+
+                        proposta.DataModificacao = DateTime.Now;
+                        await _context.SaveChangesAsync();
+                        resultado.Itens = 1;
+                        resultado.Mensagem = $"Título atualizado para \"{proposta.Titulo}\"";
+                    }
+                    break;
+
+                case "passageiros":
+                    foreach (var dto in (req.Passageiros ?? new()).Where(p => !string.IsNullOrWhiteSpace(p.Nome)))
+                    {
+                        var maxOrdem = await _context.PassageirosProposta
+                            .Where(p => p.PropostaId == propostaId).MaxAsync(p => (int?)p.Ordem) ?? 0;
+                        _context.PassageirosProposta.Add(new PassageiroProposta
+                        {
+                            Id = Guid.NewGuid(), PropostaId = propostaId,
+                            Nome = dto.Nome.Trim(),
+                            DataNascimento = ParseData(dto.DataNascimento),
+                            Genero = ParseEnum<Genero>(dto.Genero),
+                            Relacionamento = ParseEnum<RelacionamentoPassageiro>(dto.Relacionamento),
+                            Observacoes = dto.Observacoes?.Trim(),
+                            Ordem = maxOrdem + 1, DataCriacao = DateTime.Now
+                        });
+                        resultado.Itens++;
+                    }
+                    await _context.SaveChangesAsync();
+                    resultado.Mensagem = $"{resultado.Itens} passageiro{(resultado.Itens != 1 ? "s" : "")} adicionado{(resultado.Itens != 1 ? "s" : "")}";
+                    break;
+
+                case "voos":
+                    foreach (var dto in (req.Voos ?? new()).Where(v => !string.IsNullOrWhiteSpace(v.NumeroVoo)))
+                    {
+                        var maxOrdem = await _context.Voos
+                            .Where(v => v.PropostaId == propostaId).MaxAsync(v => (int?)v.Ordem) ?? 0;
+                        _context.Voos.Add(new Voo
+                        {
+                            Id = Guid.NewGuid(), PropostaId = propostaId,
+                            NumeroVoo = dto.NumeroVoo.Trim().ToUpperInvariant(),
+                            TipoVoo = ParseEnum<TipoVoo>(dto.TipoVoo) ?? TipoVoo.Ida,
+                            Companhia = dto.Companhia?.Trim() ?? "",
+                            Classe = dto.Classe?.Trim(), Duracao = dto.Duracao?.Trim(),
+                            Origem = dto.Origem.Trim(), Destino = dto.Destino.Trim(),
+                            HorarioSaida = ParseDateTime(dto.HorarioSaida),
+                            HorarioChegada = ParseDateTime(dto.HorarioChegada),
+                            BagagemMaoPeso = dto.BagagemMaoPeso,
+                            BagagemDespachadaPeso = dto.BagagemDespachadaPeso,
+                            Ordem = maxOrdem + 1, DataCriacao = DateTime.Now
+                        });
+                        resultado.Itens++;
+                    }
+                    await _context.SaveChangesAsync();
+                    resultado.Mensagem = $"{resultado.Itens} voo{(resultado.Itens != 1 ? "s" : "")} adicionado{(resultado.Itens != 1 ? "s" : "")}";
+                    break;
+
+                case "destinos":
+                    foreach (var dtoD in (req.Destinos ?? new()).Where(d => !string.IsNullOrWhiteSpace(d.Nome)))
+                    {
+                        var maxOrdemD = await _context.Destinos
+                            .Where(d => d.PropostaId == propostaId).MaxAsync(d => (int?)d.Ordem) ?? 0;
+                        var destino = new Destino
+                        {
+                            Id = Guid.NewGuid(), PropostaId = propostaId,
+                            Nome = dtoD.Nome.Trim(), Pais = dtoD.Pais?.Trim(),
+                            Cidade = dtoD.Cidade?.Trim(),
+                            DataChegada = ParseData(dtoD.DataChegada),
+                            DataSaida = ParseData(dtoD.DataSaida),
+                            Descricao = dtoD.Descricao?.Trim(),
+                            Latitude = dtoD.Latitude, Longitude = dtoD.Longitude,
+                            Localizacao = CriarPoint(dtoD.Latitude, dtoD.Longitude),
+                            Ordem = maxOrdemD + 1, DataCriacao = DateTime.Now
+                        };
+                        _context.Destinos.Add(destino);
+                        await _context.SaveChangesAsync();
+                        resultado.Itens++;
+
+                        foreach (var h in dtoD.Hospedagens.Where(h => !string.IsNullOrWhiteSpace(h.Nome)))
+                        {
+                            var maxH = await _context.Hospedagens.Where(x => x.DestinoId == destino.Id).MaxAsync(x => (int?)x.Ordem) ?? 0;
+                            _context.Hospedagens.Add(new Hospedagem
+                            {
+                                Id = Guid.NewGuid(), DestinoId = destino.Id,
+                                Nome = h.Nome.Trim(), Descricao = h.Descricao?.Trim(),
+                                Endereco = h.Endereco?.Trim(), Latitude = h.Latitude, Longitude = h.Longitude,
+                                CheckIn = ParseData(h.CheckIn), CheckOut = ParseData(h.CheckOut),
+                                Categoria = ParseEnum<CategoriaHospedagem>(h.Categoria) ?? CategoriaHospedagem.Hotel,
+                                TipoPensao = ParseEnum<TipoPensao>(h.TipoPensao) ?? TipoPensao.SemPensao,
+                                Reserva = h.Reserva?.Trim(), Observacoes = h.Observacoes?.Trim(),
+                                Ordem = maxH + 1, DataCriacao = DateTime.Now
+                            });
+                        }
+                        foreach (var e in dtoD.Experiencias.Where(e => !string.IsNullOrWhiteSpace(e.TipoPasseio)))
+                        {
+                            var maxE = await _context.Experiencias.Where(x => x.DestinoId == destino.Id).MaxAsync(x => (int?)x.Ordem) ?? 0;
+                            _context.Experiencias.Add(new Experiencia
+                            {
+                                Id = Guid.NewGuid(), DestinoId = destino.Id,
+                                TipoPasseio = e.TipoPasseio.Trim(), Descricao = e.Descricao?.Trim(),
+                                Valor = e.Valor, DataInicio = ParseDateTime(e.DataInicio),
+                                DataFim = ParseDateTime(e.DataFim),
+                                Ordem = maxE + 1, DataCriacao = DateTime.Now
+                            });
+                        }
+                        foreach (var t in dtoD.Transportes.Where(t => !string.IsNullOrWhiteSpace(t.Titulo)))
+                        {
+                            var maxT = await _context.Transportes.Where(x => x.DestinoId == destino.Id).MaxAsync(x => (int?)x.Ordem) ?? 0;
+                            _context.Transportes.Add(new Transporte
+                            {
+                                Id = Guid.NewGuid(), DestinoId = destino.Id,
+                                Titulo = t.Titulo.Trim(), Descricao = t.Descricao?.Trim(),
+                                Valor = t.Valor, Ordem = maxT + 1, DataCriacao = DateTime.Now
+                            });
+                        }
+                        await _context.SaveChangesAsync();
+                    }
+                    resultado.Mensagem = $"{resultado.Itens} destino{(resultado.Itens != 1 ? "s" : "")} adicionado{(resultado.Itens != 1 ? "s" : "")} com hospedagens, experiências e transportes";
+                    break;
+
+                case "seguros":
+                    foreach (var dto in (req.Seguros ?? new()).Where(s => !string.IsNullOrWhiteSpace(s.Titulo)))
+                    {
+                        var maxOrdem = await _context.Seguros
+                            .Where(s => s.PropostaId == propostaId).MaxAsync(s => (int?)s.Ordem) ?? 0;
+                        _context.Seguros.Add(new Seguro
+                        {
+                            Id = Guid.NewGuid(), PropostaId = propostaId,
+                            Titulo = dto.Titulo.Trim(), Descricao = dto.Descricao?.Trim(),
+                            Valor = dto.Valor, Ordem = maxOrdem + 1, DataCriacao = DateTime.Now
+                        });
+                        resultado.Itens++;
+                    }
+                    await _context.SaveChangesAsync();
+                    resultado.Mensagem = $"{resultado.Itens} seguro{(resultado.Itens != 1 ? "s" : "")} adicionado{(resultado.Itens != 1 ? "s" : "")}";
+                    break;
+
+                default:
+                    return BlocoErro(req.Bloco, $"Bloco desconhecido: {req.Bloco}");
+            }
+
+            return resultado;
+        }
+
+        private static ResultadoBloco BlocoErro(string bloco, string msg) =>
+            new() { Ok = false, Bloco = bloco, Erro = msg };
+
         // ── Helpers ──────────────────────────────────────────────────────────────
 
         private static ResultadoImportacao Erro(string msg) =>

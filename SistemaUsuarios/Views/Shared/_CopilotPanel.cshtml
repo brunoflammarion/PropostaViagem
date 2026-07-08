@@ -236,13 +236,56 @@
 }
 .cp-attach-chip .chip-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cp-attach-chip button { background: none; border: none; padding: 0; color: inherit; cursor: pointer; line-height: 1; flex-shrink: 0; font-size: .65rem; }
-/* Cartão de análise de importação */
-.cp-import-card { background: #f0f7ff; border: 1px solid #b6d4fe; border-radius: 10px; padding: 12px 14px; margin-top: 6px; }
-.cp-import-card .import-title { font-weight: 700; font-size: .82rem; color: #084298; margin-bottom: 6px; }
-.cp-import-counts { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0; }
-.cp-import-counts .badge { font-size: .72rem; }
-.cp-import-actions { display: flex; gap: 6px; margin-top: 10px; }
-.cp-import-actions .btn { font-size: .78rem; }
+/* ── Cards de bloco (fluxo de importação conversacional) ─────────────── */
+.cp-bloco-card {
+    background: #f0f7ff !important;
+    border-color: #b6d4fe !important;
+    padding: 12px 14px !important;
+}
+.cp-bloco-header {
+    display: flex; align-items: center; gap: 6px;
+    font-size: .83rem; margin-bottom: 10px;
+    color: #084298;
+}
+.cp-bloco-count {
+    margin-left: auto; font-size: .7rem; font-weight: 600;
+    background: #b6d4fe; color: #084298; border-radius: 20px;
+    padding: 1px 8px;
+}
+.cp-bloco-itens { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
+.cp-bloco-item {
+    font-size: .79rem; padding: 4px 8px;
+    background: rgba(255,255,255,.7); border-radius: 6px;
+    border: 1px solid #dce7f7;
+}
+.cp-bloco-item-destino {
+    font-size: .79rem; padding: 6px 8px;
+    background: rgba(255,255,255,.7); border-radius: 6px;
+    border: 1px solid #dce7f7;
+    display: flex; flex-direction: column; gap: 3px;
+}
+.cp-bloco-sub {
+    font-size: .75rem; color: #444; padding-left: 14px;
+    border-left: 2px solid #b6d4fe; margin-left: 6px;
+}
+.cp-item-detalhe { color: #6c757d; font-weight: 400; }
+.cp-obs-item { font-size: .75rem; color: #555; font-style: italic; }
+.cp-bloco-actions { display: flex; gap: 6px; }
+.cp-bloco-actions .btn { font-size: .78rem; }
+.cp-confirmado-badge {
+    font-size: .65rem; font-weight: 600; color: #198754;
+    background: #d1e7dd; border-radius: 20px; padding: 1px 7px; margin-left: 4px;
+}
+.cp-pulado-badge {
+    font-size: .65rem; font-weight: 600; color: #6c757d;
+    background: #e9ecef; border-radius: 20px; padding: 1px 7px; margin-left: 4px;
+}
+/* Alertas e pendências */
+.cp-alerta-bubble {
+    background: #fff8e1 !important; border-color: #ffc107 !important;
+}
+.cp-alerta-title { font-size: .72rem; font-weight: 700; color: #856404; margin-bottom: 5px; }
+.cp-alerta-item  { font-size: .78rem; color: #664d03; padding: 2px 0; }
 
 /* Scrollbar das mensagens */
 .copilot-messages::-webkit-scrollbar { width: 4px; }

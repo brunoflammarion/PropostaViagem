@@ -116,42 +116,39 @@ namespace SistemaUsuarios.Controllers
                     return NotFound(new { erro = "Proposta não encontrada ou sem permissão." });
             }
 
-            var (preview, erro) = await _importacaoIA.AnalisarAsync(arquivos);
+            var (draft, erro) = await _importacaoIA.AnalisarAsync(arquivos);
 
-            if (preview == null)
+            if (draft == null)
                 return BadRequest(new { erro = erro ?? "Erro ao processar os documentos." });
 
-            // Build chat-style summary
-            var partes = new List<string>();
-            if (preview.Passageiros?.Count > 0)
-                partes.Add($"{preview.Passageiros.Count} passageiro{(preview.Passageiros.Count > 1 ? "s" : "")}");
-            if (preview.Voos?.Count > 0)
-                partes.Add($"{preview.Voos.Count} voo{(preview.Voos.Count > 1 ? "s" : "")}");
-            if (preview.Destinos?.Count > 0)
+            // Contar itens para saber se há algo a importar
+            var temItens = draft.Passageiros.Any() || draft.Voos.Any() ||
+                           draft.Destinos.Any() || draft.Seguros.Any();
+
+            // Se a IA não gerou mensagemInicial, construímos uma de fallback
+            if (string.IsNullOrWhiteSpace(draft.MensagemInicial))
             {
-                partes.Add($"{preview.Destinos.Count} destino{(preview.Destinos.Count > 1 ? "s" : "")}");
-                var h = preview.Destinos.Sum(d => d.Hospedagens?.Count ?? 0);
-                var e = preview.Destinos.Sum(d => d.Experiencias?.Count ?? 0);
-                var t = preview.Destinos.Sum(d => d.Transportes?.Count ?? 0);
-                if (h > 0) partes.Add($"{h} hospedagem{(h > 1 ? "ns" : "")}");
-                if (e > 0) partes.Add($"{e} experiência{(e > 1 ? "s" : "")}");
-                if (t > 0) partes.Add($"{t} transporte{(t > 1 ? "s" : "")}");
+                var partes = new List<string>();
+                if (draft.Passageiros.Count > 0) partes.Add($"{draft.Passageiros.Count} passageiro{(draft.Passageiros.Count != 1 ? "s" : "")}");
+                if (draft.Voos.Count > 0) partes.Add($"{draft.Voos.Count} voo{(draft.Voos.Count != 1 ? "s" : "")}");
+                if (draft.Destinos.Count > 0)
+                {
+                    partes.Add($"{draft.Destinos.Count} destino{(draft.Destinos.Count != 1 ? "s" : "")}");
+                    var h = draft.Destinos.Sum(d => d.Hospedagens.Count);
+                    var e = draft.Destinos.Sum(d => d.Experiencias.Count);
+                    var t = draft.Destinos.Sum(d => d.Transportes.Count);
+                    if (h > 0) partes.Add($"{h} hospedagem{(h != 1 ? "ns" : "")}");
+                    if (e > 0) partes.Add($"{e} experiência{(e != 1 ? "s" : "")}");
+                    if (t > 0) partes.Add($"{t} transporte{(t != 1 ? "s" : "")}");
+                }
+                if (draft.Seguros.Count > 0) partes.Add($"{draft.Seguros.Count} seguro{(draft.Seguros.Count != 1 ? "s" : "")}");
+
+                draft.MensagemInicial = temItens
+                    ? $"Analisei o documento e encontrei: {string.Join(", ", partes)}.\n\nPosso adicionar esses itens à sua proposta?"
+                    : "Analisei o documento mas não encontrei itens estruturados (voos, hospedagens, passageiros, etc.). Tente com um documento diferente.";
             }
-            if (preview.Seguros?.Count > 0)
-                partes.Add($"{preview.Seguros.Count} seguro{(preview.Seguros.Count > 1 ? "s" : "")}");
 
-            var temItens = partes.Count > 0;
-            var resumo   = temItens
-                ? $"Identifiquei neste documento: {string.Join(", ", partes)}. Posso adicionar esses itens a esta proposta?"
-                : "Analisei o documento mas não encontrei itens estruturados que eu possa importar (voos, hospedagens, passageiros, etc.). Tente com um documento diferente.";
-
-            return Json(new
-            {
-                tipo     = "analise_documentos",
-                resumo,
-                preview,
-                temItens
-            });
+            return Json(new { tipo = "analise_documentos", draft, temItens });
         }
     }
 }
