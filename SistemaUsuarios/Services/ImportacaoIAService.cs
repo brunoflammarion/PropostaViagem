@@ -120,7 +120,7 @@ namespace SistemaUsuarios.Services
                     new { role = "user", content = contentItems }
                 },
                 response_format = new { type = "json_object" },
-                max_tokens = 4096,
+                max_tokens = 8192,
                 temperature = 0.1
             };
 
@@ -195,8 +195,34 @@ namespace SistemaUsuarios.Services
                 var sb = new StringBuilder();
                 foreach (var page in pdf.GetPages())
                 {
-                    var words = page.GetWords().Select(w => w.Text);
-                    sb.AppendLine(string.Join(" ", words));
+                    // Group words into lines by Y coordinate proximity (tolerance = 4 pts)
+                    // Then sort lines top→bottom and words left→right
+                    var wordList = page.GetWords().ToList();
+                    if (!wordList.Any()) continue;
+
+                    var lines = new List<(double yKey, List<(double x, string text)> words)>();
+                    foreach (var word in wordList)
+                    {
+                        // PdfPig: Y increases upward; use Bottom as anchor
+                        var y = Math.Round(word.BoundingBox.Bottom, 0);
+                        var existing = lines.FirstOrDefault(l => Math.Abs(l.yKey - y) <= 4);
+                        if (existing.words != null)
+                        {
+                            existing.words.Add((word.BoundingBox.Left, word.Text));
+                        }
+                        else
+                        {
+                            lines.Add((y, new List<(double, string)> { (word.BoundingBox.Left, word.Text) }));
+                        }
+                    }
+
+                    // Sort lines descending by Y (top of page first in PDF coords)
+                    foreach (var line in lines.OrderByDescending(l => l.yKey))
+                    {
+                        var lineText = string.Join(" ", line.words.OrderBy(w => w.x).Select(w => w.text));
+                        sb.AppendLine(lineText);
+                    }
+                    sb.AppendLine(); // page break
                 }
                 return sb.ToString().Trim();
             }
@@ -233,25 +259,79 @@ namespace SistemaUsuarios.Services
             catch { return json.Length > 200 ? json[..200] : json; }
         }
 
-        private static string BuildSystemPrompt() => @"Você é um extrator especializado em documentos de viagem. Sua única função é analisar documentos (PDFs, imagens, e-mails, vouchers, confirmações de reserva) e retornar um JSON estruturado com TODAS as informações encontradas.
+        private static string BuildSystemPrompt() => @"Você é um extrator especializado em documentos de viagem de operadoras e agências brasileiras (G7, CVC, Decolar, Infotera, Visual, Queensberry, etc.).
+Sua única função é analisar o conteúdo fornecido e retornar um JSON estruturado com TODAS as informações encontradas.
 
-REGRAS OBRIGATÓRIAS:
-1. Retorne APENAS JSON válido, sem nenhum texto adicional fora do JSON
-2. NUNCA invente ou infira informações que não estejam explicitamente no documento
-3. Use null para qualquer campo que não esteja presente no documento
-4. Datas: use formato ISO ""yyyy-MM-dd"" para datas, ""yyyy-MM-ddTHH:mm:ss"" para data+hora
-5. Coordenadas: forneça valores aproximados para cidades/locais conhecidos; use null se não tiver certeza
-6. Todos os textos em português quando possível
-7. Para tipo de voo: ""Ida"" = voo de ida, ""Volta"" = voo de retorno, ""Interno"" = doméstico/conexão
-8. Para categoria de hospedagem: Hotel, Pousada, Resort, HotelFazenda, AluguelCasa, Camping, Outros
-9. Para tipo de pensão: SemPensao, CafeDaManha, MeiaPensao, PensaoCompleta, AllInclusive, Outros
+══ REGRAS OBRIGATÓRIAS ══
+1. Retorne APENAS JSON válido, sem nenhum texto fora do JSON
+2. NUNCA invente informações — use null para campos ausentes
+3. Datas: ISO ""yyyy-MM-dd"" para datas, ""yyyy-MM-ddTHH:mm:ss"" para data+hora
+4. Coordenadas: forneça valores para cidades conhecidas; null se incerto
 
-RETORNE ESTE JSON (preencha os campos encontrados, use null nos ausentes):
+══ PADRÕES BRASILEIROS QUE VOCÊ DEVE RECONHECER ══
+
+DATAS EM PT-BR — converta para ISO:
+  jan=01 fev=02 mar=03 abr=04 mai=05 jun=06 jul=07 ago=08 set=09 out=10 nov=11 dez=12
+  Ex: ""09 out 2026"" → ""2026-10-09""
+
+MOEDA BRASILEIRA:
+  ""R$ 1.234,56"" → 1234.56  (ponto=milhar, vírgula=decimal)
+
+COMPANHIAS AÉREAS BRASILEIRAS E PREFIXOS IATA:
+  Azul=AD  LATAM=LA  Gol=G3
+  Se o documento disser ""Voo Operado por Azul"" + ""Voo: 2976"" → numeroVoo=""AD2976"", companhia=""Azul""
+  Se não tiver prefixo, use o número como está e coloque a companhia no campo companhia
+
+AEROPORTOS BRASILEIROS (IATA):
+  GRU=São Paulo Guarulhos  CGH=Congonhas  VCP=Campinas
+  GIG=Rio de Janeiro Galeão  SDU=Santos Dumont
+  BSB=Brasília  CNF=Belo Horizonte Confins
+  CWB=Curitiba  POA=Porto Alegre  FLN=Florianópolis
+  SSA=Salvador  REC=Recife  FOR=Fortaleza  NAT=Natal  MCZ=Maceió
+  BEL=Belém  MAO=Manaus  THE=Teresina  SLZ=São Luís
+
+TIPO DE VOO:
+  ""Ida"" = voo de saída (origem=cidade do cliente)
+  ""Volta"" = voo de retorno
+  ""Interno"" = conexão doméstica no destino
+
+REFEIÇÕES/PENSÃO — mapeie para os valores exatos:
+  ""Breakfast"" / ""Café da Manhã"" / ""BB"" → CafeDaManha
+  ""Meia Pensão"" / ""HB"" → MeiaPensao
+  ""Pensão Completa"" / ""FB"" → PensaoCompleta
+  ""All Inclusive"" / ""AI"" → AllInclusive
+  Sem refeição / ""RO"" → SemPensao
+
+CATEGORIA DE HOSPEDAGEM — mapeie para:
+  Hotel, Pousada, Resort, HotelFazenda, AluguelCasa, Camping, Outros
+  Ex: ""Pousada Caminho dos Plátanos"" → categoria=""Pousada""
+
+PASSAGEIROS SEM NOME:
+  Se o documento listar apenas contagens (ex: ""2 Adultos 1 Criança (3 anos)""):
+  → Crie entradas: ""Adulto 1"", ""Adulto 2"", ""Criança 1""
+  → Para criança com idade, calcule dataNascimento aproximada subtraindo a idade do ano da viagem
+  → Ex: viagem em 2026, criança de 3 anos → dataNascimento=""2023-01-01""
+  → Relacionamento de criança → ""Filho"" (padrão)
+
+TRASLADO / TRANSFER:
+  Serviços como ""Traslado Aeroporto/Hotel"", ""Transfer"", ""Shuttle"" → coloque em ""transportes"", NÃO em ""experiencias""
+
+PASSEIOS / EXCURSÕES / CITY TOUR:
+  → coloque em ""experiencias""
+
+SEGURO VIAGEM:
+  Qualquer menção a seguro, cobertura médica, assistência viagem → coloque em ""seguros""
+
+NÚMERO DO ORÇAMENTO:
+  O número do orçamento/reserva (ex: ""Orcamento 1: 189312"") deve ir em proposta.observacoesGerais
+  E também como reserva na hospedagem correspondente
+
+══ ESTRUTURA JSON OBRIGATÓRIA ══
 {
   ""proposta"": {
-    ""titulo"": ""string ou null"",
-    ""observacoesGerais"": ""string ou null"",
-    ""operadora"": ""string ou null""
+    ""titulo"": ""string descritivo (ex: Gramado 09-12/10/2026) ou null"",
+    ""observacoesGerais"": ""string com número do orçamento, operadora e condições relevantes ou null"",
+    ""operadora"": ""nome da operadora ou null""
   },
   ""passageiros"": [
     {
@@ -264,24 +344,24 @@ RETORNE ESTE JSON (preencha os campos encontrados, use null nos ausentes):
   ],
   ""voos"": [
     {
-      ""numeroVoo"": ""string obrigatório (ex: LA3050)"",
+      ""numeroVoo"": ""string obrigatório com prefixo IATA se possível (ex: AD2976)"",
       ""tipoVoo"": ""Ida ou Volta ou Interno"",
-      ""companhia"": ""string obrigatório (ex: LATAM)"",
-      ""classe"": ""string ou null"",
-      ""duracao"": ""string ou null (ex: 2h30)"",
-      ""origem"": ""código IATA ou nome da cidade"",
-      ""destino"": ""código IATA ou nome da cidade"",
+      ""companhia"": ""nome da companhia (ex: Azul)"",
+      ""classe"": ""Econômica ou Executiva ou Primeira ou null"",
+      ""duracao"": ""string (ex: 1h15) ou null"",
+      ""origem"": ""código IATA de 3 letras"",
+      ""destino"": ""código IATA de 3 letras"",
       ""horarioSaida"": ""yyyy-MM-ddTHH:mm:ss ou null"",
       ""horarioChegada"": ""yyyy-MM-ddTHH:mm:ss ou null"",
-      ""bagagemMaoPeso"": ""número em kg ou null"",
-      ""bagagemDespachadaPeso"": ""número em kg ou null""
+      ""bagagemMaoPeso"": null,
+      ""bagagemDespachadaPeso"": null
     }
   ],
   ""destinos"": [
     {
-      ""nome"": ""string obrigatório"",
-      ""pais"": ""string ou null"",
-      ""cidade"": ""string ou null"",
+      ""nome"": ""nome do destino obrigatório (ex: Gramado)"",
+      ""pais"": ""Brasil ou nome do país"",
+      ""cidade"": ""nome da cidade"",
       ""dataChegada"": ""yyyy-MM-dd ou null"",
       ""dataSaida"": ""yyyy-MM-dd ou null"",
       ""latitude"": ""número decimal ou null"",
@@ -290,8 +370,8 @@ RETORNE ESTE JSON (preencha os campos encontrados, use null nos ausentes):
       ""hospedagens"": [
         {
           ""nome"": ""string obrigatório"",
-          ""descricao"": ""string ou null"",
-          ""endereco"": ""string ou null"",
+          ""descricao"": ""tipo de quarto e observações ou null"",
+          ""endereco"": ""endereço completo ou null"",
           ""latitude"": ""número decimal ou null"",
           ""longitude"": ""número decimal ou null"",
           ""checkIn"": ""yyyy-MM-dd ou null"",
@@ -304,7 +384,7 @@ RETORNE ESTE JSON (preencha os campos encontrados, use null nos ausentes):
       ],
       ""experiencias"": [
         {
-          ""tipoPasseio"": ""string obrigatório"",
+          ""tipoPasseio"": ""nome do passeio/excursão obrigatório"",
           ""descricao"": ""string ou null"",
           ""valor"": ""número decimal ou null"",
           ""dataInicio"": ""yyyy-MM-ddTHH:mm:ss ou null"",
@@ -313,8 +393,8 @@ RETORNE ESTE JSON (preencha os campos encontrados, use null nos ausentes):
       ],
       ""transportes"": [
         {
-          ""titulo"": ""string obrigatório"",
-          ""descricao"": ""string ou null"",
+          ""titulo"": ""nome do traslado/transfer obrigatório"",
+          ""descricao"": ""string com detalhes da empresa e trajeto ou null"",
           ""valor"": ""número decimal ou null""
         }
       ]
@@ -322,14 +402,14 @@ RETORNE ESTE JSON (preencha os campos encontrados, use null nos ausentes):
   ],
   ""seguros"": [
     {
-      ""titulo"": ""string obrigatório"",
+      ""titulo"": ""nome do seguro obrigatório"",
       ""descricao"": ""string ou null"",
       ""valor"": ""número decimal ou null""
     }
   ],
   ""valoresFinanceiros"": {
-    ""valorTotal"": ""número decimal ou null"",
-    ""observacoes"": ""string com resumo financeiro ou null""
+    ""valorTotal"": ""número decimal (R$ sem formatação, ex: 2819.64) ou null"",
+    ""observacoes"": ""resumo financeiro: condições de pagamento, parcelamento ou null""
   }
 }";
     }

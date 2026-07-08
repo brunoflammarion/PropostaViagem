@@ -87,9 +87,9 @@
         }
 
         // ── File attachment ──────────────────────────────────────────────────
-        if (attachBtn && fileInput) {
-            attachBtn.addEventListener('click', () => fileInput.click());
-
+        // O <label for="cpFileInput"> no HTML cuida do clique nativamente.
+        // Aqui só precisamos ouvir o 'change' para processar os arquivos selecionados.
+        if (fileInput) {
             fileInput.addEventListener('change', () => {
                 Array.from(fileInput.files).forEach(f => {
                     if (attachedFiles.length >= 5) return;
