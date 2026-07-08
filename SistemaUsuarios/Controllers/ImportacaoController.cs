@@ -64,6 +64,7 @@ namespace SistemaUsuarios.Controllers
             {
                 Titulo               = "Nova Proposta",
                 StatusProposta       = StatusProposta.Rascunho,
+                UsuarioId            = usuarioId,
                 UsuarioMasterId      = masterUsuarioId,
                 UsuarioResponsavelId = responsavelId,
                 DataCriacao          = DateTime.UtcNow,
