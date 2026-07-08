@@ -88,16 +88,30 @@
                 btn.addEventListener('click', () => sendMessage(btn.dataset.msg)));
         }
 
-        // ── File attachment (label for= cuida do clique) ─────────────────────
+        // ── File attachment ──────────────────────────────────────────────────
+        const attachBtn  = document.getElementById('cpAttachBtn');
+
+        if (attachBtn && fileInput) {
+            // Disparo explícito via JS — mais compatível que label for= em todos os browsers
+            attachBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                fileInput.click();
+            });
+        }
+
         if (fileInput) {
-            fileInput.addEventListener('change', () => {
-                Array.from(fileInput.files).forEach(f => {
+            fileInput.addEventListener('change', function () {
+                const files = this.files;
+                if (!files || files.length === 0) return;
+                Array.from(files).forEach(f => {
                     if (attachedFiles.length >= 5) return;
                     if (!attachedFiles.find(x => x.name === f.name && x.size === f.size))
                         attachedFiles.push(f);
                 });
-                fileInput.value = '';
+                this.value = '';
                 renderAttachChips();
+                // Abrir painel se ainda não estiver aberto
+                if (!opened) openPanel();
             });
         }
 

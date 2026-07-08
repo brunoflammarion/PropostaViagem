@@ -348,10 +348,9 @@
         <div class="cp-input-wrap">
             @if (Model.HasValue)
             {
-                /* label for= associa nativamente ao file input sem precisar de JS click() */
-                <label for="cpFileInput" id="cpAttachBtn" class="btn btn-sm btn-outline-secondary cp-attach-btn" title="Anexar documento para importar" style="cursor:pointer;margin:0;">
+                <button type="button" id="cpAttachBtn" class="btn btn-sm btn-outline-secondary cp-attach-btn" title="Anexar documento para importar">
                     <i class="fas fa-paperclip"></i>
-                </label>
+                </button>
             }
             <textarea id="copilotInput"
                       class="cp-textarea"
@@ -369,8 +368,8 @@
         {
             <div class="cp-hint">Enter para enviar · Shift+Enter para nova linha</div>
         }
-        <input type="file" id="cpFileInput" multiple
+        <input type="file" id="cpFileInput" multiple tabindex="-1"
                accept=".pdf,.jpg,.jpeg,.png,.gif,.webp,.docx,.txt,.eml,.html"
-               style="position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;pointer-events:none;">
+               style="position:fixed;left:-9999px;top:-9999px;opacity:0;width:1px;height:1px;">
     </div>
 </div>
