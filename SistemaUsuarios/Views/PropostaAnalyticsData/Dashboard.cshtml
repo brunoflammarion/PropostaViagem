@@ -5,15 +5,6 @@
 }
 
 @functions {
-    string BadgeClass(StatusProposta s) => s switch {
-        StatusProposta.Rascunho => "secondary",
-        StatusProposta.Enviada  => "primary",
-        StatusProposta.Aprovada => "success",
-        StatusProposta.Rejeitada => "danger",
-        StatusProposta.Cancelada => "dark",
-        _ => "secondary"
-    };
-
     string StatusLabel(StatusProposta s) => s switch {
         StatusProposta.Rascunho  => "Rascunho",
         StatusProposta.Enviada   => "Enviada",
@@ -21,6 +12,16 @@
         StatusProposta.Rejeitada => "Rejeitada",
         StatusProposta.Cancelada => "Cancelada",
         _ => s.ToString()
+    };
+
+    // CSS class suffix for status badges (paleta AT, sem conflito com agenttools-app.css)
+    string StatusBadgeMod(StatusProposta s) => s switch {
+        StatusProposta.Rascunho  => "s-rascunho",
+        StatusProposta.Enviada   => "s-enviada",
+        StatusProposta.Aprovada  => "s-aprovada",
+        StatusProposta.Rejeitada => "s-rejeitada",
+        StatusProposta.Cancelada => "s-cancelada",
+        _ => "s-rascunho"
     };
 
     string FormatarData(DateTime? dt) {
@@ -190,7 +191,6 @@
                             <thead>
                                 <tr>
                                     <th>Proposta</th>
-                                    <th>Status</th>
                                     <th class="text-center">Visualizações</th>
                                     <th class="text-center">Avaliações</th>
                                     <th>Última visita</th>
@@ -219,12 +219,6 @@
                                                     }
                                                 </span>
                                             }
-                                        </td>
-                                        <td>
-                                            <span class="badge bg-@BadgeClass(p.StatusProposta) bg-opacity-10 text-@BadgeClass(p.StatusProposta)"
-                                                  style="font-size:.72rem; font-weight:600;">
-                                                @StatusLabel(p.StatusProposta)
-                                            </span>
                                         </td>
                                         <td class="text-center">
                                             <span class="viz-badge">
@@ -286,9 +280,7 @@
                     </div>
                     @if (Model.OportunidadesFollowUp.Any())
                     {
-                        <span class="badge" style="background:#fff7ed; color:#d97706; font-size:.75rem;">
-                            @Model.OportunidadesFollowUp.Count
-                        </span>
+                        <span class="followup-count-badge">@Model.OportunidadesFollowUp.Count</span>
                     }
                 </div>
 
@@ -313,11 +305,10 @@
                                         <i class="fas fa-user me-1" style="font-size:.7rem; opacity:.6;"></i>@op.ClienteNome
                                         <span class="mx-1 text-muted">·</span>
                                     }
-                                    <span class="badge bg-@BadgeClass(op.StatusProposta) bg-opacity-10 text-@BadgeClass(op.StatusProposta)"
-                                          style="font-size:.7rem;">@StatusLabel(op.StatusProposta)</span>
+                                    <span class="at-status-badge @StatusBadgeMod(op.StatusProposta)">@StatusLabel(op.StatusProposta)</span>
                                     @if (op.UltimaVisualizacao.HasValue)
                                     {
-                                        <span class="ms-1 text-muted" style="font-size:.75rem;">· @FormatarData(op.UltimaVisualizacao)</span>
+                                        <span class="ms-1" style="font-size:.75rem; color:#9ca3af;">· @FormatarData(op.UltimaVisualizacao)</span>
                                     }
                                 </div>
                                 <div class="followup-motivo">@op.MotivoSugestao</div>

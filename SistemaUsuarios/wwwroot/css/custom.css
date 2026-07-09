@@ -1320,7 +1320,7 @@ a:hover {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    max-width: 220px;
+    max-width: 300px;
 }
 
 #analytics-dashboard-page .radar-proposta-sub {
@@ -1330,7 +1330,7 @@ a:hover {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    max-width: 220px;
+    max-width: 300px;
 }
 
 #analytics-dashboard-page .viz-badge {
@@ -1437,13 +1437,47 @@ a:hover {
 #analytics-dashboard-page .followup-motivo {
     font-size: .8125rem;
     color: #374151;
-    background: var(--at-brand-surface);
-    border-left: 3px solid var(--at-brand);
-    padding: 6px 10px;
-    border-radius: 0 4px 4px 0;
-    margin-bottom: 8px;
-    line-height: 1.45;
+    background: rgba(91, 168, 255, 0.08);
+    border-left: 3px solid #5BA8FF;
+    padding: 7px 10px;
+    border-radius: 0 6px 6px 0;
+    margin-bottom: 10px;
+    line-height: 1.5;
 }
+
+/* ── Count badge ─────────────────────────────────────── */
+#analytics-dashboard-page .followup-count-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 24px;
+    padding: 0 8px;
+    background: #1E4E8C;
+    color: #fff;
+    border-radius: 20px;
+    font-size: .75rem;
+    font-weight: 700;
+    letter-spacing: .01em;
+    flex-shrink: 0;
+}
+
+/* ── Status badges (sem conflito com agenttools-app.css) ─ */
+#analytics-dashboard-page .at-status-badge {
+    display: inline-flex;
+    align-items: center;
+    font-size: .7rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 20px;
+    line-height: 1.6;
+    vertical-align: middle;
+}
+#analytics-dashboard-page .at-status-badge.s-rascunho  { background: #f1f3f5; color: #495057; }
+#analytics-dashboard-page .at-status-badge.s-enviada   { background: #E6F1FF; color: #1E4E8C; }
+#analytics-dashboard-page .at-status-badge.s-aprovada  { background: #dcfce7; color: #166534; }
+#analytics-dashboard-page .at-status-badge.s-rejeitada { background: #fee2e2; color: #991b1b; }
+#analytics-dashboard-page .at-status-badge.s-cancelada { background: #f1f3f5; color: #6b7280; }
 
 @media (max-width: 991.98px) {
     #analytics-dashboard-page .analytics-summary-grid {
@@ -1460,8 +1494,9 @@ a:hover {
         gap: 8px;
     }
 
-    #analytics-dashboard-page .radar-proposta-name {
-        max-width: 140px;
+    #analytics-dashboard-page .radar-proposta-name,
+    #analytics-dashboard-page .radar-proposta-sub {
+        max-width: 160px;
     }
 }
 
