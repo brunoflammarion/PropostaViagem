@@ -1,4 +1,4 @@
-﻿@functions {
+@functions {
     static string LightenHex(string hex, int amt)
     {
         if (string.IsNullOrEmpty(hex) || !hex.StartsWith("#") || hex.Length != 7) return hex;
@@ -25,6 +25,12 @@
     var _uTipo       = Context.Session.GetString("TipoUsuario") ?? "Master";
     var _uIsMaster   = _uTipo != "Associado";
     var _uNomeMaster = Context.Session.GetString("NomeMaster");
+
+    // Active-page helpers
+    var _ctrl   = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+    var _action = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
+    string NavCls(string ctrl, string? act = null) =>
+        _ctrl == ctrl && (act == null || _action == act) ? "active" : "";
 }
 <!DOCTYPE html>
 <html lang="pt-br">
@@ -34,13 +40,9 @@
     <title>@(ViewData["Title"] ?? "Agent Tools") - Sistema de Viagens</title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
 
-    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Custom styles (after Bootstrap so our rules win) -->
     <link href="~/css/custom.css" rel="stylesheet" asp-append-version="true">
 
     @await RenderSectionAsync("Styles", required: false)
@@ -59,66 +61,55 @@
         </style>
     }
 
-    <!-- App layout override — carregado APÓS todos os outros CSS -->
     <link href="~/css/agenttools-app.css" rel="stylesheet" asp-append-version="true">
 </head>
 <body class="app-body">
 <div class="app-shell">
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg app-navbar">
+
+    <!-- ══ DESKTOP NAVBAR — visível apenas ≥ 992 px ═══════════════ -->
+    <nav class="navbar navbar-expand-lg app-navbar d-none d-lg-block">
         <div class="container-fluid">
             <a class="navbar-brand d-inline-flex align-items-center gap-2" href="@Url.Action("Index", "Home")">
                 <img src="~/images/logo.png" alt="AgentTools" width="40" height="40" style="display:block;flex-shrink:0;">
                 <span class="brand-wordmark">Agent <strong>Tools</strong></span>
             </a>
 
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-
-            <div class="collapse navbar-collapse" id="navbarNav">
+            <div class="navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Index" && ViewContext.RouteData.Values["controller"]?.ToString() == "Proposta" ? "active" : "")"
-                           href="@Url.Action("Index", "Proposta")">
+                        <a class="nav-link @NavCls("Proposta","Index")" href="@Url.Action("Index", "Proposta")">
                             <i class="fas fa-list me-1"></i>Propostas
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Cliente" ? "active" : "")"
-                           href="@Url.Action("Index", "Cliente")">
+                        <a class="nav-link @NavCls("Cliente")" href="@Url.Action("Index", "Cliente")">
                             <i class="fas fa-users me-1"></i>Clientes
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "PropostaAnalyticsData" ? "active" : "")"
-                           href="/PropostaAnalyticsData/Dashboard">
+                        <a class="nav-link @NavCls("PropostaAnalyticsData")" href="/PropostaAnalyticsData/Dashboard">
                             <i class="fas fa-chart-bar me-1"></i>Analytics
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Tarefa" ? "active" : "")"
-                           href="@Url.Action("Index", "Tarefa")">
+                        <a class="nav-link @NavCls("Tarefa")" href="@Url.Action("Index", "Tarefa")">
                             <i class="fas fa-tasks me-1"></i>Tarefas
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Oferta" ? "active" : "")"
-                           href="@Url.Action("Index", "Oferta")">
+                        <a class="nav-link @NavCls("Oferta")" href="@Url.Action("Index", "Oferta")">
                             <i class="fas fa-bullhorn me-1"></i>Ofertas
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Lead" ? "active" : "")"
-                           href="@Url.Action("Index", "Lead")">
+                        <a class="nav-link @NavCls("Lead")" href="@Url.Action("Index", "Lead")">
                             <i class="fas fa-user-plus me-1"></i>Leads
                         </a>
                     </li>
                     @if (Context.Session.GetString("UsuarioId") != null && _uIsMaster)
                     {
                         <li class="nav-item">
-                            <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Usuario" && ViewContext.RouteData.Values["action"]?.ToString() == "GerenciarEquipe" ? "active" : "")"
-                               href="@Url.Action("GerenciarEquipe", "Usuario")">
+                            <a class="nav-link @NavCls("Usuario","GerenciarEquipe")" href="@Url.Action("GerenciarEquipe", "Usuario")">
                                 <i class="fas fa-users-cog me-1"></i>Equipe
                             </a>
                         </li>
@@ -186,10 +177,97 @@
         </div>
     </nav>
 
-    <!-- Main Content -->
+    <!-- ══ MOBILE HEADER — visível apenas < 992 px ════════════════ -->
+    <header class="at-mobile-header d-flex d-lg-none" role="banner">
+        <a class="at-mobile-brand" href="@Url.Action("Index", "Home")">
+            <img src="~/images/logo.png" alt="AgentTools" width="34" height="34">
+            <span class="at-mobile-wordmark">Agent <strong>Tools</strong></span>
+        </a>
+        <button class="at-hamburger" type="button" id="atMenuToggle"
+                aria-label="Abrir menu de navegação" aria-expanded="false" aria-controls="atDrawer">
+            <span class="at-hamburger-bar"></span>
+            <span class="at-hamburger-bar"></span>
+            <span class="at-hamburger-bar"></span>
+        </button>
+    </header>
+
+    <!-- ══ MOBILE DRAWER ══════════════════════════════════════════ -->
+    <aside class="at-drawer" id="atDrawer" aria-hidden="true" aria-label="Menu de navegação">
+        <div class="at-drawer-header">
+            <img src="~/images/logo.png" alt="AgentTools" width="30" height="30" style="flex-shrink:0;">
+            <span class="at-mobile-wordmark">Agent <strong>Tools</strong></span>
+            <button class="at-drawer-close" id="atDrawerClose" type="button" aria-label="Fechar menu">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <nav class="at-drawer-nav" aria-label="Navegação principal">
+            <a class="at-drawer-link @NavCls("Home","Index")" href="@Url.Action("Index", "Home")">
+                <i class="fas fa-home"></i><span>Home</span>
+            </a>
+            <a class="at-drawer-link @NavCls("Proposta","Index")" href="@Url.Action("Index", "Proposta")">
+                <i class="fas fa-list"></i><span>Propostas</span>
+            </a>
+            <a class="at-drawer-link @NavCls("Cliente")" href="@Url.Action("Index", "Cliente")">
+                <i class="fas fa-users"></i><span>Clientes</span>
+            </a>
+            <a class="at-drawer-link @NavCls("PropostaAnalyticsData")" href="/PropostaAnalyticsData/Dashboard">
+                <i class="fas fa-chart-bar"></i><span>Analytics</span>
+            </a>
+            <a class="at-drawer-link @NavCls("Tarefa")" href="@Url.Action("Index", "Tarefa")">
+                <i class="fas fa-tasks"></i><span>Tarefas</span>
+            </a>
+            <a class="at-drawer-link @NavCls("Oferta")" href="@Url.Action("Index", "Oferta")">
+                <i class="fas fa-bullhorn"></i><span>Ofertas</span>
+            </a>
+            <a class="at-drawer-link @NavCls("Lead")" href="@Url.Action("Index", "Lead")">
+                <i class="fas fa-user-plus"></i><span>Leads</span>
+            </a>
+            @if (Context.Session.GetString("UsuarioId") != null && _uIsMaster)
+            {
+                <a class="at-drawer-link @NavCls("Usuario","GerenciarEquipe")" href="@Url.Action("GerenciarEquipe", "Usuario")">
+                    <i class="fas fa-users-cog"></i><span>Equipe</span>
+                </a>
+            }
+        </nav>
+
+        @if (Context.Session.GetString("UsuarioId") != null)
+        {
+            <div class="at-drawer-divider"></div>
+            <div class="at-drawer-user-section">
+                @if (!_uIsMaster && !string.IsNullOrEmpty(_uNomeMaster))
+                {
+                    <div class="at-drawer-master-badge">
+                        <i class="fas fa-link"></i> Agente de <strong>@_uNomeMaster</strong>
+                    </div>
+                }
+                <a class="at-drawer-link at-drawer-profile" href="@Url.Action("Index", "Usuario")">
+                    @if (!string.IsNullOrEmpty(_uFoto))
+                    {
+                        <img src="@_uFoto" alt="" class="at-drawer-avatar">
+                    }
+                    else
+                    {
+                        <span class="at-drawer-initials">@_uIniciais</span>
+                    }
+                    <div class="at-drawer-user-info">
+                        <div class="at-drawer-user-name">@_uNome</div>
+                        <div class="at-drawer-user-role">@_uTipo</div>
+                    </div>
+                </a>
+                <a class="at-drawer-link at-drawer-logout" href="@Url.Action("Logout", "Auth")">
+                    <i class="fas fa-sign-out-alt"></i><span>Sair</span>
+                </a>
+            </div>
+        }
+    </aside>
+
+    <!-- ══ BACKDROP ═══════════════════════════════════════════════ -->
+    <div class="at-backdrop" id="atBackdrop" aria-hidden="true"></div>
+
+    <!-- ══ CONTEÚDO PRINCIPAL ═════════════════════════════════════ -->
     <main class="app-main">
     <div class="at-app-container@(ViewData["FullBleed"] != null ? " at-app-container--full-bleed" : "")" role="main">
-        <!-- Mensagens de Feedback -->
         @if (TempData["Sucesso"] != null)
         {
             <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -198,7 +276,6 @@
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         }
-
         @if (TempData["Erro"] != null)
         {
             <div class="alert alert-danger alert-dismissible fade show" role="alert">
@@ -207,7 +284,6 @@
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         }
-
         @if (TempData["Aviso"] != null)
         {
             <div class="alert alert-warning alert-dismissible fade show" role="alert">
@@ -216,7 +292,6 @@
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         }
-
         @if (TempData["Info"] != null)
         {
             <div class="alert alert-info alert-dismissible fade show" role="alert">
@@ -226,7 +301,6 @@
             </div>
         }
 
-        <!-- Page Content -->
         @RenderBody()
     </div>
     </main>
@@ -244,33 +318,66 @@
                 </div>
                 <div class="col-md-6 text-md-end mt-3 mt-md-0">
                     <div class="mb-1">
-                        <a href="#" style="color:#687268;" class="me-3 text-decoration-none">
-                            <i class="fab fa-facebook"></i>
-                        </a>
-                        <a href="#" style="color:#687268;" class="me-3 text-decoration-none">
-                            <i class="fab fa-instagram"></i>
-                        </a>
-                        <a href="#" style="color:#687268;" class="text-decoration-none">
-                            <i class="fab fa-whatsapp"></i>
-                        </a>
+                        <a href="#" style="color:#687268;" class="me-3 text-decoration-none"><i class="fab fa-facebook"></i></a>
+                        <a href="#" style="color:#687268;" class="me-3 text-decoration-none"><i class="fab fa-instagram"></i></a>
+                        <a href="#" style="color:#687268;" class="text-decoration-none"><i class="fab fa-whatsapp"></i></a>
                     </div>
                     <p class="mb-0">
-                        <small style="color:#687268;opacity:.65;">
-                            © @DateTime.Now.Year Agent Tools · Todos os direitos reservados
-                        </small>
+                        <small style="color:#687268;opacity:.65;">© @DateTime.Now.Year Agent Tools · Todos os direitos reservados</small>
                     </p>
                 </div>
             </div>
         </div>
     </footer>
 
-    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-
-    <!-- Multi-photo upload component -->
     <script src="~/js/multi-photo.js"></script>
 
     @await RenderSectionAsync("Scripts", required: false)
+
+    <!-- Mobile drawer controller -->
+    <script>
+    (function () {
+        var body     = document.body;
+        var toggle   = document.getElementById('atMenuToggle');
+        var drawer   = document.getElementById('atDrawer');
+        var backdrop = document.getElementById('atBackdrop');
+        var closeBtn = document.getElementById('atDrawerClose');
+
+        function openDrawer() {
+            body.classList.add('at-drawer-open');
+            body.style.overflow = 'hidden';
+            if (drawer)   drawer.setAttribute('aria-hidden', 'false');
+            if (toggle)   toggle.setAttribute('aria-expanded', 'true');
+            if (backdrop) backdrop.setAttribute('aria-hidden', 'false');
+        }
+
+        function closeDrawer() {
+            body.classList.remove('at-drawer-open');
+            body.style.overflow = '';
+            if (drawer)   drawer.setAttribute('aria-hidden', 'true');
+            if (toggle)   toggle.setAttribute('aria-expanded', 'false');
+            if (backdrop) backdrop.setAttribute('aria-hidden', 'true');
+        }
+
+        if (toggle)   toggle.addEventListener('click', openDrawer);
+        if (closeBtn) closeBtn.addEventListener('click', closeDrawer);
+        if (backdrop) backdrop.addEventListener('click', closeDrawer);
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && body.classList.contains('at-drawer-open')) {
+                closeDrawer();
+            }
+        });
+
+        // Close on nav link click (navigation closes drawer)
+        if (drawer) {
+            drawer.querySelectorAll('.at-drawer-link').forEach(function (link) {
+                link.addEventListener('click', closeDrawer);
+            });
+        }
+    })();
+    </script>
 </div><!-- /.app-shell -->
 </body>
 </html>
