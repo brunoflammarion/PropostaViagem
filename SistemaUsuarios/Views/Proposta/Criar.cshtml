@@ -249,7 +249,7 @@
 @await Html.PartialAsync("_CopilotPanel", (Guid?)null)
 
 @section Scripts {
-    <script src="~/js/copilot.js"></script>
+    <script src="~/js/copilot.js" asp-append-version="true"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
 

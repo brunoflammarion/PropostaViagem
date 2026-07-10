@@ -41,19 +41,17 @@
         let blocoIdx       = 0;
         let blocosPulados  = new Set();
 
-        const propostaId = (panel.dataset.propostaId || '').trim() || null;
+        let propostaId = (panel.dataset.propostaId || '').trim() || null;
         const isEditMode = !!propostaId;
 
-        // ── Pendente vindo de "Criar com IA" ────────────────────────────────
+        // ── Sessão de importação vinda de "Criar com IA" ────────────────────
+        // O draft persiste no servidor — carregamos via fetch (sobrevive a reload)
+        const urlParams       = new URLSearchParams(window.location.search);
+        let currentSessaoId   = urlParams.get('sessaoImport') || null;
         let pendingAutoImport = null;
-        if (new URLSearchParams(window.location.search).get('pendingImport') === '1' && isEditMode) {
-            try {
-                const raw = sessionStorage.getItem('pendingImport_' + propostaId);
-                if (raw) {
-                    pendingAutoImport = JSON.parse(raw);
-                    sessionStorage.removeItem('pendingImport_' + propostaId);
-                }
-            } catch (e) { /* ignore */ }
+
+        if (currentSessaoId && isEditMode) {
+            pendingAutoImport = '__fetch__'; // sinaliza: buscar do servidor
         }
 
         // ── Painel abrir/fechar ─────────────────────────────────────────────
@@ -62,11 +60,30 @@
             toggleBtn.style.display = 'none';
             if (!opened) {
                 opened = true;
-                if (pendingAutoImport) {
-                    // Vem do fluxo "Criar com IA" — o objeto já é o response de AnalisarArquivos
-                    const data = pendingAutoImport;
+                if (pendingAutoImport === '__fetch__') {
+                    // Draft persiste no servidor — busca via /Importacao/SessaoDraft
                     pendingAutoImport = null;
-                    setTimeout(() => iniciarRevisaoDraft(data.draft || data), 300);
+                    setTimeout(async () => {
+                        const loadEl = appendLoading();
+                        try {
+                            const res = await fetch('/Importacao/SessaoDraft/' + currentSessaoId);
+                            loadEl.remove();
+                            if (res.ok) {
+                                const data = await res.json();
+                                if (data.draft && (data.draft.mensagemInicial || data.draft.passageiros?.length || data.draft.voos?.length || data.draft.destinos?.length)) {
+                                    iniciarRevisaoDraft(data.draft);
+                                } else {
+                                    appendMsgAI('Recebi o arquivo mas não encontrei itens estruturados para importar. Você pode tentar novamente ou digitar as informações da proposta aqui.');
+                                }
+                            } else {
+                                const err = await res.json().catch(() => ({}));
+                                appendMsgAI(`Não consegui carregar o rascunho da importação (${err.erro || res.status}). Você pode continuar editando a proposta normalmente.`);
+                            }
+                        } catch (e) {
+                            loadEl.remove();
+                            appendMsgAI('Não consegui carregar o rascunho da importação. Você pode continuar editando a proposta normalmente.');
+                        }
+                    }, 300);
                 } else {
                     const hadHistory = isEditMode && loadState();
                     if (!hadHistory) showWelcome();
@@ -313,7 +330,26 @@
 
         // ── Confirmar bloco ───────────────────────────────────────────────────
         window.cpConfirmarBloco = async function (idx) {
-            if (!propostaId || isLoading) return;
+            if (isLoading) return;
+
+            // Sem proposta ainda (copilot aberto em /Proposta/Criar) — cria rascunho primeiro
+            if (!propostaId) {
+                const le = appendLoading();
+                setLoading(true);
+                try {
+                    const r = await fetch('/Importacao/CriarRascunho', { method: 'POST' });
+                    if (!r.ok) throw new Error('Não foi possível criar a proposta.');
+                    const d = await r.json();
+                    propostaId = d.propostaId; // atualiza closure — todos os próximos blocos usarão este ID
+                } catch (e) {
+                    le.remove();
+                    setLoading(false);
+                    appendMsgAI('Não consegui criar a proposta automaticamente. Tente usar "Criar com IA" na tela de Propostas.');
+                    return;
+                }
+                le.remove();
+                setLoading(false);
+            }
 
             const bloco  = draftBlocos[idx];
             const cardEl = document.getElementById(`cp-bloco-${idx}`);
@@ -463,7 +499,9 @@
             }
         }
 
-        // ── Envio com arquivos → análise de importação ────────────────────────
+        // ── Envio com arquivos ────────────────────────────────────────────────
+        // Se houver sessaoImport ativa → mescla no draft existente.
+        // Caso contrário → análise fresca via AiCopilot/AnalisarArquivos.
         async function sendWithFiles(extraText) {
             if (isLoading) return;
 
@@ -481,29 +519,58 @@
             const loadEl = appendLoading();
             setLoading(true);
 
-            try {
-                const fd = new FormData();
-                fd.append('propostaId', propostaId || '');
-                files.forEach(f => fd.append('arquivos', f));
+            if (currentSessaoId) {
+                // Mescla no draft existente (preserva itens já confirmados)
+                try {
+                    const fd = new FormData();
+                    files.forEach(f => fd.append('arquivos', f));
 
-                const res = await fetch('/AiCopilot/AnalisarArquivos', { method: 'POST', body: fd });
-                if (!res.ok) {
-                    const err = await res.json().catch(() => ({}));
-                    throw new Error(err.erro || `Erro ${res.status}`);
-                }
-                const data = await res.json();
-                loadEl.remove();
+                    const res = await fetch('/Importacao/MesclarArquivos/' + currentSessaoId, { method: 'POST', body: fd });
+                    if (!res.ok) {
+                        const err = await res.json().catch(() => ({}));
+                        throw new Error(err.erro || `Erro ${res.status}`);
+                    }
+                    const data = await res.json();
+                    loadEl.remove();
 
-                if (data.tipo === 'analise_documentos' && data.draft) {
-                    iniciarRevisaoDraft(data.draft);
-                } else {
-                    appendMsgAI(data.mensagem || 'Análise concluída, mas não encontrei itens estruturados.');
+                    appendMsgAI(data.mensagem || 'Arquivo analisado e mesclado ao rascunho.');
+
+                    // Apresenta apenas os blocos com itens NOVOS (delta)
+                    if (data.temDelta && data.delta) {
+                        setTimeout(() => iniciarRevisaoDraft(data.delta), 600);
+                    }
+                } catch (e) {
+                    loadEl.remove();
+                    appendMsgAI(`Erro ao mesclar o documento: ${e.message}`);
+                } finally {
+                    setLoading(false);
                 }
-            } catch (e) {
-                loadEl.remove();
-                appendMsgAI(`Erro ao analisar o documento: ${e.message}`);
-            } finally {
-                setLoading(false);
+            } else {
+                // Análise independente (sem sessão de importação ativa)
+                try {
+                    const fd = new FormData();
+                    fd.append('propostaId', propostaId || '');
+                    files.forEach(f => fd.append('arquivos', f));
+
+                    const res = await fetch('/AiCopilot/AnalisarArquivos', { method: 'POST', body: fd });
+                    if (!res.ok) {
+                        const err = await res.json().catch(() => ({}));
+                        throw new Error(err.erro || `Erro ${res.status}`);
+                    }
+                    const data = await res.json();
+                    loadEl.remove();
+
+                    if (data.tipo === 'analise_documentos' && data.draft) {
+                        iniciarRevisaoDraft(data.draft);
+                    } else {
+                        appendMsgAI(data.mensagem || 'Análise concluída, mas não encontrei itens estruturados.');
+                    }
+                } catch (e) {
+                    loadEl.remove();
+                    appendMsgAI(`Erro ao analisar o documento: ${e.message}`);
+                } finally {
+                    setLoading(false);
+                }
             }
         }
 

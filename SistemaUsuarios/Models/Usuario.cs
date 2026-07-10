@@ -56,6 +56,9 @@ namespace SistemaUsuarios.Models
         /// <summary>Nulo para usuários Master; aponta para o Master responsável para usuários Associados.</summary>
         public Guid? UsuarioMasterId { get; set; }
 
+        [MaxLength(64)]
+        public string? CalendarioToken { get; set; }
+
         // Navigation properties de hierarquia
         public virtual Usuario? UsuarioMaster { get; set; }
         public virtual ICollection<Usuario> Associados { get; set; } = new List<Usuario>();

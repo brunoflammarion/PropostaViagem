@@ -215,7 +215,8 @@ Responda SOMENTE com um JSON válido, sem texto fora do objeto, no seguinte form
             TipoPensao tipoPensao,
             string? reserva,
             string? observacoes,
-            string? comodidadesJson = null)
+            string? comodidadesJson = null,
+            IFormFile[]? fotos = null)
         {
             if (!UsuarioLogado())
                 return RedirectToAction("Login", "Auth");
@@ -284,7 +285,43 @@ Responda SOMENTE com um JSON válido, sem texto fora do objeto, no seguinte form
                 await _context.SaveChangesAsync();
             }
 
-            TempData["Sucesso"] = $"Hospedagem '{nome}' adicionada com sucesso!";
+            // Salvar fotos enviadas junto com o formulário de criação
+            var fotosValidas = (fotos ?? Array.Empty<IFormFile>())
+                .Where(f => f != null && f.Length > 0).ToList();
+
+            if (fotosValidas.Any())
+            {
+                var errosFoto = new List<string>();
+                for (int i = 0; i < fotosValidas.Count; i++)
+                {
+                    try
+                    {
+                        var caminho = await SalvarFotoHospedagemAsync(fotosValidas[i]);
+                        _context.HospedagemFotos.Add(new HospedagemFoto
+                        {
+                            HospedagemId = hospedagem.Id,
+                            CaminhoFoto  = caminho,
+                            Principal    = i == 0,   // primeira foto marcada como principal
+                            Ordem        = i + 1
+                        });
+                    }
+                    catch (InvalidOperationException ex)
+                    {
+                        errosFoto.Add($"{fotosValidas[i].FileName}: {ex.Message}");
+                    }
+                }
+                await _context.SaveChangesAsync();
+
+                if (errosFoto.Any())
+                    TempData["Aviso"] = $"Hospedagem criada, mas {errosFoto.Count} foto(s) não puderam ser salvas: {string.Join(" | ", errosFoto)}";
+                else
+                    TempData["Sucesso"] = $"Hospedagem '{nome}' adicionada com {fotosValidas.Count} foto(s)!";
+            }
+            else
+            {
+                TempData["Sucesso"] = $"Hospedagem '{nome}' adicionada com sucesso!";
+            }
+
             return RedirectToEditar(destino.PropostaId);
         }
 

@@ -51,7 +51,8 @@ namespace SistemaUsuarios.Controllers
             string? videoUrl,
             decimal? valor,
             DateTime? dataInicio,
-            DateTime? dataFim)
+            DateTime? dataFim,
+            IFormFile[]? imagens = null)
         {
             if (!UsuarioLogado())
                 return RedirectToAction("Login", "Auth");
@@ -99,7 +100,42 @@ namespace SistemaUsuarios.Controllers
             _context.Experiencias.Add(experiencia);
             await _context.SaveChangesAsync();
 
-            TempData["Sucesso"] = $"Experiência \"{experiencia.TipoPasseio}\" adicionada!";
+            var imagensValidas = (imagens ?? Array.Empty<IFormFile>())
+                .Where(f => f != null && f.Length > 0).ToList();
+
+            if (imagensValidas.Any())
+            {
+                var errosFoto = new List<string>();
+                for (int i = 0; i < imagensValidas.Count; i++)
+                {
+                    try
+                    {
+                        var caminho = await SalvarImagemAsync(imagensValidas[i]);
+                        _context.ExperienciaImagens.Add(new ExperienciaImagem
+                        {
+                            Id            = Guid.NewGuid(),
+                            ExperienciaId = experiencia.Id,
+                            CaminhoImagem = caminho,
+                            Ordem         = i + 1,
+                            DataCriacao   = DateTime.Now
+                        });
+                    }
+                    catch (InvalidOperationException ex)
+                    {
+                        errosFoto.Add($"{imagensValidas[i].FileName}: {ex.Message}");
+                    }
+                }
+                await _context.SaveChangesAsync();
+
+                TempData[errosFoto.Any() ? "Aviso" : "Sucesso"] = errosFoto.Any()
+                    ? $"Experiência criada, mas {errosFoto.Count} imagem(ns) não puderam ser salvas: {string.Join("; ", errosFoto)}"
+                    : $"Experiência \"{experiencia.TipoPasseio}\" adicionada com {imagensValidas.Count} imagem(ns)!";
+            }
+            else
+            {
+                TempData["Sucesso"] = $"Experiência \"{experiencia.TipoPasseio}\" adicionada!";
+            }
+
             return RedirectToEditar(propostaId);
         }
 

@@ -150,32 +150,24 @@
 
         document.getElementById('criarIA-step-pick').style.display = 'none';
         document.getElementById('criarIA-step-loading').style.display = '';
-        document.getElementById('criarIA-loading-msg').textContent = 'Criando proposta rascunho…';
+        document.getElementById('criarIA-loading-msg').textContent = 'Analisando documentos com IA…';
 
         try {
-            // 1. Criar rascunho
-            var res1 = await fetch('/Importacao/CriarRascunho', { method: 'POST' });
-            if (!res1.ok) throw new Error('Erro ao criar proposta');
-            var d1 = await res1.json();
-            var propostaId = d1.propostaId;
-
-            // 2. Analisar documentos
-            document.getElementById('criarIA-loading-msg').textContent = 'Analisando documentos com IA…';
+            // Passo único: cria rascunho + analisa + salva sessão server-side
             var fd = new FormData();
-            fd.append('propostaId', propostaId);
             selectedFiles.forEach(function (f) { fd.append('arquivos', f); });
 
-            var res2 = await fetch('/AiCopilot/AnalisarArquivos', { method: 'POST', body: fd });
-            if (!res2.ok) throw new Error('Erro na análise');
-            var analise = await res2.json();
-
-            // 3. Salvar preview no sessionStorage
-            if (analise.preview) {
-                sessionStorage.setItem('pendingImport_' + propostaId, JSON.stringify(analise));
+            var res = await fetch('/Importacao/IniciarComArquivos', { method: 'POST', body: fd });
+            if (!res.ok) {
+                var errBody = await res.json().catch(function () { return {}; });
+                throw new Error(errBody.erro || 'Erro ao processar os documentos');
             }
+            var data = await res.json();
 
-            // 4. Redirecionar para Editar com pendingImport=1
-            window.location.href = '/Proposta/Editar/' + propostaId + '?pendingImport=1';
+            // Redireciona para a tela de edição com o ID da sessão server-side
+            // O copiloto carrega o draft do servidor (não do sessionStorage)
+            document.getElementById('criarIA-loading-msg').textContent = 'Abrindo Copiloto…';
+            window.location.href = '/Proposta/Editar/' + data.propostaId + '?sessaoImport=' + data.sessaoId;
 
         } catch (err) {
             document.getElementById('criarIA-step-loading').style.display = 'none';

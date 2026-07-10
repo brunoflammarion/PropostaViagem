@@ -740,7 +740,7 @@
                                                         <form asp-controller="Destino" asp-action="EditarDestino" method="post">
                                                             <input type="hidden" name="id" value="@destino.Id" />
                                                             <div class="mb-2">
-                                                                <input type="text" name="nome" class="form-control form-control-sm" value="@destino.Nome" placeholder="Nome" />
+                                                                <input type="text" name="nome" id="nome-dest-@destino.Id" class="form-control form-control-sm" value="@destino.Nome" placeholder="Nome" />
                                                             </div>
                                                             <div class="row">
                                                                 <div class="col-6 mb-2">
@@ -761,11 +761,24 @@
                                                                 </div>
                                                             </div>
                                                             <div class="mb-2">
-                                                                <textarea name="descricao" class="form-control form-control-sm" rows="3">@destino.Descricao</textarea>
+                                                                <textarea name="descricao" id="desc-dest-@destino.Id" class="form-control form-control-sm" rows="3">@destino.Descricao</textarea>
                                                             </div>
-                                                            <button type="submit" class="btn btn-sm btn-primary">
-                                                                <i class="fas fa-save me-1"></i>Salvar
-                                                            </button>
+                                                            <div id="desc-alert-@destino.Id" class="d-none mb-1"></div>
+                                                            <div class="d-flex gap-1 mb-0">
+                                                                <button type="button" class="btn btn-outline-primary btn-sm" id="btn-gerar-desc-dest-@destino.Id"
+                                                                        onclick="gerarDescricaoDestino('@destino.Id')">
+                                                                    <i class="fas fa-magic me-1"></i>Gerar descrição com IA
+                                                                </button>
+                                                                <button type="submit" class="btn btn-sm btn-primary">
+                                                                    <i class="fas fa-save me-1"></i>Salvar
+                                                                </button>
+                                                            </div>
+                                                            <input type="hidden" name="AtracoesLLM" id="atracoes-dest-@destino.Id" value="@destino.AtracoesLLM" />
+                                                            <input type="hidden" name="GastronomiaLLM" id="gastro-dest-@destino.Id" value="@destino.GastronomiaLLM" />
+                                                            <input type="hidden" name="InformacoesPraticasLLM" id="infoprat-dest-@destino.Id" value="@destino.InformacoesPraticasLLM" />
+                                                            <input type="hidden" name="MalaViagemLLM" id="mala-dest-@destino.Id" value="@destino.MalaViagemLLM" />
+                                                            <input type="hidden" name="CuidadosLLM" id="cuidados-dest-@destino.Id" value="@destino.CuidadosLLM" />
+                                                            <input type="hidden" name="PratosTipicosLLM" id="pratos-dest-@destino.Id" value="@destino.PratosTipicosLLM" />
                                                         </form>
                                                     </div>
                                                     <div class="col-md-6">
@@ -846,7 +859,7 @@
                                                          style="border:1px solid #dee2e6;"
                                                          data-cidade="@(destino.Cidade ?? destino.Nome)">
                                                         <h6 class="small text-muted fw-semibold mb-2">Nova Hospedagem</h6>
-                                                        <form asp-controller="Hospedagem" asp-action="Adicionar" method="post">
+                                                        <form asp-controller="Hospedagem" asp-action="Adicionar" method="post" enctype="multipart/form-data">
                                                             @Html.AntiForgeryToken()
                                                             <input type="hidden" name="destinoId" value="@destino.Id" />
                                                             <input type="hidden" name="latitude" class="hosp-lat" />
@@ -952,7 +965,32 @@
                                                                            class="form-control form-control-sm" />
                                                                 </div>
                                                             </div>
-                                                            
+
+                                                            <!-- ── Fotos da hospedagem (opcionais antes de salvar) ── -->
+                                                            <div class="mb-2 mt-1">
+                                                                <label class="form-label form-label-sm mb-1">
+                                                                    <i class="fas fa-images me-1 text-secondary"></i>Fotos
+                                                                    <span class="fw-normal text-muted">(opcional)</span>
+                                                                </label>
+                                                                <small class="d-block text-muted mb-1" style="font-size:0.71rem;line-height:1.4;">
+                                                                    Adicione imagens do hotel para deixar a proposta mais visual. Você também poderá editar depois.
+                                                                </small>
+                                                                <label for="nhf-@destino.Id.ToString("N")"
+                                                                       class="d-block border rounded-2 py-2 px-3 text-center mb-0 new-hosp-dropzone"
+                                                                       style="border-style:dashed!important;cursor:pointer;background:#f8f9fa;transition:background .15s;">
+                                                                    <input type="file" name="fotos"
+                                                                           id="nhf-@destino.Id.ToString("N")"
+                                                                           class="new-hosp-fotos-input d-none"
+                                                                           multiple
+                                                                           accept="image/jpeg,image/jpg,image/png,image/webp,image/gif" />
+                                                                    <i class="fas fa-cloud-upload-alt text-secondary" style="font-size:1.1rem;"></i>
+                                                                    <div class="text-muted mt-1" style="font-size:0.72rem;">
+                                                                        Arraste ou <span class="text-primary">clique para selecionar</span> · JPG, PNG, WEBP · máx 10 MB
+                                                                    </div>
+                                                                </label>
+                                                                <div class="new-hosp-fotos-preview d-flex flex-wrap gap-2 mt-2"></div>
+                                                            </div>
+
                                                             <div class="mt-2">
                                                                 <button type="submit" class="btn btn-sm btn-info text-white">
                                                                     <i class="fas fa-plus me-1"></i>Adicionar
@@ -1433,7 +1471,7 @@
                                             <div class="collapse mb-3" id="add-exp-@destino.Id">
                                                 <div class="card bg-light border-0 p-3">
                                                     <h6 class="small text-muted fw-semibold mb-2">Nova Experiência</h6>
-                                                    <form asp-controller="Experiencia" asp-action="Adicionar" method="post">
+                                                    <form asp-controller="Experiencia" asp-action="Adicionar" method="post" enctype="multipart/form-data">
                                                         @Html.AntiForgeryToken()
                                                         <input type="hidden" name="destinoId" value="@destino.Id" />
                                                         <div class="row g-2">
@@ -1475,6 +1513,30 @@
                                                                           rows="2" maxlength="4000"
                                                                           placeholder="Descreva a experiência para o cliente..."></textarea>
                                                             </div>
+                                                        </div>
+                                                        <!-- Fotos da experiência no cadastro inicial -->
+                                                        <div class="mb-2 mt-2">
+                                                            <label class="form-label form-label-sm mb-1">
+                                                                <i class="fas fa-images me-1 text-secondary"></i>Fotos da experiência
+                                                                <span class="fw-normal text-muted">(opcional)</span>
+                                                            </label>
+                                                            <small class="d-block text-muted mb-1" style="font-size:0.71rem;line-height:1.4;">
+                                                                Adicione imagens da experiência para deixar a proposta mais visual. Você também poderá editar depois.
+                                                            </small>
+                                                            <label for="nef-@destino.Id.ToString("N")"
+                                                                   class="d-block border rounded-2 py-2 px-3 text-center mb-0 new-exp-dropzone"
+                                                                   style="border-style:dashed!important;cursor:pointer;background:#f8f9fa;transition:background .15s;">
+                                                                <input type="file" name="imagens"
+                                                                       id="nef-@destino.Id.ToString("N")"
+                                                                       class="new-exp-fotos-input d-none"
+                                                                       multiple
+                                                                       accept="image/jpeg,image/jpg,image/png,image/webp,image/gif" />
+                                                                <i class="fas fa-cloud-upload-alt text-secondary" style="font-size:1.1rem;"></i>
+                                                                <div class="text-muted mt-1" style="font-size:0.72rem;">
+                                                                    Arraste ou <span class="text-primary">clique para selecionar</span> · JPG, PNG, WEBP · máx 10 MB
+                                                                </div>
+                                                            </label>
+                                                            <div class="new-exp-fotos-preview d-flex flex-wrap gap-2 mt-2"></div>
                                                         </div>
                                                         <div class="mt-2">
                                                             <button type="submit" class="btn btn-sm btn-warning text-dark">
@@ -1759,7 +1821,7 @@
                                             <div class="collapse mb-3" id="add-transp-@destino.Id">
                                                 <div class="card bg-light border-0 p-3">
                                                     <h6 class="small text-muted fw-semibold mb-2">Novo Transporte</h6>
-                                                    <form asp-controller="Transporte" asp-action="Adicionar" method="post">
+                                                    <form asp-controller="Transporte" asp-action="Adicionar" method="post" enctype="multipart/form-data">
                                                         @Html.AntiForgeryToken()
                                                         <input type="hidden" name="destinoId" value="@destino.Id" />
                                                         <div class="row g-2">
@@ -1784,6 +1846,30 @@
                                                                           rows="2" maxlength="4000"
                                                                           placeholder="Descreva o transporte para o cliente..."></textarea>
                                                             </div>
+                                                        </div>
+                                                        <!-- Fotos do transporte no cadastro inicial -->
+                                                        <div class="mb-2 mt-2">
+                                                            <label class="form-label form-label-sm mb-1">
+                                                                <i class="fas fa-images me-1 text-secondary"></i>Fotos do transporte
+                                                                <span class="fw-normal text-muted">(opcional)</span>
+                                                            </label>
+                                                            <small class="d-block text-muted mb-1" style="font-size:0.71rem;line-height:1.4;">
+                                                                Adicione imagens do veículo, transfer ou serviço de transporte para deixar a proposta mais visual. Você também poderá editar depois.
+                                                            </small>
+                                                            <label for="ntf-@destino.Id.ToString("N")"
+                                                                   class="d-block border rounded-2 py-2 px-3 text-center mb-0 new-transp-dropzone"
+                                                                   style="border-style:dashed!important;cursor:pointer;background:#f8f9fa;transition:background .15s;">
+                                                                <input type="file" name="imagens"
+                                                                       id="ntf-@destino.Id.ToString("N")"
+                                                                       class="new-transp-fotos-input d-none"
+                                                                       multiple
+                                                                       accept="image/jpeg,image/jpg,image/png,image/webp,image/gif" />
+                                                                <i class="fas fa-cloud-upload-alt text-secondary" style="font-size:1.1rem;"></i>
+                                                                <div class="text-muted mt-1" style="font-size:0.72rem;">
+                                                                    Arraste ou <span class="text-primary">clique para selecionar</span> · JPG, PNG, WEBP · máx 10 MB
+                                                                </div>
+                                                            </label>
+                                                            <div class="new-transp-fotos-preview d-flex flex-wrap gap-2 mt-2"></div>
                                                         </div>
                                                         <div class="mt-2">
                                                             <button type="submit" class="btn btn-sm btn-primary">
@@ -3154,8 +3240,17 @@
                         </div>
                     </div>
 
-                    <!-- Passageiros adicionais -->
-                    @foreach (var pax in proposta.PassageirosProposta.OrderBy(p => p.Ordem))
+                }
+                else if (cliente == null && !proposta.PassageirosProposta.Any())
+                {
+                    <div class="text-center py-3 text-muted">
+                        <i class="fas fa-info-circle me-1"></i>
+                        <small>Adicione o cliente principal acima para gerenciar os passageiros.</small>
+                    </div>
+                }
+
+                <!-- Passageiros da viagem — sempre visíveis, independente de cliente vinculado -->
+                @foreach (var pax in proposta.PassageirosProposta.OrderBy(p => p.Ordem))
                     {
                         var paxRelLabel = pax.Relacionamento.HasValue ? pax.Relacionamento switch {
                             SistemaUsuarios.Models.RelacionamentoPassageiro.Filho => "Filho",
@@ -3289,18 +3384,10 @@
                         </div><!-- /card pax -->
                     }
 
-                    @if (!proposta.PassageirosProposta.Any())
-                    {
-                        <div class="text-center py-3 text-muted">
-                            <small>Nenhum passageiro adicional. Use "Adicionar Passageiro" para incluir familiares e acompanhantes.</small>
-                        </div>
-                    }
-                }
-                else
+                @if (!proposta.PassageirosProposta.Any())
                 {
                     <div class="text-center py-3 text-muted">
-                        <i class="fas fa-info-circle me-1"></i>
-                        <small>Adicione o cliente principal acima para gerenciar os passageiros.</small>
+                        <small>Nenhum passageiro adicional. Use "Adicionar Passageiro" para incluir familiares e acompanhantes.</small>
                     </div>
                 }
             }
@@ -4427,7 +4514,7 @@
 @await Html.PartialAsync("_CopilotPanel", (Guid?)Model.Id)
 
 @section Scripts {
-    <script src="~/js/copilot.js"></script>
+    <script src="~/js/copilot.js" asp-append-version="true"></script>
     <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet" />
     <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
@@ -4669,7 +4756,36 @@
             configurarValidacaoFormularios();
             configurarHospRichEditors();
             configurarAutoUpload();
+            configurarPreviewFotosNovaHospedagem();
+            configurarPreviewFotosNovaExp();
+            configurarPreviewFotosNovaTransp();
             configurarCollapseState();
+
+            // Auto-busca AeroDataBox: quando card de voo abre com número preenchido
+            document.querySelectorAll('[id^="collapse-voo-"]').forEach(function (collapseEl) {
+                collapseEl.addEventListener('show.bs.collapse', function () {
+                    const safeId = collapseEl.id.replace('collapse-voo-', '');
+                    const numero = document.getElementById('numero-voo-' + safeId)?.value?.trim();
+                    if (numero) {
+                        setTimeout(function () { consultarVooCard(safeId); }, 400);
+                    }
+                });
+            });
+
+            // Auto-IA hospedagem: quando card de hospedagem abre com nome preenchido e descrição vazia
+            document.querySelectorAll('[id^="hosp-edit-"]').forEach(function (collapseEl) {
+                collapseEl.addEventListener('show.bs.collapse', function () {
+                    setTimeout(function () {
+                        var $container = $(collapseEl).find('.hosp-form-container');
+                        if (!$container.length) return;
+                        var nome = $container.find('.hosp-nome-input').val().trim();
+                        var desc = $container.find('.hosp-rich-desc').text().trim();
+                        if (nome && !desc) {
+                            $container.find('.btn-gerar-desc-hosp').trigger('click');
+                        }
+                    }, 400);
+                });
+            });
 
             // Preview em tempo real do título (Tab 1)
             const tituloInput = document.getElementById('Titulo');
@@ -5022,6 +5138,51 @@
             }
         });
 
+        // IA — Gerar descrição para destino existente (cards editáveis)
+        async function gerarDescricaoDestino(destinoId) {
+            const nomeEl  = document.getElementById('nome-dest-'   + destinoId);
+            const descEl  = document.getElementById('desc-dest-'   + destinoId);
+            const alertEl = document.getElementById('desc-alert-'  + destinoId);
+            const btn     = document.getElementById('btn-gerar-desc-dest-' + destinoId);
+            const nome    = nomeEl?.value?.trim();
+
+            if (!nome) {
+                if (alertEl) { alertEl.className = 'alert alert-warning py-1 px-2 small mb-1'; alertEl.textContent = 'Preencha o nome do destino primeiro.'; }
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Gerando...';
+            if (alertEl) alertEl.className = 'd-none';
+
+            try {
+                const resp = await fetch('@Url.Action("GerarDescricao","Destino")', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+                    body: new URLSearchParams({ nome })
+                });
+                const text = await resp.text();
+                if (!resp.ok) throw new Error(text);
+                const data = JSON.parse(text);
+
+                if (descEl) descEl.value = data.descricao ?? '';
+                const set = (id, val) => { const el = document.getElementById(id + destinoId); if (el && val) el.value = JSON.stringify(val, null, 2); };
+                set('atracoes-dest-',  data.atracoes);
+                set('gastro-dest-',    data.gastronomia);
+                set('infoprat-dest-',  data.informacoesPraticas);
+                set('mala-dest-',      data.malaViagem);
+                set('pratos-dest-',    data.pratosTipicos);
+                set('cuidados-dest-',  data.cuidados);
+
+                if (alertEl) { alertEl.className = 'alert alert-success py-1 px-2 small mb-1'; alertEl.textContent = 'Descrição gerada! Clique em Salvar para aplicar.'; }
+            } catch (err) {
+                if (alertEl) { alertEl.className = 'alert alert-danger py-1 px-2 small mb-1'; alertEl.textContent = 'Erro ao gerar: ' + err.message; }
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-magic me-1"></i>Gerar descrição com IA';
+            }
+        }
+
         // ── Preview de Insights no bloco Adicionar Novo Destino ──────────
         function renderInsightsPreviewNovoDest(data) {
             const body = document.getElementById('novo-dest-insights-body');
@@ -5140,6 +5301,235 @@
             });
         }
 
+        // ── Preview de fotos no formulário "Nova Hospedagem" ─────────────────
+        function configurarPreviewFotosNovaHospedagem() {
+            document.querySelectorAll('.new-hosp-fotos-input').forEach(function (input) {
+                var dropzone = input.closest('label.new-hosp-dropzone');
+                var preview  = dropzone ? dropzone.nextElementSibling : null;
+                if (!preview) return;
+
+                var fileMap = []; // [{file, url}]
+                var MAX_MB  = 10 * 1024 * 1024;
+
+                function addFiles(list) {
+                    var erros = [];
+                    Array.from(list).forEach(function (f) {
+                        if (!f.type.startsWith('image/')) { erros.push(f.name + ': não é imagem'); return; }
+                        if (f.size > MAX_MB)              { erros.push(f.name + ': maior que 10 MB'); return; }
+                        if (fileMap.some(function (x) { return x.file.name === f.name && x.file.size === f.size; })) return;
+                        fileMap.push({ file: f, url: URL.createObjectURL(f) });
+                    });
+                    if (erros.length) alert('Arquivo(s) ignorado(s):\n' + erros.join('\n'));
+                    rebuild();
+                }
+
+                function rebuild() {
+                    preview.innerHTML = '';
+                    var dt = new DataTransfer();
+                    fileMap.forEach(function (item, idx) {
+                        dt.items.add(item.file);
+
+                        var thumb = document.createElement('div');
+                        thumb.style.cssText = 'position:relative;width:68px;height:68px;flex-shrink:0;';
+
+                        var img = document.createElement('img');
+                        img.src = item.url;
+                        img.alt = item.file.name;
+                        img.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:6px;border:1px solid #dee2e6;display:block;';
+                        thumb.appendChild(img);
+
+                        if (idx === 0) {
+                            var badge = document.createElement('span');
+                            badge.textContent = 'Principal';
+                            badge.style.cssText = 'position:absolute;bottom:0;left:0;right:0;text-align:center;background:rgba(0,81,151,.82);color:#fff;font-size:.52rem;font-weight:700;padding:1px 0;border-radius:0 0 6px 6px;pointer-events:none;';
+                            thumb.appendChild(badge);
+                        }
+
+                        var rm = document.createElement('button');
+                        rm.type = 'button';
+                        rm.innerHTML = '×';
+                        rm.title = 'Remover';
+                        rm.style.cssText = 'position:absolute;top:-5px;right:-5px;width:18px;height:18px;border-radius:50%;border:none;background:#dc3545;color:#fff;font-size:.75rem;line-height:18px;text-align:center;cursor:pointer;padding:0;';
+                        (function (i) {
+                            rm.addEventListener('click', function (e) {
+                                e.preventDefault(); e.stopPropagation();
+                                URL.revokeObjectURL(fileMap[i].url);
+                                fileMap.splice(i, 1);
+                                rebuild();
+                            });
+                        }(idx));
+                        thumb.appendChild(rm);
+                        preview.appendChild(thumb);
+                    });
+                    try { input.files = dt.files; } catch (_) {}
+                }
+
+                input.addEventListener('change', function () { addFiles(this.files); });
+
+                if (dropzone) {
+                    dropzone.addEventListener('dragover',  function (e) { e.preventDefault(); dropzone.style.background = '#e7f1ff'; });
+                    dropzone.addEventListener('dragleave', function ()  { dropzone.style.removeProperty('background'); });
+                    dropzone.addEventListener('drop',      function (e) {
+                        e.preventDefault();
+                        dropzone.style.removeProperty('background');
+                        addFiles(e.dataTransfer.files);
+                    });
+                }
+            });
+        }
+
+        function configurarPreviewFotosNovaExp() {
+            document.querySelectorAll('.new-exp-fotos-input').forEach(function (input) {
+                var dropzone = input.closest('label.new-exp-dropzone');
+                var preview  = dropzone ? dropzone.nextElementSibling : null;
+                if (!preview) return;
+
+                var fileMap = [];
+                var MAX_MB  = 10 * 1024 * 1024;
+
+                function addFiles(list) {
+                    var erros = [];
+                    Array.from(list).forEach(function (f) {
+                        if (!f.type.startsWith('image/')) { erros.push(f.name + ': não é imagem'); return; }
+                        if (f.size > MAX_MB)              { erros.push(f.name + ': maior que 10 MB'); return; }
+                        if (fileMap.some(function (x) { return x.file.name === f.name && x.file.size === f.size; })) return;
+                        fileMap.push({ file: f, url: URL.createObjectURL(f) });
+                    });
+                    if (erros.length) alert('Arquivo(s) ignorado(s):\n' + erros.join('\n'));
+                    rebuild();
+                }
+
+                function rebuild() {
+                    preview.innerHTML = '';
+                    var dt = new DataTransfer();
+                    fileMap.forEach(function (item, idx) {
+                        dt.items.add(item.file);
+
+                        var thumb = document.createElement('div');
+                        thumb.style.cssText = 'position:relative;width:68px;height:68px;flex-shrink:0;';
+
+                        var img = document.createElement('img');
+                        img.src = item.url;
+                        img.alt = item.file.name;
+                        img.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:6px;border:1px solid #dee2e6;display:block;';
+                        thumb.appendChild(img);
+
+                        if (idx === 0) {
+                            var badge = document.createElement('span');
+                            badge.textContent = '1ª foto';
+                            badge.style.cssText = 'position:absolute;bottom:0;left:0;right:0;text-align:center;background:rgba(0,81,151,.82);color:#fff;font-size:.52rem;font-weight:700;padding:1px 0;border-radius:0 0 6px 6px;pointer-events:none;';
+                            thumb.appendChild(badge);
+                        }
+
+                        var rm = document.createElement('button');
+                        rm.type = 'button';
+                        rm.innerHTML = '×';
+                        rm.title = 'Remover';
+                        rm.style.cssText = 'position:absolute;top:-5px;right:-5px;width:18px;height:18px;border-radius:50%;border:none;background:#dc3545;color:#fff;font-size:.75rem;line-height:18px;text-align:center;cursor:pointer;padding:0;';
+                        (function (i) {
+                            rm.addEventListener('click', function (e) {
+                                e.preventDefault(); e.stopPropagation();
+                                URL.revokeObjectURL(fileMap[i].url);
+                                fileMap.splice(i, 1);
+                                rebuild();
+                            });
+                        }(idx));
+                        thumb.appendChild(rm);
+                        preview.appendChild(thumb);
+                    });
+                    try { input.files = dt.files; } catch (_) {}
+                }
+
+                input.addEventListener('change', function () { addFiles(this.files); });
+
+                if (dropzone) {
+                    dropzone.addEventListener('dragover',  function (e) { e.preventDefault(); dropzone.style.background = '#e7f1ff'; });
+                    dropzone.addEventListener('dragleave', function ()  { dropzone.style.removeProperty('background'); });
+                    dropzone.addEventListener('drop',      function (e) {
+                        e.preventDefault();
+                        dropzone.style.removeProperty('background');
+                        addFiles(e.dataTransfer.files);
+                    });
+                }
+            });
+        }
+
+        function configurarPreviewFotosNovaTransp() {
+            document.querySelectorAll('.new-transp-fotos-input').forEach(function (input) {
+                var dropzone = input.closest('label.new-transp-dropzone');
+                var preview  = dropzone ? dropzone.nextElementSibling : null;
+                if (!preview) return;
+
+                var fileMap = [];
+                var MAX_MB  = 10 * 1024 * 1024;
+
+                function addFiles(list) {
+                    var erros = [];
+                    Array.from(list).forEach(function (f) {
+                        if (!f.type.startsWith('image/')) { erros.push(f.name + ': não é imagem'); return; }
+                        if (f.size > MAX_MB)              { erros.push(f.name + ': maior que 10 MB'); return; }
+                        if (fileMap.some(function (x) { return x.file.name === f.name && x.file.size === f.size; })) return;
+                        fileMap.push({ file: f, url: URL.createObjectURL(f) });
+                    });
+                    if (erros.length) alert('Arquivo(s) ignorado(s):\n' + erros.join('\n'));
+                    rebuild();
+                }
+
+                function rebuild() {
+                    preview.innerHTML = '';
+                    var dt = new DataTransfer();
+                    fileMap.forEach(function (item, idx) {
+                        dt.items.add(item.file);
+
+                        var thumb = document.createElement('div');
+                        thumb.style.cssText = 'position:relative;width:68px;height:68px;flex-shrink:0;';
+
+                        var img = document.createElement('img');
+                        img.src = item.url;
+                        img.alt = item.file.name;
+                        img.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:6px;border:1px solid #dee2e6;display:block;';
+                        thumb.appendChild(img);
+
+                        if (idx === 0) {
+                            var badge = document.createElement('span');
+                            badge.textContent = 'Principal';
+                            badge.style.cssText = 'position:absolute;bottom:0;left:0;right:0;text-align:center;background:rgba(0,81,151,.82);color:#fff;font-size:.52rem;font-weight:700;padding:1px 0;border-radius:0 0 6px 6px;pointer-events:none;';
+                            thumb.appendChild(badge);
+                        }
+
+                        var rm = document.createElement('button');
+                        rm.type = 'button';
+                        rm.innerHTML = '×';
+                        rm.title = 'Remover';
+                        rm.style.cssText = 'position:absolute;top:-5px;right:-5px;width:18px;height:18px;border-radius:50%;border:none;background:#dc3545;color:#fff;font-size:.75rem;line-height:18px;text-align:center;cursor:pointer;padding:0;';
+                        (function (i) {
+                            rm.addEventListener('click', function (e) {
+                                e.preventDefault(); e.stopPropagation();
+                                URL.revokeObjectURL(fileMap[i].url);
+                                fileMap.splice(i, 1);
+                                rebuild();
+                            });
+                        }(idx));
+                        thumb.appendChild(rm);
+                        preview.appendChild(thumb);
+                    });
+                    try { input.files = dt.files; } catch (_) {}
+                }
+
+                input.addEventListener('change', function () { addFiles(this.files); });
+
+                if (dropzone) {
+                    dropzone.addEventListener('dragover',  function (e) { e.preventDefault(); dropzone.style.background = '#e7f1ff'; });
+                    dropzone.addEventListener('dragleave', function ()  { dropzone.style.removeProperty('background'); });
+                    dropzone.addEventListener('drop',      function (e) {
+                        e.preventDefault();
+                        dropzone.style.removeProperty('background');
+                        addFiles(e.dataTransfer.files);
+                    });
+                }
+            });
+        }
+
         // ============================================================
         // COLLAPSE STATE — preserva destinos abertos via sessionStorage
         // ============================================================
@@ -5171,6 +5561,12 @@
                     if (ids.indexOf(destinoId) === -1) ids.push(destinoId);
                     saveOpenIds(ids);
                     setChevron(el.id, true);
+                    // Auto-gera descrição se nome preenchido mas descrição ainda vazia
+                    var nomeEl = document.getElementById('nome-dest-' + destinoId);
+                    var descEl = document.getElementById('desc-dest-' + destinoId);
+                    if (nomeEl && nomeEl.value.trim() && descEl && !descEl.value.trim()) {
+                        setTimeout(function () { gerarDescricaoDestino(destinoId); }, 400);
+                    }
                 });
 
                 el.addEventListener('hide.bs.collapse', function () {

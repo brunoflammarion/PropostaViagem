@@ -31,6 +31,12 @@ namespace SistemaUsuarios.Controllers
             var uid  = UsuarioId();
             var hoje = DateTime.Today;
 
+            var usuario = await _context.Usuarios
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.Id == uid);
+
+            ViewBag.CalendarioToken = usuario?.CalendarioToken;
+
             var vm = new TarefaIndexViewModel
             {
                 TarefasHoje       = await _tarefaService.ListarHojeAsync(uid),
@@ -44,6 +50,63 @@ namespace SistemaUsuarios.Controllers
             };
 
             return View(vm);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> CalendarioData(int ano, int mes)
+        {
+            if (!UsuarioLogado()) return Json(new { ok = false });
+            var uid = UsuarioId();
+
+            var primeiro = new DateTime(ano, mes, 1);
+            var ultimo   = primeiro.AddMonths(1).AddDays(-1);
+
+            var tarefas = await _context.Tarefas
+                .Where(t => t.UsuarioId == uid && !t.IsDeleted
+                    && t.Status != TarefaStatus.Cancelada
+                    && t.DataVencimento.Date >= primeiro
+                    && t.DataVencimento.Date <= ultimo)
+                .Select(t => new {
+                    data      = t.DataVencimento.ToString("yyyy-MM-dd"),
+                    titulo    = t.Titulo,
+                    tipo      = t.Tipo ?? "Geral",
+                    prioridade = t.Prioridade ?? "Baixa",
+                    concluida = t.Status == TarefaStatus.Concluida,
+                    id        = t.Id
+                })
+                .AsNoTracking()
+                .ToListAsync();
+
+            var viagens = await _context.Propostas
+                .Where(p => (p.UsuarioResponsavelId == uid || p.UsuarioMasterId == uid)
+                    && p.StatusProposta == StatusProposta.Aprovada
+                    && p.DataInicio.HasValue && p.DataFim.HasValue
+                    && p.DataInicio!.Value.Date <= ultimo
+                    && p.DataFim!.Value.Date   >= primeiro)
+                .Select(p => new {
+                    inicio = p.DataInicio!.Value.ToString("yyyy-MM-dd"),
+                    fim    = p.DataFim!.Value.ToString("yyyy-MM-dd"),
+                    titulo = p.Titulo
+                })
+                .AsNoTracking()
+                .ToListAsync();
+
+            return Json(new { tarefas, viagens });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> GerarTokenCalendario()
+        {
+            if (!UsuarioLogado()) return Json(new { ok = false });
+            var uid     = UsuarioId();
+            var usuario = await _context.Usuarios.FindAsync(uid);
+            if (usuario == null) return Json(new { ok = false });
+
+            usuario.CalendarioToken = Guid.NewGuid().ToString("N");
+            await _context.SaveChangesAsync();
+
+            var url = $"{Request.Scheme}://{Request.Host}/calendario/feed/{usuario.CalendarioToken}";
+            return Json(new { ok = true, url });
         }
 
         // ── CRUD ─────────────────────────────────────────────────────────────────

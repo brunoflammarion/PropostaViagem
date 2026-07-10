@@ -23,6 +23,26 @@
             return $"#{r:X2}{g:X2}{b:X2}";
         } catch { return hex; }
     }
+
+    static string ContrastText(string hex) {
+        if (string.IsNullOrEmpty(hex) || !hex.StartsWith("#") || hex.Length != 7) return "#ffffff";
+        try {
+            int r = Convert.ToInt32(hex.Substring(1, 2), 16);
+            int g = Convert.ToInt32(hex.Substring(3, 2), 16);
+            int b = Convert.ToInt32(hex.Substring(5, 2), 16);
+            return (0.299 * r + 0.587 * g + 0.114 * b) / 255.0 > 0.5 ? "#1a1a2e" : "#ffffff";
+        } catch { return "#ffffff"; }
+    }
+
+    static string TintColor(string hex, double factor = 0.87) {
+        if (string.IsNullOrEmpty(hex) || !hex.StartsWith("#") || hex.Length != 7) return "#f8f9fa";
+        try {
+            int r = Convert.ToInt32(hex.Substring(1,2),16);
+            int g = Convert.ToInt32(hex.Substring(3,2),16);
+            int b = Convert.ToInt32(hex.Substring(5,2),16);
+            return $"#{(int)(r+(255-r)*factor):X2}{(int)(g+(255-g)*factor):X2}{(int)(b+(255-b)*factor):X2}";
+        } catch { return "#f8f9fa"; }
+    }
 }
 @{
     var layoutNome = (Model.Layout?.Nome ?? "Familiar").ToLower();
@@ -51,6 +71,10 @@
     bool uTemCores  = !string.IsNullOrEmpty(uCorP) && !string.IsNullOrEmpty(uCorD);
     var uCorPLight  = uTemCores ? LightenPub(uCorP!, 22)  : "";
     var uCorDAlt    = uTemCores ? LightenPub(uCorD!, -15) : "";
+    var uCorS     = !string.IsNullOrEmpty(Model.Usuario.CorSecundaria) ? Model.Usuario.CorSecundaria : (uTemCores ? LightenPub(uCorP!, 50) : "");
+    var uCorPTxt  = uTemCores ? ContrastText(uCorP!) : "#ffffff";
+    var uCorDTxt  = uTemCores ? ContrastText(uCorD!) : "#ffffff";
+    var uCorSTint = uTemCores && !string.IsNullOrEmpty(uCorS) ? TintColor(uCorS, 0.72) : "";
 
     bool isPreview     = (bool)(ViewBag.IsPreview ?? false);
     string linkPublico = isPreview ? (string)(ViewBag.LinkPublico ?? "") : "";
@@ -134,7 +158,14 @@
     --c-warm:      @uCorD;
     --c-hero-from: @uCorDAlt;
     --c-hero-to:   @uCorP;
+    --c-bg-alt:    @(string.IsNullOrEmpty(uCorSTint) ? "#EEF4F7" : uCorSTint);
+    --c-secondary: @uCorS;
 }
+/* Primária: accent + hero | Secundária: bg-alt + chips + divider | Destaque: warm + CTAs */
+.fam-nav-active,
+.btn-aval-submit { color: @uCorPTxt; }
+.fam-chip { border: 1px solid @uCorS; }
+.fam-section-divider { background: linear-gradient(90deg, @uCorP, @uCorS, @uCorD); }
     </text>
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }

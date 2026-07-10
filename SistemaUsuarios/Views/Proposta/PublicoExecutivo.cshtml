@@ -23,6 +23,26 @@
             return $"#{r:X2}{g:X2}{b:X2}";
         } catch { return hex; }
     }
+
+    static string ContrastText(string hex) {
+        if (string.IsNullOrEmpty(hex) || !hex.StartsWith("#") || hex.Length != 7) return "#ffffff";
+        try {
+            int r = Convert.ToInt32(hex.Substring(1, 2), 16);
+            int g = Convert.ToInt32(hex.Substring(3, 2), 16);
+            int b = Convert.ToInt32(hex.Substring(5, 2), 16);
+            return (0.299 * r + 0.587 * g + 0.114 * b) / 255.0 > 0.5 ? "#1a1a2e" : "#ffffff";
+        } catch { return "#ffffff"; }
+    }
+
+    static string TintColor(string hex, double factor = 0.87) {
+        if (string.IsNullOrEmpty(hex) || !hex.StartsWith("#") || hex.Length != 7) return "#f8f9fa";
+        try {
+            int r = Convert.ToInt32(hex.Substring(1,2),16);
+            int g = Convert.ToInt32(hex.Substring(3,2),16);
+            int b = Convert.ToInt32(hex.Substring(5,2),16);
+            return $"#{(int)(r+(255-r)*factor):X2}{(int)(g+(255-g)*factor):X2}{(int)(b+(255-b)*factor):X2}";
+        } catch { return "#f8f9fa"; }
+    }
 }
 @{
     var layoutNome = (Model.Layout?.Nome ?? "Executivo").ToLower();
@@ -50,6 +70,12 @@
     bool uTemCores  = !string.IsNullOrEmpty(uCorP) && !string.IsNullOrEmpty(uCorD);
     var uCorPLight  = uTemCores ? LightenPub(uCorP!, 22)  : "";
     var uCorDAlt    = uTemCores ? LightenPub(uCorD!, -15) : "";
+    // CorSecundaria → accent2 (ícones, labels, botões secundários); fallback = primary clareada
+    var uCorS       = !string.IsNullOrEmpty(Model.Usuario.CorSecundaria) ? Model.Usuario.CorSecundaria : (uTemCores ? uCorPLight! : "");
+    var uCorAcc2    = uTemCores ? (string.IsNullOrEmpty(uCorS) ? uCorPLight! : uCorS) : "";
+    var uCorAcc2Txt = uTemCores && !string.IsNullOrEmpty(uCorAcc2) ? ContrastText(uCorAcc2) : "#ffffff";
+    var uCorDTxt    = uTemCores ? ContrastText(uCorD!) : "#ffffff";
+    var uCorSTint   = uTemCores && !string.IsNullOrEmpty(uCorS) ? TintColor(uCorS, 0.72) : "";
 
     bool isPreview     = (bool)(ViewBag.IsPreview ?? false);
     string linkPublico = isPreview ? (string)(ViewBag.LinkPublico ?? "") : "";
@@ -95,9 +121,16 @@
     <text>
 :root {
     --c-accent:  @uCorP;
-    --c-accent2: @uCorPLight;
+    --c-accent2: @uCorAcc2;
     --c-warm:    @uCorD;
+    --c-bg-alt:  @(string.IsNullOrEmpty(uCorSTint) ? "#F1F5F9" : uCorSTint);
 }
+/* Secundária: ícones, labels, sidebar nav, badges, pax buttons */
+.exec-pax-init { color: @uCorAcc2Txt; }
+/* Destaque: CTAs de contato (botões principais de ação) */
+.exec-sb-cta,
+.exec-btn-email,
+.btn-aval-submit { background: @uCorD; color: @uCorDTxt; }
     </text>
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }

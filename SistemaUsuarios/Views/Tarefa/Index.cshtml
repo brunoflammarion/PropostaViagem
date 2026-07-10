@@ -5,6 +5,10 @@
     Layout = "_Layout";
 
     var hoje = DateTime.Today;
+    var calToken   = ViewBag.CalendarioToken as string;
+    var calFeedUrl = calToken != null
+        ? $"{Context.Request.Scheme}://{Context.Request.Host}/calendario/feed/{calToken}"
+        : null;
 }
 
 @functions {
@@ -36,8 +40,8 @@
     static string FormatarData(DateTime d)
     {
         var hoje = DateTime.Today;
-        if (d.Date == hoje)            return "Hoje";
-        if (d.Date == hoje.AddDays(1)) return "Amanhã";
+        if (d.Date == hoje)             return "Hoje";
+        if (d.Date == hoje.AddDays(1))  return "Amanhã";
         if (d.Date == hoje.AddDays(-1)) return "Ontem";
         return d.ToString("dd/MM/yyyy");
     }
@@ -150,16 +154,24 @@
 .tf-item.concluida { opacity: .55; }
 .tf-item.atrasada .tf-data { color: #ef4444; font-weight: 700; }
 
+/* Phase 1: Check button with visible affordance */
 .tf-check {
-    width: 22px; height: 22px; border-radius: 50%;
-    border: 2px solid var(--c-border);
-    flex-shrink: 0; margin-top: 2px;
+    width: 24px; height: 24px; border-radius: 50%;
+    border: 2px solid #cbd5e1;
+    flex-shrink: 0; margin-top: 1px;
     cursor: pointer; display: flex; align-items: center; justify-content: center;
-    transition: border-color .15s, background .15s;
+    transition: border-color .15s, background .15s, box-shadow .15s;
+    position: relative;
 }
-.tf-check:hover { border-color: #10b981; background: #f0fdf4; }
+.tf-check:hover {
+    border-color: #10b981;
+    background: #f0fdf4;
+    box-shadow: 0 0 0 3px rgba(16,185,129,.12);
+}
+.tf-check:hover i { display: flex !important; color: #10b981; opacity: .5; }
 .tf-check.checked { border-color: #10b981; background: #10b981; }
-.tf-check.checked i { color: #fff; font-size: .75rem; }
+.tf-check.checked i { display: flex !important; color: #fff; opacity: 1; font-size: .75rem; }
+.tf-check i { font-size: .75rem; display: none; }
 
 .tf-body  { flex: 1; min-width: 0; }
 .tf-titulo { font-weight: 600; font-size: .92rem; color: #1e293b; margin-bottom: 4px; line-height: 1.3; }
@@ -251,7 +263,7 @@
     outline: none; border-color: #6366f1;
 }
 .tf-modal textarea { resize: vertical; min-height: 70px; }
-.tf-modal-footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
+.tf-modal-footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; align-items: center; }
 .btn-tf-cancel { background: #f1f5f9; border: none; border-radius: 7px; padding: 9px 20px; font-weight: 600; font-size: .87rem; cursor: pointer; }
 .btn-tf-save   { background: #6366f1; color: #fff; border: none; border-radius: 7px; padding: 9px 22px; font-weight: 700; font-size: .87rem; cursor: pointer; }
 .btn-tf-save:hover { background: #4f46e5; }
@@ -263,6 +275,143 @@
     padding: 10px 0 6px; border-bottom: 1px solid var(--c-border);
     margin-bottom: 8px;
 }
+
+/* ── Phase 2: Calendário ── */
+.tfcal-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+.tfcal-month-title {
+    flex: 1;
+    text-align: center;
+    font-weight: 700;
+    font-size: 1rem;
+    color: #1e293b;
+}
+.tfcal-nav {
+    background: none;
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-sm);
+    width: 32px; height: 32px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: #64748b;
+    transition: background .15s, color .15s;
+    flex-shrink: 0;
+}
+.tfcal-nav:hover { background: var(--c-bg); color: #1e293b; }
+.tfcal-sync-btn {
+    background: #6366f1; color: #fff; border: none;
+    border-radius: var(--radius-sm); padding: 6px 14px;
+    font-size: .78rem; font-weight: 600;
+    cursor: pointer; display: flex; align-items: center; gap: 6px;
+    transition: background .15s; flex-shrink: 0;
+}
+.tfcal-sync-btn:hover { background: #4f46e5; }
+
+.tfcal-dow-row {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    margin-bottom: 3px;
+}
+.tfcal-dow {
+    text-align: center;
+    font-size: .67rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .4px;
+    color: var(--c-muted); padding: 4px 0;
+}
+.tfcal-dow:first-child { color: #ef4444; }
+
+#calGridCells {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+}
+.tfcal-cell {
+    min-height: 52px;
+    border-radius: 6px; padding: 5px 5px 4px;
+    cursor: pointer; transition: background .12s;
+    position: relative; background: #fff;
+    border: 1.5px solid transparent;
+    overflow: hidden;
+}
+.tfcal-cell:hover  { background: #f1f5f9; }
+.tfcal-cell.empty  { background: none; cursor: default; pointer-events: none; }
+.tfcal-cell.today  { background: #eef2ff; border-color: #6366f1; }
+.tfcal-cell.today .tfcal-num { color: #6366f1; font-weight: 800; }
+.tfcal-cell.selected { background: #e0e7ff; border-color: #6366f1; }
+.tfcal-cell.has-trip { background: #f0fdf4; }
+.tfcal-cell.today.has-trip { background: #e0e7ff; }
+
+.tfcal-num {
+    font-size: .78rem; font-weight: 600;
+    color: #334155; line-height: 1; margin-bottom: 4px;
+}
+.tfcal-dots { display: flex; gap: 2px; flex-wrap: wrap; }
+.tfcal-dot  { width: 6px; height: 6px; border-radius: 50%; display: inline-block; background: #6366f1; }
+.tfcal-dot.dot-alta   { background: #ef4444; }
+.tfcal-dot.dot-ok     { background: #10b981; }
+.tfcal-dot.dot-normal { background: #6366f1; }
+.tfcal-dot-more { font-size: .55rem; color: var(--c-muted); font-weight: 700; align-self: center; }
+
+.tfcal-trip-bar {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    height: 4px; background: #10b981;
+}
+
+.tfcal-detail {
+    margin-top: 14px; background: #fff;
+    border-radius: var(--radius-md); box-shadow: var(--shadow-sm);
+    padding: 14px 16px; border-left: 3px solid #6366f1;
+}
+.tfcal-detail-title {
+    font-weight: 700; font-size: .88rem;
+    color: #1e293b; margin-bottom: 10px; text-transform: capitalize;
+}
+.cal-detail-trip {
+    display: flex; align-items: center; gap: 8px;
+    background: #f0fdf4; color: #065f46; border-radius: var(--radius-sm);
+    padding: 7px 12px; font-size: .83rem; font-weight: 600; margin-bottom: 6px;
+}
+.cal-detail-task {
+    display: flex; align-items: flex-start; gap: 8px;
+    padding: 7px 0; font-size: .83rem;
+    border-bottom: 1px solid #f1f5f9; color: #1e293b;
+}
+.cal-detail-task:last-child { border-bottom: none; }
+.cal-detail-task.done { color: var(--c-muted); text-decoration: line-through; }
+.cal-detail-task i { color: var(--c-muted); margin-top: 2px; font-size: .8rem; flex-shrink: 0; }
+.cal-detail-task.done i { color: #10b981; }
+.cal-detail-empty { color: var(--c-muted); font-size: .83rem; margin: 0; }
+
+@@media (max-width: 480px) { .tfcal-cell { min-height: 44px; } }
+
+/* ── Phase 3: Sync modal ── */
+.sync-link-box { display: flex; gap: 6px; margin-bottom: 6px; }
+.sync-link-box input {
+    flex: 1; font-size: .75rem; cursor: pointer;
+    background: #f8fafc; color: #475569;
+}
+.btn-sync-copy {
+    background: #6366f1; color: #fff; border: none;
+    border-radius: 7px; padding: 9px 14px;
+    cursor: pointer; font-size: .82rem; transition: background .15s;
+}
+.btn-sync-copy:hover { background: #4f46e5; }
+.btn-regen-link {
+    background: none; border: none; color: #ef4444;
+    font-size: .78rem; cursor: pointer; padding: 0;
+    display: inline-flex; align-items: center; gap: 4px;
+    margin-right: auto;
+}
+.btn-regen-link:hover { text-decoration: underline; }
+.sync-inst-item {
+    background: var(--c-bg); border-radius: var(--radius-sm);
+    padding: 10px 12px; margin-bottom: 6px; font-size: .8rem;
+}
+.sync-inst-item strong { display: block; margin-bottom: 3px; color: #1e293b; }
+.sync-inst-item p { margin: 0; color: #64748b; line-height: 1.5; }
 </style>
 }
 
@@ -316,6 +465,9 @@
     <button class="tf-tab" data-panel="concluidas" id="tab-concluidas">
         Concluídas
     </button>
+    <button class="tf-tab" data-panel="calendario" id="tab-calendario">
+        <i class="fas fa-calendar-alt me-1"></i>Calendário
+    </button>
 </div>
 
 <!-- ── Panel: Atrasadas ── -->
@@ -333,8 +485,8 @@
             @foreach (var t in Model.TarefasAtrasadas)
             {
                 <li class="tf-item @(t.Prioridade?.ToLower()) atrasada" data-id="@t.Id">
-                    <div class="tf-check" onclick="concluir('@t.Id', this)">
-                        <i class="fas fa-check" style="display:none"></i>
+                    <div class="tf-check" onclick="concluir('@t.Id', this)" title="Marcar como concluída">
+                        <i class="fas fa-check"></i>
                     </div>
                     <div class="tf-body">
                         <div class="tf-titulo">@t.Titulo</div>
@@ -371,8 +523,8 @@
             @foreach (var t in Model.TarefasHoje)
             {
                 <li class="tf-item @(t.Prioridade?.ToLower())" data-id="@t.Id">
-                    <div class="tf-check" onclick="concluir('@t.Id', this)">
-                        <i class="fas fa-check" style="display:none"></i>
+                    <div class="tf-check" onclick="concluir('@t.Id', this)" title="Marcar como concluída">
+                        <i class="fas fa-check"></i>
                     </div>
                     <div class="tf-body">
                         <div class="tf-titulo">@t.Titulo</div>
@@ -412,8 +564,8 @@
                 @foreach (var t in grupo)
                 {
                     <li class="tf-item @(t.Prioridade?.ToLower())" data-id="@t.Id">
-                        <div class="tf-check" onclick="concluir('@t.Id', this)">
-                            <i class="fas fa-check" style="display:none"></i>
+                        <div class="tf-check" onclick="concluir('@t.Id', this)" title="Marcar como concluída">
+                            <i class="fas fa-check"></i>
                         </div>
                         <div class="tf-body">
                             <div class="tf-titulo">@t.Titulo</div>
@@ -465,6 +617,32 @@
             }
         </ul>
     }
+</div>
+
+<!-- ── Panel: Calendário (Phase 2) ── -->
+<div class="tf-panel" id="panel-calendario">
+    <div class="tfcal-header">
+        <button class="tfcal-nav" id="calPrev" title="Mês anterior"><i class="fas fa-chevron-left"></i></button>
+        <span class="tfcal-month-title" id="calTitle">Carregando…</span>
+        <button class="tfcal-nav" id="calNext" title="Próximo mês"><i class="fas fa-chevron-right"></i></button>
+        <button class="tfcal-sync-btn" onclick="abrirModalSync()">
+            <i class="fas fa-calendar-plus"></i>Sincronizar
+        </button>
+    </div>
+    <div class="tfcal-dow-row">
+        <div class="tfcal-dow" style="color:#ef4444">Dom</div>
+        <div class="tfcal-dow">Seg</div>
+        <div class="tfcal-dow">Ter</div>
+        <div class="tfcal-dow">Qua</div>
+        <div class="tfcal-dow">Qui</div>
+        <div class="tfcal-dow">Sex</div>
+        <div class="tfcal-dow">Sáb</div>
+    </div>
+    <div id="calGridCells"></div>
+    <div class="tfcal-detail" id="calDetail" style="display:none">
+        <div class="tfcal-detail-title" id="calDetailTitle"></div>
+        <div id="calDetailItems"></div>
+    </div>
 </div>
 
 </div><!-- /#tarefas-page -->
@@ -526,11 +704,81 @@
     </div>
 </div>
 
+<!-- ── Modal sincronização ICS (Phase 3) ── -->
+<div class="tf-modal-overlay" id="modalSync">
+    <div class="tf-modal">
+        <h5><i class="fas fa-calendar-plus me-2" style="color:#6366f1"></i>Sincronizar Agenda</h5>
+
+        <p class="small text-muted mb-3">
+            Adicione suas tarefas e viagens ao Google Calendar, Outlook ou calendário do iPhone/Mac usando este link privado.
+            <strong>Não compartilhe este link</strong> — ele dá acesso à sua agenda.
+        </p>
+
+        @if (calFeedUrl != null)
+        {
+            <label>Seu link de sincronização</label>
+            <div class="sync-link-box">
+                <input type="text" id="syncLinkInput" value="@calFeedUrl" readonly onclick="this.select()" />
+                <button class="btn-sync-copy" onclick="copiarSync()" title="Copiar link"><i class="fas fa-copy"></i></button>
+            </div>
+            <div id="syncCopiado" style="display:none;color:#10b981;font-size:.78rem;margin-bottom:10px">
+                <i class="fas fa-check"></i> Link copiado!
+            </div>
+        }
+        else
+        {
+            <div id="syncGerarArea">
+                <button class="btn-tf-save" style="width:100%" onclick="gerarLinkSync()">
+                    <i class="fas fa-magic me-1"></i>Gerar link de sincronização
+                </button>
+            </div>
+            <div id="syncLinkArea" style="display:none">
+                <label>Seu link de sincronização</label>
+                <div class="sync-link-box">
+                    <input type="text" id="syncLinkInput" readonly onclick="this.select()" />
+                    <button class="btn-sync-copy" onclick="copiarSync()" title="Copiar link"><i class="fas fa-copy"></i></button>
+                </div>
+                <div id="syncCopiado" style="display:none;color:#10b981;font-size:.78rem;margin-bottom:10px">
+                    <i class="fas fa-check"></i> Link copiado!
+                </div>
+            </div>
+        }
+
+        <div class="sync-instructions mt-3">
+            <div class="sync-inst-item">
+                <strong><i class="fab fa-google me-1"></i>Google Calendar</strong>
+                <p>Outros calendários → + → Por URL → cole o link → Adicionar calendário</p>
+            </div>
+            <div class="sync-inst-item">
+                <strong><i class="fab fa-microsoft me-1"></i>Outlook</strong>
+                <p>Adicionar calendário → Assinar da Web → cole o link → Importar</p>
+            </div>
+            <div class="sync-inst-item">
+                <strong><i class="fab fa-apple me-1"></i>iPhone / Mac</strong>
+                <p>Calendário → Arquivo → Nova assinatura de calendário → cole o link</p>
+            </div>
+        </div>
+
+        <div class="tf-modal-footer">
+            @if (calFeedUrl != null)
+            {
+                <button class="btn-regen-link" onclick="regenerarSync()">
+                    <i class="fas fa-redo me-1"></i>Regenerar link
+                </button>
+            }
+            <button class="btn-tf-cancel" onclick="fecharModalSync()">Fechar</button>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
 <script>
 // ── Tabs ──────────────────────────────────────────────────────────────────────
 document.querySelectorAll('.tf-tab').forEach(btn => {
-    btn.addEventListener('click', () => ativarTab(btn.dataset.panel));
+    btn.addEventListener('click', () => {
+        ativarTab(btn.dataset.panel);
+        if (btn.dataset.panel === 'calendario') initCal();
+    });
 });
 
 function ativarTab(panel) {
@@ -543,7 +791,7 @@ function ativarTab(panel) {
 // ── Concluir ──────────────────────────────────────────────────────────────────
 async function concluir(id, checkEl) {
     checkEl.classList.add('checked');
-    checkEl.innerHTML = '<i class="fas fa-check"></i>';
+    checkEl.querySelector('i').style.display = 'flex';
     const item = checkEl.closest('.tf-item');
     item.style.opacity = '.5';
 
@@ -558,7 +806,6 @@ async function concluir(id, checkEl) {
     } else {
         item.style.opacity = '1';
         checkEl.classList.remove('checked');
-        checkEl.innerHTML = '';
     }
 }
 
@@ -629,6 +876,175 @@ async function salvarNovaTarefa() {
         location.reload();
     } else {
         alert(d.erro || 'Erro ao criar tarefa.');
+    }
+}
+
+// ── Calendário (Phase 2) ──────────────────────────────────────────────────────
+const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const MESES_ABR = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+
+let calYear  = new Date().getFullYear();
+let calMonth = new Date().getMonth() + 1;
+const calCache = {};
+let calReady = false;
+
+async function initCal() {
+    if (!calReady) {
+        calReady = true;
+        document.getElementById('calPrev').addEventListener('click', () => navCal(-1));
+        document.getElementById('calNext').addEventListener('click', () => navCal(1));
+    }
+    renderCal(await fetchCalData(calYear, calMonth));
+}
+
+async function fetchCalData(ano, mes) {
+    const k = `${ano}-${mes}`;
+    if (!calCache[k]) {
+        const r = await fetch(`/Tarefa/CalendarioData?ano=${ano}&mes=${mes}`);
+        calCache[k] = await r.json();
+    }
+    return calCache[k];
+}
+
+async function navCal(delta) {
+    calMonth += delta;
+    if (calMonth > 12) { calMonth = 1; calYear++; }
+    if (calMonth < 1)  { calMonth = 12; calYear--; }
+    renderCal(await fetchCalData(calYear, calMonth));
+}
+
+function renderCal(data) {
+    const { tarefas, viagens } = data;
+    document.getElementById('calTitle').textContent = `${MESES[calMonth - 1]} ${calYear}`;
+
+    const tasksByDay = {};
+    tarefas.forEach(t => (tasksByDay[t.data] = tasksByDay[t.data] || []).push(t));
+
+    const tripDays = {};
+    viagens.forEach(v => {
+        const s = new Date(v.inicio + 'T00:00:00');
+        const e = new Date(v.fim   + 'T00:00:00');
+        for (const d = new Date(s); d <= e; d.setDate(d.getDate() + 1)) {
+            const k = d.toISOString().slice(0, 10);
+            (tripDays[k] = tripDays[k] || []).push({
+                titulo: v.titulo,
+                isStart: d.getTime() === s.getTime(),
+                isEnd:   d.getTime() === e.getTime()
+            });
+        }
+    });
+
+    const daysInMonth = new Date(calYear, calMonth, 0).getDate();
+    const startDow    = new Date(calYear, calMonth - 1, 1).getDay();
+    const todayStr    = new Date().toISOString().slice(0, 10);
+    const cells       = document.getElementById('calGridCells');
+    cells.innerHTML   = '';
+
+    for (let i = 0; i < startDow; i++) {
+        cells.insertAdjacentHTML('beforeend', '<div class="tfcal-cell empty"></div>');
+    }
+
+    for (let d = 1; d <= daysInMonth; d++) {
+        const ds   = `${calYear}-${String(calMonth).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        const tasks = tasksByDay[ds] || [];
+        const trips = tripDays[ds]  || [];
+
+        let cls = 'tfcal-cell';
+        if (ds === todayStr) cls += ' today';
+        if (trips.length)    cls += ' has-trip';
+
+        const cell = document.createElement('div');
+        cell.className    = cls;
+        cell.dataset.date = ds;
+        cell.innerHTML    = `<div class="tfcal-num">${d}</div>`;
+
+        if (tasks.length) {
+            const dotsEl = document.createElement('div');
+            dotsEl.className = 'tfcal-dots';
+            tasks.slice(0, 3).forEach(t => {
+                const dot = document.createElement('span');
+                dot.className = 'tfcal-dot ' + (t.concluida ? 'dot-ok' : t.prioridade === 'Alta' ? 'dot-alta' : 'dot-normal');
+                dotsEl.appendChild(dot);
+            });
+            if (tasks.length > 3) {
+                const more = document.createElement('span');
+                more.className   = 'tfcal-dot-more';
+                more.textContent = `+${tasks.length - 3}`;
+                dotsEl.appendChild(more);
+            }
+            cell.appendChild(dotsEl);
+        }
+
+        if (trips.length) cell.insertAdjacentHTML('beforeend', '<div class="tfcal-trip-bar"></div>');
+
+        cell.addEventListener('click', () => showDayDetail(ds, tasks, trips));
+        cells.appendChild(cell);
+    }
+
+    document.getElementById('calDetail').style.display = 'none';
+}
+
+function showDayDetail(ds, tasks, trips) {
+    document.querySelectorAll('.tfcal-cell').forEach(c => c.classList.remove('selected'));
+    document.querySelector(`.tfcal-cell[data-date="${ds}"]`)?.classList.add('selected');
+
+    const [, mes, dia] = ds.split('-');
+    document.getElementById('calDetailTitle').textContent = `${parseInt(dia)} de ${MESES_ABR[parseInt(mes) - 1]}`;
+
+    let html = '';
+    trips.forEach(v => { html += `<div class="cal-detail-trip"><i class="fas fa-plane me-1"></i>${v.titulo}</div>`; });
+    tasks.forEach(t => {
+        const done = t.concluida;
+        html += `<div class="cal-detail-task${done ? ' done' : ''}"><i class="fas ${done ? 'fa-check-circle' : 'fa-circle'}"></i>${t.titulo}</div>`;
+    });
+    if (!trips.length && !tasks.length) html = '<p class="cal-detail-empty">Nenhum evento neste dia.</p>';
+
+    document.getElementById('calDetailItems').innerHTML = html;
+    document.getElementById('calDetail').style.display  = 'block';
+}
+
+// ── Sync modal (Phase 3) ──────────────────────────────────────────────────────
+function abrirModalSync() {
+    document.getElementById('modalSync').classList.add('open');
+}
+function fecharModalSync() {
+    document.getElementById('modalSync').classList.remove('open');
+}
+document.getElementById('modalSync').addEventListener('click', e => {
+    if (e.target === e.currentTarget) fecharModalSync();
+});
+
+function copiarSync() {
+    const input = document.getElementById('syncLinkInput');
+    if (!input) return;
+    input.select();
+    navigator.clipboard?.writeText(input.value).catch(() => document.execCommand('copy'));
+    const el = document.getElementById('syncCopiado');
+    if (el) { el.style.display = 'block'; setTimeout(() => el.style.display = 'none', 2500); }
+}
+
+async function gerarLinkSync() {
+    const btn = document.querySelector('#syncGerarArea button');
+    btn.disabled = true; btn.textContent = 'Gerando…';
+    const r = await fetch('/Tarefa/GerarTokenCalendario', { method: 'POST' });
+    const d = await r.json();
+    if (d.ok) {
+        document.getElementById('syncGerarArea').style.display  = 'none';
+        document.getElementById('syncLinkArea').style.display   = 'block';
+        document.getElementById('syncLinkInput').value          = d.url;
+    } else {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-magic me-1"></i>Gerar link de sincronização';
+    }
+}
+
+async function regenerarSync() {
+    if (!confirm('Regenerar o link tornará o anterior inválido. Continuar?')) return;
+    const r = await fetch('/Tarefa/GerarTokenCalendario', { method: 'POST' });
+    const d = await r.json();
+    if (d.ok) {
+        const input = document.getElementById('syncLinkInput');
+        if (input) { input.value = d.url; input.select(); }
     }
 }
 </script>

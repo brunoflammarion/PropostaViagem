@@ -346,12 +346,9 @@
     <div id="copilotInputArea" class="cp-input-area">
         <div id="cpAttachments" class="cp-attachments"></div>
         <div class="cp-input-wrap">
-            @if (Model.HasValue)
-            {
-                <button type="button" id="cpAttachBtn" class="btn btn-sm btn-outline-secondary cp-attach-btn" title="Anexar documento para importar">
-                    <i class="fas fa-paperclip"></i>
-                </button>
-            }
+            <button type="button" id="cpAttachBtn" class="btn btn-sm btn-outline-secondary cp-attach-btn" title="Anexar documento para importar">
+                <i class="fas fa-paperclip"></i>
+            </button>
             <textarea id="copilotInput"
                       class="cp-textarea"
                       placeholder="@(Model.HasValue ? "Pergunte sobre a proposta, o destino, o cliente..." : "Me conte: para onde é a viagem, quando e quem vai?")"
@@ -360,14 +357,7 @@
                 <i class="fas fa-paper-plane"></i>
             </button>
         </div>
-        @if (Model.HasValue)
-        {
-            <div class="cp-hint">Enter para enviar &bull; Shift+Enter nova linha &bull; <i class="fas fa-paperclip"></i> para importar documento</div>
-        }
-        else
-        {
-            <div class="cp-hint">Enter para enviar · Shift+Enter para nova linha</div>
-        }
+        <div class="cp-hint">Enter para enviar &bull; Shift+Enter nova linha &bull; <i class="fas fa-paperclip"></i> para importar documento</div>
         <input type="file" id="cpFileInput" multiple tabindex="-1"
                accept=".pdf,.jpg,.jpeg,.png,.gif,.webp,.docx,.txt,.eml,.html"
                style="position:fixed;left:-9999px;top:-9999px;opacity:0;width:1px;height:1px;">

@@ -47,7 +47,8 @@ namespace SistemaUsuarios.Controllers
             Guid destinoId,
             string titulo,
             string? descricao,
-            decimal? valor)
+            decimal? valor,
+            IFormFile[]? imagens = null)
         {
             if (!UsuarioLogado())
                 return RedirectToAction("Login", "Auth");
@@ -86,7 +87,43 @@ namespace SistemaUsuarios.Controllers
             _context.Transportes.Add(transporte);
             await _context.SaveChangesAsync();
 
-            TempData["Sucesso"] = $"Transporte \"{transporte.Titulo}\" adicionado!";
+            var imagensValidas = (imagens ?? Array.Empty<IFormFile>())
+                .Where(f => f != null && f.Length > 0).ToList();
+
+            if (imagensValidas.Any())
+            {
+                var errosFoto = new List<string>();
+                for (int i = 0; i < imagensValidas.Count; i++)
+                {
+                    try
+                    {
+                        var caminho = await SalvarImagemAsync(imagensValidas[i]);
+                        _context.TransporteImagens.Add(new TransporteImagem
+                        {
+                            Id            = Guid.NewGuid(),
+                            TransporteId  = transporte.Id,
+                            CaminhoImagem = caminho,
+                            Ordem         = i + 1,
+                            Principal     = i == 0,
+                            DataCriacao   = DateTime.Now
+                        });
+                    }
+                    catch (InvalidOperationException ex)
+                    {
+                        errosFoto.Add($"{imagensValidas[i].FileName}: {ex.Message}");
+                    }
+                }
+                await _context.SaveChangesAsync();
+
+                TempData[errosFoto.Any() ? "Aviso" : "Sucesso"] = errosFoto.Any()
+                    ? $"Transporte criado, mas {errosFoto.Count} imagem(ns) não puderam ser salvas: {string.Join("; ", errosFoto)}"
+                    : $"Transporte \"{transporte.Titulo}\" adicionado com {imagensValidas.Count} imagem(ns)!";
+            }
+            else
+            {
+                TempData["Sucesso"] = $"Transporte \"{transporte.Titulo}\" adicionado!";
+            }
+
             return RedirectToEditar(propostaId);
         }
 

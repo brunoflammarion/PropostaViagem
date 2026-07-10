@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NetTopologySuite.Geometries;
 using SistemaUsuarios.Data;
@@ -12,9 +13,11 @@ using SistemaUsuarios.Data;
 namespace SistemaUsuarios.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260709021320_AddCalendarioToken")]
+    partial class AddCalendarioToken
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -624,46 +627,6 @@ namespace SistemaUsuarios.Migrations
                     b.HasIndex("HospedagemId");
 
                     b.ToTable("HospedagemFotos");
-                });
-
-            modelBuilder.Entity("SistemaUsuarios.Models.ImportacaoSessao", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("AtualizadoEm")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("CriadoEm")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("DraftJson")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("ExpiradoEm")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid?>("PropostaId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("SourceFiles")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
-
-                    b.Property<Guid>("UsuarioId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("UsuarioMasterId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("ImportacaoSessoes");
                 });
 
             modelBuilder.Entity("SistemaUsuarios.Models.Layout", b =>

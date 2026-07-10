@@ -50,6 +50,9 @@ namespace SistemaUsuarios.Data
         public DbSet<Tarefa> Tarefas { get; set; }
         public DbSet<ConfiguracaoLembrete> ConfiguracoesLembrete { get; set; }
 
+        // ── IMPORTAÇÃO IA ──────────────────────────────────────────────────────
+        public DbSet<ImportacaoSessao> ImportacaoSessoes { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

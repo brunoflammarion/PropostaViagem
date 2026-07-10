@@ -27,6 +27,34 @@
         }
         catch { return hex; }
     }
+
+    // Retorna #ffffff ou #1a1a2e conforme a luminância relativa do fundo
+    static string ContrastText(string hex)
+    {
+        if (string.IsNullOrEmpty(hex) || !hex.StartsWith("#") || hex.Length != 7) return "#ffffff";
+        try
+        {
+            int r = Convert.ToInt32(hex.Substring(1, 2), 16);
+            int g = Convert.ToInt32(hex.Substring(3, 2), 16);
+            int b = Convert.ToInt32(hex.Substring(5, 2), 16);
+            return (0.299 * r + 0.587 * g + 0.114 * b) / 255.0 > 0.5 ? "#1a1a2e" : "#ffffff";
+        }
+        catch { return "#ffffff"; }
+    }
+
+    // Mistura a cor com branco — factor 0=original, 1=branco puro (para fundos suaves)
+    static string TintColor(string hex, double factor = 0.87)
+    {
+        if (string.IsNullOrEmpty(hex) || !hex.StartsWith("#") || hex.Length != 7) return "#f8f9fa";
+        try
+        {
+            int r = Convert.ToInt32(hex.Substring(1, 2), 16);
+            int g = Convert.ToInt32(hex.Substring(3, 2), 16);
+            int b = Convert.ToInt32(hex.Substring(5, 2), 16);
+            return $"#{(int)(r + (255-r)*factor):X2}{(int)(g + (255-g)*factor):X2}{(int)(b + (255-b)*factor):X2}";
+        }
+        catch { return "#f8f9fa"; }
+    }
 }
 @{
     var layoutNome = (Model.Layout?.Nome ?? "Padrão").ToLower();
@@ -62,6 +90,11 @@
     bool uTemCores = !string.IsNullOrEmpty(uCorP) && !string.IsNullOrEmpty(uCorD);
     var uCorPLight = uTemCores ? LightenPub(uCorP!, 22)  : "";
     var uCorDAlt   = uTemCores ? LightenPub(uCorD!, -15) : "";
+    var uCorS     = !string.IsNullOrEmpty(Model.Usuario.CorSecundaria) ? Model.Usuario.CorSecundaria : (uTemCores ? LightenPub(uCorP!, 50) : "");
+    var uCorDTxt  = uTemCores ? ContrastText(uCorD!) : "#ffffff";
+    var uCorPTxt  = uTemCores ? ContrastText(uCorP!) : "#ffffff";
+    var uCorSTint = uTemCores && !string.IsNullOrEmpty(uCorS) ? TintColor(uCorS, 0.72) : "";
+    var uCorSTxt  = uTemCores && !string.IsNullOrEmpty(uCorS) ? ContrastText(uCorS) : "#ffffff";
 
     // Modo preview do agente (não contabiliza visualização)
     bool isPreview      = (bool)(ViewBag.IsPreview ?? false);
@@ -144,15 +177,23 @@
    IDENTIDADE VISUAL DO AGENTE (override personalizado)
 ═══════════════════════════════════════════════════════ */
 .@(themeClass) {
-    --c-hero-from:  @uCorP;
-    --c-hero-to:    @uCorPLight;
-    --c-accent:     @uCorD;
-    --c-accent-alt: @uCorDAlt;
-    --c-h2:         @uCorP;
-    --c-divider:    @uCorD;
-    --c-badge-bg:   @uCorP;
-    --c-badge-txt:  #ffffff;
+    --c-hero-from:   @uCorP;
+    --c-hero-to:     @uCorPLight;
+    --c-accent:      @uCorD;
+    --c-accent-alt:  @uCorDAlt;
+    --c-h2:          @uCorP;
+    --c-divider:     @uCorD;
+    --c-badge-bg:    @uCorD;
+    --c-badge-txt:   @uCorDTxt;
+    --c-section-alt: @(string.IsNullOrEmpty(uCorSTint) ? "#f5f7fb" : uCorSTint);
+    --c-secondary:   @uCorS;
 }
+/* Primária: nav brand + headings | Secundária: numeração destinos + bordas chips | Destaque: badges + CTAs */
+.@(themeClass) .prop-nav-brand { color: @uCorP; }
+.@(themeClass) .destino-num { background: @uCorS; color: @uCorSTxt; }
+.@(themeClass) .comod-chip { border-color: @uCorS; }
+.@(themeClass) .highlight-chip { border-color: @uCorS; }
+.@(themeClass) .btn-aval-submit { color: @uCorDTxt; }
 </text>
 }
 
