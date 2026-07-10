@@ -10,10 +10,12 @@ namespace SistemaUsuarios.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly IFlightLookupService _flightLookup;
+        private readonly BlobStorageService _blob;
 
-        public VooController(ApplicationDbContext context, IFlightLookupService flightLookup)
+        public VooController(ApplicationDbContext context, IFlightLookupService flightLookup, BlobStorageService blob)
         {
             _context = context;
+            _blob = blob;
             _flightLookup = flightLookup;
         }
 
@@ -437,23 +439,14 @@ namespace SistemaUsuarios.Controllers
                 return RedirectToEditar(voo.PropostaId);
             }
 
-            var extensao = Path.GetExtension(arquivo.FileName).ToLowerInvariant();
-            var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "voo-anexos");
-            if (!Directory.Exists(uploadsPath))
-                Directory.CreateDirectory(uploadsPath);
-
-            var nomeArquivo = $"{Guid.NewGuid()}{extensao}";
-            var caminhoCompleto = Path.Combine(uploadsPath, nomeArquivo);
-
-            using (var stream = new FileStream(caminhoCompleto, FileMode.Create))
-                await arquivo.CopyToAsync(stream);
+            var blobUrl = await _blob.SalvarArquivoAsync(arquivo, "voo-anexos");
 
             var anexo = new VooAnexo
             {
                 Id = Guid.NewGuid(),
                 VooId = vooId,
                 NomeOriginal = arquivo.FileName,
-                CaminhoArquivo = $"/uploads/voo-anexos/{nomeArquivo}",
+                CaminhoArquivo = blobUrl,
                 TipoArquivo = arquivo.ContentType,
                 Tamanho = arquivo.Length,
                 DataCriacao = DateTime.Now
@@ -515,12 +508,12 @@ namespace SistemaUsuarios.Controllers
             if (anexo == null)
                 return NotFound();
 
+            if (anexo.CaminhoArquivo.StartsWith("http"))
+                return Redirect(anexo.CaminhoArquivo);
+
             var caminho = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot",
                 anexo.CaminhoArquivo.TrimStart('/'));
-
-            if (!System.IO.File.Exists(caminho))
-                return NotFound();
-
+            if (!System.IO.File.Exists(caminho)) return NotFound();
             var bytes = await System.IO.File.ReadAllBytesAsync(caminho);
             return File(bytes, string.IsNullOrEmpty(anexo.TipoArquivo)
                 ? "application/octet-stream" : anexo.TipoArquivo,
@@ -585,41 +578,10 @@ namespace SistemaUsuarios.Controllers
 
         // ─── HELPERS PRIVADOS ─────────────────────────────────────────────────────
 
-        private async Task<string> SalvarImagemAsync(IFormFile imagem)
-        {
-            var extensoesPermitidas = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
-            var ext = Path.GetExtension(imagem.FileName).ToLowerInvariant();
+        private Task<string> SalvarImagemAsync(IFormFile imagem)
+            => _blob.SalvarAsync(imagem, "voo-obs");
 
-            if (!extensoesPermitidas.Contains(ext))
-                throw new InvalidOperationException("Apenas imagens são permitidas (JPG, PNG, GIF, WebP).");
-
-            if (imagem.Length > 10 * 1024 * 1024)
-                throw new InvalidOperationException("Imagem muito grande. Máximo 10MB.");
-
-            var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "voo-obs");
-            if (!Directory.Exists(uploadsPath))
-                Directory.CreateDirectory(uploadsPath);
-
-            var nome = $"{Guid.NewGuid()}{ext}";
-            var caminho = Path.Combine(uploadsPath, nome);
-
-            using var stream = new FileStream(caminho, FileMode.Create);
-            await imagem.CopyToAsync(stream);
-
-            return $"/uploads/voo-obs/{nome}";
-        }
-
-        private static void DeletarArquivoFisico(string? caminhoRelativo)
-        {
-            if (string.IsNullOrEmpty(caminhoRelativo)) return;
-            try
-            {
-                var full = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot",
-                    caminhoRelativo.TrimStart('/'));
-                if (System.IO.File.Exists(full))
-                    System.IO.File.Delete(full);
-            }
-            catch { /* log and swallow */ }
-        }
+        private void DeletarArquivoFisico(string? url)
+            => _ = _blob.DeletarAsync(url);
     }
 }

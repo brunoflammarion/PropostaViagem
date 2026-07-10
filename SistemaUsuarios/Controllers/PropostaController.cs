@@ -14,10 +14,12 @@ namespace SistemaUsuarios.Controllers
         private readonly IMemoryCache _cache;
         private readonly IConfiguration _configuration;
         private readonly ITarefaService _tarefaService;
+        private readonly BlobStorageService _blob;
 
-        public PropostaController(ApplicationDbContext context, IMemoryCache cache, IConfiguration configuration, ITarefaService tarefaService)
+        public PropostaController(ApplicationDbContext context, IMemoryCache cache, IConfiguration configuration, ITarefaService tarefaService, BlobStorageService blob)
         {
             _context      = context;
+            _blob         = blob;
             _cache        = cache;
             _configuration = configuration;
             _tarefaService = tarefaService;
@@ -54,45 +56,8 @@ namespace SistemaUsuarios.Controllers
             return p.UsuarioResponsavelId == usuarioLogadoId;
         }
 
-        private async Task<string> SalvarFotoAsync(IFormFile foto)
-        {
-            if (foto == null || foto.Length == 0)
-                return null;
-
-            // Validar se é imagem
-            var extensoesPermitidas = new[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp" };
-            var extensao = Path.GetExtension(foto.FileName).ToLowerInvariant();
-
-            if (!extensoesPermitidas.Contains(extensao))
-                throw new InvalidOperationException("Apenas arquivos de imagem são permitidos (JPG, PNG, GIF, BMP)");
-
-            // Validar tamanho (5MB)
-            if (foto.Length > 5 * 1024 * 1024)
-                throw new InvalidOperationException("Arquivo muito grande. Máximo 5MB permitido");
-
-            // Validar tipo MIME
-            var tiposPermitidos = new[] { "image/jpeg", "image/jpg", "image/png", "image/gif", "image/bmp" };
-            if (!tiposPermitidos.Contains(foto.ContentType.ToLowerInvariant()))
-                throw new InvalidOperationException("Tipo de arquivo não permitido");
-
-            // Criar diretório se não existir
-            var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "propostas");
-            if (!Directory.Exists(uploadsPath))
-                Directory.CreateDirectory(uploadsPath);
-
-            // Gerar nome único
-            var nomeArquivo = $"{Guid.NewGuid()}{extensao}";
-            var caminhoCompleto = Path.Combine(uploadsPath, nomeArquivo);
-
-            // Salvar arquivo
-            using (var stream = new FileStream(caminhoCompleto, FileMode.Create))
-            {
-                await foto.CopyToAsync(stream);
-            }
-
-            // Retornar caminho relativo
-            return $"/uploads/propostas/{nomeArquivo}";
-        }
+        private Task<string> SalvarFotoAsync(IFormFile foto)
+            => _blob.SalvarAsync(foto, "propostas");
 
         private Guid ObterUsuarioLogadoId()
         {
@@ -457,22 +422,8 @@ namespace SistemaUsuarios.Controllers
                 // PROCESSAR UPLOAD DE NOVA FOTO SE FORNECIDA
                 if (model.FotoCapaUpload != null && model.FotoCapaUpload.Length > 0)
                 {
-                    // Excluir foto anterior se existir
-                    if (!string.IsNullOrEmpty(proposta.FotoCapa))
-                    {
-                        try
-                        {
-                            var caminhoAnterior = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", proposta.FotoCapa.TrimStart('/'));
-                            if (System.IO.File.Exists(caminhoAnterior))
-                            {
-                                System.IO.File.Delete(caminhoAnterior);
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine($"Erro ao excluir foto anterior: {ex.Message}");
-                        }
-                    }
+                    // Excluir foto anterior
+                    _ = _blob.DeletarAsync(proposta.FotoCapa);
 
                     // Salvar nova foto
                     model.FotoCapa = await SalvarFotoAsync(model.FotoCapaUpload);
@@ -1040,42 +991,12 @@ namespace SistemaUsuarios.Controllers
             foreach (var destino in proposta.Destinos)
             {
                 foreach (var foto in destino.Fotos)
-                {
-                    if (!string.IsNullOrEmpty(foto.CaminhoFoto))
-                    {
-                        try
-                        {
-                            var caminhoCompleto = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", foto.CaminhoFoto.TrimStart('/'));
-                            if (System.IO.File.Exists(caminhoCompleto))
-                            {
-                                System.IO.File.Delete(caminhoCompleto);
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            // Log do erro mas continua com a exclusão
-                            Console.WriteLine($"Erro ao excluir arquivo de foto: {ex.Message}");
-                        }
-                    }
-                }
+                    _ = _blob.DeletarAsync(foto.CaminhoFoto);
             }
 
             // Remover foto de capa da proposta
-            if (!string.IsNullOrEmpty(proposta.FotoCapa))
+            _ = _blob.DeletarAsync(proposta.FotoCapa);
             {
-                try
-                {
-                    var caminhoCompleto = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", proposta.FotoCapa.TrimStart('/'));
-                    if (System.IO.File.Exists(caminhoCompleto))
-                    {
-                        System.IO.File.Delete(caminhoCompleto);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    // Log do erro mas continua com a exclusão
-                    Console.WriteLine($"Erro ao excluir foto de capa: {ex.Message}");
-                }
             }
 
             _context.Propostas.Remove(proposta);
@@ -1451,21 +1372,7 @@ namespace SistemaUsuarios.Controllers
                 return Json(new { success = false, message = "Proposta não encontrada ou sem permissão" });
 
             // Remover arquivo físico se existir
-            if (!string.IsNullOrEmpty(proposta.FotoCapa))
-            {
-                try
-                {
-                    var caminhoCompleto = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", proposta.FotoCapa.TrimStart('/'));
-                    if (System.IO.File.Exists(caminhoCompleto))
-                    {
-                        System.IO.File.Delete(caminhoCompleto);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Erro ao excluir arquivo de foto: {ex.Message}");
-                }
-            }
+            _ = _blob.DeletarAsync(proposta.FotoCapa);
 
             // Atualizar no banco
             proposta.FotoCapa = null;

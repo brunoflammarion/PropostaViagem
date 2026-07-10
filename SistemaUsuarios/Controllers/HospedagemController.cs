@@ -1,3 +1,4 @@
+using SistemaUsuarios.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -15,10 +16,12 @@ namespace SistemaUsuarios.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly IConfiguration _configuration;
+        private readonly BlobStorageService _blob;
 
-        public HospedagemController(ApplicationDbContext context, IConfiguration configuration)
+        public HospedagemController(ApplicationDbContext context, IConfiguration configuration, BlobStorageService blob)
         {
             _context = context;
+            _blob = blob;
             _configuration = configuration;
         }
 
@@ -1067,54 +1070,14 @@ Responda SOMENTE com um JSON válido, sem texto fora do objeto, no seguinte form
             }
         }
 
-        private async Task<string> SalvarFotoAsync(IFormFile foto)
-            => await SalvarFotoParaPastaAsync(foto, "acomodacoes");
+        private Task<string> SalvarFotoAsync(IFormFile foto)
+            => _blob.SalvarAsync(foto, "acomodacoes");
 
-        private async Task<string> SalvarFotoHospedagemAsync(IFormFile foto)
-            => await SalvarFotoParaPastaAsync(foto, "hospedagens");
+        private Task<string> SalvarFotoHospedagemAsync(IFormFile foto)
+            => _blob.SalvarAsync(foto, "hospedagens");
 
-        private static async Task<string> SalvarFotoParaPastaAsync(IFormFile foto, string pasta)
-        {
-            var extensoesPermitidas = new[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp" };
-            var extensao = Path.GetExtension(foto.FileName).ToLowerInvariant();
-
-            if (!extensoesPermitidas.Contains(extensao))
-                throw new InvalidOperationException("Apenas arquivos de imagem são permitidos (JPG, PNG, GIF, BMP, WebP)");
-
-            if (foto.Length > 10 * 1024 * 1024)
-                throw new InvalidOperationException("Arquivo muito grande. Máximo 10MB permitido");
-
-            var tiposPermitidos = new[] { "image/jpeg", "image/jpg", "image/png", "image/gif", "image/bmp", "image/webp" };
-            if (!tiposPermitidos.Contains(foto.ContentType.ToLowerInvariant()))
-                throw new InvalidOperationException("Tipo de arquivo não permitido");
-
-            var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", pasta);
-            if (!Directory.Exists(uploadsPath))
-                Directory.CreateDirectory(uploadsPath);
-
-            var nomeArquivo = $"{Guid.NewGuid()}{extensao}";
-            var caminhoCompleto = Path.Combine(uploadsPath, nomeArquivo);
-
-            using var stream = new FileStream(caminhoCompleto, FileMode.Create);
-            await foto.CopyToAsync(stream);
-
-            return $"/uploads/{pasta}/{nomeArquivo}";
-        }
-
-        private static void ExcluirArquivoFisico(string? caminho)
-        {
-            if (string.IsNullOrEmpty(caminho)) return;
-            try
-            {
-                var caminhoCompleto = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", caminho.TrimStart('/'));
-                if (System.IO.File.Exists(caminhoCompleto))
-                    System.IO.File.Delete(caminhoCompleto);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Erro ao excluir arquivo físico: {ex.Message}");
-            }
-        }
+        private void ExcluirArquivoFisico(string? url)
+            => _ = _blob.DeletarAsync(url);
     }
 
     public class ReordenarFotosAcomodacaoRequest

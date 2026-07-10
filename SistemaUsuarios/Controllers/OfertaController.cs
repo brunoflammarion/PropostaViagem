@@ -1,3 +1,4 @@
+using SistemaUsuarios.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SistemaUsuarios.Data;
@@ -9,10 +10,12 @@ namespace SistemaUsuarios.Controllers
     public class OfertaController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly BlobStorageService _blob;
 
-        public OfertaController(ApplicationDbContext context)
+        public OfertaController(ApplicationDbContext context, BlobStorageService blob)
         {
             _context = context;
+            _blob = blob;
         }
 
         // ── Helpers de sessão ─────────────────────────────────────────────────────
@@ -299,17 +302,8 @@ namespace SistemaUsuarios.Controllers
             if (!permitidas.Contains(ext))
                 return BadRequest(new { erro = "Formato não permitido. Use JPG, PNG ou WebP." });
 
-            var pasta = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "ofertas");
-            if (!Directory.Exists(pasta))
-                Directory.CreateDirectory(pasta);
-
-            var nome = $"{Guid.NewGuid()}{ext}";
-            var caminho = Path.Combine(pasta, nome);
-
-            using (var stream = new FileStream(caminho, FileMode.Create))
-                await arquivo.CopyToAsync(stream);
-
-            return Ok(new { path = $"/uploads/ofertas/{nome}" });
+            var blobUrl = await _blob.SalvarAsync(arquivo, "ofertas");
+            return Ok(new { path = blobUrl });
         }
 
         // ── POST /Oferta/UploadLogo (AJAX) ────────────────────────────────────────
@@ -331,17 +325,8 @@ namespace SistemaUsuarios.Controllers
             if (!permitidas.Contains(ext))
                 return BadRequest(new { erro = "Formato não permitido. Use PNG, SVG ou WebP." });
 
-            var pasta = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "ofertas-logos");
-            if (!Directory.Exists(pasta))
-                Directory.CreateDirectory(pasta);
-
-            var nome = $"logo-{Guid.NewGuid()}{ext}";
-            var caminho = Path.Combine(pasta, nome);
-
-            using (var stream = new FileStream(caminho, FileMode.Create))
-                await arquivo.CopyToAsync(stream);
-
-            return Ok(new { path = $"/uploads/ofertas-logos/{nome}" });
+            var blobUrl = await _blob.SalvarAsync(arquivo, "ofertas-logos");
+            return Ok(new { path = blobUrl });
         }
 
         // ── Helpers privados ──────────────────────────────────────────────────────
@@ -444,17 +429,7 @@ namespace SistemaUsuarios.Controllers
             o.TextoInstitucional  = vm.TextoInstitucional?.Trim();
         }
 
-        private static void DeletarArquivoFisico(string? caminhoRelativo)
-        {
-            if (string.IsNullOrEmpty(caminhoRelativo)) return;
-            try
-            {
-                var full = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot",
-                    caminhoRelativo.TrimStart('/'));
-                if (System.IO.File.Exists(full))
-                    System.IO.File.Delete(full);
-            }
-            catch { /* ignora erros de IO */ }
-        }
+        private void DeletarArquivoFisico(string? url)
+            => _ = _blob.DeletarAsync(url);
     }
 }

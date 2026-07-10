@@ -41,6 +41,9 @@ builder.Services.AddHttpClient<AiCopilotService>();
 builder.Services.AddHttpClient<ImportacaoIAService>();
 builder.Services.AddScoped<ImportacaoPersistenciaService>();
 
+// Armazenamento de arquivos (Azure Blob Storage)
+builder.Services.AddSingleton<SistemaUsuarios.Services.BlobStorageService>();
+
 // Módulo Tarefas
 builder.Services.AddScoped<ITarefaService, TarefaService>();
 

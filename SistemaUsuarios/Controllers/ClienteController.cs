@@ -1,3 +1,4 @@
+using SistemaUsuarios.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SistemaUsuarios.Data;
@@ -9,10 +10,12 @@ namespace SistemaUsuarios.Controllers
     public class ClienteController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly BlobStorageService _blob;
 
-        public ClienteController(ApplicationDbContext context)
+        public ClienteController(ApplicationDbContext context, BlobStorageService blob)
         {
             _context = context;
+            _blob = blob;
         }
 
         private bool UsuarioLogado() =>
@@ -819,36 +822,10 @@ namespace SistemaUsuarios.Controllers
 
         // ─── Helpers ──────────────────────────────────────────────────────────────
 
-        private async Task<string> SalvarFotoAsync(IFormFile foto)
-        {
-            var ext = Path.GetExtension(foto.FileName).ToLowerInvariant();
-            var permitidos = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
-            if (!permitidos.Contains(ext))
-                throw new InvalidOperationException("Apenas imagens são permitidas (JPG, PNG, GIF, WebP).");
-            if (foto.Length > 5 * 1024 * 1024)
-                throw new InvalidOperationException("Foto muito grande. Máximo 5MB.");
+        private Task<string> SalvarFotoAsync(IFormFile foto)
+            => _blob.SalvarAsync(foto, "clientes");
 
-            var dir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "clientes");
-            if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
-
-            var nome = $"{Guid.NewGuid()}{ext}";
-            var full = Path.Combine(dir, nome);
-            using var stream = new FileStream(full, FileMode.Create);
-            await foto.CopyToAsync(stream);
-            return $"/uploads/clientes/{nome}";
-        }
-
-        private static void DeletarArquivoFisico(string? caminhoRelativo)
-        {
-            if (string.IsNullOrEmpty(caminhoRelativo)) return;
-            try
-            {
-                var full = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot",
-                    caminhoRelativo.TrimStart('/'));
-                if (System.IO.File.Exists(full))
-                    System.IO.File.Delete(full);
-            }
-            catch { /* swallow */ }
-        }
+        private void DeletarArquivoFisico(string? url)
+            => _ = _blob.DeletarAsync(url);
     }
 }

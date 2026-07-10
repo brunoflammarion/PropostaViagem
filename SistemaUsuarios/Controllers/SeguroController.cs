@@ -1,3 +1,4 @@
+using SistemaUsuarios.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SistemaUsuarios.Data;
@@ -8,9 +9,11 @@ namespace SistemaUsuarios.Controllers
     public class SeguroController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly BlobStorageService _blob;
 
-        public SeguroController(ApplicationDbContext context)
+        public SeguroController(ApplicationDbContext context, BlobStorageService blob)
         {
+            _blob = blob;
             _context = context;
         }
 
@@ -284,21 +287,14 @@ namespace SistemaUsuarios.Controllers
                 return RedirectToEditar(propostaId);
             }
 
-            var ext = Path.GetExtension(documento.FileName).ToLowerInvariant();
-            var dir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "seguro-documentos");
-            if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
-
-            var nome = $"{Guid.NewGuid()}{ext}";
-            var fullPath = Path.Combine(dir, nome);
-            using (var s = new FileStream(fullPath, FileMode.Create))
-                await documento.CopyToAsync(s);
+            var blobUrl = await _blob.SalvarArquivoAsync(documento, "seguro-documentos");
 
             _context.SeguroDocumentos.Add(new SeguroDocumento
             {
                 Id = Guid.NewGuid(),
                 SeguroId = seguroId,
                 NomeOriginal = documento.FileName,
-                CaminhoArquivo = $"/uploads/seguro-documentos/{nome}",
+                CaminhoArquivo = blobUrl,
                 TipoArquivo = documento.ContentType,
                 Tamanho = documento.Length,
                 DataCriacao = DateTime.Now
@@ -370,36 +366,10 @@ namespace SistemaUsuarios.Controllers
 
         // ─── HELPERS ─────────────────────────────────────────────────────────────
 
-        private async Task<string> SalvarImagemAsync(IFormFile imagem)
-        {
-            var ext = Path.GetExtension(imagem.FileName).ToLowerInvariant();
-            var permitidos = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
-            if (!permitidos.Contains(ext))
-                throw new InvalidOperationException("Apenas imagens são permitidas (JPG, PNG, GIF, WebP).");
-            if (imagem.Length > 10 * 1024 * 1024)
-                throw new InvalidOperationException("Imagem muito grande. Máximo 10MB.");
+        private Task<string> SalvarImagemAsync(IFormFile imagem)
+            => _blob.SalvarAsync(imagem, "seguro-imagens");
 
-            var dir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "seguro-imagens");
-            if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
-
-            var nome = $"{Guid.NewGuid()}{ext}";
-            var full = Path.Combine(dir, nome);
-            using var stream = new FileStream(full, FileMode.Create);
-            await imagem.CopyToAsync(stream);
-            return $"/uploads/seguro-imagens/{nome}";
-        }
-
-        private static void DeletarArquivoFisico(string? caminhoRelativo)
-        {
-            if (string.IsNullOrEmpty(caminhoRelativo)) return;
-            try
-            {
-                var full = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot",
-                    caminhoRelativo.TrimStart('/'));
-                if (System.IO.File.Exists(full))
-                    System.IO.File.Delete(full);
-            }
-            catch { /* swallow */ }
-        }
+        private void DeletarArquivoFisico(string? url)
+            => _ = _blob.DeletarAsync(url);
     }
 }

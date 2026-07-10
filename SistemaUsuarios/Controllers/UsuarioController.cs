@@ -12,10 +12,12 @@ namespace SistemaUsuarios.Controllers
     public class UsuarioController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly BlobStorageService _blob;
 
-        public UsuarioController(ApplicationDbContext context)
+        public UsuarioController(ApplicationDbContext context, BlobStorageService blob)
         {
             _context = context;
+            _blob = blob;
         }
 
         private bool UsuarioLogado()
@@ -340,12 +342,7 @@ namespace SistemaUsuarios.Controllers
                 var fotoPath = await SalvarFotoUsuarioAsync(foto);
 
                 // Remove foto anterior se existir
-                if (!string.IsNullOrEmpty(usuario.FotoPath))
-                {
-                    var oldFull = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot",
-                        usuario.FotoPath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
-                    if (System.IO.File.Exists(oldFull)) System.IO.File.Delete(oldFull);
-                }
+                _ = _blob.DeletarAsync(usuario.FotoPath);
 
                 usuario.FotoPath = fotoPath;
                 await _context.SaveChangesAsync();
@@ -417,24 +414,8 @@ namespace SistemaUsuarios.Controllers
             return RedirectToAction("Index");
         }
 
-        private async Task<string> SalvarFotoUsuarioAsync(IFormFile foto)
-        {
-            var ext = Path.GetExtension(foto.FileName).ToLowerInvariant();
-            var permitidos = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
-            if (!permitidos.Contains(ext))
-                throw new InvalidOperationException("Apenas imagens são permitidas (JPG, PNG, GIF, WebP).");
-            if (foto.Length > 5 * 1024 * 1024)
-                throw new InvalidOperationException("Foto muito grande. Máximo 5 MB.");
-
-            var dir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "usuarios");
-            if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
-
-            var nome = $"{Guid.NewGuid()}{ext}";
-            var full = Path.Combine(dir, nome);
-            using var stream = new FileStream(full, FileMode.Create);
-            await foto.CopyToAsync(stream);
-            return $"/uploads/usuarios/{nome}";
-        }
+        private Task<string> SalvarFotoUsuarioAsync(IFormFile foto)
+            => _blob.SalvarAsync(foto, "usuarios");
 
         private string LimparCPF(string cpf)
         {

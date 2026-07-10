@@ -1,3 +1,4 @@
+using SistemaUsuarios.Services;
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SistemaUsuarios.Data;
@@ -8,9 +9,11 @@ namespace SistemaUsuarios.Controllers
     public class DestinoFotoController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly BlobStorageService _blob;
 
-        public DestinoFotoController(ApplicationDbContext context)
+        public DestinoFotoController(ApplicationDbContext context, BlobStorageService blob)
         {
+            _blob = blob;
             _context = context;
         }
 
@@ -34,44 +37,8 @@ namespace SistemaUsuarios.Controllers
             return RedirectToAction("Editar", "Proposta", new { id = propostaId });
         }
 
-        private async Task<string> SalvarFotoAsync(IFormFile foto)
-        {
-            if (foto == null || foto.Length == 0)
-                return null;
-
-            // Validar extensão
-            var extensoesPermitidas = new[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp" };
-            var extensao = Path.GetExtension(foto.FileName).ToLowerInvariant();
-
-            if (!extensoesPermitidas.Contains(extensao))
-                throw new InvalidOperationException("Apenas arquivos de imagem são permitidos (JPG, PNG, GIF, BMP, WebP)");
-
-            // Validar tamanho (10MB)
-            if (foto.Length > 10 * 1024 * 1024)
-                throw new InvalidOperationException("Arquivo muito grande. Máximo 10MB permitido");
-
-            // Validar tipo MIME
-            var tiposPermitidos = new[] { "image/jpeg", "image/jpg", "image/png", "image/gif", "image/bmp", "image/webp" };
-            if (!tiposPermitidos.Contains(foto.ContentType.ToLowerInvariant()))
-                throw new InvalidOperationException("Tipo de arquivo não permitido");
-
-            // Criar diretório se não existir
-            var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "destinos");
-            if (!Directory.Exists(uploadsPath))
-                Directory.CreateDirectory(uploadsPath);
-
-            // Gerar nome único
-            var nomeArquivo = $"{Guid.NewGuid()}{extensao}";
-            var caminhoCompleto = Path.Combine(uploadsPath, nomeArquivo);
-
-            // Salvar arquivo
-            using (var stream = new FileStream(caminhoCompleto, FileMode.Create))
-            {
-                await foto.CopyToAsync(stream);
-            }
-
-            return $"/uploads/destinos/{nomeArquivo}";
-        }
+        private Task<string> SalvarFotoAsync(IFormFile foto)
+            => _blob.SalvarAsync(foto, "destinos");
 
         // POST: DestinoFoto/AdicionarFoto
         [HttpPost]
@@ -193,23 +160,8 @@ namespace SistemaUsuarios.Controllers
             var propostaId = foto.Destino.PropostaId;
             var destinoId = foto.DestinoId;
 
-            // Remover arquivo físico
-            if (!string.IsNullOrEmpty(foto.CaminhoFoto))
-            {
-                try
-                {
-                    var caminhoCompleto = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", foto.CaminhoFoto.TrimStart('/'));
-                    if (System.IO.File.Exists(caminhoCompleto))
-                    {
-                        System.IO.File.Delete(caminhoCompleto);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    // Log do erro mas continue com a exclusão do banco
-                    Console.WriteLine($"Erro ao excluir arquivo físico: {ex.Message}");
-                }
-            }
+            // Remover blob
+            _ = _blob.DeletarAsync(foto.CaminhoFoto);
 
             _context.DestinoFotos.Remove(foto);
             await _context.SaveChangesAsync();
@@ -400,14 +352,14 @@ namespace SistemaUsuarios.Controllers
             if (string.IsNullOrEmpty(foto.CaminhoFoto))
                 return NotFound();
 
+            // Blob URL: redireciona diretamente
+            if (foto.CaminhoFoto.StartsWith("http"))
+                return Redirect(foto.CaminhoFoto);
+
             var caminhoCompleto = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", foto.CaminhoFoto.TrimStart('/'));
-
-            if (!System.IO.File.Exists(caminhoCompleto))
-                return NotFound();
-
+            if (!System.IO.File.Exists(caminhoCompleto)) return NotFound();
             var contentType = GetContentType(foto.CaminhoFoto);
             var fileBytes = await System.IO.File.ReadAllBytesAsync(caminhoCompleto);
-
             return File(fileBytes, contentType);
         }
 
