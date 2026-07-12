@@ -61,8 +61,14 @@ namespace SistemaUsuarios.Services
                 }
 
                 var json = await response.Content.ReadAsStringAsync();
-                _logger.LogDebug("AeroDataBox: {Bytes} bytes para {Ident}", json.Length, ident);
 
+                if (string.IsNullOrWhiteSpace(json))
+                {
+                    _logger.LogWarning("AeroDataBox retornou corpo vazio para {Ident}", ident);
+                    return new FlightInfoResult { Erro = $"Voo {ident} não encontrado ou sem dados disponíveis." };
+                }
+
+                _logger.LogDebug("AeroDataBox: {Bytes} bytes para {Ident}", json.Length, ident);
                 return ParseResposta(json, ident);
             }
             catch (HttpRequestException ex)
@@ -250,12 +256,21 @@ namespace SistemaUsuarios.Services
             }
         }
 
+        // Brasil é permanentemente UTC-3 desde 2019 (sem horário de verão)
+        private static readonly TimeSpan BrtOffset = TimeSpan.FromHours(-3);
+
         private static DateTime? ParseLocalTime(string? valor)
         {
             if (string.IsNullOrEmpty(valor)) return null;
             if (DateTime.TryParse(valor, null,
                 System.Globalization.DateTimeStyles.RoundtripKind, out var dt))
+            {
+                // Se a API retornou UTC no campo "local", converter para BRT
+                if (dt.Kind == DateTimeKind.Utc)
+                    return DateTime.SpecifyKind(dt + BrtOffset, DateTimeKind.Unspecified);
+                // Sem offset → assumir que já é horário local do aeroporto
                 return DateTime.SpecifyKind(dt, DateTimeKind.Unspecified);
+            }
             return null;
         }
 

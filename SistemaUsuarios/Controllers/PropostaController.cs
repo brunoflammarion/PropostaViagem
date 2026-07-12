@@ -891,19 +891,32 @@ namespace SistemaUsuarios.Controllers
             if (!PropostaAutorizada(proposta, usuarioId))
                 return Forbid();
 
+            var avaliacoes = await _context.AvaliacoesCliente
+                .AsNoTracking()
+                .Where(a => a.PropostaId == id)
+                .ToListAsync();
+            ViewBag.AvaliacoesPorItem = avaliacoes.ToDictionary(
+                a => $"{(int)a.TipoItem}_{a.ItemId}",
+                a => a);
+
             var layouts = await _context.Layouts
                 .Where(l => l.Ativo)
                 .OrderBy(l => l.Nome)
                 .ToListAsync();
 
-            ViewBag.Layouts    = layouts;
-            ViewBag.IsPreview  = true;
-            ViewBag.Title      = proposta.Titulo;
+            ViewBag.Layouts      = layouts;
+            ViewBag.IsPreview    = true;
+            ViewBag.Title        = proposta.Titulo;
             ViewBag.GoogleApiKey = _configuration["GoogleApiKey"] ?? "";
-            ViewBag.LinkPublico = proposta.LinkPublicoAtivo
+            ViewBag.LinkPublico  = proposta.LinkPublicoAtivo
                 ? $"{Request.Scheme}://{Request.Host}/Proposta/Publico/{id}"
                 : "";
 
+            var layoutNome = (proposta.Layout?.Nome ?? "Padrão").ToLower();
+            if (layoutNome.Contains("executivo"))
+                return View("PublicoExecutivo", proposta);
+            if (layoutNome.Contains("familiar"))
+                return View("PublicoFamiliar", proposta);
             return View("Publico", proposta);
         }
 

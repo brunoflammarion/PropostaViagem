@@ -231,6 +231,9 @@ namespace SistemaUsuarios.Services
             };
         }
 
+        // Brasil é permanentemente UTC-3 desde 2019 (sem horário de verão)
+        private static readonly TimeSpan BrtOffset = TimeSpan.FromHours(-3);
+
         private static DateTime? ExtrairDataHora(JsonElement voo, params string[] campos)
         {
             foreach (var campo in campos)
@@ -243,7 +246,11 @@ namespace SistemaUsuarios.Services
 
                 if (DateTime.TryParse(valor, null,
                     System.Globalization.DateTimeStyles.RoundtripKind, out var dt))
-                    return dt.ToLocalTime();
+                {
+                    // FlightAware retorna UTC — converter para BRT (UTC-3)
+                    var utc = dt.ToUniversalTime();
+                    return DateTime.SpecifyKind(utc + BrtOffset, DateTimeKind.Unspecified);
+                }
             }
             return null;
         }
