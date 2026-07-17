@@ -88,13 +88,14 @@ Importante: Responda em formato JSON estruturado com as chaves correspondentes a
 
             var requestBody = new
             {
-                model = "gpt-3.5-turbo",
-                temperature = 0.7,
+                model = "gpt-4o-mini",
+                temperature = 0.5,
+                response_format = new { type = "json_object" },
                 messages = new[]
                 {
-            new { role = "system", content = "Você é um redator de viagens profissional." },
-            new { role = "user", content = prompt }
-        }
+                    new { role = "system", content = "Você é um redator de viagens profissional. Responda sempre com JSON válido." },
+                    new { role = "user", content = prompt }
+                }
             };
 
             var json = JsonConvert.SerializeObject(requestBody);
@@ -152,81 +153,68 @@ public async Task<IActionResult> GerarDescricao(string nome)
     if (string.IsNullOrWhiteSpace(nome))
         return BadRequest("Nome do destino é obrigatório.");
 
-    // ... SEU código de chamada à OpenAI até obter 'jsonTexto' (content do message)
-    var prompt = $@"
-Você é um redator especializado em turismo e expert no destino {nome}.  
-Sua tarefa é gerar um conteúdo **completo, específico e comercial**, voltado para **agentes de viagem** que estão preparando propostas para clientes.  
+    var prompt = $@"Você é um redator especializado em turismo, expert no destino {nome}.
+Gere um JSON com informações comerciais completas para agentes de viagem.
 
-Regras obrigatórias:  
-1. A resposta deve ser **somente um JSON válido**, sem comentários ou texto fora do objeto.  
-2. A **descricao** deve ser um texto pronto para ser usado na proposta comercial, inspirador e objetivo, destacando diferenciais únicos e motivos para visitar {nome}.  
-3. Traga informações **específicas e acionáveis**, evitando generalidades.  
-4. Inclua sempre um **gancho comercial** em atrações e restaurantes.  
-5. Inclua links de **fontes confiáveis** em `referencia`.  
-6. Escreva em **português natural, atrativo e comercial**.  
+REGRAS CRÍTICAS:
+- Responda SOMENTE com JSON válido, sem texto fora do objeto
+- NUNCA use aspas duplas dentro dos valores — use aspas simples se precisar citar algo
+- Não inclua comentários dentro do JSON
+- Todos os arrays devem ter exatamente 5 itens
+- Escreva em português natural, atrativo e comercial
 
 {{
-  ""descricao"": ""Resumo comercial pronto para proposta (até 3 parágrafos), destacando diferenciais únicos do destino {nome}, principais atrativos, clima e estilo de vida. Deve soar inspirador, convincente e voltado à venda."",
-  
+  ""descricao"": ""Resumo comercial inspirador de até 3 parágrafos sobre {nome}, destacando diferenciais únicos, clima e estilo de vida."",
   ""atracoes"": [
     {{
       ""nome"": ""Nome oficial da atração"",
-      ""descricao"": ""Resumo objetivo (máx. 2 frases) destacando algo único da atração."",
+      ""descricao"": ""Resumo objetivo em até 2 frases, destacando algo único."",
       ""tipoPublico"": ""Ex: famílias, casais, aventureiros"",
       ""referencia"": ""URL oficial ou fonte confiável"",
-      ""ganchoComercial"": ""Razão clara para incluir na proposta (ex: ingresso obrigatório, experiência diferenciada, tours guiados)""
+      ""ganchoComercial"": ""Razão para incluir na proposta""
     }}
-    // exatamente 5 atrações
   ],
-  
   ""gastronomia"": [
     {{
       ""nome"": ""Nome do restaurante"",
-      ""tipoCulinaria"": ""Ex: argentina, internacional, frutos do mar"",
+      ""tipoCulinaria"": ""Ex: italiana, frutos do mar"",
       ""pratoDestaque"": ""Principal prato recomendado"",
-      ""perfilIdeal"": ""Ex: casal, família, luxo, econômico"",
+      ""perfilIdeal"": ""Ex: casal, família, luxo"",
       ""referencia"": ""URL confiável"",
-      ""ganchoComercial"": ""Motivo comercial para indicar (ex: noite especial, vista diferenciada, opção econômica popular)""
+      ""ganchoComercial"": ""Motivo comercial para indicar""
     }}
-    // exatamente 5 restaurantes
   ],
-  
   ""informacoesPraticas"": {{
-    ""melhorEpoca"": ""Melhor período para visitar, com justificativa"",
+    ""melhorEpoca"": ""Melhor período para visitar com justificativa"",
     ""climaMedio"": ""Clima típico com médias de temperatura"",
-    ""transportes"": ""Meios de transporte disponíveis para turistas"",
+    ""transportes"": ""Meios de transporte disponíveis"",
     ""documentos"": ""Documentos obrigatórios para entrada"",
-    ""dicasGerais"": ""Dicas práticas específicas da cidade"",
-    ""referencia"": ""Fonte oficial de turismo ou governo""
+    ""dicasGerais"": ""Dicas práticas específicas"",
+    ""referencia"": ""Fonte oficial de turismo""
   }},
-  
   ""malaViagem"": {{
-    ""roupas"": ""Sugestões específicas para o clima local"",
-    ""itensObrigatorios"": ""Ex: vacinas, documentos, seguros"",
-    ""acessoriosUteis"": ""Ex: adaptador de tomada, protetor solar, capa de chuva"",
+    ""roupas"": ""Sugestões para o clima local"",
+    ""itensObrigatorios"": ""Vacinas, documentos, seguros necessários"",
+    ""acessoriosUteis"": ""Adaptador, protetor solar, etc"",
     ""referencia"": ""Fonte confiável com dicas de viagem""
   }},
-  
   ""cuidados"": {{
     ""seguranca"": ""Recomendações de segurança específicas"",
-    ""regioesEvitar"": ""Áreas a evitar, se houver"",
+    ""regioesEvitar"": ""Áreas a evitar se houver"",
     ""vacinas"": ""Vacinas recomendadas"",
-    ""golpesComuns"": ""Golpes ou situações típicas a evitar"",
+    ""golpesComuns"": ""Situações típicas a evitar"",
     ""orientacoesPraticas"": ""Orientações úteis para turistas"",
     ""referencia"": ""Fonte oficial de saúde ou governo""
-  }}
-
+  }},
   ""pratosTipicos"": [
     {{
       ""nome"": ""Nome do prato típico"",
-      ""descricao"": ""Breve explicação do prato (ingredientes principais ou história)"",
-      ""ocasião"": ""Quando ou como é mais consumido (ex: inverno, festividades, almoço típico)"",
-      ""ganchoComercial"": ""Motivo para citar na proposta (ex: experiência cultural autêntica, prato mais pedido pelos turistas)""
+      ""descricao"": ""Breve explicação com ingredientes ou história"",
+      ""ocasiao"": ""Quando ou como é consumido"",
+      ""ganchoComercial"": ""Motivo para citar na proposta""
     }}
-    // exatamente 5 pratos típicos
-}}
-
-";
+  ]
+}}";
 
 
             var builder = WebApplication.CreateBuilder();
@@ -242,13 +230,14 @@ Regras obrigatórias:
 
             var requestBody = new
             {
-                model = "gpt-3.5-turbo",
-                temperature = 0.7,
+                model = "gpt-4o-mini",
+                temperature = 0.5,
+                response_format = new { type = "json_object" },
                 messages = new[]
                 {
-            new { role = "system", content = "Você é um redator de viagens profissional." },
-            new { role = "user", content = prompt }
-        }
+                    new { role = "system", content = "Você é um redator de viagens profissional. Responda sempre com JSON válido." },
+                    new { role = "user", content = prompt }
+                }
             };
 
             var json = JsonConvert.SerializeObject(requestBody);
