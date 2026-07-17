@@ -666,6 +666,8 @@ namespace SistemaUsuarios.Controllers
                     .ThenInclude(v => v.Passageiros.OrderBy(pv => pv.DataCriacao))
                 .Include(p => p.Seguros.OrderBy(s => s.Ordem))
                     .ThenInclude(s => s.Imagens.OrderBy(i => i.Ordem))
+                .AsSplitQuery()
+                .AsNoTracking()
                 .FirstOrDefaultAsync(p => p.Id == id);
 
             if (proposta == null)
@@ -885,6 +887,7 @@ namespace SistemaUsuarios.Controllers
                     .ThenInclude(v => v.Passageiros.OrderBy(pv => pv.DataCriacao))
                 .Include(p => p.Seguros.OrderBy(s => s.Ordem))
                     .ThenInclude(s => s.Imagens.OrderBy(i => i.Ordem))
+                .AsSplitQuery()
                 .FirstOrDefaultAsync(p => p.Id == id);
 
             if (proposta == null)
