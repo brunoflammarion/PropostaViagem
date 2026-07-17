@@ -317,6 +317,7 @@ namespace SistemaUsuarios.Controllers
                     .ThenInclude(s => s.Documentos.OrderBy(d => d.DataCriacao))
                 .Include(p => p.Cliente)
                 .Include(p => p.PassageirosProposta.OrderBy(pp => pp.Ordem))
+                .AsSplitQuery()
                 .FirstOrDefaultAsync(p => p.Id == id);
 
             if (proposta == null)

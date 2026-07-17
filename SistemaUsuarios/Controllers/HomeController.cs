@@ -348,6 +348,13 @@ namespace SistemaUsuarios.Controllers
 
         public IActionResult Privacy() => View();
 
+        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+        public IActionResult Error()
+        {
+            Response.StatusCode = 500;
+            return Content("Ocorreu um erro interno. Tente novamente.", "text/plain");
+        }
+
         private class Viz7
         {
             public Guid PropostaId { get; set; }
