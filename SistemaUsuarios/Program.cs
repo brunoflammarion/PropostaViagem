@@ -47,6 +47,12 @@ builder.Services.AddSingleton<SistemaUsuarios.Services.BlobStorageService>();
 // Módulo Tarefas
 builder.Services.AddScoped<ITarefaService, TarefaService>();
 
+// Platform Admin
+builder.Services.AddScoped<SistemaUsuarios.Services.PlatformMetricsService>();
+
+// Conteúdos de Demonstração
+builder.Services.AddScoped<SistemaUsuarios.Services.DemonstracaoService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -104,6 +110,20 @@ using (var scope = app.Services.CreateScope())
     {
         // Aplicar migra��es pendentes
         context.Database.Migrate();
+
+        // Seed: primeiro admin da plataforma
+        if (!context.AdminsPlataforma.Any())
+        {
+            context.AdminsPlataforma.Add(new SistemaUsuarios.Models.AdminPlataforma
+            {
+                Nome  = "Bruno",
+                Email = "bruno.tromp@gmail.com",
+                Senha = BCrypt.Net.BCrypt.HashPassword("Admin@2025!"),
+                Ativo = true,
+                DataCriacao = DateTime.Now,
+            });
+            context.SaveChanges();
+        }
 
         // Seed layouts se n�o existirem
         if (!context.Layouts.Any())

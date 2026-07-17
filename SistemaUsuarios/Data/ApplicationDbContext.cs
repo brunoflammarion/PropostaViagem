@@ -53,6 +53,13 @@ namespace SistemaUsuarios.Data
         // ── IMPORTAÇÃO IA ──────────────────────────────────────────────────────
         public DbSet<ImportacaoSessao> ImportacaoSessoes { get; set; }
 
+        // ── PLATFORM ADMIN ─────────────────────────────────────────────────────
+        public DbSet<AdminPlataforma> AdminsPlataforma { get; set; }
+
+        // ── CONTEÚDOS DE DEMONSTRAÇÃO ───────────────────────────────────────
+        public DbSet<ConteudoDemonstracao> ConteudosDemonstracao { get; set; }
+        public DbSet<ConteudoDemonstracaoAplicado> ConteudosDemonstracaoAplicados { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -552,6 +559,44 @@ namespace SistemaUsuarios.Data
 
             modelBuilder.Entity<ConfiguracaoLembrete>()
                 .HasIndex(c => new { c.UsuarioId, c.TemplateCodigo })
+                .IsUnique();
+
+            // ── PLATFORM ADMIN ────────────────────────────────────────────────
+            modelBuilder.Entity<AdminPlataforma>()
+                .HasIndex(a => a.Email)
+                .IsUnique();
+
+            // ── CONTEÚDOS DE DEMONSTRAÇÃO ─────────────────────────────────────
+            modelBuilder.Entity<ConteudoDemonstracao>()
+                .Property(c => c.TipoConteudo)
+                .HasConversion<int>();
+
+            modelBuilder.Entity<ConteudoDemonstracao>()
+                .HasOne(c => c.CriadoPorAdmin)
+                .WithMany()
+                .HasForeignKey(c => c.CriadoPorAdminId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<ConteudoDemonstracao>()
+                .HasOne(c => c.AtualizadoPorAdmin)
+                .WithMany()
+                .HasForeignKey(c => c.AtualizadoPorAdminId)
+                .OnDelete(DeleteBehavior.NoAction)
+                .IsRequired(false);
+
+            modelBuilder.Entity<ConteudoDemonstracaoAplicado>()
+                .HasOne(a => a.ConteudoDemonstracao)
+                .WithMany(c => c.Aplicacoes)
+                .HasForeignKey(a => a.ConteudoDemonstracaoId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<ConteudoDemonstracaoAplicado>()
+                .Property(a => a.StatusAplicacao)
+                .HasConversion<int>();
+
+            // Índice único: cada conteúdo só pode ser aplicado uma vez por agência (idempotência)
+            modelBuilder.Entity<ConteudoDemonstracaoAplicado>()
+                .HasIndex(a => new { a.ConteudoDemonstracaoId, a.AgenciaMasterId })
                 .IsUnique();
         }
     }

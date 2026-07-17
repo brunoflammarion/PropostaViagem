@@ -110,6 +110,9 @@ namespace SistemaUsuarios.Models.ViewModels
         /// </summary>
         public bool TemFotoCapa => !string.IsNullOrEmpty(FotoCapa);
 
+        /// <summary>Quando true, esta proposta foi criada automaticamente como demonstração no onboarding.</summary>
+        public bool IsConteudoDemonstracao { get; set; }
+
         /// <summary>
         /// Período formatado da viagem
         /// </summary>

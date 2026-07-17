@@ -156,7 +156,8 @@ namespace SistemaUsuarios.Controllers
                 UsuarioResponsavelId = p.UsuarioResponsavelId,
                 LinkPublicoAtivo = p.LinkPublicoAtivo,
                 FotoCapa = p.FotoCapa,
-                DataModificacao = p.DataModificacao
+                DataModificacao = p.DataModificacao,
+                IsConteudoDemonstracao = p.IsConteudoDemonstracao,
             }).ToList();
 
             // Calcular estatísticas

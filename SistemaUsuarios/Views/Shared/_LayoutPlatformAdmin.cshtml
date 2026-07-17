@@ -1,0 +1,360 @@
+@{
+    var _adminNome = Context.Session.GetString("PlatformAdminNome") ?? "Admin";
+    var _adminIniciais = _adminNome.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+        .Take(2).Select(p => char.ToUpper(p[0]).ToString()).Aggregate("", (a, b) => a + b);
+    var _ctrl   = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+    var _action = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
+
+    string NavCls(string action) =>
+        _action == action ? "pa-nav-link active" : "pa-nav-link";
+}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@(ViewData["Title"] ?? "Platform Admin") · Agent Tools</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; }
+        html, body { height: 100%; margin: 0; }
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: #f1f5f9;
+            color: #0f172a;
+        }
+
+        /* ── Shell ── */
+        .pa-shell {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* ── Sidebar ── */
+        .pa-sidebar {
+            width: 232px;
+            flex-shrink: 0;
+            background: #0f172a;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            overflow-y: auto;
+        }
+
+        .pa-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 20px 16px 16px;
+            text-decoration: none;
+            border-bottom: 1px solid rgba(255,255,255,.08);
+        }
+        .pa-logo-icon {
+            width: 34px; height: 34px;
+            border-radius: 8px;
+            background: #2563eb;
+            color: #fff;
+            font-size: 12px;
+            font-weight: 800;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .pa-logo-name {
+            font-size: 13px;
+            font-weight: 700;
+            color: #f1f5f9;
+            line-height: 1.2;
+        }
+        .pa-logo-badge {
+            font-size: 10px;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+        }
+
+        .pa-nav {
+            flex: 1;
+            padding: 12px 8px;
+        }
+        .pa-nav-section {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            color: #334155;
+            padding: 12px 8px 6px;
+        }
+        .pa-nav-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            border-radius: 7px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #94a3b8;
+            text-decoration: none;
+            margin-bottom: 1px;
+            transition: background .12s, color .12s;
+        }
+        .pa-nav-link:hover { background: rgba(255,255,255,.06); color: #e2e8f0; }
+        .pa-nav-link.active { background: rgba(37,99,235,.18); color: #93c5fd; font-weight: 600; }
+        .pa-nav-link i { width: 16px; text-align: center; font-size: 13px; }
+
+        .pa-sidebar-footer {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 16px;
+            border-top: 1px solid rgba(255,255,255,.08);
+        }
+        .pa-avatar {
+            width: 30px; height: 30px;
+            border-radius: 50%;
+            background: #1e3a5f;
+            border: 1px solid #2563eb;
+            color: #93c5fd;
+            font-size: 11px;
+            font-weight: 700;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .pa-admin-name {
+            font-size: 12px;
+            font-weight: 600;
+            color: #cbd5e1;
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .pa-logout-btn {
+            color: #475569;
+            text-decoration: none;
+            font-size: 13px;
+            transition: color .12s;
+        }
+        .pa-logout-btn:hover { color: #f87171; }
+
+        /* ── Content area ── */
+        .pa-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .pa-topbar {
+            background: #fff;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 0 28px;
+            height: 52px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+        .pa-topbar-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+        .pa-topbar-breadcrumb {
+            font-size: 12px;
+            color: #94a3b8;
+        }
+        .pa-topbar-breadcrumb a { color: #64748b; text-decoration: none; }
+        .pa-topbar-breadcrumb a:hover { color: #2563eb; }
+        .pa-topbar-sep { color: #cbd5e1; margin: 0 4px; }
+
+        .pa-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px 28px;
+        }
+
+        /* ── Cards ── */
+        .pa-kpi-card {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 18px 20px;
+        }
+        .pa-kpi-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            color: #94a3b8;
+            margin-bottom: 6px;
+        }
+        .pa-kpi-value {
+            font-size: 28px;
+            font-weight: 800;
+            color: #0f172a;
+            line-height: 1;
+            font-variant-numeric: tabular-nums;
+        }
+        .pa-kpi-sub {
+            font-size: 12px;
+            color: #94a3b8;
+            margin-top: 4px;
+        }
+        .pa-kpi-icon {
+            width: 36px; height: 36px;
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 15px;
+            margin-bottom: 12px;
+        }
+
+        /* ── Table ── */
+        .pa-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .pa-table th {
+            text-align: left;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            color: #94a3b8;
+            padding: 10px 14px;
+            border-bottom: 1px solid #e2e8f0;
+            background: #f8fafc;
+        }
+        .pa-table td {
+            padding: 11px 14px;
+            border-bottom: 1px solid #f1f5f9;
+            color: #334155;
+            vertical-align: middle;
+        }
+        .pa-table tbody tr:hover td { background: #f8fafc; }
+        .pa-table .num { font-variant-numeric: tabular-nums; text-align: right; }
+
+        /* ── Section card ── */
+        .pa-card {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        .pa-card-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 18px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .pa-card-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+        .pa-card-sub {
+            font-size: 12px;
+            color: #94a3b8;
+            margin-left: auto;
+        }
+        .pa-card-body { padding: 18px; }
+
+        /* ── Misc ── */
+        .status-dot {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 3px 9px;
+            border-radius: 20px;
+        }
+        .status-dot::before {
+            content: '';
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+            opacity: .7;
+        }
+        .status-success { background: #dcfce7; color: #15803d; }
+        .status-danger  { background: #fee2e2; color: #b91c1c; }
+        .status-warning { background: #fef3c7; color: #b45309; }
+        .status-secondary { background: #f1f5f9; color: #64748b; }
+
+        @@media (max-width: 768px) {
+            .pa-sidebar { display: none; }
+        }
+    </style>
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body>
+<div class="pa-shell">
+
+    <!-- Sidebar -->
+    <aside class="pa-sidebar">
+        <a href="/PlatformAdmin/Dashboard" class="pa-logo">
+            <div class="pa-logo-icon">AT</div>
+            <div>
+                <div class="pa-logo-name">Agent Tools</div>
+                <div class="pa-logo-badge">Platform Admin</div>
+            </div>
+        </a>
+
+        <nav class="pa-nav">
+            <div class="pa-nav-section">Principal</div>
+            <a href="/PlatformAdmin/Dashboard" class="@NavCls("Dashboard")">
+                <i class="fas fa-chart-pie"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="/PlatformAdmin/Agencias" class="@NavCls("Agencias")">
+                <i class="fas fa-building"></i>
+                <span>Agências</span>
+            </a>
+            <div class="pa-nav-section">Configurações</div>
+            <a href="/PlatformAdmin/Demonstracao" class="@NavCls("Demonstracao")">
+                <i class="fas fa-star"></i>
+                <span>Demonstração</span>
+            </a>
+        </nav>
+
+        <div class="pa-sidebar-footer">
+            <div class="pa-avatar">@_adminIniciais</div>
+            <div class="pa-admin-name">@_adminNome</div>
+            <a href="/PlatformAdmin/Logout" class="pa-logout-btn" title="Sair">
+                <i class="fas fa-right-from-bracket"></i>
+            </a>
+        </div>
+    </aside>
+
+    <!-- Content -->
+    <div class="pa-content">
+        <div class="pa-topbar">
+            @if (ViewData["Breadcrumb"] != null)
+            {
+                <div class="pa-topbar-breadcrumb">@Html.Raw(ViewData["Breadcrumb"]!.ToString())</div>
+                <span class="pa-topbar-sep">/</span>
+            }
+            <div class="pa-topbar-title">@(ViewData["Title"] ?? "Dashboard")</div>
+        </div>
+
+        <div class="pa-body">
+            @if (TempData["Mensagem"] != null)
+            {
+                <div class="alert alert-@(TempData["MensagemTipo"] ?? "info") alert-dismissible mb-4" role="alert">
+                    <i class="fas fa-@(TempData["MensagemTipo"]?.ToString() == "danger" ? "ban" : "check-circle") me-2"></i>
+                    @TempData["Mensagem"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+            @RenderBody()
+        </div>
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+@await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

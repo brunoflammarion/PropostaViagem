@@ -1,0 +1,250 @@
+@using SistemaUsuarios.Models.ViewModels.PlatformAdmin
+@using SistemaUsuarios.Models
+@model AgenciaDetalheViewModel
+@{
+    Layout = "~/Views/Shared/_LayoutPlatformAdmin.cshtml";
+    ViewData["Title"] = Model.NomeAgencia;
+    ViewData["Breadcrumb"] = "<a href='/PlatformAdmin/Agencias'>Agências</a>";
+}
+
+@section Styles {
+<style>
+    .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .detail-grid-3 { grid-template-columns: repeat(3, 1fr); }
+    @@media (max-width: 900px) { .detail-grid, .detail-grid-3 { grid-template-columns: 1fr; } }
+    .kpi-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+    @@media (max-width: 700px) { .kpi-row { grid-template-columns: repeat(2, 1fr); } }
+    .chart-wrap { position: relative; height: 160px; }
+    .member-list { list-style: none; padding: 0; margin: 0; }
+    .member-item {
+        display: flex; align-items: center; gap: 10px;
+        padding: 10px 0;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    .member-item:last-child { border-bottom: none; }
+    .member-avatar {
+        width: 28px; height: 28px; border-radius: 50%;
+        background: #eff6ff; color: #2563eb;
+        font-size: 11px; font-weight: 700;
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+    }
+    .member-name { font-size: 13px; font-weight: 500; color: #334155; flex: 1; }
+    .member-date { font-size: 11px; color: #94a3b8; }
+    .action-zone {
+        background: #fff7ed;
+        border: 1px solid #fed7aa;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    .action-zone.blocked {
+        background: #f0fdf4;
+        border-color: #bbf7d0;
+    }
+    .action-title { font-size: 13px; font-weight: 700; color: #0f172a; margin-bottom: 4px; }
+    .action-desc { font-size: 12px; color: #64748b; margin-bottom: 16px; }
+    .empty-state { padding: 24px; text-align: center; color: #94a3b8; font-size: 12px; }
+</style>
+}
+
+<!-- Header da agência -->
+<div class="pa-card" style="margin-bottom:20px;">
+    <div class="pa-card-body" style="display:flex;align-items:center;gap:16px;">
+        <div style="width:48px;height:48px;border-radius:12px;background:#eff6ff;color:#2563eb;
+                    display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;flex-shrink:0;">
+            @Model.NomeAgencia.Substring(0, 1).ToUpper()
+        </div>
+        <div style="flex:1;">
+            <div style="font-size:18px;font-weight:800;color:#0f172a;line-height:1.2;">@Model.NomeAgencia</div>
+            <div style="font-size:12px;color:#64748b;margin-top:2px;">
+                @Model.NomeMaster
+                @if (!string.IsNullOrEmpty(Model.SlugAgencia))
+                {
+                    <span style="margin-left:8px;">· /@Model.SlugAgencia</span>
+                }
+                · Desde @Model.DataCriacao.ToString("dd/MM/yyyy")
+            </div>
+        </div>
+        <span class="status-dot status-@Model.StatusCss" style="font-size:13px;">@Model.StatusLabel</span>
+    </div>
+</div>
+
+<!-- KPIs -->
+<div class="kpi-row">
+    <div class="pa-kpi-card">
+        <div class="pa-kpi-label">Propostas</div>
+        <div class="pa-kpi-value">@Model.TotalPropostas</div>
+    </div>
+    <div class="pa-kpi-card">
+        <div class="pa-kpi-label">Clientes</div>
+        <div class="pa-kpi-value">@Model.TotalClientes</div>
+    </div>
+    <div class="pa-kpi-card">
+        <div class="pa-kpi-label">Leads</div>
+        <div class="pa-kpi-value">@Model.TotalLeads</div>
+    </div>
+    <div class="pa-kpi-card">
+        <div class="pa-kpi-label">Visualizações</div>
+        <div class="pa-kpi-value">@Model.TotalVisualizacoes.ToString("N0")</div>
+    </div>
+    <div class="pa-kpi-card">
+        <div class="pa-kpi-label">Ofertas</div>
+        <div class="pa-kpi-value">@Model.TotalOfertas</div>
+    </div>
+    <div class="pa-kpi-card">
+        <div class="pa-kpi-label">Tarefas</div>
+        <div class="pa-kpi-value">@Model.TotalTarefas</div>
+    </div>
+</div>
+
+<div class="detail-grid">
+
+    <!-- Atividade 90d -->
+    <div class="pa-card">
+        <div class="pa-card-header">
+            <i class="fas fa-chart-line" style="color:#2563eb;font-size:13px;"></i>
+            <span class="pa-card-title">Propostas criadas</span>
+            <span class="pa-card-sub">últimos 90 dias</span>
+        </div>
+        <div class="pa-card-body">
+            @if (Model.Atividade90d.Any())
+            {
+                <div class="chart-wrap">
+                    <canvas id="atividadeChart"></canvas>
+                </div>
+            }
+            else
+            {
+                <div class="empty-state">Nenhuma proposta nos últimos 90 dias.</div>
+            }
+        </div>
+    </div>
+
+    <!-- Equipe -->
+    <div class="pa-card">
+        <div class="pa-card-header">
+            <i class="fas fa-users" style="color:#2563eb;font-size:13px;"></i>
+            <span class="pa-card-title">Equipe</span>
+            <span class="pa-card-sub">@(Model.TotalAssociados + 1) usuários</span>
+        </div>
+        <div class="pa-card-body">
+            <ul class="member-list">
+                <!-- Master -->
+                <li class="member-item">
+                    <div class="member-avatar" style="background:#dbeafe;color:#1d4ed8;">M</div>
+                    <div class="member-name">@Model.NomeMaster <span style="font-size:10px;color:#94a3b8;font-weight:400;">(Master)</span></div>
+                    <span class="status-dot status-@Model.StatusCss" style="font-size:11px;padding:2px 7px;">@Model.StatusLabel</span>
+                </li>
+                @foreach (var a in Model.Associados)
+                {
+                    var ini = a.Nome.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                        .Take(2).Select(p => char.ToUpper(p[0]).ToString()).Aggregate("", (x, y) => x + y);
+                    <li class="member-item">
+                        <div class="member-avatar">@ini</div>
+                        <div>
+                            <div class="member-name">@a.Nome</div>
+                            <div class="member-date">desde @a.DataCriacao.ToString("dd/MM/yyyy")</div>
+                        </div>
+                        <span class="status-dot status-@a.StatusCss" style="font-size:11px;padding:2px 7px;">
+                            @(a.Status switch {
+                                StatusUsuario.Ativo => "Ativo",
+                                StatusUsuario.Bloqueado => "Bloqueado",
+                                StatusUsuario.Inativo => "Inativo",
+                                _ => "–"
+                            })
+                        </span>
+                    </li>
+                }
+            </ul>
+        </div>
+    </div>
+
+</div>
+
+<!-- Ação: reaplicar demonstração -->
+<div class="action-zone" style="border-color:#d1fae5;">
+    <div class="action-title"><i class="fas fa-star me-2" style="color:#059669;"></i>Reaplicar demonstração</div>
+    <div class="action-desc">
+        Aplica os conteúdos de demonstração que ainda não foram copiados para esta agência.
+        Conteúdos já aplicados com sucesso não são duplicados.
+    </div>
+    <form method="post" action="/PlatformAdmin/ReaplicarDemonstracao">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="masterId" value="@Model.MasterId" />
+        <button type="submit" class="btn btn-outline-success btn-sm">
+            <i class="fas fa-star me-1"></i> Reaplicar demonstração
+        </button>
+    </form>
+</div>
+
+<!-- Ação: bloquear / desbloquear -->
+@if (Model.Status != StatusUsuario.Bloqueado)
+{
+    <div class="action-zone">
+        <div class="action-title"><i class="fas fa-ban me-2" style="color:#ea580c;"></i>Bloquear agência</div>
+        <div class="action-desc">
+            Bloqueia o login do usuário Master e de todos os Associados desta agência.
+            O bloqueio é imediato — sessions ativas expiram na próxima requisição.
+        </div>
+        <form method="post" action="/PlatformAdmin/BloquearAgencia/@Model.MasterId"
+              onsubmit="return confirm('Confirma o bloqueio de @Model.NomeAgencia? Todos os usuários perderão acesso.')">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-danger btn-sm">
+                <i class="fas fa-ban me-1"></i> Bloquear agência
+            </button>
+        </form>
+    </div>
+}
+else
+{
+    <div class="action-zone blocked">
+        <div class="action-title"><i class="fas fa-circle-check me-2" style="color:#16a34a;"></i>Reativar agência</div>
+        <div class="action-desc">
+            Reativa o acesso do usuário Master e de todos os Associados bloqueados desta agência.
+        </div>
+        <form method="post" action="/PlatformAdmin/DesbloquearAgencia/@Model.MasterId"
+              onsubmit="return confirm('Confirma a reativação de @Model.NomeAgencia?')">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-success btn-sm">
+                <i class="fas fa-circle-check me-1"></i> Reativar agência
+            </button>
+        </form>
+    </div>
+}
+
+@section Scripts {
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script>
+@if (Model.Atividade90d.Any())
+{
+    <text>
+    (function() {
+        const labels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Atividade90d.Select(a => a.Data.ToString("dd/MM"))));
+        const data   = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Atividade90d.Select(a => a.Propostas)));
+        new Chart(document.getElementById('atividadeChart'), {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [{
+                    data,
+                    backgroundColor: '#2563eb',
+                    borderRadius: 3,
+                    borderSkipped: false,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { display: false }, ticks: { font: { size: 10 }, maxTicksLimit: 10 } },
+                    y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 10 } }, grid: { color: '#f1f5f9' } }
+                }
+            }
+        });
+    })();
+    </text>
+}
+</script>
+}

@@ -1,0 +1,112 @@
+@using SistemaUsuarios.Models.ViewModels.PlatformAdmin
+@model AgenciaListViewModel
+@{
+    Layout = "~/Views/Shared/_LayoutPlatformAdmin.cshtml";
+    ViewData["Title"] = "Agências";
+}
+
+@section Styles {
+<style>
+    .filter-pills { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+    .filter-pill {
+        padding: 5px 14px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        border: 1px solid #e2e8f0;
+        background: #fff;
+        color: #64748b;
+        text-decoration: none;
+        cursor: pointer;
+        transition: all .12s;
+    }
+    .filter-pill:hover { border-color: #2563eb; color: #2563eb; }
+    .filter-pill.active { background: #2563eb; border-color: #2563eb; color: #fff; }
+    .count-badge {
+        display: inline-flex; align-items: center; justify-content: center;
+        background: #f1f5f9; color: #64748b;
+        font-size: 11px; font-weight: 700;
+        padding: 1px 7px; border-radius: 10px; margin-left: 4px;
+    }
+    .agency-link { color: #2563eb; text-decoration: none; font-weight: 600; font-size: 13px; }
+    .agency-link:hover { text-decoration: underline; }
+    .num { text-align: right; font-variant-numeric: tabular-nums; }
+    .empty-state { padding: 48px; text-align: center; color: #94a3b8; }
+    .empty-state i { font-size: 32px; display: block; margin-bottom: 12px; opacity: .3; }
+    .empty-state p { font-size: 14px; margin: 0; }
+</style>
+}
+
+<!-- Filtros -->
+<div class="filter-pills">
+    <a href="/PlatformAdmin/Agencias" class="filter-pill @(Model.FiltroStatus == null ? "active" : "")">
+        Todas <span class="count-badge">@Model.TotalCount</span>
+    </a>
+    <a href="/PlatformAdmin/Agencias?status=ativa" class="filter-pill @(Model.FiltroStatus == "ativa" ? "active" : "")">Ativas</a>
+    <a href="/PlatformAdmin/Agencias?status=nova" class="filter-pill @(Model.FiltroStatus == "nova" ? "active" : "")">Novas</a>
+    <a href="/PlatformAdmin/Agencias?status=inativa" class="filter-pill @(Model.FiltroStatus == "inativa" ? "active" : "")">Inativas</a>
+    <a href="/PlatformAdmin/Agencias?status=bloqueada" class="filter-pill @(Model.FiltroStatus == "bloqueada" ? "active" : "")">Bloqueadas</a>
+</div>
+
+<div class="pa-card">
+    @if (Model.Agencias.Any())
+    {
+        <div style="overflow-x:auto;">
+            <table class="pa-table">
+                <thead>
+                    <tr>
+                        <th>Agência</th>
+                        <th>Status</th>
+                        <th class="num">Usuários</th>
+                        <th class="num">Propostas</th>
+                        <th class="num">Clientes</th>
+                        <th class="num">Leads</th>
+                        <th class="num">Views</th>
+                        <th>Última proposta</th>
+                        <th>Cadastro</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var a in Model.Agencias)
+                    {
+                        <tr>
+                            <td>
+                                <a href="/PlatformAdmin/Agencia/@a.Id" class="agency-link">@a.NomeAgencia</a>
+                                @if (!string.IsNullOrEmpty(a.SlugAgencia))
+                                {
+                                    <div style="font-size:11px;color:#94a3b8;">/@a.SlugAgencia</div>
+                                }
+                                <div style="font-size:11px;color:#94a3b8;">@a.NomeMaster</div>
+                            </td>
+                            <td><span class="status-dot status-@a.StatusCss">@a.StatusLabel</span></td>
+                            <td class="num">@(a.TotalAssociados + 1)</td>
+                            <td class="num">@a.TotalPropostas</td>
+                            <td class="num">@a.TotalClientes</td>
+                            <td class="num">@a.TotalLeads</td>
+                            <td class="num">@a.TotalVisualizacoes</td>
+                            <td style="color:@(a.UltimaAtividade.HasValue ? "#334155" : "#cbd5e1");font-size:12px;">
+                                @(a.UltimaAtividade.HasValue ? a.UltimaAtividade.Value.ToString("dd/MM/yy") : "—")
+                            </td>
+                            <td style="font-size:12px;color:#94a3b8;">@a.DataCriacao.ToString("dd/MM/yy")</td>
+                            <td>
+                                <a href="/PlatformAdmin/Agencia/@a.Id"
+                                   class="btn btn-sm btn-outline-primary"
+                                   style="font-size:11px;padding:3px 10px;">
+                                    Ver
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="empty-state">
+            <i class="fas fa-building"></i>
+            <p>Nenhuma agência @(Model.FiltroStatus != null ? "com este filtro" : "cadastrada") ainda.</p>
+        </div>
+    }
+</div>

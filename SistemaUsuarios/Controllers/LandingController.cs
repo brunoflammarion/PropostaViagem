@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using SistemaUsuarios.Data;
 using SistemaUsuarios.Models;
 using SistemaUsuarios.Models.ViewModels;
+using SistemaUsuarios.Services;
 using BCrypt.Net;
 
 namespace SistemaUsuarios.Controllers
@@ -10,10 +11,12 @@ namespace SistemaUsuarios.Controllers
     public class LandingController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly DemonstracaoService  _demonstracao;
 
-        public LandingController(ApplicationDbContext context)
+        public LandingController(ApplicationDbContext context, DemonstracaoService demonstracao)
         {
-            _context = context;
+            _context      = context;
+            _demonstracao = demonstracao;
         }
 
         // GET: Landing
@@ -154,6 +157,10 @@ namespace SistemaUsuarios.Controllers
                 usuario.Status = StatusUsuario.Ativo;
 
                 await _context.SaveChangesAsync();
+
+                // Aplicar conteúdos de demonstração — falha silenciosa para não bloquear o cadastro
+                try { await _demonstracao.AplicarConteudosAsync(usuario.Id); }
+                catch (Exception exDemo) { Console.WriteLine($"[Demo] Falha ao aplicar demonstração para {usuario.Id}: {exDemo.Message}"); }
 
                 // Criar sessão
                 HttpContext.Session.SetString("UsuarioId", usuario.Id.ToString());

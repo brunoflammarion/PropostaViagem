@@ -55,6 +55,9 @@
     });
 }
 
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,700;0,9..40,900;1,9..40,400&family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&display=swap" rel="stylesheet">
 <style>
 body { overflow: hidden; }
 
@@ -269,7 +272,7 @@ textarea.finput { resize: vertical; }
 
 /* ── Painel direito: templates ── */
 .oferta-painel-templates {
-    width: 160px; min-width: 148px;
+    width: 200px; min-width: 186px;
     background: #f8f9fb; border-left: 1px solid #e2e8f0;
     overflow-y: auto; padding: 12px 10px 20px;
 }
@@ -586,63 +589,159 @@ textarea.finput { resize: vertical; }
     <!-- ── DIREITA: templates ── -->
     <div class="oferta-painel-templates">
 
-      <div class="tpl-cat-title"><i class="fas fa-bolt" style="color:#f59e0b;"></i>Conversão</div>
+      <div class="tpl-cat-title"><i class="fas fa-camera" style="color:#3b82f6;"></i>Fotografia</div>
+
+      <div class="template-card ativo" data-template="destino" onclick="selecionarTemplate('destino')">
+        <div class="thumb" style="background:#1a2a3a;position:relative;overflow:hidden;">
+          <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.7) 0%,transparent 55%);"></div>
+          <div style="position:absolute;bottom:6px;left:8px;color:#fff;font-size:8px;font-weight:700;letter-spacing:.06em;">DESTINO</div>
+        </div>
+        <div class="thumb-cat">Fotografia</div>
+        <div class="thumb-label">Destino</div>
+      </div>
+
+      <div class="template-card" data-template="minimal" onclick="selecionarTemplate('minimal')">
+        <div class="thumb" style="background:#fff;display:flex;flex-direction:column;overflow:hidden;">
+          <div style="flex:0 0 58%;background:#b0b8c4;"></div>
+          <div style="flex:1;border-top:2px solid #2563eb;padding:4px 6px;display:flex;flex-direction:column;justify-content:space-between;">
+            <div style="height:5px;background:#222;border-radius:2px;width:80%;"></div>
+            <div style="height:3px;background:#ddd;border-radius:2px;width:60%;"></div>
+          </div>
+        </div>
+        <div class="thumb-cat">Fotografia</div>
+        <div class="thumb-label">Minimal</div>
+      </div>
+
+      <div class="template-card" data-template="editorial" onclick="selecionarTemplate('editorial')">
+        <div class="thumb" style="background:#fff;display:flex;flex-direction:column;overflow:hidden;">
+          <div style="flex:0 0 44%;background:#8a9bb0;"></div>
+          <div style="flex:1;padding:4px 6px;display:flex;flex-direction:column;gap:3px;">
+            <div style="height:6px;background:#111;border-radius:2px;width:90%;font-style:italic;"></div>
+            <div style="height:3px;background:#ddd;border-radius:2px;width:55%;"></div>
+          </div>
+        </div>
+        <div class="thumb-cat">Fotografia</div>
+        <div class="thumb-label">Editorial</div>
+      </div>
+
+      <div class="tpl-cat-divider"></div>
+      <div class="tpl-cat-title"><i class="fas fa-columns" style="color:#8b5cf6;"></i>Divisão</div>
+
+      <div class="template-card" data-template="vertical" onclick="selecionarTemplate('vertical')">
+        <div class="thumb" style="background:#1e293b;display:flex;flex-direction:column;overflow:hidden;">
+          <div style="flex:0 0 55%;background:#3d5068;"></div>
+          <div style="flex:1;padding:4px 6px;display:flex;flex-direction:column;justify-content:center;gap:2px;">
+            <div style="height:4px;background:#fff;border-radius:2px;opacity:.8;width:80%;"></div>
+            <div style="height:3px;background:#fff;border-radius:2px;opacity:.35;width:55%;"></div>
+          </div>
+        </div>
+        <div class="thumb-cat">Divisão</div>
+        <div class="thumb-label">Story</div>
+      </div>
 
       <div class="template-card" data-template="relampago" onclick="selecionarTemplate('relampago')">
-        <div class="thumb"><canvas class="template-thumb-canvas" data-template="relampago" width="140" height="82" style="display:block;"></canvas></div>
-        <div class="thumb-label"><i class="fas fa-fire" style="color:#dc2626;font-size:.7rem;"></i>Oferta em Bloco</div>
+        <div class="thumb" style="background:#2563eb;display:flex;overflow:hidden;">
+          <div style="flex:0 0 44%;padding:5px 5px;display:flex;flex-direction:column;justify-content:center;gap:3px;">
+            <div style="height:5px;background:#fff;border-radius:2px;opacity:.9;"></div>
+            <div style="height:3px;background:#fff;border-radius:2px;opacity:.45;width:70%;"></div>
+          </div>
+          <div style="flex:1;background:#4a7fdf;opacity:.6;"></div>
+        </div>
+        <div class="thumb-cat">Divisão</div>
+        <div class="thumb-label">Oferta em Bloco</div>
+      </div>
+
+      <div class="template-card" data-template="resort" onclick="selecionarTemplate('resort')">
+        <div class="thumb" style="background:#fff;display:flex;overflow:hidden;">
+          <div style="flex:0 0 44%;padding:5px 5px;display:flex;flex-direction:column;justify-content:space-between;border-right:2px solid #2563eb;">
+            <div style="height:4px;background:#111;border-radius:2px;width:80%;"></div>
+            <div style="height:4px;background:#2563eb;border-radius:2px;width:55%;"></div>
+          </div>
+          <div style="flex:1;background:#8a9bb0;"></div>
+        </div>
+        <div class="thumb-cat">Divisão</div>
+        <div class="thumb-label">Resort</div>
+      </div>
+
+      <div class="template-card" data-template="flyer" onclick="selecionarTemplate('flyer')">
+        <div class="thumb" style="background:#e8eaf0;display:flex;overflow:hidden;">
+          <div style="flex:0 0 46%;padding:4px;display:flex;flex-direction:column;gap:2px;">
+            <div style="background:#2563eb;border-radius:2px;flex:1;display:flex;align-items:center;padding:3px;"><div style="height:4px;background:#fff;border-radius:1px;width:80%;opacity:.9;"></div></div>
+          </div>
+          <div style="flex:1;background:#7a9ab0;"></div>
+        </div>
+        <div class="thumb-cat">Divisão</div>
+        <div class="thumb-label">Flyer Viagem</div>
+      </div>
+
+      <div class="tpl-cat-divider"></div>
+      <div class="tpl-cat-title"><i class="fas fa-tag" style="color:#16a34a;"></i>Preço</div>
+
+      <div class="template-card" data-template="promo" onclick="selecionarTemplate('promo')">
+        <div class="thumb" style="background:#1e3a5f;position:relative;overflow:hidden;">
+          <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;">
+            <div style="color:#fff;font-size:16px;font-weight:900;line-height:1;opacity:.9;">R$</div>
+          </div>
+          <div style="position:absolute;top:4px;right:5px;background:#f59e0b;border-radius:8px;padding:1px 4px;font-size:5px;color:#fff;font-weight:700;">PROMO</div>
+        </div>
+        <div class="thumb-cat">Preço</div>
+        <div class="thumb-label">Promo Bold</div>
       </div>
 
       <div class="template-card" data-template="apartirde" onclick="selecionarTemplate('apartirde')">
-        <div class="thumb"><canvas class="template-thumb-canvas" data-template="apartirde" width="140" height="82" style="display:block;"></canvas></div>
-        <div class="thumb-label"><i class="fas fa-tag" style="color:#16a34a;font-size:.7rem;"></i>A partir de</div>
+        <div class="thumb" style="background:#fff;display:flex;flex-direction:column;overflow:hidden;">
+          <div style="height:12px;background:#fff;border-bottom:2px solid #2563eb;display:flex;align-items:center;padding:0 5px;">
+            <div style="height:3px;background:#2563eb;border-radius:1px;width:40%;"></div>
+          </div>
+          <div style="flex:1;display:flex;align-items:center;padding:4px 6px;">
+            <div style="color:#2563eb;font-size:14px;font-weight:900;line-height:1;opacity:.85;">$$$</div>
+          </div>
+        </div>
+        <div class="thumb-cat">Preço</div>
+        <div class="thumb-label">A Partir De</div>
       </div>
 
-      <div class="template-card ativo" data-template="promocional" onclick="selecionarTemplate('promocional')">
-        <div class="thumb"><canvas class="template-thumb-canvas" data-template="promocional" width="140" height="82" style="display:block;"></canvas></div>
-        <div class="thumb-label"><i class="fas fa-fire" style="color:#dc2626;font-size:.7rem;"></i>Promocional</div>
-      </div>
-
-      <div class="tpl-cat-divider"></div>
-
-      <div class="tpl-cat-title"><i class="fas fa-image" style="color:#3b82f6;"></i>Destino</div>
-
-      <div class="template-card" data-template="destino" onclick="selecionarTemplate('destino')">
-        <div class="thumb"><canvas class="template-thumb-canvas" data-template="destino" width="140" height="82" style="display:block;"></canvas></div>
-        <div class="thumb-label"><i class="fas fa-map-marker-alt" style="color:#3b82f6;font-size:.7rem;"></i>Destino</div>
-      </div>
-
-      <div class="template-card" data-template="sonhos" onclick="selecionarTemplate('sonhos')">
-        <div class="thumb"><canvas class="template-thumb-canvas" data-template="sonhos" width="140" height="82" style="display:block;"></canvas></div>
-        <div class="thumb-label"><i class="fas fa-sparkles" style="color:#8b5cf6;font-size:.7rem;"></i>Oferta Elegante</div>
-      </div>
-
-      <div class="tpl-cat-divider"></div>
-
-      <div class="tpl-cat-title"><i class="fas fa-percent" style="color:#16a34a;"></i>Oferta</div>
-
-      <div class="template-card" data-template="comercial" onclick="selecionarTemplate('comercial')">
-        <div class="thumb"><canvas class="template-thumb-canvas" data-template="comercial" width="140" height="82" style="display:block;"></canvas></div>
-        <div class="thumb-label"><i class="fas fa-tags" style="color:#16a34a;font-size:.7rem;"></i>Comercial</div>
-      </div>
-
-      <div class="template-card" data-template="condicao" onclick="selecionarTemplate('condicao')">
-        <div class="thumb"><canvas class="template-thumb-canvas" data-template="condicao" width="140" height="82" style="display:block;"></canvas></div>
-        <div class="thumb-label"><i class="fas fa-hand-holding-usd" style="color:#0891b2;font-size:.7rem;"></i>Condição Fácil</div>
-      </div>
-
-      <div class="template-card" data-template="combo" onclick="selecionarTemplate('combo')">
-        <div class="thumb"><canvas class="template-thumb-canvas" data-template="combo" width="140" height="82" style="display:block;"></canvas></div>
-        <div class="thumb-label"><i class="fas fa-list-check" style="color:#16a34a;font-size:.7rem;"></i>Combo Incluso</div>
+      <div class="template-card" data-template="passagem" onclick="selecionarTemplate('passagem')">
+        <div class="thumb" style="background:#f0ede8;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+          <div style="background:#fff;border-radius:4px;width:85%;height:70%;box-shadow:0 2px 6px rgba(0,0,0,.12);display:flex;flex-direction:column;overflow:hidden;">
+            <div style="flex:0 0 50%;background:#2563eb;display:flex;align-items:center;justify-content:space-between;padding:0 5px;">
+              <div style="color:#fff;font-size:7px;font-weight:900;">GRU</div>
+              <div style="color:#fff;font-size:8px;">→</div>
+              <div style="color:#fff;font-size:7px;font-weight:900;">MXP</div>
+            </div>
+            <div style="flex:1;border-top:1px dashed #ddd;display:flex;align-items:center;justify-content:flex-end;padding:0 4px;">
+              <div style="color:#2563eb;font-size:7px;font-weight:900;">R$</div>
+            </div>
+          </div>
+        </div>
+        <div class="thumb-cat">Preço</div>
+        <div class="thumb-label">Passagem</div>
       </div>
 
       <div class="tpl-cat-divider"></div>
+      <div class="tpl-cat-title"><i class="fas fa-gem" style="color:#7c3aed;"></i>Estilo</div>
 
-      <div class="tpl-cat-title"><i class="fas fa-gem" style="color:#7c3aed;"></i>Marca</div>
+      <div class="template-card" data-template="luxury" onclick="selecionarTemplate('luxury')">
+        <div class="thumb" style="background:#0c0c10;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;padding:6px 8px;gap:3px;overflow:hidden;">
+          <div style="height:1px;background:#d4a847;width:30%;opacity:.7;"></div>
+          <div style="height:5px;background:#f5f0e8;border-radius:2px;width:85%;opacity:.8;"></div>
+          <div style="height:3px;background:#f5f0e8;border-radius:2px;width:55%;opacity:.35;"></div>
+        </div>
+        <div class="thumb-cat">Estilo</div>
+        <div class="thumb-label">Luxury</div>
+      </div>
 
-      <div class="template-card" data-template="premium" onclick="selecionarTemplate('premium')">
-        <div class="thumb"><canvas class="template-thumb-canvas" data-template="premium" width="140" height="82" style="display:block;"></canvas></div>
-        <div class="thumb-label"><i class="fas fa-gem" style="color:#7c3aed;font-size:.7rem;"></i>Agência Premium</div>
+      <div class="template-card" data-template="lunademel" onclick="selecionarTemplate('lunademel')">
+        <div class="thumb" style="background:#2a3a4a;position:relative;overflow:hidden;">
+          <div style="position:absolute;inset:3px;border:1px solid rgba(255,255,255,.3);"></div>
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">
+            <div style="text-align:center;padding:0 8px;">
+              <div style="height:5px;background:#fff;border-radius:2px;opacity:.8;font-style:italic;"></div>
+            </div>
+          </div>
+        </div>
+        <div class="thumb-cat">Estilo</div>
+        <div class="thumb-label">Lua de Mel</div>
       </div>
 
     </div><!-- /oferta-painel-templates -->
@@ -717,7 +816,7 @@ const FORMATOS = {
 };
 
 const state = {
-    templateAtivo : 'promocional',
+    templateAtivo : 'destino',
     formatoAtivo  : 'post',
     vars          : {},
     sizes: {
@@ -746,9 +845,11 @@ const state = {
 // ════════════════════════════════════════════════════════════════════════
 const TEMPLATES = {
 
-    // ── 1. DESTINO — Full-bleed editorial; imagem protagonista ──────────
+    // ── 1. DESTINO — Fotografia protagonista; gradiente só na base ───────
     destino: {
-        id: 'destino', nome: 'Destino Viagem',
+        id: 'destino', nome: 'Destino',
+        categoria: 'Fotografia',
+        descricao: 'Imagem em tela cheia, texto sobre gradiente limpo na base',
         slots: {
             titulo    : { label:'Título',           varPadrao:'tituloPrincipal',   compat:['tituloPrincipal','destino'] },
             subtitulo : { label:'Subtítulo',         varPadrao:'subtitulo',         compat:['subtitulo','periodoViagem','hotel'] },
@@ -759,630 +860,683 @@ const TEMPLATES = {
         render(vars, cols, w, h) {
             const { c1, c2, c3 } = cols;
             const fw = w > h ? Math.round(h * 1.6) : w;
-            const img      = vars.imagemPrincipal || '';
-            const titulo   = sv(this,'titulo',vars);
-            const subtit   = trunc(sv(this,'subtitulo',vars), 55);
-            const desc     = sv(this,'descricao',vars);
-            const textoPr  = trunc(sv(this,'textoPrinc',vars), 120);
-            const etiqueta = sv(this,'etiqueta',vars);
-            const ftrH     = Math.round(h * .072);
-            const sp       = Math.round(w * .046);
-            const dens     = density(vars);
+            const img     = vars.imagemPrincipal || '';
+            const titulo  = sv(this,'titulo',vars);
+            const subtit  = trunc(sv(this,'subtitulo',vars), 55);
+            const desc    = sv(this,'descricao',vars);
+            const etiq    = sv(this,'etiqueta',vars);
+            const ftrH    = Math.round(h * .068);
+            const sp      = Math.round(w * .046);
+            const dens    = density(vars);
             const tituloFS = fitTitle(titulo, fw, 'destino', dens, T.TIT_MAX, T.TIT_LG, slotScale('destino','titulo'));
-            const subFS    = px(fw, T.SUB,     slotScale('destino','subtitulo'));
-            const dscFS    = px(fw, T.BODY_MD, slotScale('destino','descricao'));
-            const txtFS    = px(fw, T.BODY_MD, slotScale('destino','textoPrinc'));
-            const etqFS    = px(fw, T.BADGE,   slotScale('destino','etiqueta'));
-            const tituloClr   = slotColor('titulo',        cols, '#fff');
-            const subtitClr   = slotColor('subtitulo',     cols, 'rgba(255,255,255,.80)');
-            const descClr     = slotColor('descricao',     cols, 'rgba(255,255,255,.68)');
-            const precoClr    = slotColor('preco',         cols, '#fff');
-            const parcClr     = slotColor('parcelamento',  cols, 'rgba(255,255,255,.55)');
-            const antClr      = slotColor('precoAnterior', cols, 'rgba(255,255,255,.38)');
-            const etqColor    = slotColor('etiqueta',      cols, c2); // badge bg
+            const subFS   = px(fw, T.SUB,     slotScale('destino','subtitulo'));
+            const dscFS   = px(fw, T.BODY_MD, slotScale('destino','descricao'));
+            const etqFS   = px(fw, T.BADGE,   slotScale('destino','etiqueta'));
+            const tituloClr = slotColor('titulo',    cols, '#fff');
+            const subtitClr = slotColor('subtitulo', cols, 'rgba(255,255,255,.80)');
+            const descClr   = slotColor('descricao', cols, 'rgba(255,255,255,.65)');
+            const precoClr  = slotColor('preco',     cols, '#fff');
+            const etqColor  = slotColor('etiqueta',  cols, c2);
             return `
-<div style="width:${w}px;height:${h}px;position:relative;overflow:hidden;font-family:'Segoe UI',Arial,sans-serif;box-sizing:border-box;">
-  ${img ? `<div style="position:absolute;inset:0;background-image:url('${img}');background-size:cover;background-position:center;"></div>` : `<div style="position:absolute;inset:0;background:linear-gradient(150deg,${c1} 0%,${c3} 55%,${c1}bb 100%);"></div>`}
-  <div style="position:absolute;top:0;left:0;right:0;height:${Math.round(h*.36)}px;background:linear-gradient(to bottom,rgba(0,0,0,.55),transparent);"></div>
-  <div style="position:absolute;bottom:0;left:0;right:0;height:${Math.round(h*.72)}px;background:linear-gradient(to top,${c1}f8 0%,${c1}cc 22%,${c1}66 48%,transparent 100%);"></div>
+<div style="width:${w}px;height:${h}px;position:relative;overflow:hidden;font-family:'DM Sans',system-ui,sans-serif;box-sizing:border-box;">
+  ${img ? `<div style="position:absolute;inset:0;background-image:url('${img}');background-size:cover;background-position:center;"></div>` : `<div style="position:absolute;inset:0;background:linear-gradient(150deg,${c1} 0%,${c3} 100%);"></div>`}
+  <div style="position:absolute;bottom:0;left:0;right:0;height:${Math.round(h*.52)}px;background:linear-gradient(to top,rgba(0,0,0,.84) 0%,rgba(0,0,0,.48) 38%,transparent 100%);"></div>
   <div style="position:absolute;top:${Math.round(h*.034)}px;left:${sp}px;right:${sp}px;display:flex;justify-content:space-between;align-items:flex-start;">
-    ${etiqueta ? `<div style="background:${etqColor};color:#fff;padding:${Math.round(h*.009)}px ${Math.round(w*.032)}px;border-radius:${Math.round(w*.05)}px;font-size:${etqFS}px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;box-shadow:0 3px 12px rgba(0,0,0,.35);">${esc(etiqueta)}</div>` : '<span></span>'}
-    ${vars.logo ? `<img src="${vars.logo}" style="height:${Math.round(h*.065)}px;max-width:${Math.round(w*.24)}px;object-fit:contain;filter:drop-shadow(0 1px 6px rgba(0,0,0,.5));" crossorigin="anonymous"/>` : ''}
+    ${etiq ? `<div style="background:${etqColor};color:#fff;padding:${Math.round(h*.009)}px ${Math.round(w*.028)}px;border-radius:${Math.round(w*.04)}px;font-size:${etqFS}px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">${esc(etiq)}</div>` : '<span></span>'}
+    ${vars.logo ? `<img src="${vars.logo}" style="height:${Math.round(h*.065)}px;max-width:${Math.round(w*.24)}px;object-fit:contain;filter:drop-shadow(0 1px 6px rgba(0,0,0,.5));" crossorigin="anonymous"/>` : `<span style="color:rgba(255,255,255,.7);font-size:${Math.round(h*.024)}px;font-weight:700;">${esc(vars.nomeAgencia||'')}</span>`}
   </div>
-  <div style="position:absolute;bottom:${ftrH + Math.round(h*.018)}px;left:${sp}px;right:${sp}px;">
-    ${vars.destino && titulo !== vars.destino ? `<div style="color:${c2};font-size:${Math.round(fw*.017)}px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:${Math.round(h*.006)}px;text-shadow:0 1px 5px rgba(0,0,0,.4);">📍 ${esc(vars.destino)}</div>` : ''}
-    ${titulo ? `<div style="color:${tituloClr};font-size:${tituloFS}px;font-weight:900;line-height:1.06;margin-bottom:${Math.round(h*.008)}px;text-shadow:0 3px 14px rgba(0,0,0,.55);overflow:hidden;">${esc(titulo)}</div>` : ''}
-    ${subtit ? `<div style="color:${subtitClr};font-size:${subFS}px;font-weight:500;margin-bottom:${Math.round(h*.01)}px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${esc(subtit)}</div>` : ''}
-    ${desc ? `<div style="color:${descClr};font-size:${dscFS}px;line-height:1.4;margin-bottom:${Math.round(h*.012)}px;overflow:hidden;opacity:${slotOpacity('destino','descricao')};">${fmtDesc(desc,dscFS)}</div>` : (textoPr ? `<div style="color:rgba(255,255,255,.62);font-size:${txtFS}px;line-height:1.4;margin-bottom:${Math.round(h*.012)}px;overflow:hidden;opacity:${slotOpacity('destino','textoPrinc')};">${fmtRich(textoPr)}</div>` : '')}
-    <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:${Math.round(w*.012)}px;flex-wrap:wrap;">
-      ${vars.preco ? `<div><div style="color:rgba(255,255,255,.5);font-size:${Math.round(fw*.014)}px;text-transform:uppercase;letter-spacing:.06em;">${esc(vars.textoAPartirDe||'a partir de')}</div>${vars.precoAnterior?`<div style="color:${antClr};font-size:${Math.round(fw*.016)}px;text-decoration:line-through;">${esc(vars.precoAnterior)}</div>`:''}<div style="color:${precoClr};font-size:${Math.round(fw*.055)}px;font-weight:900;line-height:1;text-shadow:0 2px 10px rgba(0,0,0,.4);">${esc(vars.preco)}</div>${vars.parcelamento?`<div style="color:${parcClr};font-size:${Math.round(fw*.015)}px;">${esc(vars.parcelamento)}</div>`:''}</div>` : '<div></div>'}
-      ${vars.cta ? `<div style="background:${c2};color:#fff;padding:${Math.round(h*.018)}px ${Math.round(w*.034)}px;border-radius:${Math.round(w*.012)}px;font-size:${Math.round(fw*.021)}px;font-weight:800;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,.35);flex-shrink:0;">${esc(vars.cta)}</div>` : ''}
+  <div style="position:absolute;bottom:${ftrH + Math.round(h*.02)}px;left:${sp}px;right:${sp}px;">
+    ${vars.destino && titulo !== vars.destino ? `<div style="color:${c2};font-size:${Math.round(fw*.015)}px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin-bottom:${Math.round(h*.006)}px;">${esc(vars.destino)}</div>` : ''}
+    ${titulo ? `<div style="color:${tituloClr};font-size:${tituloFS}px;font-weight:900;line-height:1.06;margin-bottom:${Math.round(h*.007)}px;overflow:hidden;">${esc(titulo)}</div>` : ''}
+    ${subtit ? `<div style="color:${subtitClr};font-size:${subFS}px;font-weight:400;margin-bottom:${Math.round(h*.01)}px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${esc(subtit)}</div>` : ''}
+    ${desc ? `<div style="color:${descClr};font-size:${dscFS}px;line-height:1.4;margin-bottom:${Math.round(h*.012)}px;overflow:hidden;opacity:${slotOpacity('destino','descricao')};">${fmtDesc(desc,dscFS)}</div>` : ''}
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:${Math.round(w*.01)}px;">
+      ${vars.preco ? `<div><div style="color:rgba(255,255,255,.48);font-size:${Math.round(fw*.013)}px;letter-spacing:.06em;text-transform:uppercase;">${esc(vars.textoAPartirDe||'a partir de')}</div>${vars.precoAnterior?`<div style="color:rgba(255,255,255,.4);font-size:${Math.round(fw*.015)}px;text-decoration:line-through;">${esc(vars.precoAnterior)}</div>`:''}<div style="color:${precoClr};font-size:${Math.round(fw*.052)}px;font-weight:900;line-height:1;">${esc(vars.preco)}</div>${vars.parcelamento?`<div style="color:rgba(255,255,255,.5);font-size:${Math.round(fw*.013)}px;">${esc(vars.parcelamento)}</div>`:''}</div>` : '<div></div>'}
+      ${vars.cta ? `<div style="background:${c2};color:#fff;padding:${Math.round(h*.016)}px ${Math.round(w*.032)}px;border-radius:${Math.round(w*.01)}px;font-size:${Math.round(fw*.019)}px;font-weight:700;white-space:nowrap;flex-shrink:0;">${esc(vars.cta)}</div>` : ''}
     </div>
   </div>
-  <div style="position:absolute;bottom:0;left:0;right:0;height:${ftrH}px;background:rgba(0,0,0,.42);padding:0 ${sp}px;display:flex;align-items:center;justify-content:space-between;">
-    <span style="color:rgba(255,255,255,.82);font-size:${Math.round(ftrH*.3)}px;font-weight:600;">${esc(vars.nomeAgencia||'')}</span>
-    <span style="color:rgba(255,255,255,.72);font-size:${Math.round(ftrH*.28)}px;display:inline-flex;align-items:center;gap:5px;">${vars.whatsApp?cntWA(vars.whatsApp,Math.round(ftrH*.32)):(vars.instagram?cntIG(vars.instagram,Math.round(ftrH*.32)):'')}</span>
+  <div style="position:absolute;bottom:0;left:0;right:0;height:${ftrH}px;background:rgba(0,0,0,.36);padding:0 ${sp}px;display:flex;align-items:center;justify-content:space-between;">
+    <span style="color:rgba(255,255,255,.72);font-size:${Math.round(ftrH*.28)}px;display:inline-flex;align-items:center;gap:5px;">${vars.whatsApp?cntWA(vars.whatsApp,Math.round(ftrH*.32)):''}</span>
+    <span style="color:rgba(255,255,255,.55);font-size:${Math.round(ftrH*.26)}px;display:inline-flex;align-items:center;gap:5px;">${vars.instagram?cntIG(vars.instagram,Math.round(ftrH*.32)):''}</span>
   </div>
 </div>`;
         }
     },
 
-    // ── 2. COMERCIAL — Split estruturado; copy + preço como argumento ─────
-    comercial: {
-        id: 'comercial', nome: 'Comercial Split',
+    // ── 2. PROMO — Fundo sólido; preço como herói tipográfico absoluto ───
+    promo: {
+        id: 'promo', nome: 'Promo Bold',
+        categoria: 'Preço',
+        descricao: 'Fundo de cor, preço enorme — ideal para promoções relâmpago',
         slots: {
-            titulo    : { label:'Título',           varPadrao:'tituloPrincipal',   compat:['tituloPrincipal','destino'] },
-            subtitulo : { label:'Subtítulo',         varPadrao:'subtitulo',         compat:['subtitulo','periodoViagem','hotel'] },
-            descricao : { label:'Descrição',         varPadrao:'textoComplementar', compat:['textoComplementar','condicaoEspecial','observacoesCurtas'] },
-            textoPrinc: { label:'Texto principal',   varPadrao:'textoPrincipal',    compat:['textoPrincipal','inclusoesOferta'] },
-            etiqueta  : { label:'Etiqueta / Oferta', varPadrao:'seloPromocional',   compat:['seloPromocional','tagPromocional','textoUrgencia'] },
+            titulo    : { label:'Título',       varPadrao:'tituloPrincipal', compat:['tituloPrincipal','destino'] },
+            subtitulo : { label:'Subtítulo',    varPadrao:'subtitulo',       compat:['subtitulo','periodoViagem'] },
+            etiqueta  : { label:'Etiqueta',     varPadrao:'seloPromocional', compat:['seloPromocional','tagPromocional','textoUrgencia'] },
+            descricao : { label:'Descrição',    varPadrao:'textoComplementar', compat:['textoComplementar'] },
+            textoPrinc: { label:'Texto',        varPadrao:'',                compat:[] },
         },
         render(vars, cols, w, h) {
             const { c1, c2, c3 } = cols;
-            const fw = w > h ? Math.round(h * 1.6) : w;
-            const img      = vars.imagemPrincipal || '';
-            const titulo   = sv(this,'titulo',vars);
-            const subtit   = trunc(sv(this,'subtitulo',vars), 55);
-            const desc     = sv(this,'descricao',vars);
-            const textoPr  = sv(this,'textoPrinc',vars);
-            const etiqueta = sv(this,'etiqueta',vars);
-            const isStory  = h > w;
-            const isFb     = w > h;
-            const imgW     = isStory ? 0 : (isFb ? Math.floor(w*.36) : Math.floor(w*.40));
-            const hdrH     = Math.round(h * .092);
-            const ftrH     = Math.round(h * .088);
-            const sp       = Math.round(w * (isStory?.045:.038));
-            const dens     = density(vars);
-            const tituloFS = fitTitle(titulo, fw, 'comercial', dens, isStory?T.TIT_LG:T.TIT_MD, isStory?T.TIT_MD:T.TIT_SM, slotScale('comercial','titulo'));
-            const subFS    = px(fw, T.SUB,     slotScale('comercial','subtitulo'));
-            const dscFS    = px(fw, T.BODY_MD, slotScale('comercial','descricao'));
-            const txtFS    = px(fw, T.BODY_MD, slotScale('comercial','textoPrinc'));
-            const etqFS    = px(fw, T.BADGE,   slotScale('comercial','etiqueta'));
-            const hasBullets  = textoPr && textoPr.includes('\n');
-            const bulletItems = hasBullets ? bulletsHTML(textoPr, 4, c2, px(w,T.BODY_SM,slotScale('comercial','textoPrinc')), px(w,T.SP_XS)) : '';
-            const textTrunc   = hasBullets ? '' : trunc(textoPr, 130);
-            const tituloClr   = slotColor('titulo',        cols, c1);
-            const subtitClr   = slotColor('subtitulo',     cols, '#555');
-            const descClr     = slotColor('descricao',     cols, '#555');
-            const precoClr    = slotColor('preco',         cols, c2);
-            const parcClr     = slotColor('parcelamento',  cols, '#666');
-            const antClr      = slotColor('precoAnterior', cols, '#bbb');
-            const etqColor    = slotColor('etiqueta',      cols, c2); // badge bg
+            const fw      = w > h ? Math.round(h * 1.6) : w;
+            const img     = vars.imagemPrincipal || '';
+            const titulo  = sv(this,'titulo',vars);
+            const subtit  = trunc(sv(this,'subtitulo',vars), 48);
+            const etiq    = sv(this,'etiqueta',vars);
+            const sp      = Math.round(w * .055);
+            const hdrH    = Math.round(h * .13);
+            const ftrH    = Math.round(h * .11);
+            const dens    = density(vars);
+            const tituloFS = fitTitle(titulo, fw, 'promo', dens, T.TIT_MAX, T.TIT_LG, slotScale('promo','titulo'));
+            const etqFS   = px(fw, T.BADGE, 1);
+            const tituloClr = slotColor('titulo',   cols, '#fff');
+            const subtitClr = slotColor('subtitulo',cols, 'rgba(255,255,255,.7)');
+            const precoClr  = slotColor('preco',    cols, '#fff');
+            const etqBg     = slotColor('etiqueta', cols, c2);
             return `
-<div style="width:${w}px;height:${h}px;position:relative;overflow:hidden;font-family:'Segoe UI',Arial,sans-serif;background:#fff;box-sizing:border-box;display:flex;flex-direction:column;">
-  <div style="background:${c1};height:${hdrH}px;padding:0 ${sp}px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
-    ${vars.logo ? `<img src="${vars.logo}" style="height:${Math.round(hdrH*.55)}px;max-width:${Math.round(w*.22)}px;object-fit:contain;" crossorigin="anonymous"/>` : `<span style="color:#fff;font-size:${Math.round(hdrH*.28)}px;font-weight:700;letter-spacing:.03em;">${esc(vars.nomeAgencia||'')}</span>`}
-    ${etiqueta ? `<span style="background:${etqColor};color:#fff;padding:${Math.round(hdrH*.1)}px ${Math.round(w*.024)}px;border-radius:${Math.round(w*.035)}px;font-size:${etqFS}px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;">${esc(etiqueta)}</span>` : ''}
+<div style="width:${w}px;height:${h}px;position:relative;overflow:hidden;font-family:'DM Sans',system-ui,sans-serif;background:${c1};box-sizing:border-box;">
+  ${img ? `<div style="position:absolute;right:0;top:0;width:${Math.round(w*.38)}px;bottom:0;overflow:hidden;"><div style="position:absolute;inset:0;background-image:url('${img}');background-size:cover;background-position:center;opacity:.22;"></div><div style="position:absolute;inset:0;background:linear-gradient(to right,${c1},${c1}88 40%,transparent 100%);"></div></div>` : ''}
+  <div style="position:absolute;top:0;left:0;right:0;height:3px;background:${c2};"></div>
+  <div style="position:absolute;top:3px;left:${sp}px;right:${sp}px;height:${hdrH}px;display:flex;align-items:center;justify-content:space-between;">
+    ${vars.logo ? `<img src="${vars.logo}" style="height:${Math.round(hdrH*.52)}px;max-width:${Math.round(w*.3)}px;object-fit:contain;filter:brightness(0) invert(1);" crossorigin="anonymous"/>` : `<span style="color:rgba(255,255,255,.62);font-size:${Math.round(hdrH*.26)}px;font-weight:700;letter-spacing:.05em;">${esc(vars.nomeAgencia||'')}</span>`}
+    ${etiq ? `<div style="background:${etqBg};color:#fff;padding:${Math.round(h*.009)}px ${Math.round(w*.028)}px;border-radius:${Math.round(w*.04)}px;font-size:${etqFS}px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">${esc(etiq)}</div>` : ''}
   </div>
-  <div style="display:flex;flex:1;overflow:hidden;">
-    ${imgW > 0 ? `<div style="width:${imgW}px;flex-shrink:0;position:relative;overflow:hidden;">${img?`<div style="position:absolute;inset:0;background-image:url('${img}');background-size:cover;background-position:center;"></div>`:`<div style="position:absolute;inset:0;background:linear-gradient(160deg,${c1} 0%,${c3} 100%);"></div>`}<div style="position:absolute;inset:0;background:linear-gradient(to right,transparent 55%,rgba(255,255,255,.18) 100%);"></div>${vars.destino?`<div style="position:absolute;bottom:${Math.round(h*.022)}px;left:0;right:0;text-align:center;color:#fff;font-size:${Math.round(fw*.017)}px;font-weight:700;text-shadow:0 2px 8px rgba(0,0,0,.6);">📍 ${esc(vars.destino)}</div>`:''}</div>` : ''}
-    <div style="flex:1;padding:${Math.round(h*.028)}px ${sp}px;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;min-width:0;">
-      <div style="overflow:hidden;">
-        ${titulo ? `<div style="color:${tituloClr};font-size:${tituloFS}px;font-weight:900;line-height:1.1;margin-bottom:${Math.round(h*.007)}px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${esc(titulo)}</div>` : ''}
-        ${subtit ? `<div style="color:${subtitClr};font-size:${subFS}px;font-weight:500;margin-bottom:${Math.round(h*.006)}px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${esc(subtit)}</div>` : ''}
-        <div style="width:${Math.round(w*.06)}px;height:2px;background:${c2};margin-bottom:${Math.round(h*.012)}px;"></div>
-        ${desc ? `<div style="color:${descClr};font-size:${dscFS}px;line-height:1.42;margin-bottom:${Math.round(h*.01)}px;overflow:hidden;opacity:${slotOpacity('comercial','descricao')};">${fmtDesc(desc,dscFS)}</div>` : ''}
-        ${bulletItems ? `<div style="color:#333;opacity:${slotOpacity('comercial','textoPrinc')};">${bulletItems}</div>` : (textTrunc ? `<div style="color:#444;font-size:${txtFS}px;line-height:1.42;overflow:hidden;opacity:${slotOpacity('comercial','textoPrinc')};">${fmtRich(textTrunc)}</div>` : '')}
-      </div>
-      <div>
-        ${vars.preco ? `<div style="margin-bottom:${Math.round(h*.01)}px;">${vars.precoAnterior?`<div style="color:${antClr};font-size:${Math.round(fw*.015)}px;text-decoration:line-through;">${esc(vars.precoAnterior)}</div>`:''}<div style="color:${precoClr};font-size:${Math.round(fw*.048)}px;font-weight:900;line-height:1;">${esc(vars.preco)}</div>${vars.parcelamento?`<div style="color:${parcClr};font-size:${Math.round(fw*.015)}px;">${esc(vars.parcelamento)}</div>`:''}</div>` : ''}
-        ${vars.cta ? `<div style="background:${c1};color:#fff;padding:${Math.round(h*.013)}px;border-radius:${Math.round(w*.009)}px;font-size:${Math.round(fw*.018)}px;font-weight:700;text-align:center;">${esc(vars.cta)}</div>` : ''}
-      </div>
-    </div>
+  <div style="position:absolute;left:${sp}px;right:${sp}px;top:${hdrH+3}px;bottom:${ftrH}px;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:${Math.round(h*.01)}px;">
+    ${vars.destino ? `<div style="color:${c2};font-size:${Math.round(fw*.015)}px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;">${esc(vars.destino)}</div>` : ''}
+    ${titulo ? `<div style="color:${tituloClr};font-size:${tituloFS}px;font-weight:900;line-height:1.05;overflow:hidden;">${esc(titulo)}</div>` : ''}
+    ${subtit ? `<div style="color:${subtitClr};font-size:${px(fw,T.SUB,slotScale('promo','subtitulo'))}px;font-weight:400;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${esc(subtit)}</div>` : ''}
+    ${vars.preco ? `<div style="margin-top:${Math.round(h*.018)}px;"><div style="color:rgba(255,255,255,.42);font-size:${Math.round(fw*.013)}px;letter-spacing:.06em;text-transform:uppercase;">${esc(vars.textoAPartirDe||'a partir de')}</div>${vars.precoAnterior?`<div style="color:rgba(255,255,255,.35);font-size:${Math.round(fw*.017)}px;text-decoration:line-through;">${esc(vars.precoAnterior)}</div>`:''}<div style="color:${precoClr};font-size:${Math.round(fw*.082)}px;font-weight:900;line-height:.95;letter-spacing:-.01em;">${esc(vars.preco)}</div>${vars.parcelamento?`<div style="color:rgba(255,255,255,.5);font-size:${Math.round(fw*.015)}px;margin-top:3px;">${esc(vars.parcelamento)}</div>`:''}</div>` : ''}
+    ${vars.cta ? `<div style="margin-top:${Math.round(h*.016)}px;background:${c2};color:#fff;padding:${Math.round(h*.016)}px ${Math.round(w*.042)}px;border-radius:${Math.round(w*.01)}px;font-size:${Math.round(fw*.020)}px;font-weight:700;">${esc(vars.cta)}</div>` : ''}
   </div>
-  <div style="background:${c3};height:${ftrH}px;padding:0 ${sp}px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
-    <span style="color:#fff;font-size:${Math.round(ftrH*.28)}px;display:inline-flex;align-items:center;gap:5px;">${vars.whatsApp?cntWA(vars.whatsApp,Math.round(ftrH*.32)):''}</span>
-    <span style="color:#fff;font-size:${Math.round(ftrH*.28)}px;display:inline-flex;align-items:center;gap:5px;">${vars.instagram?cntIG(vars.instagram,Math.round(ftrH*.32)):''}</span>
-    <span style="color:rgba(255,255,255,.72);font-size:${Math.round(ftrH*.23)}px;">${esc(vars.rodape||vars.nomeAgencia||'')}</span>
+  <div style="position:absolute;bottom:0;left:0;right:0;height:${ftrH}px;border-top:1px solid rgba(255,255,255,.12);padding:0 ${sp}px;display:flex;align-items:center;justify-content:space-between;">
+    <span style="color:rgba(255,255,255,.6);font-size:${Math.round(ftrH*.28)}px;display:inline-flex;align-items:center;gap:5px;">${vars.whatsApp?cntWA(vars.whatsApp,Math.round(ftrH*.32)):''}</span>
+    <span style="color:rgba(255,255,255,.45);font-size:${Math.round(ftrH*.26)}px;display:inline-flex;align-items:center;gap:5px;">${vars.instagram?cntIG(vars.instagram,Math.round(ftrH*.32)):''}</span>
   </div>
 </div>`;
         }
     },
 
-    // ── 3. PROMOCIONAL — Overlay total; preço é o herói absoluto ─────────
-    promocional: {
-        id: 'promocional', nome: 'Promoção Destaque',
+    // ── 3. VERTICAL — Story-native: foto topo, painel escuro base ─────────
+    vertical: {
+        id: 'vertical', nome: 'Story',
+        categoria: 'Divisão',
+        descricao: 'Foto topo, painel escuro na base — nativo para Stories',
         slots: {
-            titulo    : { label:'Título',           varPadrao:'tituloPrincipal',   compat:['tituloPrincipal','destino'] },
-            subtitulo : { label:'Subtítulo',         varPadrao:'subtitulo',         compat:['subtitulo','periodoViagem','textoUrgencia'] },
-            descricao : { label:'Descrição',         varPadrao:'textoComplementar', compat:['textoComplementar','condicaoEspecial','inclusoesOferta'] },
-            textoPrinc: { label:'Texto principal',   varPadrao:'textoPrincipal',    compat:['textoPrincipal','inclusoesOferta'] },
-            etiqueta  : { label:'Etiqueta / Oferta', varPadrao:'seloPromocional',   compat:['seloPromocional','tagPromocional','textoUrgencia'] },
+            titulo    : { label:'Título',    varPadrao:'tituloPrincipal', compat:['tituloPrincipal','destino'] },
+            subtitulo : { label:'Período',   varPadrao:'periodoViagem',   compat:['periodoViagem','subtitulo'] },
+            etiqueta  : { label:'Etiqueta',  varPadrao:'seloPromocional', compat:['seloPromocional','tagPromocional'] },
+            descricao : { label:'Descrição', varPadrao:'textoComplementar', compat:['textoComplementar'] },
         },
         render(vars, cols, w, h) {
             const { c1, c2, c3 } = cols;
-            const fw = w > h ? Math.round(h * 1.6) : w;
-            const img      = vars.imagemPrincipal || '';
-            const titulo   = sv(this,'titulo',vars);
-            const subtit   = trunc(sv(this,'subtitulo',vars), 55);
-            const desc     = sv(this,'descricao',vars);
-            const textoPr  = trunc(sv(this,'textoPrinc',vars), 140);
-            const etiqueta = sv(this,'etiqueta',vars);
-            const ftrH     = Math.round(h * .082);
-            const sp       = Math.round(w * .055);
-            const dens     = density(vars);
-            const tituloFS = fitTitle(titulo, fw, 'promocional', dens, T.TIT_MAX, T.TIT_LG, slotScale('promocional','titulo'));
-            const subFS    = px(fw, T.SUB,     slotScale('promocional','subtitulo'));
-            const dscFS    = px(fw, T.BODY_MD, slotScale('promocional','descricao'));
-            const txtFS    = px(fw, T.BODY_MD, slotScale('promocional','textoPrinc'));
-            const etqFS    = px(fw, T.BADGE,   slotScale('promocional','etiqueta'));
-            const tituloClr   = slotColor('titulo',        cols, '#fff');
-            const subtitClr   = slotColor('subtitulo',     cols, 'rgba(255,255,255,.72)');
-            const descClr     = slotColor('descricao',     cols, 'rgba(255,255,255,.78)');
-            const precoClr    = slotColor('preco',         cols, c2);
-            const parcClr     = slotColor('parcelamento',  cols, 'rgba(255,255,255,.55)');
-            const antClr      = slotColor('precoAnterior', cols, 'rgba(255,255,255,.38)');
-            const etqColor    = slotColor('etiqueta',      cols, c2); // badge bg
+            const fw      = w > h ? Math.round(h * 1.6) : w;
+            const img     = vars.imagemPrincipal || '';
+            const titulo  = sv(this,'titulo',vars);
+            const subtit  = trunc(sv(this,'subtitulo',vars), 48);
+            const etiq    = sv(this,'etiqueta',vars);
+            const split   = Math.round(h * .55);
+            const panH    = h - split;
+            const sp      = Math.round(w * .065);
+            const dens    = density(vars);
+            const tituloFS  = fitTitle(titulo, fw, 'vertical', dens, T.TIT_LG, T.TIT_MD, slotScale('vertical','titulo'));
+            const tituloClr = slotColor('titulo',   cols, '#fff');
+            const subtitClr = slotColor('subtitulo',cols, 'rgba(255,255,255,.62)');
+            const precoClr  = slotColor('preco',    cols, c2);
+            const etqBg     = slotColor('etiqueta', cols, c2);
             return `
-<div style="width:${w}px;height:${h}px;position:relative;overflow:hidden;font-family:'Segoe UI',Arial,sans-serif;box-sizing:border-box;">
-  ${img ? `<div style="position:absolute;inset:0;background-image:url('${img}');background-size:cover;background-position:center;"></div>` : `<div style="position:absolute;inset:0;background:${c1};"></div>`}
-  <div style="position:absolute;inset:0;background:rgba(0,0,0,.68);"></div>
-  <div style="position:absolute;top:0;left:0;bottom:0;width:6px;background:linear-gradient(to bottom,${c2},${c3});"></div>
-  <div style="position:absolute;inset:0;bottom:${ftrH}px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:${Math.round(h*.04)}px ${sp}px;text-align:center;gap:${Math.round(h*.009)}px;">
-    ${etiqueta ? `<div style="background:${etqColor};color:#fff;padding:${Math.round(h*.01)}px ${Math.round(w*.048)}px;border-radius:${Math.round(w*.045)}px;font-size:${etqFS}px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;box-shadow:0 6px 20px rgba(0,0,0,.4);">🔥 ${esc(etiqueta)}</div>` : ''}
-    ${vars.destino ? `<div style="color:rgba(255,255,255,.62);font-size:${Math.round(fw*.019)}px;font-weight:600;">📍 ${esc(vars.destino)}${vars.periodoViagem?' · '+esc(vars.periodoViagem):''}</div>` : ''}
-    ${titulo ? `<div style="color:${tituloClr};font-size:${tituloFS}px;font-weight:900;line-height:1.06;text-shadow:0 3px 14px rgba(0,0,0,.5);overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;">${esc(titulo)}</div>` : ''}
-    ${subtit ? `<div style="color:${subtitClr};font-size:${subFS}px;">${esc(subtit)}</div>` : ''}
-    ${(desc||textoPr) ? `<div style="background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.16);border-radius:${Math.round(w*.012)}px;padding:${Math.round(h*.014)}px ${Math.round(w*.036)}px;max-width:${Math.round(w*.9)}px;text-align:left;">${desc?`<div style="color:${descClr};font-size:${dscFS}px;line-height:1.42;opacity:${slotOpacity('promocional','descricao')};${textoPr?`margin-bottom:${Math.round(h*.006)}px;`:''}">${fmtDesc(desc,dscFS)}</div>`:''}${textoPr?`<div style="color:rgba(255,255,255,.72);font-size:${txtFS}px;line-height:1.4;opacity:${slotOpacity('promocional','textoPrinc')};">${fmtRich(textoPr)}</div>`:''}</div>` : ''}
-    ${vars.preco ? `<div style="text-align:center;">${vars.precoAnterior?`<div style="color:${antClr};font-size:${Math.round(fw*.022)}px;text-decoration:line-through;">${esc(vars.precoAnterior)}</div>`:''}<div style="color:${precoClr};font-size:${Math.round(fw*.076)}px;font-weight:900;line-height:1;text-shadow:0 3px 18px rgba(0,0,0,.5);">${esc(vars.preco)}</div>${vars.parcelamento?`<div style="color:${parcClr};font-size:${Math.round(fw*.018)}px;">${esc(vars.parcelamento)}</div>`:''}</div>` : ''}
-    ${vars.cta ? `<div style="background:${c2};color:#fff;padding:${Math.round(h*.022)}px ${Math.round(w*.06)}px;border-radius:${Math.round(w*.012)}px;font-size:${Math.round(fw*.025)}px;font-weight:900;box-shadow:0 6px 22px rgba(0,0,0,.4);">${esc(vars.cta)}</div>` : ''}
-    ${vars.validadeOferta ? `<div style="color:rgba(255,255,255,.38);font-size:${Math.round(fw*.015)}px;">${esc(vars.validadeOferta)}</div>` : ''}
+<div style="width:${w}px;height:${h}px;position:relative;overflow:hidden;font-family:'DM Sans',system-ui,sans-serif;background:${c1};box-sizing:border-box;">
+  <div style="position:absolute;top:0;left:0;right:0;height:${split}px;overflow:hidden;">
+    ${img ? `<div style="position:absolute;inset:0;background-image:url('${img}');background-size:cover;background-position:center;"></div>` : `<div style="position:absolute;inset:0;background:linear-gradient(160deg,${c1} 0%,${c3} 100%);"></div>`}
+    <div style="position:absolute;bottom:0;left:0;right:0;height:${Math.round(split*.5)}px;background:linear-gradient(to bottom,transparent,${c1});"></div>
+    ${etiq ? `<div style="position:absolute;top:${Math.round(split*.06)}px;left:${sp}px;background:${etqBg};color:#fff;padding:${Math.round(h*.008)}px ${Math.round(w*.032)}px;border-radius:${Math.round(w*.04)}px;font-size:${px(fw,T.BADGE,1)}px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;">${esc(etiq)}</div>` : ''}
   </div>
-  <div style="position:absolute;bottom:0;left:0;right:0;height:${ftrH}px;background:${c1};padding:0 ${sp}px;display:flex;align-items:center;justify-content:space-between;">
-    ${vars.logo ? `<img src="${vars.logo}" style="height:${Math.round(ftrH*.55)}px;max-width:${Math.round(w*.18)}px;object-fit:contain;" crossorigin="anonymous"/>` : `<span style="color:#fff;font-size:${Math.round(ftrH*.28)}px;font-weight:700;">${esc(vars.nomeAgencia||'')}</span>`}
-    <span style="color:rgba(255,255,255,.82);font-size:${Math.round(ftrH*.27)}px;display:inline-flex;align-items:center;gap:5px;">${vars.whatsApp?cntWA(vars.whatsApp,Math.round(ftrH*.32)):(vars.instagram?cntIG(vars.instagram,Math.round(ftrH*.32)):'')}</span>
+  <div style="position:absolute;top:${Math.round(split*.62)}px;left:${sp}px;right:${sp}px;bottom:${Math.round(panH*.22)}px;display:flex;flex-direction:column;justify-content:flex-end;gap:${Math.round(h*.008)}px;">
+    ${vars.destino ? `<div style="color:${c2};font-size:${Math.round(fw*.014)}px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;">${esc(vars.destino)}</div>` : ''}
+    ${titulo ? `<div style="color:${tituloClr};font-size:${tituloFS}px;font-weight:900;line-height:1.06;overflow:hidden;">${esc(titulo)}</div>` : ''}
+    ${subtit ? `<div style="color:${subtitClr};font-size:${px(fw,T.SUB,slotScale('vertical','subtitulo'))}px;font-weight:400;">${esc(subtit)}</div>` : ''}
   </div>
+  <div style="position:absolute;bottom:0;left:0;right:0;height:${Math.round(panH*.22)}px;border-top:1px solid rgba(255,255,255,.1);padding:0 ${sp}px;display:flex;align-items:center;justify-content:space-between;">
+    ${vars.logo ? `<img src="${vars.logo}" style="height:${Math.round(panH*.14)}px;max-width:${Math.round(w*.32)}px;object-fit:contain;filter:brightness(0) invert(1);" crossorigin="anonymous"/>` : `<span style="color:rgba(255,255,255,.55);font-size:${Math.round(h*.014)}px;font-weight:700;">${esc(vars.nomeAgencia||'')}</span>`}
+    <span style="color:rgba(255,255,255,.5);font-size:${Math.round(h*.014)}px;display:inline-flex;align-items:center;gap:5px;">${vars.whatsApp?cntWA(vars.whatsApp,Math.round(h*.018)):(vars.instagram?cntIG(vars.instagram,Math.round(h*.018)):'')}</span>
+  </div>
+  ${vars.preco ? `<div style="position:absolute;bottom:${Math.round(panH*.22)+Math.round(h*.016)}px;right:${sp}px;text-align:right;"><div style="color:rgba(255,255,255,.42);font-size:${Math.round(fw*.013)}px;">${esc(vars.textoAPartirDe||'a partir de')}</div><div style="color:${precoClr};font-size:${Math.round(fw*.048)}px;font-weight:900;line-height:1;">${esc(vars.preco)}</div>${vars.parcelamento?`<div style="color:rgba(255,255,255,.45);font-size:${Math.round(fw*.013)}px;">${esc(vars.parcelamento)}</div>`:''}</div>` : ''}
 </div>`;
         }
     },
 
-    // ── 4. OFERTA EM BLOCO — Painel forte à esquerda; preço como protagonista
+    // ── 4. RELÂMPAGO — Painel forte + foto; divisão dinâmica ─────────────
     relampago: {
         id: 'relampago', nome: 'Oferta em Bloco',
+        categoria: 'Divisão',
+        descricao: 'Painel colorido + foto — para promoções diretas e objetivas',
         slots: {
-            titulo    : { label:'Título',           varPadrao:'tituloPrincipal',   compat:['tituloPrincipal'] },
-            subtitulo : { label:'Subtítulo',         varPadrao:'subtitulo',         compat:['subtitulo'] },
-            descricao : { label:'Descrição',         varPadrao:'textoComplementar', compat:['textoComplementar'] },
-            textoPrinc: { label:'Texto principal',   varPadrao:'',                  compat:[] },
-            etiqueta  : { label:'Etiqueta / Oferta', varPadrao:'seloPromocional',   compat:['seloPromocional','tagPromocional'] },
+            titulo    : { label:'Título',    varPadrao:'tituloPrincipal', compat:['tituloPrincipal'] },
+            subtitulo : { label:'Subtítulo', varPadrao:'subtitulo',       compat:['subtitulo'] },
+            descricao : { label:'Descrição', varPadrao:'textoComplementar', compat:['textoComplementar'] },
+            etiqueta  : { label:'Etiqueta',  varPadrao:'seloPromocional', compat:['seloPromocional','tagPromocional'] },
         },
         render(vars, cols, w, h) {
             const { c1, c2, c3 } = cols;
-            const fw = w > h ? Math.round(h * 1.6) : w;
-            const img      = vars.imagemPrincipal || '';
-            const titulo   = sv(this,'titulo',vars);
-            const subtit   = trunc(sv(this,'subtitulo',vars), 48);
-            const desc     = sv(this,'descricao',vars);
-            const etiqueta = sv(this,'etiqueta',vars);
-            const isStory  = h > w;
-            const pW       = isStory ? w : Math.round(w * .44);
-            const pH       = isStory ? Math.round(h * .60) : h;
-            const imgAreaH = isStory ? (h - pH) : h;
-            const sp       = Math.round(pW * .086);
-            const ftrH     = Math.round(pH * .13);
-            const dens     = density(vars);
-            const tituloFS = fitTitle(titulo, fw, 'relampago', dens, T.TIT_LG, T.TIT_SM, slotScale('relampago','titulo'));
-            const subFS    = px(fw, T.SUB, slotScale('relampago','subtitulo'));
-            const dscFS    = px(fw, T.BODY_SM, slotScale('relampago','descricao'));
-            const etqFS    = px(fw, T.BADGE, 1);
-            const prcFS    = Math.min(Math.round(fw * .072), px(fw, T.PRC_MD, slotScale('relampago','preco')));
-            const antFS    = px(fw, T.BODY_SM, 1);
-            const parFS    = px(fw, T.BODY_SM, slotScale('relampago','parcelamento'));
-            const icSz     = Math.max(14, Math.round(ftrH * .32));
-            const tituloClr   = slotColor('titulo',        cols, '#fff');
-            const subtitClr   = slotColor('subtitulo',     cols, 'rgba(255,255,255,.62)');
-            const descClr     = slotColor('descricao',     cols, 'rgba(255,255,255,.5)');
-            const precoClr    = slotColor('preco',         cols, c2);
-            const parcClr     = slotColor('parcelamento',  cols, 'rgba(255,255,255,.52)');
-            const antClr      = slotColor('precoAnterior', cols, 'rgba(255,255,255,.35)');
-            const etqColor    = slotColor('etiqueta',      cols, c2); // badge bg
+            const fw      = w > h ? Math.round(h * 1.6) : w;
+            const img     = vars.imagemPrincipal || '';
+            const titulo  = sv(this,'titulo',vars);
+            const subtit  = trunc(sv(this,'subtitulo',vars), 48);
+            const desc    = sv(this,'descricao',vars);
+            const etiq    = sv(this,'etiqueta',vars);
+            const isStory = h > w;
+            const pW      = isStory ? w : Math.round(w * .44);
+            const pH      = isStory ? Math.round(h * .58) : h;
+            const imgH    = isStory ? (h - pH) : h;
+            const sp      = Math.round(pW * .088);
+            const ftrH    = Math.round(pH * .14);
+            const hdrH    = Math.round(pH * .14);
+            const dens    = density(vars);
+            const tituloFS  = fitTitle(titulo, fw, 'relampago', dens, T.TIT_LG, T.TIT_SM, slotScale('relampago','titulo'));
+            const tituloClr = slotColor('titulo',   cols, '#fff');
+            const subtitClr = slotColor('subtitulo',cols, 'rgba(255,255,255,.62)');
+            const precoClr  = slotColor('preco',    cols, c2);
+            const etqBg     = slotColor('etiqueta', cols, c2);
             return `
-<div style="width:${w}px;height:${h}px;position:relative;overflow:hidden;font-family:'Segoe UI',Arial,sans-serif;box-sizing:border-box;">
-  <div style="position:absolute;${isStory?`top:0;left:0;right:0;height:${imgAreaH}px`:`left:${pW}px;top:0;right:0;bottom:0`};overflow:hidden;">
-    ${img?`<div style="position:absolute;inset:0;background-image:url('${img}');background-size:cover;background-position:center;"></div>`:`<div style="position:absolute;inset:0;background:linear-gradient(155deg,${c3} 0%,${c1}aa 100%);"></div>`}
-    <div style="position:absolute;${isStory?`bottom:0;left:0;right:0;height:${Math.round(imgAreaH*.45)}px;background:linear-gradient(to bottom,transparent,${c1})`:`top:0;left:0;bottom:0;width:${Math.round(pW*.55)}px;background:linear-gradient(to right,${c1},transparent)`};"></div>
+<div style="width:${w}px;height:${h}px;position:relative;overflow:hidden;font-family:'DM Sans',system-ui,sans-serif;box-sizing:border-box;">
+  <div style="position:absolute;${isStory?`top:0;left:0;right:0;height:${imgH}px`:`left:${pW}px;top:0;right:0;bottom:0`};overflow:hidden;">
+    ${img ? `<div style="position:absolute;inset:0;background-image:url('${img}');background-size:cover;background-position:center;"></div>` : `<div style="position:absolute;inset:0;background:linear-gradient(155deg,${c3} 0%,${c1}88 100%);"></div>`}
+    <div style="position:absolute;${isStory?`bottom:0;left:0;right:0;height:${Math.round(imgH*.4)}px;background:linear-gradient(to bottom,transparent,${c1})`:`top:0;left:0;bottom:0;width:${Math.round(pW*.5)}px;background:linear-gradient(to right,${c1},transparent)`};"></div>
   </div>
-  <div style="position:absolute;${isStory?`left:0;right:0;top:${imgAreaH}px;height:${pH}px`:`left:0;top:0;width:${pW}px;height:${h}px`};background:${c1};padding:${Math.round(pH*.06)}px ${sp}px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;">
-    <div style="overflow:hidden;">
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:${Math.round(pH*.028)}px;gap:8px;">
-        ${vars.logo?`<img src="${vars.logo}" style="height:${Math.round(pH*.055)}px;max-width:${Math.round(pW*.52)}px;object-fit:contain;filter:brightness(10);" crossorigin="anonymous"/>`:vars.nomeAgencia?`<span style="color:rgba(255,255,255,.55);font-size:${Math.round(pW*.032)}px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${esc(vars.nomeAgencia)}</span>`:'<span></span>'}
-        ${etiqueta?`<div style="background:${etqColor};color:#fff;padding:${Math.round(pH*.010)}px ${Math.round(pW*.038)}px;border-radius:${Math.round(pW*.04)}px;font-size:${etqFS}px;font-weight:900;text-transform:uppercase;letter-spacing:.06em;white-space:nowrap;flex-shrink:0;box-shadow:0 2px 12px rgba(0,0,0,.35);">${esc(etiqueta)}</div>`:''}
-      </div>
-      ${titulo?`<div style="color:${tituloClr};font-size:${tituloFS}px;font-weight:900;line-height:1.08;margin-bottom:${Math.round(pH*.012)}px;overflow:hidden;">${esc(titulo)}</div>`:''}
-      ${subtit?`<div style="color:${subtitClr};font-size:${subFS}px;font-weight:400;margin-bottom:${Math.round(pH*.008)}px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${esc(subtit)}</div>`:''}
-      <div style="width:${Math.round(pW*.1)}px;height:3px;background:${c2};margin:${Math.round(pH*.014)}px 0;border-radius:2px;"></div>
-      ${desc?`<div style="color:${descClr};font-size:${dscFS}px;line-height:1.38;overflow:hidden;">${fmtDesc(desc,dscFS)}</div>`:''}
+  <div style="position:absolute;${isStory?`left:0;right:0;top:${imgH}px;height:${pH}px`:`left:0;top:0;width:${pW}px;height:${h}px`};background:${c1};display:flex;flex-direction:column;overflow:hidden;">
+    <div style="height:${hdrH}px;padding:0 ${sp}px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+      ${vars.logo ? `<img src="${vars.logo}" style="height:${Math.round(hdrH*.48)}px;max-width:${Math.round(pW*.55)}px;object-fit:contain;filter:brightness(0) invert(1);" crossorigin="anonymous"/>` : `<span style="color:rgba(255,255,255,.55);font-size:${Math.round(hdrH*.26)}px;font-weight:700;letter-spacing:.04em;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${esc(vars.nomeAgencia||'')}</span>`}
+      ${etiq ? `<div style="background:${etqBg};color:#fff;padding:${Math.round(pH*.008)}px ${Math.round(pW*.032)}px;border-radius:${Math.round(pW*.035)}px;font-size:${px(fw,T.BADGE,1)}px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;white-space:nowrap;flex-shrink:0;">${esc(etiq)}</div>` : ''}
     </div>
-    <div style="flex-shrink:0;">
-      ${vars.precoAnterior?`<div style="color:${antClr};font-size:${antFS}px;text-decoration:line-through;margin-bottom:2px;">${esc(vars.precoAnterior)}</div>`:''}
-      ${vars.preco?`<div style="color:${precoClr};font-size:${prcFS}px;font-weight:900;line-height:1.02;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${esc(vars.preco)}</div>`:''}
-      ${vars.parcelamento?`<div style="color:${parcClr};font-size:${parFS}px;margin-top:${Math.round(pH*.006)}px;">${esc(vars.parcelamento)}</div>`:''}
+    <div style="flex:1;padding:${Math.round(pH*.016)}px ${sp}px;display:flex;flex-direction:column;justify-content:center;gap:${Math.round(pH*.008)}px;overflow:hidden;">
+      ${titulo ? `<div style="color:${tituloClr};font-size:${tituloFS}px;font-weight:900;line-height:1.07;overflow:hidden;">${esc(titulo)}</div>` : ''}
+      <div style="width:${Math.round(pW*.09)}px;height:2px;background:${c2};border-radius:2px;"></div>
+      ${subtit ? `<div style="color:${subtitClr};font-size:${px(fw,T.SUB,slotScale('relampago','subtitulo'))}px;font-weight:400;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${esc(subtit)}</div>` : ''}
+      ${desc ? `<div style="color:rgba(255,255,255,.48);font-size:${px(fw,T.BODY_SM,slotScale('relampago','descricao'))}px;line-height:1.38;overflow:hidden;">${fmtDesc(desc,px(fw,T.BODY_SM))}</div>` : ''}
+      ${vars.preco ? `<div style="margin-top:${Math.round(pH*.01)}px;">${vars.precoAnterior?`<div style="color:rgba(255,255,255,.32);font-size:${Math.round(fw*.014)}px;text-decoration:line-through;">${esc(vars.precoAnterior)}</div>`:''}<div style="color:${precoClr};font-size:${Math.round(fw*.062)}px;font-weight:900;line-height:.95;">${esc(vars.preco)}</div>${vars.parcelamento?`<div style="color:rgba(255,255,255,.5);font-size:${Math.round(fw*.014)}px;margin-top:3px;">${esc(vars.parcelamento)}</div>`:''}</div>` : ''}
     </div>
-    <div style="border-top:1px solid rgba(255,255,255,.16);padding-top:${Math.round(pH*.018)}px;display:flex;align-items:center;justify-content:space-between;gap:6px;overflow:hidden;flex-shrink:0;">
-      <span style="color:rgba(255,255,255,.78);font-size:${Math.round(ftrH*.25)}px;display:inline-flex;align-items:center;gap:5px;overflow:hidden;flex:1;min-width:0;">${vars.whatsApp?cntWA(vars.whatsApp,icSz):''}</span>
-      <span style="color:rgba(255,255,255,.62);font-size:${Math.round(ftrH*.25)}px;display:inline-flex;align-items:center;gap:5px;overflow:hidden;flex-shrink:0;">${vars.instagram?cntIG(vars.instagram,icSz):''}</span>
+    <div style="height:${ftrH}px;border-top:1px solid rgba(255,255,255,.12);padding:0 ${sp}px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;overflow:hidden;">
+      <span style="color:rgba(255,255,255,.65);font-size:${Math.round(ftrH*.28)}px;display:inline-flex;align-items:center;gap:4px;">${vars.whatsApp?cntWA(vars.whatsApp,Math.round(ftrH*.32)):''}</span>
+      <span style="color:rgba(255,255,255,.5);font-size:${Math.round(ftrH*.28)}px;display:inline-flex;align-items:center;gap:4px;">${vars.instagram?cntIG(vars.instagram,Math.round(ftrH*.32)):''}</span>
     </div>
   </div>
 </div>`;
         }
     },
 
-    // ── 5. APARTIRDE — Preço "a partir de" como hero central ─────────────
+    // ── 5. A PARTIR DE — Preço como hero central, fundo branco ───────────
     apartirde: {
         id: 'apartirde', nome: 'A Partir De',
+        categoria: 'Preço',
+        descricao: 'Fundo branco, preço enorme como âncora visual — limpo e direto',
         slots: {
-            titulo    : { label:'Título',           varPadrao:'tituloPrincipal',   compat:['tituloPrincipal','destino'] },
-            subtitulo : { label:'Subtítulo',         varPadrao:'subtitulo',         compat:['subtitulo','periodoViagem','hotel'] },
-            descricao : { label:'Descrição',         varPadrao:'textoComplementar', compat:['textoComplementar','condicaoEspecial','inclusoesOferta'] },
-            textoPrinc: { label:'Texto principal',   varPadrao:'textoPrincipal',    compat:['textoPrincipal','condicaoEspecial'] },
-            etiqueta  : { label:'Etiqueta / Oferta', varPadrao:'seloPromocional',   compat:['seloPromocional','tagPromocional','textoUrgencia'] },
+            titulo    : { label:'Título',    varPadrao:'tituloPrincipal', compat:['tituloPrincipal','destino'] },
+            subtitulo : { label:'Subtítulo', varPadrao:'subtitulo',       compat:['subtitulo','periodoViagem','hotel'] },
+            etiqueta  : { label:'Etiqueta',  varPadrao:'seloPromocional', compat:['seloPromocional','tagPromocional','textoUrgencia'] },
+            descricao : { label:'Descrição', varPadrao:'textoComplementar', compat:['textoComplementar'] },
         },
         render(vars, cols, w, h) {
             const { c1, c2, c3 } = cols;
-            const fw = w > h ? Math.round(h * 1.6) : w;
-            const img      = vars.imagemPrincipal || '';
-            const titulo   = sv(this,'titulo',vars);
-            const subtit   = trunc(sv(this,'subtitulo',vars), 55);
-            const desc     = sv(this,'descricao',vars);
-            const textoPr  = sv(this,'textoPrinc',vars);
-            const etiqueta = sv(this,'etiqueta',vars);
-            const isStory  = h > w;
-            const hdrH     = Math.round(h * .088);
-            const ftrH     = Math.round(h * .088);
-            const splitX   = isStory ? 0 : Math.round(w * .42);
-            const sp       = Math.round(w * .038);
-            const dens     = density(vars);
-            const tituloFS = fitTitle(titulo, fw, 'apartirde', dens, isStory?T.TIT_LG:T.TIT_MD, T.TIT_SM, slotScale('apartirde','titulo'));
-            const subFS    = px(fw, T.SUB,     slotScale('apartirde','subtitulo'));
-            const dscFS    = px(fw, T.BODY_MD, slotScale('apartirde','descricao'));
-            const txtFS    = px(fw, T.BODY_MD, slotScale('apartirde','textoPrinc'));
-            const etqFS    = px(fw, T.BADGE,   slotScale('apartirde','etiqueta'));
-            const hasBullets  = textoPr && textoPr.includes('\n');
-            const bulletItems = hasBullets ? bulletsHTML(textoPr, 4, c2, px(w,T.BODY_SM,slotScale('apartirde','textoPrinc')), px(w,T.SP_XS)) : '';
-            const textTrunc   = hasBullets ? '' : trunc(textoPr, 110);
-            const tituloClr   = slotColor('titulo',        cols, c1);
-            const subtitClr   = slotColor('subtitulo',     cols, '#555');
-            const descClr     = slotColor('descricao',     cols, '#444');
-            const precoClr    = slotColor('preco',         cols, c2);
-            const parcClr     = slotColor('parcelamento',  cols, '#666');
-            const antClr      = slotColor('precoAnterior', cols, '#bbb');
-            const etqColor    = slotColor('etiqueta',      cols, c2); // badge bg
+            const fw      = w > h ? Math.round(h * 1.6) : w;
+            const img     = vars.imagemPrincipal || '';
+            const titulo  = sv(this,'titulo',vars);
+            const subtit  = trunc(sv(this,'subtitulo',vars), 52);
+            const etiq    = sv(this,'etiqueta',vars);
+            const desc    = sv(this,'descricao',vars);
+            const isStory = h > w;
+            const hdrH    = Math.round(h * .12);
+            const ftrH    = Math.round(h * .12);
+            const imgW    = isStory ? 0 : Math.round(w * .38);
+            const sp      = Math.round(w * .06);
+            const dens    = density(vars);
+            const tituloFS  = fitTitle(titulo, fw, 'apartirde', dens, T.TIT_LG, T.TIT_MD, slotScale('apartirde','titulo'));
+            const tituloClr = slotColor('titulo',   cols, '#111');
+            const subtitClr = slotColor('subtitulo',cols, '#666');
+            const precoClr  = slotColor('preco',    cols, c1);
+            const etqBg     = slotColor('etiqueta', cols, c2);
             return `
-<div style="width:${w}px;height:${h}px;position:relative;overflow:hidden;font-family:'Segoe UI',Arial,sans-serif;background:#fff;box-sizing:border-box;display:flex;flex-direction:column;">
-  <div style="height:${hdrH}px;background:#fff;border-bottom:3px solid ${c1};padding:0 ${sp}px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
-    ${vars.logo ? `<img src="${vars.logo}" style="height:${Math.round(hdrH*.58)}px;max-width:${Math.round(w*.22)}px;object-fit:contain;" crossorigin="anonymous"/>` : `<span style="color:${c1};font-size:${Math.round(hdrH*.3)}px;font-weight:800;">${esc(vars.nomeAgencia||'')}</span>`}
-    ${etiqueta ? `<span style="background:${etqColor};color:#fff;padding:${Math.round(hdrH*.1)}px ${Math.round(w*.022)}px;border-radius:${Math.round(w*.038)}px;font-size:${etqFS}px;font-weight:800;text-transform:uppercase;">${esc(etiqueta)}</span>` : ''}
+<div style="width:${w}px;height:${h}px;position:relative;overflow:hidden;font-family:'DM Sans',system-ui,sans-serif;background:#fff;box-sizing:border-box;">
+  ${imgW > 0 ? `<div style="position:absolute;right:0;top:0;bottom:0;width:${imgW}px;overflow:hidden;">${img?`<div style="position:absolute;inset:0;background-image:url('${img}');background-size:cover;background-position:center;"></div>`:`<div style="position:absolute;inset:0;background:${c1};"></div>`}<div style="position:absolute;inset:0;background:linear-gradient(to right,#fff 0%,transparent 35%);"></div></div>` : (isStory && img ? `<div style="position:absolute;inset:0;background-image:url('${img}');background-size:cover;background-position:center;opacity:.06;"></div>` : '')}
+  <div style="position:absolute;top:0;left:0;right:${imgW}px;height:${hdrH}px;padding:0 ${sp}px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid ${c1};">
+    ${vars.logo ? `<img src="${vars.logo}" style="height:${Math.round(hdrH*.48)}px;max-width:${Math.round(w*.28)}px;object-fit:contain;" crossorigin="anonymous"/>` : `<span style="color:${c1};font-size:${Math.round(hdrH*.28)}px;font-weight:800;">${esc(vars.nomeAgencia||'')}</span>`}
+    ${etiq ? `<div style="background:${etqBg};color:#fff;padding:${Math.round(h*.007)}px ${Math.round(w*.024)}px;border-radius:${Math.round(w*.035)}px;font-size:${px(fw,T.BADGE,1)}px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;">${esc(etiq)}</div>` : ''}
   </div>
-  <div style="flex:1;display:flex;overflow:hidden;">
-    ${splitX > 0 ? `<div style="width:${splitX}px;flex-shrink:0;position:relative;overflow:hidden;">${img?`<div style="position:absolute;inset:0;background-image:url('${img}');background-size:cover;background-position:center;"></div>`:`<div style="position:absolute;inset:0;background:${c1};"></div>`}${vars.destino?`<div style="position:absolute;bottom:${Math.round(h*.022)}px;left:0;right:0;text-align:center;color:#fff;font-size:${Math.round(fw*.017)}px;font-weight:700;text-shadow:0 1px 6px rgba(0,0,0,.6);">📍 ${esc(vars.destino)}</div>`:''}</div>` : ''}
+  <div style="position:absolute;top:${hdrH}px;left:${sp}px;right:${imgW+sp}px;bottom:${ftrH}px;display:flex;flex-direction:column;justify-content:center;gap:${Math.round(h*.012)}px;overflow:hidden;">
+    ${vars.destino ? `<div style="color:${c2};font-size:${Math.round(fw*.014)}px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;">${esc(vars.destino)}</div>` : ''}
+    ${titulo ? `<div style="color:${tituloClr};font-size:${tituloFS}px;font-weight:900;line-height:1.08;overflow:hidden;">${esc(titulo)}</div>` : ''}
+    ${subtit ? `<div style="color:${subtitClr};font-size:${px(fw,T.BODY_MD,slotScale('apartirde','subtitulo'))}px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${esc(subtit)}</div>` : ''}
+    ${vars.preco ? `<div style="margin-top:${Math.round(h*.016)}px;padding-top:${Math.round(h*.016)}px;border-top:2px solid ${c1}14;"><div style="color:#aaa;font-size:${Math.round(fw*.013)}px;letter-spacing:.1em;text-transform:uppercase;">${esc(vars.textoAPartirDe||'a partir de')}</div>${vars.precoAnterior?`<div style="color:#ccc;font-size:${Math.round(fw*.018)}px;text-decoration:line-through;">${esc(vars.precoAnterior)}</div>`:''}<div style="color:${precoClr};font-size:${Math.round(fw*.075)}px;font-weight:900;line-height:.9;letter-spacing:-.02em;">${esc(vars.preco)}</div>${vars.parcelamento?`<div style="color:#888;font-size:${Math.round(fw*.015)}px;margin-top:4px;">${esc(vars.parcelamento)}</div>`:''}</div>` : ''}
+    ${desc ? `<div style="color:#666;font-size:${px(fw,T.BODY_SM,slotScale('apartirde','descricao'))}px;line-height:1.4;overflow:hidden;">${fmtDesc(desc,px(fw,T.BODY_SM))}</div>` : ''}
+    ${vars.cta ? `<div style="background:${c1};color:#fff;padding:${Math.round(h*.014)}px ${Math.round(w*.036)}px;border-radius:${Math.round(w*.008)}px;font-size:${Math.round(fw*.018)}px;font-weight:700;display:inline-block;align-self:flex-start;">${esc(vars.cta)}</div>` : ''}
+  </div>
+  <div style="position:absolute;bottom:0;left:0;right:0;height:${ftrH}px;background:${c1};padding:0 ${sp}px;display:flex;align-items:center;justify-content:space-between;">
+    <span style="color:rgba(255,255,255,.82);font-size:${Math.round(ftrH*.28)}px;display:inline-flex;align-items:center;gap:5px;">${vars.whatsApp?cntWA(vars.whatsApp,Math.round(ftrH*.32)):''}</span>
+    <span style="color:rgba(255,255,255,.62);font-size:${Math.round(ftrH*.28)}px;display:inline-flex;align-items:center;gap:5px;">${vars.instagram?cntIG(vars.instagram,Math.round(ftrH*.32)):''}</span>
+  </div>
+</div>`;
+        }
+    },
+
+    // ── 6. LUXURY — Escuro elegante, Playfair Display ────────────────────
+    luxury: {
+        id: 'luxury', nome: 'Luxury',
+        categoria: 'Estilo',
+        descricao: 'Fundo quase-preto, tipografia serifada — para viagens de alto padrão',
+        slots: {
+            titulo    : { label:'Título',    varPadrao:'tituloPrincipal', compat:['tituloPrincipal','destino'] },
+            subtitulo : { label:'Subtítulo', varPadrao:'subtitulo',       compat:['subtitulo','periodoViagem'] },
+            etiqueta  : { label:'Etiqueta',  varPadrao:'seloPromocional', compat:['seloPromocional','tagPromocional'] },
+            descricao : { label:'Descrição', varPadrao:'textoComplementar', compat:['textoComplementar'] },
+        },
+        render(vars, cols, w, h) {
+            const { c1, c2, c3 } = cols;
+            const fw      = w > h ? Math.round(h * 1.6) : w;
+            const img     = vars.imagemPrincipal || '';
+            const titulo  = sv(this,'titulo',vars);
+            const subtit  = trunc(sv(this,'subtitulo',vars), 52);
+            const etiq    = sv(this,'etiqueta',vars);
+            const sp      = Math.round(w * .065);
+            const ftrH    = Math.round(h * .10);
+            const topH    = Math.round(h * .12);
+            const dens    = density(vars);
+            const tituloFS  = fitTitle(titulo, fw, 'luxury', dens, T.TIT_XL, T.TIT_LG, slotScale('luxury','titulo'));
+            const tituloClr = slotColor('titulo',   cols, '#f5f0e8');
+            const subtitClr = slotColor('subtitulo',cols, 'rgba(245,240,232,.5)');
+            const precoClr  = slotColor('preco',    cols, c2);
+            return `
+<div style="width:${w}px;height:${h}px;position:relative;overflow:hidden;font-family:'DM Sans',system-ui,sans-serif;background:#0c0c10;box-sizing:border-box;">
+  ${img ? `<div style="position:absolute;inset:0;background-image:url('${img}');background-size:cover;background-position:center;opacity:.18;"></div>` : ''}
+  <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(12,12,16,.95) 0%,rgba(12,12,16,.72) 50%,rgba(12,12,16,.95) 100%);"></div>
+  <div style="position:absolute;top:0;left:${sp}px;right:${sp}px;height:${topH}px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(245,240,232,.08);">
+    ${vars.logo ? `<img src="${vars.logo}" style="height:${Math.round(topH*.44)}px;max-width:${Math.round(w*.28)}px;object-fit:contain;filter:brightness(0) invert(1);opacity:.85;" crossorigin="anonymous"/>` : `<span style="color:rgba(245,240,232,.55);font-size:${Math.round(topH*.24)}px;font-weight:400;letter-spacing:.12em;text-transform:uppercase;">${esc(vars.nomeAgencia||'')}</span>`}
+    ${etiq ? `<span style="color:${c2};font-size:${px(fw,T.BADGE,1)}px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;">${esc(etiq)}</span>` : ''}
+  </div>
+  <div style="position:absolute;top:${topH}px;left:${sp}px;right:${sp}px;bottom:${ftrH}px;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:${Math.round(h*.012)}px;">
+    ${vars.destino ? `<div style="color:${c2};font-size:${Math.round(fw*.013)}px;letter-spacing:.18em;text-transform:uppercase;font-weight:600;">${esc(vars.destino)}</div>` : ''}
+    ${titulo ? `<div style="color:${tituloClr};font-size:${tituloFS}px;font-weight:400;line-height:1.12;font-family:'Playfair Display',Georgia,serif;overflow:hidden;">${esc(titulo)}</div>` : ''}
+    <div style="width:${Math.round(w*.06)}px;height:1px;background:${c2};opacity:.7;"></div>
+    ${subtit ? `<div style="color:${subtitClr};font-size:${px(fw,T.BODY_MD,slotScale('luxury','subtitulo'))}px;font-weight:300;letter-spacing:.04em;">${esc(subtit)}</div>` : ''}
+    ${vars.preco ? `<div style="margin-top:${Math.round(h*.014)}px;"><div style="color:rgba(245,240,232,.35);font-size:${Math.round(fw*.012)}px;letter-spacing:.1em;text-transform:uppercase;">${esc(vars.textoAPartirDe||'a partir de')}</div><div style="color:${precoClr};font-size:${Math.round(fw*.054)}px;font-weight:700;line-height:1;">${esc(vars.preco)}</div>${vars.parcelamento?`<div style="color:rgba(245,240,232,.35);font-size:${Math.round(fw*.013)}px;">${esc(vars.parcelamento)}</div>`:''}</div>` : ''}
+    ${vars.cta ? `<div style="margin-top:${Math.round(h*.01)}px;border:1px solid ${c2};color:${c2};padding:${Math.round(h*.012)}px ${Math.round(w*.035)}px;font-size:${Math.round(fw*.016)}px;letter-spacing:.06em;text-transform:uppercase;">${esc(vars.cta)}</div>` : ''}
+  </div>
+  <div style="position:absolute;bottom:0;left:${sp}px;right:${sp}px;height:${ftrH}px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid rgba(245,240,232,.08);">
+    <span style="color:rgba(245,240,232,.38);font-size:${Math.round(ftrH*.28)}px;display:inline-flex;align-items:center;gap:5px;">${vars.whatsApp?cntWA(vars.whatsApp,Math.round(ftrH*.32)):''}</span>
+    <span style="color:rgba(245,240,232,.28);font-size:${Math.round(ftrH*.26)}px;display:inline-flex;align-items:center;gap:5px;">${vars.instagram?cntIG(vars.instagram,Math.round(ftrH*.32)):''}</span>
+  </div>
+</div>`;
+        }
+    },
+
+    // ── 7. MINIMAL — Foto dominante no topo, texto limpo na base ─────────
+    minimal: {
+        id: 'minimal', nome: 'Minimal',
+        categoria: 'Fotografia',
+        descricao: 'Foto no topo sem overlay, texto limpo abaixo — sem camadas',
+        slots: {
+            titulo    : { label:'Título',    varPadrao:'tituloPrincipal', compat:['tituloPrincipal','destino'] },
+            subtitulo : { label:'Subtítulo', varPadrao:'subtitulo',       compat:['subtitulo','periodoViagem'] },
+            etiqueta  : { label:'Etiqueta',  varPadrao:'seloPromocional', compat:['seloPromocional','tagPromocional'] },
+            descricao : { label:'Descrição', varPadrao:'textoComplementar', compat:['textoComplementar'] },
+        },
+        render(vars, cols, w, h) {
+            const { c1, c2, c3 } = cols;
+            const fw      = w > h ? Math.round(h * 1.6) : w;
+            const img     = vars.imagemPrincipal || '';
+            const titulo  = sv(this,'titulo',vars);
+            const subtit  = trunc(sv(this,'subtitulo',vars), 52);
+            const etiq    = sv(this,'etiqueta',vars);
+            const desc    = sv(this,'descricao',vars);
+            const imgH    = Math.round(h * .56);
+            const sp      = Math.round(w * .065);
+            const dens    = density(vars);
+            const tituloFS  = fitTitle(titulo, fw, 'minimal', dens, T.TIT_LG, T.TIT_MD, slotScale('minimal','titulo'));
+            const tituloClr = slotColor('titulo',   cols, '#111');
+            const subtitClr = slotColor('subtitulo',cols, '#888');
+            const precoClr  = slotColor('preco',    cols, c2);
+            return `
+<div style="width:${w}px;height:${h}px;position:relative;overflow:hidden;font-family:'DM Sans',system-ui,sans-serif;background:#fff;box-sizing:border-box;">
+  <div style="position:absolute;top:0;left:0;right:0;height:${imgH}px;overflow:hidden;">
+    ${img ? `<div style="position:absolute;inset:0;background-image:url('${img}');background-size:cover;background-position:center;"></div>` : `<div style="position:absolute;inset:0;background:linear-gradient(160deg,${c1} 0%,${c3} 100%);"></div>`}
+    ${etiq ? `<div style="position:absolute;top:${Math.round(imgH*.06)}px;left:${sp}px;background:${c1};color:#fff;padding:${Math.round(h*.007)}px ${Math.round(w*.028)}px;border-radius:${Math.round(w*.035)}px;font-size:${px(fw,T.BADGE,1)}px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;">${esc(etiq)}</div>` : ''}
+  </div>
+  <div style="position:absolute;top:${imgH}px;left:0;right:0;bottom:0;background:#fff;border-top:3px solid ${c1};padding:${Math.round(h*.028)}px ${sp}px;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;">
+    <div style="overflow:hidden;">
+      ${vars.destino ? `<div style="color:${c2};font-size:${Math.round(fw*.013)}px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin-bottom:${Math.round(h*.006)}px;">${esc(vars.destino)}</div>` : ''}
+      ${titulo ? `<div style="color:${tituloClr};font-size:${tituloFS}px;font-weight:800;line-height:1.08;overflow:hidden;">${esc(titulo)}</div>` : ''}
+      ${subtit ? `<div style="color:${subtitClr};font-size:${px(fw,T.BODY_MD,slotScale('minimal','subtitulo'))}px;margin-top:${Math.round(h*.006)}px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${esc(subtit)}</div>` : ''}
+      ${desc ? `<div style="color:#666;font-size:${px(fw,T.BODY_SM,slotScale('minimal','descricao'))}px;line-height:1.4;margin-top:${Math.round(h*.008)}px;overflow:hidden;">${fmtDesc(desc,px(fw,T.BODY_SM))}</div>` : ''}
+    </div>
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:${Math.round(w*.01)}px;">
+      ${vars.preco ? `<div>${vars.precoAnterior?`<div style="color:#ccc;font-size:${Math.round(fw*.013)}px;text-decoration:line-through;">${esc(vars.precoAnterior)}</div>`:''}<div style="color:${precoClr};font-size:${Math.round(fw*.046)}px;font-weight:900;line-height:.95;">${esc(vars.preco)}</div>${vars.parcelamento?`<div style="color:#888;font-size:${Math.round(fw*.013)}px;margin-top:2px;">${esc(vars.parcelamento)}</div>`:''}</div>` : '<div></div>'}
+      <div style="display:inline-flex;align-items:center;gap:${Math.round(w*.014)}px;">
+        ${vars.logo ? `<img src="${vars.logo}" style="height:${Math.round(h*.038)}px;max-width:${Math.round(w*.22)}px;object-fit:contain;" crossorigin="anonymous"/>` : `<span style="color:#aaa;font-size:${Math.round(h*.014)}px;">${esc(vars.nomeAgencia||'')}</span>`}
+        <span style="color:#bbb;font-size:${Math.round(h*.014)}px;display:inline-flex;align-items:center;gap:4px;">${vars.whatsApp?cntWA(vars.whatsApp,Math.round(h*.018)):(vars.instagram?cntIG(vars.instagram,Math.round(h*.018)):'')}</span>
+      </div>
+    </div>
+  </div>
+</div>`;
+        }
+    },
+
+    // ── 8. RESORT — Painel branco + foto limpa ───────────────────────────
+    resort: {
+        id: 'resort', nome: 'Resort',
+        categoria: 'Divisão',
+        descricao: 'Painel branco com conteúdo completo, foto à direita sem overlay',
+        slots: {
+            titulo    : { label:'Título',    varPadrao:'tituloPrincipal', compat:['tituloPrincipal','destino'] },
+            subtitulo : { label:'Subtítulo', varPadrao:'subtitulo',       compat:['subtitulo','periodoViagem','hotel'] },
+            etiqueta  : { label:'Etiqueta',  varPadrao:'seloPromocional', compat:['seloPromocional','tagPromocional'] },
+            descricao : { label:'Descrição', varPadrao:'textoComplementar', compat:['textoComplementar','inclusoesOferta'] },
+        },
+        render(vars, cols, w, h) {
+            const { c1, c2, c3 } = cols;
+            const fw      = w > h ? Math.round(h * 1.6) : w;
+            const img     = vars.imagemPrincipal || '';
+            const titulo  = sv(this,'titulo',vars);
+            const subtit  = trunc(sv(this,'subtitulo',vars), 48);
+            const etiq    = sv(this,'etiqueta',vars);
+            const desc    = sv(this,'descricao',vars);
+            const isStory = h > w;
+            const pW      = isStory ? w : Math.round(w * .44);
+            const imgTop  = isStory ? Math.round(h * .42) : 0;
+            const sp      = Math.round(pW * .1);
+            const hdrH    = Math.round(h * .13);
+            const ftrH    = Math.round(h * .12);
+            const dens    = density(vars);
+            const tituloFS  = fitTitle(titulo, fw, 'resort', dens, T.TIT_LG, T.TIT_MD, slotScale('resort','titulo'));
+            const tituloClr = slotColor('titulo',   cols, '#111');
+            const subtitClr = slotColor('subtitulo',cols, '#666');
+            const precoClr  = slotColor('preco',    cols, c2);
+            return `
+<div style="width:${w}px;height:${h}px;position:relative;overflow:hidden;font-family:'DM Sans',system-ui,sans-serif;background:#fff;box-sizing:border-box;">
+  ${isStory ? `<div style="position:absolute;top:0;left:0;right:0;height:${imgTop}px;overflow:hidden;">${img?`<div style="position:absolute;inset:0;background-image:url('${img}');background-size:cover;background-position:center;"></div>`:`<div style="position:absolute;inset:0;background:linear-gradient(160deg,${c1} 0%,${c3} 100%);"></div>`}</div>` : `<div style="position:absolute;top:0;right:0;width:${w-pW}px;bottom:0;overflow:hidden;">${img?`<div style="position:absolute;inset:0;background-image:url('${img}');background-size:cover;background-position:center;"></div>`:`<div style="position:absolute;inset:0;background:linear-gradient(160deg,${c1} 0%,${c3} 100%);"></div>`}</div>`}
+  <div style="position:absolute;${isStory?`top:${imgTop}px;left:0;right:0;bottom:0`:`top:0;left:0;width:${pW}px;bottom:0`};background:#fff;display:flex;flex-direction:column;overflow:hidden;">
+    <div style="height:${hdrH}px;padding:0 ${sp}px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid ${c1};flex-shrink:0;">
+      ${vars.logo ? `<img src="${vars.logo}" style="height:${Math.round(hdrH*.46)}px;max-width:${Math.round(pW*.55)}px;object-fit:contain;" crossorigin="anonymous"/>` : `<span style="color:${c1};font-size:${Math.round(hdrH*.26)}px;font-weight:800;letter-spacing:.02em;">${esc(vars.nomeAgencia||'')}</span>`}
+      ${etiq ? `<div style="background:${c1};color:#fff;padding:${Math.round(h*.007)}px ${Math.round(pW*.028)}px;border-radius:${Math.round(pW*.035)}px;font-size:${px(fw,T.BADGE,1)}px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;">${esc(etiq)}</div>` : ''}
+    </div>
     <div style="flex:1;padding:${Math.round(h*.028)}px ${sp}px;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;">
       <div style="overflow:hidden;">
-        ${titulo ? `<div style="color:${tituloClr};font-size:${tituloFS}px;font-weight:900;line-height:1.1;margin-bottom:${Math.round(h*.006)}px;overflow:hidden;">${esc(titulo)}</div>` : ''}
-        ${subtit ? `<div style="color:${subtitClr};font-size:${subFS}px;margin-bottom:${Math.round(h*.01)}px;line-height:1.32;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${esc(subtit)}</div>` : ''}
-        <div style="background:${c1}0e;border-left:4px solid ${c2};border-radius:0 ${Math.round(w*.01)}px ${Math.round(w*.01)}px 0;padding:${Math.round(h*.014)}px ${Math.round(w*.02)}px;margin-bottom:${Math.round(h*.012)}px;">
-          <div style="color:#777;font-size:${Math.round(fw*.013)}px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;margin-bottom:2px;">${esc(vars.textoAPartirDe||'a partir de')}</div>
-          ${vars.preco ? `<div style="color:${precoClr};font-size:${Math.round(fw*.062)}px;font-weight:900;line-height:.95;">${esc(vars.preco)}</div>${vars.parcelamento?`<div style="color:${parcClr};font-size:${Math.round(fw*.015)}px;margin-top:2px;">${esc(vars.parcelamento)}</div>`:''}<div style="color:${antClr};font-size:${Math.round(fw*.012)}px;text-decoration:line-through;">${vars.precoAnterior?esc(vars.precoAnterior):''}</div>` : '<div style="color:#ccc;">—</div>'}
-        </div>
-        ${desc ? `<div style="color:${descClr};font-size:${dscFS}px;line-height:1.42;margin-bottom:${Math.round(h*.009)}px;overflow:hidden;opacity:${slotOpacity('apartirde','descricao')};">${fmtDesc(desc,dscFS)}</div>` : ''}
-        ${bulletItems ? `<div style="color:#333;opacity:${slotOpacity('apartirde','textoPrinc')};">${bulletItems}</div>` : (textTrunc ? `<div style="color:#333;font-size:${txtFS}px;line-height:1.42;overflow:hidden;opacity:${slotOpacity('apartirde','textoPrinc')};">${fmtRich(textTrunc)}</div>` : '')}
+        ${vars.destino ? `<div style="color:${c2};font-size:${Math.round(fw*.013)}px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin-bottom:${Math.round(h*.007)}px;">${esc(vars.destino)}</div>` : ''}
+        ${titulo ? `<div style="color:${tituloClr};font-size:${tituloFS}px;font-weight:900;line-height:1.08;overflow:hidden;">${esc(titulo)}</div>` : ''}
+        ${subtit ? `<div style="color:${subtitClr};font-size:${px(fw,T.BODY_MD,slotScale('resort','subtitulo'))}px;margin-top:${Math.round(h*.006)}px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${esc(subtit)}</div>` : ''}
+        <div style="width:${Math.round(pW*.1)}px;height:3px;background:${c2};margin:${Math.round(h*.014)}px 0;border-radius:2px;"></div>
+        ${desc ? `<div style="color:#555;font-size:${px(fw,T.BODY_SM,slotScale('resort','descricao'))}px;line-height:1.4;overflow:hidden;">${fmtDesc(desc,px(fw,T.BODY_SM))}</div>` : ''}
       </div>
-      ${vars.cta ? `<div style="background:${c1};color:#fff;padding:${Math.round(h*.013)}px ${Math.round(w*.022)}px;border-radius:${Math.round(w*.009)}px;font-size:${Math.round(fw*.018)}px;font-weight:700;display:inline-block;align-self:flex-start;">${esc(vars.cta)}</div>` : ''}
-    </div>
-  </div>
-  <div style="height:${ftrH}px;background:${c1};padding:0 ${sp}px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
-    <span style="color:rgba(255,255,255,.88);font-size:${Math.round(ftrH*.28)}px;display:inline-flex;align-items:center;gap:5px;">${vars.whatsApp?cntWA(vars.whatsApp,Math.round(ftrH*.32)):''}</span>
-    <span style="color:rgba(255,255,255,.68);font-size:${Math.round(ftrH*.25)}px;display:inline-flex;align-items:center;gap:5px;">${vars.instagram?cntIG(vars.instagram,Math.round(ftrH*.32)):''}</span>
-  </div>
-</div>`;
-        }
-    },
-
-    // ── 6. OFERTA ELEGANTE — Degradê elegante; conteúdo posicionado à esquerda
-    sonhos: {
-        id: 'sonhos', nome: 'Oferta Elegante',
-        slots: {
-            titulo    : { label:'Título',           varPadrao:'tituloPrincipal',   compat:['tituloPrincipal'] },
-            subtitulo : { label:'Subtítulo',         varPadrao:'subtitulo',         compat:['subtitulo'] },
-            descricao : { label:'Descrição',         varPadrao:'textoComplementar', compat:['textoComplementar'] },
-            textoPrinc: { label:'Texto principal',   varPadrao:'',                  compat:[] },
-            etiqueta  : { label:'Etiqueta / Oferta', varPadrao:'seloPromocional',   compat:['seloPromocional','tagPromocional'] },
-        },
-        render(vars, cols, w, h) {
-            const { c1, c2, c3 } = cols;
-            const fw = w > h ? Math.round(h * 1.6) : w;
-            const img      = vars.imagemPrincipal || '';
-            const titulo   = sv(this,'titulo',vars);
-            const subtit   = trunc(sv(this,'subtitulo',vars), 50);
-            const desc     = sv(this,'descricao',vars);
-            const etiqueta = sv(this,'etiqueta',vars);
-            const isStory  = h > w;
-            const sp       = Math.round(w * .054);
-            const ftrH     = Math.round(h * .088);
-            const topH     = Math.round(h * .11);
-            const dens     = density(vars);
-            const tituloFS = fitTitle(titulo, fw, 'sonhos', dens, T.TIT_MAX, T.TIT_LG, slotScale('sonhos','titulo'));
-            const subFS    = px(fw, T.SUB, slotScale('sonhos','subtitulo'));
-            const dscFS    = px(fw, T.BODY_MD, slotScale('sonhos','descricao'));
-            const etqFS    = px(fw, T.BADGE, 1);
-            const prcFS    = Math.min(Math.round(fw * .068), px(fw, T.PRC_MD, slotScale('sonhos','preco')));
-            const antFS    = px(fw, T.BODY_SM, 1);
-            const parFS    = px(fw, T.BODY_SM, slotScale('sonhos','parcelamento'));
-            const icSz     = Math.max(13, Math.round(ftrH * .30));
-            const tituloClr   = slotColor('titulo',        cols, '#fff');
-            const subtitClr   = slotColor('subtitulo',     cols, 'rgba(255,255,255,.70)');
-            const descClr     = slotColor('descricao',     cols, 'rgba(255,255,255,.58)');
-            const precoClr    = slotColor('preco',         cols, '#fff');
-            const parcClr     = slotColor('parcelamento',  cols, 'rgba(255,255,255,.52)');
-            const antClr      = slotColor('precoAnterior', cols, 'rgba(255,255,255,.35)');
-            const etqColor    = slotColor('etiqueta',      cols, c2); // badge bg
-            return `
-<div style="width:${w}px;height:${h}px;position:relative;overflow:hidden;font-family:'Segoe UI',Arial,sans-serif;box-sizing:border-box;">
-  ${img?`<div style="position:absolute;inset:0;background-image:url('${img}');background-size:cover;background-position:center;"></div>`:`<div style="position:absolute;inset:0;background:linear-gradient(135deg,${c1} 0%,${c3} 100%);"></div>`}
-  <div style="position:absolute;inset:0;background:linear-gradient(to right,${c1}f2 0%,${c1}cc ${isStory?'100%':'44%'},${c1}77 ${isStory?'100%':'60%'},rgba(0,0,0,.14) 100%);"></div>
-  <div style="position:absolute;top:0;left:0;right:0;height:${Math.round(h*.2)}px;background:linear-gradient(to bottom,rgba(0,0,0,.32),transparent);"></div>
-  <div style="position:absolute;top:0;left:0;right:0;height:${topH}px;padding:${Math.round(topH*.18)}px ${sp}px;display:flex;align-items:center;justify-content:space-between;box-sizing:border-box;">
-    ${vars.logo?`<img src="${vars.logo}" style="height:${Math.round(topH*.52)}px;max-width:${Math.round(w*.22)}px;object-fit:contain;filter:drop-shadow(0 1px 6px rgba(0,0,0,.5));" crossorigin="anonymous"/>`:`<span style="color:rgba(255,255,255,.72);font-size:${Math.round(topH*.22)}px;font-weight:700;letter-spacing:.04em;">${esc(vars.nomeAgencia||'')}</span>`}
-    ${etiqueta?`<div style="background:${etqColor};color:#fff;padding:${Math.round(h*.010)}px ${Math.round(w*.034)}px;border-radius:${Math.round(w*.04)}px;font-size:${etqFS}px;font-weight:900;text-transform:uppercase;letter-spacing:.07em;box-shadow:0 3px 14px rgba(0,0,0,.35);">${esc(etiqueta)}</div>`:'<span></span>'}
-  </div>
-  <div style="position:absolute;bottom:${ftrH + Math.round(h*.026)}px;left:${sp}px;right:${isStory?sp:Math.round(w*.36)}px;display:flex;flex-direction:column;gap:${Math.round(h*.009)}px;">
-    ${titulo?`<div style="color:${tituloClr};font-size:${tituloFS}px;font-weight:900;line-height:1.06;text-shadow:0 3px 18px rgba(0,0,0,.55);overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;">${esc(titulo)}</div>`:''}
-    <div style="width:${Math.round(w*.055)}px;height:3px;background:${c2};border-radius:2px;flex-shrink:0;"></div>
-    ${subtit?`<div style="color:${subtitClr};font-size:${subFS}px;font-style:italic;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${esc(subtit)}</div>`:''}
-    ${desc?`<div style="color:${descClr};font-size:${dscFS}px;line-height:1.4;overflow:hidden;">${fmtDesc(desc,dscFS)}</div>`:''}
-    ${vars.preco?`<div style="margin-top:${Math.round(h*.006)}px;">${vars.precoAnterior?`<div style="color:${antClr};font-size:${antFS}px;text-decoration:line-through;margin-bottom:1px;">${esc(vars.precoAnterior)}</div>`:''}<div style="color:${precoClr};font-size:${prcFS}px;font-weight:900;line-height:1.02;text-shadow:0 2px 12px rgba(0,0,0,.45);">${esc(vars.preco)}</div>${vars.parcelamento?`<div style="color:${parcClr};font-size:${parFS}px;margin-top:3px;">${esc(vars.parcelamento)}</div>`:''}</div>`:''}
-  </div>
-  <div style="position:absolute;bottom:0;left:0;right:0;height:${ftrH}px;background:rgba(0,0,0,.36);padding:0 ${sp}px;display:flex;align-items:center;justify-content:space-between;overflow:hidden;">
-    <span style="color:rgba(255,255,255,.85);font-size:${Math.round(ftrH*.28)}px;display:inline-flex;align-items:center;gap:5px;overflow:hidden;flex:1;min-width:0;">${vars.whatsApp?cntWA(vars.whatsApp,icSz):''}</span>
-    <span style="color:rgba(255,255,255,.68);font-size:${Math.round(ftrH*.26)}px;display:inline-flex;align-items:center;gap:5px;overflow:hidden;flex-shrink:0;">${vars.instagram?cntIG(vars.instagram,icSz):''}</span>
-  </div>
-</div>`;
-        }
-    },
-
-    // ── 7. CONDIÇÃO FÁCIL — Painel à direita; parcelamento como protagonista
-    condicao: {
-        id: 'condicao', nome: 'Condição Fácil',
-        slots: {
-            titulo    : { label:'Título',           varPadrao:'tituloPrincipal',   compat:['tituloPrincipal'] },
-            subtitulo : { label:'Subtítulo',         varPadrao:'subtitulo',         compat:['subtitulo'] },
-            descricao : { label:'Descrição',         varPadrao:'textoComplementar', compat:['textoComplementar'] },
-            textoPrinc: { label:'Texto principal',   varPadrao:'',                  compat:[] },
-            etiqueta  : { label:'Etiqueta / Oferta', varPadrao:'seloPromocional',   compat:['seloPromocional','tagPromocional'] },
-        },
-        render(vars, cols, w, h) {
-            const { c1, c2, c3 } = cols;
-            const fw = w > h ? Math.round(h * 1.6) : w;
-            const img      = vars.imagemPrincipal || '';
-            const titulo   = sv(this,'titulo',vars);
-            const subtit   = trunc(sv(this,'subtitulo',vars), 50);
-            const desc     = sv(this,'descricao',vars);
-            const etiqueta = sv(this,'etiqueta',vars);
-            const isStory  = h > w;
-            const pW       = isStory ? w : Math.round(w * .46);
-            const pH       = isStory ? Math.round(h * .60) : h;
-            const imgAreaH = isStory ? (h - pH) : h;
-            const imgAreaW = isStory ? w : (w - pW);
-            const sp       = Math.round(pW * .08);
-            const hdrH     = Math.round(pH * .10);
-            const ftrH     = Math.round(pH * .10);
-            const dens     = density(vars);
-            const tituloFS = fitTitle(titulo, fw, 'condicao', dens, T.TIT_MD, T.TIT_SM, slotScale('condicao','titulo'));
-            const subFS    = px(fw, T.BODY_LG, slotScale('condicao','subtitulo'));
-            const dscFS    = px(fw, T.BODY_SM, slotScale('condicao','descricao'));
-            const etqFS    = px(fw, T.BADGE, 1);
-            const icSz     = Math.max(13, Math.round(ftrH * .30));
-            const par      = vars.parcelamento || '';
-            const parM     = par.match(/^(\d+)\s*[x×]\s*(?:de\s+)?(.*)/i);
-            const parN     = parM ? parM[1] : '';
-            const parV     = parM ? parM[2].trim() : par;
-            const nFS      = Math.min(Math.round(fw * .080), px(fw, T.PRC_LG, slotScale('condicao','preco')));
-            const vFS      = Math.min(Math.round(fw * .068), px(fw, T.PRC_LG, slotScale('condicao','preco')));
-            const prcFS    = Math.min(Math.round(fw * .060), px(fw, T.PRC_MD, slotScale('condicao','preco')));
-            const tituloClr   = slotColor('titulo',        cols, c1);
-            const subtitClr   = slotColor('subtitulo',     cols, '#666');
-            const descClr     = slotColor('descricao',     cols, '#777');
-            const precoClr    = slotColor('preco',         cols, c2);
-            const parcClr     = slotColor('parcelamento',  cols, c2);
-            const antClr      = slotColor('precoAnterior', cols, '#bbb');
-            const etqColor    = slotColor('etiqueta',      cols, c2); // badge bg
-            const condBlk  = parN && parV
-                ? `<div style="display:flex;align-items:flex-end;gap:${Math.round(pW*.018)}px;flex-wrap:nowrap;margin-bottom:${Math.round(pH*.010)}px;overflow:hidden;"><div style="display:inline-flex;align-items:flex-end;background:${c1}12;border-radius:${Math.round(pW*.022)}px;padding:${Math.round(pH*.012)}px ${Math.round(pW*.028)}px;gap:2px;flex-shrink:0;"><span style="color:${precoClr};font-size:${nFS}px;font-weight:900;line-height:1;">${esc(parN)}</span><span style="color:${precoClr}88;font-size:${Math.round(nFS*.40)}px;font-weight:700;padding-bottom:${Math.round(nFS*.05)}px;">×</span></div><div style="color:${parcClr};font-size:${vFS}px;font-weight:900;line-height:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;flex:1;">${esc(parV)}</div></div>`
-                : vars.preco
-                ? `<div style="color:${precoClr};font-size:${prcFS}px;font-weight:900;line-height:1;margin-bottom:${Math.round(pH*.008)}px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${esc(vars.preco)}</div>`
-                : '';
-            return `
-<div style="width:${w}px;height:${h}px;position:relative;overflow:hidden;font-family:'Segoe UI',Arial,sans-serif;box-sizing:border-box;background:#f4f6f9;">
-  <div style="position:absolute;${isStory?`top:0;left:0;right:0;height:${imgAreaH}px`:`left:0;top:0;width:${imgAreaW}px;bottom:0`};overflow:hidden;">
-    ${img?`<div style="position:absolute;inset:0;background-image:url('${img}');background-size:cover;background-position:center;"></div>`:`<div style="position:absolute;inset:0;background:linear-gradient(135deg,${c1} 0%,${c3} 100%);"></div>`}
-    <div style="position:absolute;${isStory?`bottom:0;left:0;right:0;height:${Math.round(imgAreaH*.4)}px;background:linear-gradient(to bottom,transparent,#f4f6f9)`:`top:0;right:0;bottom:0;width:${Math.round(imgAreaW*.35)}px;background:linear-gradient(to right,transparent,#f4f6f9)`};"></div>
-    ${etiqueta?`<div style="position:absolute;top:${Math.round(h*.028)}px;left:${Math.round(w*.022)}px;background:${etqColor};color:#fff;padding:${Math.round(h*.010)}px ${Math.round(w*.028)}px;border-radius:${Math.round(w*.04)}px;font-size:${etqFS}px;font-weight:900;text-transform:uppercase;letter-spacing:.06em;box-shadow:0 3px 14px rgba(0,0,0,.3);">${esc(etiqueta)}</div>`:''}
-  </div>
-  <div style="position:absolute;${isStory?`left:0;right:0;top:${imgAreaH}px;height:${pH}px`:`right:0;top:0;width:${pW}px;height:${h}px`};background:#fff;box-shadow:${isStory?'none':'-4px 0 24px rgba(0,0,0,.12)'};display:flex;flex-direction:column;overflow:hidden;">
-    <div style="background:${c1};height:${hdrH}px;padding:0 ${sp}px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;overflow:hidden;">
-      ${vars.logo?`<img src="${vars.logo}" style="height:${Math.round(hdrH*.52)}px;max-width:${Math.round(pW*.55)}px;object-fit:contain;filter:brightness(10);" crossorigin="anonymous"/>`:vars.nomeAgencia?`<span style="color:rgba(255,255,255,.85);font-size:${Math.round(hdrH*.25)}px;font-weight:700;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${esc(vars.nomeAgencia)}</span>`:'<span></span>'}
-    </div>
-    <div style="flex:1;padding:${Math.round(pH*.032)}px ${sp}px;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;box-sizing:border-box;">
       <div style="overflow:hidden;">
-        ${titulo?`<div style="color:${tituloClr};font-size:${tituloFS}px;font-weight:900;line-height:1.1;margin-bottom:${Math.round(pH*.008)}px;overflow:hidden;">${esc(titulo)}</div>`:''}
-        ${subtit?`<div style="color:${subtitClr};font-size:${subFS}px;margin-bottom:${Math.round(pH*.008)}px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${esc(subtit)}</div>`:''}
-        <div style="height:2px;background:linear-gradient(to right,${c2},${c2}22);margin:${Math.round(pH*.014)}px 0;border-radius:2px;"></div>
-      </div>
-      <div style="flex-shrink:0;">
-        ${(condBlk||vars.preco)?`<div style="color:#999;font-size:${Math.round(fw*.013)}px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:${Math.round(pH*.012)}px;">${parN?'Parcele em':'A partir de'}</div>${condBlk}`:``}
-        ${vars.precoAnterior?`<div style="color:${antClr};font-size:${dscFS}px;text-decoration:line-through;margin-bottom:${Math.round(pH*.006)}px;">${esc(vars.precoAnterior)}</div>`:''}
-        ${desc?`<div style="color:${descClr};font-size:${dscFS}px;line-height:1.38;overflow:hidden;">${fmtDesc(desc,dscFS)}</div>`:''}
+        ${vars.preco ? `<div style="margin-bottom:${Math.round(h*.01)}px;">${vars.precoAnterior?`<div style="color:#ccc;font-size:${Math.round(fw*.013)}px;text-decoration:line-through;">${esc(vars.precoAnterior)}</div>`:''}<div style="color:${precoClr};font-size:${Math.round(fw*.054)}px;font-weight:900;line-height:.95;">${esc(vars.preco)}</div>${vars.parcelamento?`<div style="color:#888;font-size:${Math.round(fw*.014)}px;margin-top:2px;">${esc(vars.parcelamento)}</div>`:''}</div>` : ''}
+        ${vars.cta ? `<div style="background:${c1};color:#fff;padding:${Math.round(h*.014)}px ${Math.round(pW*.04)}px;border-radius:${Math.round(w*.008)}px;font-size:${Math.round(fw*.018)}px;font-weight:700;display:inline-block;">${esc(vars.cta)}</div>` : ''}
       </div>
     </div>
     <div style="height:${ftrH}px;background:${c1};padding:0 ${sp}px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;overflow:hidden;">
-      <span style="color:rgba(255,255,255,.88);font-size:${Math.round(ftrH*.28)}px;display:inline-flex;align-items:center;gap:5px;overflow:hidden;flex:1;min-width:0;">${vars.whatsApp?cntWA(vars.whatsApp,icSz):''}</span>
-      <span style="color:rgba(255,255,255,.70);font-size:${Math.round(ftrH*.26)}px;display:inline-flex;align-items:center;gap:5px;overflow:hidden;flex-shrink:0;">${vars.instagram?cntIG(vars.instagram,icSz):''}</span>
+      <span style="color:rgba(255,255,255,.82);font-size:${Math.round(ftrH*.28)}px;display:inline-flex;align-items:center;gap:4px;">${vars.whatsApp?cntWA(vars.whatsApp,Math.round(ftrH*.32)):''}</span>
+      <span style="color:rgba(255,255,255,.62);font-size:${Math.round(ftrH*.28)}px;display:inline-flex;align-items:center;gap:4px;">${vars.instagram?cntIG(vars.instagram,Math.round(ftrH*.32)):''}</span>
     </div>
   </div>
 </div>`;
         }
     },
 
-    // ── 8. COMBO — Checklist de inclusões; lista é o herói ───────────────
-    combo: {
-        id: 'combo', nome: 'Combo Incluso',
+    // ── 9. EDITORIAL — Foto herói + tipografia Playfair abaixo ──────────
+    editorial: {
+        id: 'editorial', nome: 'Editorial',
+        categoria: 'Fotografia',
+        descricao: 'Foto dominante acima, título em Playfair Display abaixo — estilo revista',
         slots: {
-            titulo    : { label:'Título',              varPadrao:'tituloPrincipal',   compat:['tituloPrincipal','destino'] },
-            subtitulo : { label:'Subtítulo',            varPadrao:'subtitulo',         compat:['subtitulo','periodoViagem'] },
-            descricao : { label:'Descrição / Itens',    varPadrao:'inclusoesOferta',   compat:['inclusoesOferta','condicaoEspecial','textoComplementar'] },
-            textoPrinc: { label:'Texto principal',      varPadrao:'textoPrincipal',    compat:['textoPrincipal','condicaoEspecial'] },
-            etiqueta  : { label:'Etiqueta / Oferta',    varPadrao:'tagPromocional',    compat:['tagPromocional','seloPromocional','textoUrgencia'] },
+            titulo    : { label:'Título',    varPadrao:'tituloPrincipal', compat:['tituloPrincipal','destino'] },
+            subtitulo : { label:'Subtítulo', varPadrao:'subtitulo',       compat:['subtitulo','textoInstitucional'] },
+            etiqueta  : { label:'Etiqueta',  varPadrao:'seloPromocional', compat:['seloPromocional','tagPromocional'] },
+            descricao : { label:'Descrição', varPadrao:'textoComplementar', compat:['textoComplementar'] },
         },
         render(vars, cols, w, h) {
             const { c1, c2, c3 } = cols;
-            const fw       = w > h ? Math.round(h * 1.6) : w;
-            const isStory  = h > w;
-            const img      = vars.imagemPrincipal || '';
-            const titulo   = sv(this,'titulo',vars);
-            const subtit   = trunc(sv(this,'subtitulo',vars), 45);
-            const desc     = sv(this,'descricao',vars);
-            const textoPr  = sv(this,'textoPrinc',vars);
-            const etiqueta = sv(this,'etiqueta',vars);
-            const ftrH     = Math.round(h * .096);
-            const sideW    = isStory ? 0 : Math.round(w * .42);
-            const imgH     = isStory ? Math.round(h * .44) : 0;
-            const rW       = isStory ? w : (w - sideW);
-            const sp       = Math.round(rW * .072);
-            const dens     = density(vars);
-            const tituloFS = fitTitle(titulo, fw, 'combo', dens, T.TIT_MD, T.TIT_SM, slotScale('combo','titulo'));
-            const subFS    = px(fw, T.SUB,     slotScale('combo','subtitulo'));
-            const dscFS    = px(fw, T.BODY_MD, slotScale('combo','descricao'));
-            const txtFS    = px(fw, T.BODY_MD, slotScale('combo','textoPrinc'));
-            const etqFS    = px(fw, T.BADGE,   slotScale('combo','etiqueta'));
-            const descLines = desc ? desc.replace(/<br\s*\/?>/gi,'\n').replace(/<[^>]+>/g,'').split('\n').filter(l=>l.trim()) : [];
-            const hasBulletDesc = descLines.length > 1;
-            const bulletSrc  = hasBulletDesc ? desc : textoPr;
-            const bulletItems = bulletsHTML(bulletSrc, isStory ? 7 : 5, c2, hasBulletDesc ? dscFS : txtFS, px(w,T.SP_XS));
-            const fallback    = (!hasBulletDesc && !textoPr) ? desc : '';
-            const tituloClr   = slotColor('titulo',        cols, '#fff');
-            const subtitClr   = slotColor('subtitulo',     cols, '#666');
-            const descClr     = slotColor('descricao',     cols, '#222');
-            const precoClr    = slotColor('preco',         cols, c2);
-            const parcClr     = slotColor('parcelamento',  cols, '#666');
-            const antClr      = slotColor('precoAnterior', cols, '#bbb');
-            const etqColor    = slotColor('etiqueta',      cols, c2);
-
-            if (isStory) {
-                const contentH = h - imgH - ftrH;
-                const sp2 = Math.round(w * .068);
-                return `
-<div style="width:${w}px;height:${h}px;position:relative;overflow:hidden;font-family:'Segoe UI',Arial,sans-serif;background:#fff;box-sizing:border-box;">
+            const fw      = w > h ? Math.round(h * 1.6) : w;
+            const img     = vars.imagemPrincipal || '';
+            const titulo  = sv(this,'titulo',vars);
+            const subtit  = trunc(sv(this,'subtitulo',vars), 64);
+            const etiq    = sv(this,'etiqueta',vars);
+            const desc    = sv(this,'descricao',vars);
+            const imgH    = Math.round(h * .44);
+            const sp      = Math.round(w * .065);
+            const ftrH    = Math.round(h * .1);
+            const dens    = density(vars);
+            const tituloFS  = fitTitle(titulo, fw, 'editorial', dens, T.TIT_XL, T.TIT_LG, slotScale('editorial','titulo'));
+            const tituloClr = slotColor('titulo',   cols, '#111');
+            const subtitClr = slotColor('subtitulo',cols, '#666');
+            const precoClr  = slotColor('preco',    cols, c2);
+            return `
+<div style="width:${w}px;height:${h}px;position:relative;overflow:hidden;font-family:'DM Sans',system-ui,sans-serif;background:#fff;box-sizing:border-box;">
   <div style="position:absolute;top:0;left:0;right:0;height:${imgH}px;overflow:hidden;">
     ${img ? `<div style="position:absolute;inset:0;background-image:url('${img}');background-size:cover;background-position:center;"></div>` : `<div style="position:absolute;inset:0;background:linear-gradient(160deg,${c1} 0%,${c3} 100%);"></div>`}
-    <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 45%,rgba(0,0,0,.42) 100%);"></div>
-    ${etiqueta ? `<div style="position:absolute;top:${Math.round(h*.018)}px;left:${sp2}px;background:${etqColor};color:#fff;padding:${Math.round(h*.006)}px ${Math.round(w*.032)}px;border-radius:${Math.round(w*.04)}px;font-size:${etqFS}px;font-weight:800;text-transform:uppercase;box-shadow:0 2px 10px rgba(0,0,0,.3);">${esc(etiqueta)}</div>` : ''}
-    <div style="position:absolute;bottom:${Math.round(imgH*.055)}px;left:${sp2}px;right:${sp2}px;">
-      ${titulo ? `<div style="color:#fff;font-size:${tituloFS}px;font-weight:800;line-height:1.18;text-shadow:0 2px 8px rgba(0,0,0,.55);overflow:hidden;">${esc(titulo)}</div>` : ''}
-      ${vars.destino && titulo !== vars.destino ? `<div style="color:${c3};font-size:${Math.round(fw*.015)}px;font-weight:700;margin-top:${Math.round(h*.003)}px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">📍 ${esc(vars.destino)}</div>` : ''}
+    <div style="position:absolute;top:${Math.round(imgH*.06)}px;left:${sp}px;right:${sp}px;display:flex;align-items:center;justify-content:space-between;">
+      ${vars.logo ? `<img src="${vars.logo}" style="height:${Math.round(imgH*.1)}px;max-width:${Math.round(w*.28)}px;object-fit:contain;filter:drop-shadow(0 1px 4px rgba(0,0,0,.5));" crossorigin="anonymous"/>` : `<span style="color:#fff;font-size:${Math.round(imgH*.052)}px;font-weight:700;text-shadow:0 1px 4px rgba(0,0,0,.5);">${esc(vars.nomeAgencia||'')}</span>`}
+      ${etiq ? `<div style="background:${c2};color:#fff;padding:${Math.round(h*.007)}px ${Math.round(w*.024)}px;border-radius:${Math.round(w*.035)}px;font-size:${px(fw,T.BADGE,1)}px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;">${esc(etiq)}</div>` : ''}
     </div>
   </div>
-  <div style="position:absolute;top:${imgH}px;left:0;right:0;height:${contentH}px;padding:${Math.round(h*.022)}px ${sp2}px ${Math.round(h*.014)}px;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;">
+  <div style="position:absolute;top:${imgH}px;left:0;right:0;bottom:${ftrH}px;background:#fff;padding:${Math.round(h*.028)}px ${sp}px;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;">
     <div style="overflow:hidden;">
-      ${subtit ? `<div style="color:${subtitClr};font-size:${subFS}px;margin-bottom:${Math.round(h*.008)}px;line-height:1.28;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${esc(subtit)}</div>` : ''}
-      <div style="color:#888;font-size:${px(w,T.BODY_SM)}px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:${Math.round(h*.008)}px;border-bottom:1px solid ${c1}20;padding-bottom:${Math.round(h*.005)}px;">O que está incluso</div>
-      ${bulletItems ? `<div style="color:#222;opacity:${slotOpacity('combo', hasBulletDesc ? 'descricao' : 'textoPrinc')};">${bulletItems}</div>` : (fallback ? `<div style="color:${descClr};font-size:${dscFS}px;line-height:1.4;opacity:${slotOpacity('combo','descricao')};">${fmtDesc(fallback,dscFS)}</div>` : '')}
+      ${vars.destino ? `<div style="color:${c2};font-size:${Math.round(fw*.013)}px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;margin-bottom:${Math.round(h*.007)}px;">${esc(vars.destino)}</div>` : ''}
+      ${titulo ? `<div style="color:${tituloClr};font-size:${tituloFS}px;font-weight:400;line-height:1.1;font-family:'Playfair Display',Georgia,serif;overflow:hidden;">${esc(titulo)}</div>` : ''}
+      ${subtit ? `<div style="color:${subtitClr};font-size:${px(fw,T.BODY_MD,slotScale('editorial','subtitulo'))}px;margin-top:${Math.round(h*.008)}px;font-style:italic;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${esc(subtit)}</div>` : ''}
+      ${desc ? `<div style="color:#777;font-size:${px(fw,T.BODY_SM,slotScale('editorial','descricao'))}px;line-height:1.4;overflow:hidden;margin-top:${Math.round(h*.01)}px;">${fmtDesc(desc,px(fw,T.BODY_SM))}</div>` : ''}
     </div>
-    ${vars.preco ? `<div style="border-top:1px solid #e2e8f0;padding-top:${Math.round(h*.009)}px;">${vars.precoAnterior?`<div style="color:${antClr};font-size:${px(w,T.BODY_MD)}px;text-decoration:line-through;">${esc(vars.precoAnterior)}</div>`:''}<div style="display:flex;align-items:flex-end;justify-content:space-between;gap:${Math.round(w*.016)}px;flex-wrap:wrap;"><div><div style="color:#888;font-size:${px(w,T.BODY_SM)}px;">${esc(vars.textoAPartirDe||'a partir de')}</div><div style="color:${precoClr};font-size:${px(fw,T.PRC_LG)}px;font-weight:900;line-height:1.04;">${esc(vars.preco)}</div>${vars.parcelamento?`<div style="color:${parcClr};font-size:${px(w,T.BODY_SM)}px;">${esc(vars.parcelamento)}</div>`:''}</div>${vars.cta?`<div style="background:${c1};color:#fff;padding:${Math.round(h*.011)}px ${Math.round(w*.068)}px;border-radius:${px(w,T.BR_MD)}px;font-size:${px(w,T.CTA)}px;font-weight:700;flex-shrink:0;align-self:flex-end;">${esc(vars.cta)}</div>`:''}</div></div>` : ''}
+    ${vars.preco ? `<div>${vars.precoAnterior?`<div style="color:#ccc;font-size:${Math.round(fw*.013)}px;text-decoration:line-through;">${esc(vars.precoAnterior)}</div>`:''}<div style="color:${precoClr};font-size:${Math.round(fw*.046)}px;font-weight:900;line-height:.95;">${esc(vars.preco)}</div>${vars.parcelamento?`<div style="color:#888;font-size:${Math.round(fw*.013)}px;margin-top:2px;">${esc(vars.parcelamento)}</div>`:''}</div>` : ''}
   </div>
-  <div style="position:absolute;bottom:0;left:0;right:0;height:${ftrH}px;background:${c1};padding:0 ${Math.round(w*.028)}px;display:flex;align-items:center;justify-content:space-between;">
-    ${vars.logo ? `<img src="${vars.logo}" style="height:${Math.round(ftrH*.55)}px;max-width:${Math.round(w*.2)}px;object-fit:contain;" crossorigin="anonymous"/>` : `<span style="color:rgba(255,255,255,.85);font-size:${Math.round(ftrH*.26)}px;font-weight:700;">${esc(vars.nomeAgencia||'')}</span>`}
-    <span style="color:rgba(255,255,255,.80);font-size:${Math.round(ftrH*.25)}px;display:inline-flex;align-items:center;gap:5px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${vars.whatsApp?cntWA(vars.whatsApp,Math.round(ftrH*.30)):(vars.instagram?cntIG(vars.instagram,Math.round(ftrH*.30)):'')}</span>
+  <div style="position:absolute;bottom:0;left:0;right:0;height:${ftrH}px;background:${c1};padding:0 ${sp}px;display:flex;align-items:center;justify-content:space-between;">
+    <span style="color:rgba(255,255,255,.82);font-size:${Math.round(ftrH*.28)}px;display:inline-flex;align-items:center;gap:4px;">${vars.whatsApp?cntWA(vars.whatsApp,Math.round(ftrH*.32)):''}</span>
+    <span style="color:rgba(255,255,255,.62);font-size:${Math.round(ftrH*.28)}px;display:inline-flex;align-items:center;gap:4px;">${vars.instagram?cntIG(vars.instagram,Math.round(ftrH*.32)):''}</span>
+  </div>
+</div>`;
+        }
+    },
+
+    // ── 10. FLYER SPLIT — Painel branco + card flutuante + foto full-bleed ──
+    flyer: {
+        id: 'flyer', nome: 'Flyer Viagem',
+        categoria: 'Divisão',
+        descricao: 'Painel claro + card colorido flutuante — para pacotes com destaque de preço',
+        slots: {
+            titulo    : { label:'Título',              varPadrao:'tituloPrincipal',   compat:['tituloPrincipal','destino'] },
+            subtitulo : { label:'Subtítulo / tagline', varPadrao:'subtitulo',         compat:['subtitulo','periodoViagem'] },
+            descricao : { label:'Rodapé / miúdo',      varPadrao:'textoComplementar', compat:['textoComplementar','observacoesCurtas','condicaoEspecial'] },
+            etiqueta  : { label:'Etiqueta',             varPadrao:'seloPromocional',   compat:['seloPromocional','tagPromocional','textoUrgencia'] },
+        },
+        render(vars, cols, w, h) {
+            const { c1, c2, c3 } = cols;
+            const fw      = w > h ? Math.round(h * 1.6) : w;
+            const img     = vars.imagemPrincipal || '';
+            const titulo  = sv(this, 'titulo', vars);
+            const subtit  = trunc(sv(this, 'subtitulo', vars), 80);
+            const rodape  = trunc(sv(this, 'descricao', vars), 200);
+            const etiq    = sv(this, 'etiqueta', vars);
+            const isStory = h > w;
+
+            const leftW = isStory ? w : Math.round(w * .46);
+            const topH  = isStory ? Math.round(h * .38) : h;
+            const botH  = isStory ? h - topH : h;
+            const sp    = Math.round(w * (isStory ? .055 : .042));
+            const cpV   = Math.round((isStory ? botH : h) * .028);
+            const cpH   = Math.round((isStory ? w : leftW) * .065);
+            const cardW = isStory ? w : leftW;
+
+            const tituloFS  = fitTitle(titulo, cardW, 'flyer', density(vars), T.TIT_LG, T.TIT_MD, slotScale('flyer','titulo'));
+            const precoFS   = Math.round(cardW * .14);
+            const labelFS   = Math.round(fw * .014);
+            const subFS     = px(fw, T.BODY_MD, slotScale('flyer','subtitulo'));
+            const ctaFS     = Math.round(fw * .016);
+            const rodapeFS  = Math.round(cardW * .023);
+            const brandFS   = Math.round(h * .032);
+            const logoH     = Math.round(h * .052);
+            const cardR     = Math.round(w * .024);
+            const ctaR      = Math.round(w * .018);
+            const planeD    = Math.round(w * .07);
+            const planeFZ   = Math.round(w * .022);
+            const panelBg   = '#f0f2f6';
+            const precoLabel = vars.textoAPartirDe || 'Pacotes com desconto de';
+
+            if (!isStory) {
+                return `
+<div style="width:${w}px;height:${h}px;position:relative;overflow:hidden;font-family:'DM Sans',system-ui,sans-serif;display:flex;box-sizing:border-box;">
+  <div style="width:${leftW}px;flex-shrink:0;display:flex;flex-direction:column;justify-content:space-between;padding:${Math.round(h*.036)}px ${sp}px ${Math.round(h*.03)}px;background:${panelBg};">
+    <div style="display:flex;align-items:center;gap:${Math.round(w*.008)}px;">
+      ${vars.logo ? `<img src="${vars.logo}" style="height:${logoH}px;max-width:${Math.round(leftW*.42)}px;object-fit:contain;" crossorigin="anonymous"/>` : `<span style="font-size:${brandFS}px;font-weight:900;color:${c1};font-style:italic;letter-spacing:-.01em;">${esc(vars.nomeAgencia||'Viagem')}</span>`}
+      ${etiq ? `<span style="margin-left:auto;background:${c2};color:#fff;font-size:${Math.round(brandFS*.55)}px;font-weight:800;padding:${Math.round(h*.007)}px ${Math.round(leftW*.022)}px;border-radius:${Math.round(w*.02)}px;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;">${esc(etiq)}</span>` : ''}
+    </div>
+    <div style="background:${c1};border-radius:${cardR}px;padding:${cpV}px ${cpH}px;position:relative;flex:1;margin:${Math.round(h*.022)}px 0;display:flex;flex-direction:column;justify-content:space-between;box-shadow:0 8px 32px rgba(0,0,0,.18);">
+      <div style="position:absolute;top:-${Math.round(planeD*.42)}px;right:${Math.round(leftW*.1)}px;width:${planeD}px;height:${planeD}px;background:${c2};border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,.22);"><span style="color:#fff;font-size:${planeFZ}px;line-height:1;">✈</span></div>
+      ${titulo ? `<div style="color:#fff;font-size:${tituloFS}px;font-weight:800;line-height:1.12;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;">${esc(titulo)}</div>` : ''}
+      <div style="margin-top:${Math.round(h*.008)}px;">
+        ${vars.preco ? `<div style="color:rgba(255,255,255,.68);font-size:${labelFS}px;letter-spacing:.01em;">${esc(precoLabel)}</div>` : ''}
+        ${vars.preco ? `<div style="color:#fff;font-size:${precoFS}px;font-weight:900;line-height:1;letter-spacing:-.02em;">${esc(vars.preco)}</div>` : ''}
+        ${subtit ? `<div style="color:rgba(255,255,255,.8);font-size:${subFS}px;margin-top:${Math.round(h*.005)}px;line-height:1.3;">${esc(subtit)}</div>` : ''}
+      </div>
+      ${vars.cta ? `<div style="background:${c3};color:#fff;border-radius:${ctaR}px;padding:${Math.round(h*.012)}px ${Math.round(cpH*.7)}px;font-size:${ctaFS}px;font-weight:700;line-height:1.25;margin-top:${Math.round(h*.018)}px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${esc(vars.cta)}</div>` : ''}
+    </div>
+    ${rodape ? `<div style="color:#888;font-size:${rodapeFS}px;line-height:1.42;overflow:hidden;">${fmtRich(rodape)}</div>` : `<div style="color:#888;font-size:${rodapeFS}px;display:inline-flex;align-items:center;gap:${Math.round(w*.012)}px;">${vars.whatsApp?cntWA(vars.whatsApp,Math.round(h*.028)):''}${vars.instagram?cntIG(vars.instagram,Math.round(h*.028)):''}</div>`}
+  </div>
+  <div style="flex:1;position:relative;overflow:hidden;">
+    ${img ? `<div style="position:absolute;inset:0;background-image:url('${img}');background-size:cover;background-position:center;"></div>` : `<div style="position:absolute;inset:0;background:linear-gradient(160deg,${c1} 0%,${c3} 100%);"></div>`}
+    ${vars.destino ? `<div style="position:absolute;bottom:${Math.round(h*.025)}px;left:0;right:0;text-align:center;color:#fff;font-size:${Math.round(fw*.016)}px;font-weight:700;text-shadow:0 2px 8px rgba(0,0,0,.6);">${esc(vars.destino)}</div>` : ''}
+  </div>
+</div>`;
+            } else {
+                const bsp = Math.round(w * .055);
+                return `
+<div style="width:${w}px;height:${h}px;position:relative;overflow:hidden;font-family:'DM Sans',system-ui,sans-serif;background:${panelBg};display:flex;flex-direction:column;box-sizing:border-box;">
+  <div style="height:${topH}px;flex-shrink:0;position:relative;overflow:hidden;">
+    ${img ? `<div style="position:absolute;inset:0;background-image:url('${img}');background-size:cover;background-position:center;"></div>` : `<div style="position:absolute;inset:0;background:linear-gradient(160deg,${c1} 0%,${c3} 100%);"></div>`}
+    <div style="position:absolute;top:${Math.round(topH*.05)}px;left:${bsp}px;">
+      ${vars.logo ? `<img src="${vars.logo}" style="height:${Math.round(topH*.1)}px;max-width:${Math.round(w*.38)}px;object-fit:contain;filter:drop-shadow(0 1px 6px rgba(0,0,0,.55));" crossorigin="anonymous"/>` : `<span style="font-size:${Math.round(topH*.052)}px;font-weight:900;color:#fff;font-style:italic;text-shadow:0 2px 8px rgba(0,0,0,.6);">${esc(vars.nomeAgencia||'Viagem')}</span>`}
+    </div>
+    ${vars.destino ? `<div style="position:absolute;bottom:${Math.round(topH*.04)}px;left:0;right:0;text-align:center;color:#fff;font-size:${Math.round(w*.034)}px;font-weight:700;text-shadow:0 2px 8px rgba(0,0,0,.6);">${esc(vars.destino)}</div>` : ''}
+  </div>
+  <div style="flex:1;padding:${Math.round(botH*.028)}px ${bsp}px;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;">
+    <div style="background:${c1};border-radius:${cardR}px;padding:${Math.round(botH*.04)}px ${bsp}px;position:relative;box-shadow:0 6px 24px rgba(0,0,0,.15);display:flex;flex-direction:column;gap:${Math.round(botH*.014)}px;">
+      <div style="position:absolute;top:-${Math.round(planeD*.38)}px;right:${Math.round(bsp*1.8)}px;width:${Math.round(planeD*.9)}px;height:${Math.round(planeD*.9)}px;background:${c2};border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(0,0,0,.22);"><span style="color:#fff;font-size:${Math.round(planeFZ*.85)}px;line-height:1;">✈</span></div>
+      ${etiq ? `<div style="color:${c2};font-size:${Math.round(w*.027)}px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;">${esc(etiq)}</div>` : ''}
+      ${titulo ? `<div style="color:#fff;font-size:${Math.round(w*.042)}px;font-weight:800;line-height:1.12;">${esc(titulo)}</div>` : ''}
+      ${vars.preco ? `<div><div style="color:rgba(255,255,255,.68);font-size:${Math.round(w*.028)}px;">${esc(precoLabel)}</div><div style="color:#fff;font-size:${Math.round(w*.13)}px;font-weight:900;line-height:1;">${esc(vars.preco)}</div>${subtit?`<div style="color:rgba(255,255,255,.8);font-size:${Math.round(w*.032)}px;">${esc(subtit)}</div>`:''}</div>` : (subtit ? `<div style="color:rgba(255,255,255,.8);font-size:${Math.round(w*.034)}px;line-height:1.3;">${esc(subtit)}</div>` : '')}
+      ${vars.cta ? `<div style="background:${c3};color:#fff;border-radius:${ctaR}px;padding:${Math.round(botH*.022)}px ${Math.round(bsp*.7)}px;font-size:${Math.round(w*.032)}px;font-weight:700;line-height:1.25;">${esc(vars.cta)}</div>` : ''}
+    </div>
+    ${rodape ? `<div style="color:#888;font-size:${Math.round(w*.026)}px;line-height:1.4;margin-top:${Math.round(botH*.02)}px;">${fmtRich(rodape)}</div>` : `<div style="color:#888;font-size:${Math.round(w*.026)}px;margin-top:${Math.round(botH*.02)}px;display:inline-flex;align-items:center;gap:${Math.round(w*.018)}px;">${vars.whatsApp?cntWA(vars.whatsApp,Math.round(w*.05)):''}${vars.instagram?cntIG(vars.instagram,Math.round(w*.05)):''}</div>`}
   </div>
 </div>`;
             }
+        }
+    },
 
+    // ── 11. PASSAGEM — Estética de bilhete de avião ───────────────────────
+    passagem: {
+        id: 'passagem', nome: 'Passagem',
+        categoria: 'Preço',
+        descricao: 'Estética de bilhete aéreo — origem → destino, preço central',
+        slots: {
+            titulo    : { label:'Título',    varPadrao:'tituloPrincipal', compat:['tituloPrincipal','destino'] },
+            subtitulo : { label:'Origem',    varPadrao:'origemViagem',    compat:['origemViagem','subtitulo'] },
+            etiqueta  : { label:'Destino',   varPadrao:'destino',         compat:['destino','periodoViagem'] },
+            descricao : { label:'Período',   varPadrao:'periodoViagem',   compat:['periodoViagem','textoComplementar'] },
+        },
+        render(vars, cols, w, h) {
+            const { c1, c2, c3 } = cols;
+            const fw      = w > h ? Math.round(h * 1.6) : w;
+            const img     = vars.imagemPrincipal || '';
+            const titulo  = sv(this,'titulo',vars);
+            const origem  = sv(this,'subtitulo',vars) || 'Origem';
+            const destino = sv(this,'etiqueta',vars)  || vars.destino || 'Destino';
+            const periodo = sv(this,'descricao',vars);
+            const sp      = Math.round(w * .065);
+            const cardY   = Math.round(h * .075);
+            const cardH   = h - cardY * 2;
+            const csp     = Math.round(cardH * .072);
+            const notchR  = Math.round(w * .028);
+            const splitY  = Math.round(cardH * .48);
+            const dens    = density(vars);
+            const tituloFS = fitTitle(titulo, fw, 'passagem', dens, T.TIT_MD, T.TIT_SM, 1);
+            const precoClr = slotColor('preco', cols, c1);
             return `
-<div style="width:${w}px;height:${h}px;position:relative;overflow:hidden;font-family:'Segoe UI',Arial,sans-serif;background:#fff;box-sizing:border-box;">
-  <div style="position:absolute;top:0;left:0;width:${sideW}px;bottom:${ftrH}px;overflow:hidden;">
-    ${img ? `<div style="position:absolute;inset:0;background-image:url('${img}');background-size:cover;background-position:center;"></div>` : `<div style="position:absolute;inset:0;background:linear-gradient(160deg,${c1} 0%,${c3} 100%);"></div>`}
-    <div style="position:absolute;inset:0;background:linear-gradient(to top,${c1}ec 0%,transparent 52%);"></div>
-    ${etiqueta ? `<div style="position:absolute;top:${Math.round(h*.024)}px;left:${Math.round(w*.02)}px;background:${etqColor};color:#fff;padding:${Math.round(h*.007)}px ${Math.round(w*.02)}px;border-radius:${Math.round(w*.03)}px;font-size:${etqFS}px;font-weight:800;text-transform:uppercase;box-shadow:0 2px 10px rgba(0,0,0,.3);">${esc(etiqueta)}</div>` : ''}
-    <div style="position:absolute;bottom:${Math.round(h*.022)}px;left:${Math.round(w*.022)}px;right:${Math.round(w*.018)}px;">
-      ${titulo ? `<div style="color:${tituloClr};font-size:${tituloFS}px;font-weight:800;line-height:1.18;text-shadow:0 2px 8px rgba(0,0,0,.55);overflow:hidden;">${esc(titulo)}</div>` : ''}
-      ${vars.destino && titulo !== vars.destino ? `<div style="color:${c3};font-size:${Math.round(fw*.015)}px;font-weight:700;margin-top:${Math.round(h*.004)}px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">📍 ${esc(vars.destino)}</div>` : ''}
+<div style="width:${w}px;height:${h}px;position:relative;overflow:hidden;font-family:'DM Sans',system-ui,sans-serif;background:#f0ede8;box-sizing:border-box;">
+  ${img ? `<div style="position:absolute;inset:0;background-image:url('${img}');background-size:cover;background-position:center;opacity:.07;"></div>` : ''}
+  <div style="position:absolute;top:${cardY}px;left:${sp}px;right:${sp}px;height:${cardH}px;background:#fff;border-radius:${Math.round(w*.018)}px;box-shadow:0 8px 40px rgba(0,0,0,.1);">
+    <div style="position:absolute;top:0;left:0;right:0;height:${splitY}px;background:${c1};border-radius:${Math.round(w*.018)}px ${Math.round(w*.018)}px 0 0;display:flex;flex-direction:column;justify-content:space-between;padding:${csp}px ${Math.round((w-2*sp)*.075)}px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        ${vars.logo ? `<img src="${vars.logo}" style="height:${Math.round(cardH*.07)}px;max-width:${Math.round(w*.3)}px;object-fit:contain;filter:brightness(0) invert(1);" crossorigin="anonymous"/>` : `<span style="color:rgba(255,255,255,.7);font-size:${Math.round(h*.016)}px;font-weight:700;">${esc(vars.nomeAgencia||'')}</span>`}
+        ${vars.whatsApp ? `<span style="color:rgba(255,255,255,.6);font-size:${Math.round(h*.014)}px;display:inline-flex;align-items:center;gap:4px;">${cntWA(vars.whatsApp,Math.round(h*.018))}</span>` : ''}
+      </div>
+      <div style="display:flex;align-items:center;gap:${Math.round((w-2*sp)*.028)}px;">
+        <div style="flex:1;overflow:hidden;">
+          <div style="color:rgba(255,255,255,.5);font-size:${Math.round(fw*.011)}px;letter-spacing:.12em;text-transform:uppercase;">DE</div>
+          <div style="color:#fff;font-size:${Math.round(fw*.042)}px;font-weight:900;line-height:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${esc(origem)}</div>
+        </div>
+        <div style="color:${c2};font-size:${Math.round(fw*.028)}px;flex-shrink:0;">→</div>
+        <div style="flex:1;overflow:hidden;">
+          <div style="color:rgba(255,255,255,.5);font-size:${Math.round(fw*.011)}px;letter-spacing:.12em;text-transform:uppercase;">PARA</div>
+          <div style="color:#fff;font-size:${Math.round(fw*.042)}px;font-weight:900;line-height:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${esc(destino)}</div>
+        </div>
+      </div>
     </div>
-  </div>
-  <div style="position:absolute;top:0;left:${sideW}px;right:0;bottom:${ftrH}px;padding:${Math.round(h*.026)}px ${sp}px ${Math.round(h*.018)}px;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;">
-    <div style="overflow:hidden;">
-      ${subtit ? `<div style="color:${subtitClr};font-size:${subFS}px;margin-bottom:${Math.round(h*.01)}px;line-height:1.28;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${esc(subtit)}</div>` : ''}
-      <div style="color:#888;font-size:${px(w,T.BODY_SM)}px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:${Math.round(h*.01)}px;border-bottom:1px solid ${c1}20;padding-bottom:${Math.round(h*.006)}px;">O que está incluso</div>
-      ${bulletItems ? `<div style="color:#222;opacity:${slotOpacity('combo', hasBulletDesc ? 'descricao' : 'textoPrinc')};">${bulletItems}</div>` : (fallback ? `<div style="color:${descClr};font-size:${dscFS}px;line-height:1.4;opacity:${slotOpacity('combo','descricao')};">${fmtDesc(fallback,dscFS)}</div>` : '')}
+    <div style="position:absolute;left:-${notchR}px;top:${splitY-notchR}px;width:${notchR*2}px;height:${notchR*2}px;background:#f0ede8;border-radius:50%;"></div>
+    <div style="position:absolute;right:-${notchR}px;top:${splitY-notchR}px;width:${notchR*2}px;height:${notchR*2}px;background:#f0ede8;border-radius:50%;"></div>
+    <div style="position:absolute;left:${Math.round((w-2*sp)*.075)}px;right:${Math.round((w-2*sp)*.075)}px;top:${splitY}px;border-top:2px dashed rgba(0,0,0,.1);"></div>
+    <div style="position:absolute;top:${splitY+2}px;left:0;right:0;bottom:0;border-radius:0 0 ${Math.round(w*.018)}px ${Math.round(w*.018)}px;display:flex;flex-direction:column;justify-content:space-between;padding:${Math.round(cardH*.04)}px ${Math.round((w-2*sp)*.075)}px ${Math.round(cardH*.055)}px;">
+      <div style="overflow:hidden;">
+        ${titulo ? `<div style="color:#222;font-size:${tituloFS}px;font-weight:800;line-height:1.1;overflow:hidden;">${esc(titulo)}</div>` : ''}
+        ${periodo ? `<div style="color:#999;font-size:${Math.round(fw*.014)}px;margin-top:${Math.round(h*.006)}px;">${esc(periodo)}</div>` : ''}
+      </div>
+      ${vars.preco ? `<div style="text-align:right;"><div style="color:#bbb;font-size:${Math.round(fw*.011)}px;letter-spacing:.06em;text-transform:uppercase;">${esc(vars.textoAPartirDe||'a partir de')}</div><div style="color:${precoClr};font-size:${Math.round(fw*.052)}px;font-weight:900;line-height:1;">${esc(vars.preco)}</div>${vars.parcelamento?`<div style="color:#bbb;font-size:${Math.round(fw*.013)}px;">${esc(vars.parcelamento)}</div>`:''}</div>` : ''}
     </div>
-    ${vars.preco ? `<div style="border-top:1px solid #e2e8f0;padding-top:${Math.round(h*.01)}px;">${vars.precoAnterior?`<div style="color:${antClr};font-size:${px(w,T.BODY_MD)}px;text-decoration:line-through;">${esc(vars.precoAnterior)}</div>`:''}<div style="display:flex;align-items:flex-end;justify-content:space-between;gap:${Math.round(w*.016)}px;flex-wrap:wrap;"><div><div style="color:#888;font-size:${px(w,T.BODY_SM)}px;">${esc(vars.textoAPartirDe||'a partir de')}</div><div style="color:${precoClr};font-size:${px(w,T.PRC_LG)}px;font-weight:900;line-height:1.04;">${esc(vars.preco)}</div>${vars.parcelamento?`<div style="color:${parcClr};font-size:${px(w,T.BODY_SM)}px;">${esc(vars.parcelamento)}</div>`:''}</div>${vars.cta?`<div style="background:${c1};color:#fff;padding:${Math.round(h*.011)}px ${Math.round(rW*.055)}px;border-radius:${px(w,T.BR_MD)}px;font-size:${px(w,T.CTA)}px;font-weight:700;flex-shrink:0;align-self:flex-end;">${esc(vars.cta)}</div>`:''}</div></div>` : ''}
-  </div>
-  <div style="position:absolute;bottom:0;left:0;right:0;height:${ftrH}px;background:${c1};padding:0 ${Math.round(w*.028)}px;display:flex;align-items:center;justify-content:space-between;">
-    ${vars.logo ? `<img src="${vars.logo}" style="height:${Math.round(ftrH*.55)}px;max-width:${Math.round(w*.2)}px;object-fit:contain;" crossorigin="anonymous"/>` : `<span style="color:rgba(255,255,255,.85);font-size:${Math.round(ftrH*.26)}px;font-weight:700;">${esc(vars.nomeAgencia||'')}</span>`}
-    <span style="color:rgba(255,255,255,.80);font-size:${Math.round(ftrH*.25)}px;display:inline-flex;align-items:center;gap:5px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${vars.whatsApp?cntWA(vars.whatsApp,Math.round(ftrH*.30)):(vars.instagram?cntIG(vars.instagram,Math.round(ftrH*.30)):'')}</span>
   </div>
 </div>`;
         }
     },
 
-    // ── 9. PREMIUM — Dark; marca protagonista, elegância acima de tudo ────
-    premium: {
-        id: 'premium', nome: 'Agência Premium',
+    // ── 12. LUA DE MEL — Romântico, elegante, Playfair Display ──────────
+    lunademel: {
+        id: 'lunademel', nome: 'Lua de Mel',
+        categoria: 'Estilo',
+        descricao: 'Tom romântico, borda fina, tipografia serifada — para viagens especiais',
         slots: {
-            titulo    : { label:'Título',           varPadrao:'tituloPrincipal',   compat:['tituloPrincipal','destino','textoInstitucional'] },
-            subtitulo : { label:'Subtítulo',         varPadrao:'subtitulo',         compat:['subtitulo','periodoViagem','hotel'] },
-            descricao : { label:'Descrição',         varPadrao:'textoComplementar', compat:['textoComplementar','condicaoEspecial','observacoesCurtas'] },
-            textoPrinc: { label:'Texto principal',   varPadrao:'textoPrincipal',    compat:['textoPrincipal','condicaoEspecial','inclusoesOferta'] },
-            etiqueta  : { label:'Etiqueta / Oferta', varPadrao:'seloPromocional',   compat:['seloPromocional','tagPromocional','textoUrgencia'] },
+            titulo    : { label:'Título',    varPadrao:'tituloPrincipal', compat:['tituloPrincipal','destino'] },
+            subtitulo : { label:'Subtítulo', varPadrao:'subtitulo',       compat:['subtitulo','periodoViagem'] },
+            etiqueta  : { label:'Etiqueta',  varPadrao:'seloPromocional', compat:['seloPromocional','tagPromocional'] },
+            descricao : { label:'Descrição', varPadrao:'textoComplementar', compat:['textoComplementar'] },
         },
         render(vars, cols, w, h) {
             const { c1, c2, c3 } = cols;
-            const fw = w > h ? Math.round(h * 1.6) : w;
-            const img      = vars.imagemPrincipal || '';
-            const titulo   = sv(this,'titulo',vars);
-            const subtit   = trunc(sv(this,'subtitulo',vars), 55);
-            const desc     = sv(this,'descricao',vars);
-            const textoPr  = trunc(sv(this,'textoPrinc',vars), 110);
-            const etiqueta = sv(this,'etiqueta',vars);
-            const isStory  = h > w;
-            const imgW     = isStory ? w : Math.round(w * .42);
-            const hdrH     = Math.round(h * .14);
-            const sp       = Math.round(w * .048);
-            const dens     = density(vars);
-            const tituloFS = fitTitle(titulo, fw, 'premium', dens, isStory?T.TIT_XL:T.TIT_LG, isStory?T.TIT_MD:T.TIT_SM, slotScale('premium','titulo'));
-            const subFS    = px(fw, T.SUB,     slotScale('premium','subtitulo'));
-            const dscFS    = px(fw, T.BODY_MD, slotScale('premium','descricao'));
-            const txtFS    = px(fw, T.BODY_MD, slotScale('premium','textoPrinc'));
-            const etqFS    = px(fw, T.BADGE,   slotScale('premium','etiqueta'));
-            const tituloClr   = slotColor('titulo',        cols, '#fff');
-            const subtitClr   = slotColor('subtitulo',     cols, 'rgba(255,255,255,.65)');
-            const descClr     = slotColor('descricao',     cols, 'rgba(255,255,255,.58)');
-            const precoClr    = slotColor('preco',         cols, c2);
-            const parcClr     = slotColor('parcelamento',  cols, 'rgba(255,255,255,.42)');
-            const antClr      = slotColor('precoAnterior', cols, 'rgba(255,255,255,.3)');
-            const etqColor    = slotColor('etiqueta',      cols, c2); // badge text
+            const fw      = w > h ? Math.round(h * 1.6) : w;
+            const img     = vars.imagemPrincipal || '';
+            const titulo  = sv(this,'titulo',vars);
+            const subtit  = trunc(sv(this,'subtitulo',vars), 52);
+            const etiq    = sv(this,'etiqueta',vars);
+            const sp      = Math.round(w * .075);
+            const border  = Math.round(w * .022);
+            const dens    = density(vars);
+            const tituloFS  = fitTitle(titulo, fw, 'lunademel', dens, T.TIT_XL, T.TIT_LG, slotScale('lunademel','titulo'));
+            const tituloClr = slotColor('titulo',   cols, '#fff');
+            const subtitClr = slotColor('subtitulo',cols, 'rgba(255,255,255,.62)');
+            const precoClr  = slotColor('preco',    cols, c2);
             return `
-<div style="width:${w}px;height:${h}px;position:relative;overflow:hidden;font-family:'Segoe UI',Arial,sans-serif;background:${c1};box-sizing:border-box;">
-  <div style="position:absolute;inset:0;background:linear-gradient(135deg,${c1} 0%,${c3}42 100%);"></div>
-  ${img ? (isStory
-    ? `<div style="position:absolute;top:${hdrH}px;left:0;right:0;height:${Math.round(h*.38)}px;overflow:hidden;"><div style="position:absolute;inset:0;background-image:url('${img}');background-size:cover;background-position:center;opacity:.45;"></div><div style="position:absolute;inset:0;background:linear-gradient(to bottom,${c1} 0%,transparent 30%,transparent 70%,${c1} 100%);"></div></div>`
-    : `<div style="position:absolute;top:0;right:0;width:${imgW}px;bottom:0;overflow:hidden;"><div style="position:absolute;inset:0;background-image:url('${img}');background-size:cover;background-position:center;opacity:.45;"></div><div style="position:absolute;inset:0;background:linear-gradient(to right,${c1} 0%,${c1}80 28%,transparent 55%);"></div></div>`) : ''}
-  <div style="position:absolute;top:0;left:0;right:${isStory?0:imgW}px;height:3px;background:linear-gradient(to right,${c2},${c3});"></div>
-  <div style="position:absolute;top:3px;left:0;right:${isStory?0:imgW}px;height:${hdrH}px;padding:${Math.round(hdrH*.18)}px ${sp}px;display:flex;align-items:center;gap:${Math.round(w*.016)}px;">
-    ${vars.logo ? `<img src="${vars.logo}" style="height:${Math.round(hdrH*.48)}px;max-width:${Math.round(w*.22)}px;object-fit:contain;filter:brightness(10);" crossorigin="anonymous"/>` : ''}
-    ${vars.nomeAgencia ? `<span style="color:rgba(255,255,255,.88);font-size:${Math.round(hdrH*.22)}px;font-weight:700;letter-spacing:.04em;">${esc(vars.nomeAgencia)}</span>` : ''}
-  </div>
-  <div style="position:absolute;top:${hdrH + 3}px;left:0;right:${isStory?0:imgW}px;bottom:0;padding:${Math.round(h*.026)}px ${sp}px;display:flex;flex-direction:column;justify-content:center;gap:${Math.round(h*.01)}px;overflow:hidden;">
-    ${etiqueta ? `<div style="color:${etqColor};font-size:${etqFS}px;font-weight:700;text-transform:uppercase;letter-spacing:.14em;">${esc(etiqueta)}</div>` : ''}
-    ${titulo ? `<div style="color:${tituloClr};font-size:${tituloFS}px;font-weight:900;line-height:1.16;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;">${esc(titulo)}</div>` : ''}
-    ${vars.destino ? `<div style="color:${c2};font-size:${Math.round(fw*.016)}px;font-weight:600;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">📍 ${esc(vars.destino)}${vars.periodoViagem?' · '+esc(vars.periodoViagem):''}</div>` : ''}
-    <div style="width:${Math.round(w*.07)}px;height:2px;background:${c2};flex-shrink:0;"></div>
-    ${subtit ? `<div style="color:${subtitClr};font-size:${subFS}px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${esc(subtit)}</div>` : ''}
-    ${desc ? `<div style="color:${descClr};font-size:${dscFS}px;line-height:1.46;border-left:2px solid ${c2}55;padding-left:${Math.round(w*.015)}px;overflow:hidden;opacity:${slotOpacity('premium','descricao')};">${fmtDesc(desc,dscFS)}</div>` : ''}
-    ${textoPr ? `<div style="color:rgba(255,255,255,.65);font-size:${txtFS}px;line-height:1.46;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;opacity:${slotOpacity('premium','textoPrinc')};">${fmtRich(textoPr)}</div>` : ''}
-    ${vars.preco ? `<div style="margin-top:${Math.round(h*.004)}px;"><div style="color:rgba(255,255,255,.42);font-size:${Math.round(fw*.013)}px;text-transform:uppercase;letter-spacing:.07em;">${esc(vars.textoAPartirDe||'a partir de')}</div>${vars.precoAnterior?`<div style="color:${antClr};font-size:${Math.round(fw*.016)}px;text-decoration:line-through;">${esc(vars.precoAnterior)}</div>`:''}<div style="color:${precoClr};font-size:${Math.round(fw*.046)}px;font-weight:900;line-height:1.05;">${esc(vars.preco)}</div>${vars.parcelamento?`<div style="color:${parcClr};font-size:${Math.round(fw*.014)}px;">${esc(vars.parcelamento)}</div>`:''}</div>` : ''}
-    ${vars.cta ? `<div style="display:inline-block;border:1.5px solid ${c2};color:${c2};padding:${Math.round(h*.011)}px ${Math.round(w*.026)}px;border-radius:${Math.round(w*.008)}px;font-size:${Math.round(fw*.016)}px;font-weight:700;letter-spacing:.04em;align-self:flex-start;">${esc(vars.cta)}</div>` : ''}
-  </div>
-  <div style="position:absolute;bottom:0;left:0;right:0;height:${Math.round(h*.07)}px;border-top:1px solid rgba(255,255,255,.11);padding:0 ${sp}px;display:flex;align-items:center;justify-content:space-between;overflow:hidden;">
-    <span style="color:rgba(255,255,255,.55);font-size:${Math.round(h*.016)}px;display:inline-flex;align-items:center;gap:5px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${vars.whatsApp?cntWA(vars.whatsApp,Math.round(h*.022)):(vars.instagram?cntIG(vars.instagram,Math.round(h*.022)):'')}</span>
-    <span style="color:rgba(255,255,255,.28);font-size:${Math.round(h*.015)}px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${vars.rodape?esc(vars.rodape):''}</span>
+<div style="width:${w}px;height:${h}px;position:relative;overflow:hidden;font-family:'DM Sans',system-ui,sans-serif;box-sizing:border-box;">
+  ${img ? `<div style="position:absolute;inset:0;background-image:url('${img}');background-size:cover;background-position:center;"></div>` : `<div style="position:absolute;inset:0;background:linear-gradient(160deg,${c1} 0%,${c3} 100%);"></div>`}
+  <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.52) 0%,rgba(0,0,0,.28) 40%,rgba(0,0,0,.65) 100%);"></div>
+  <div style="position:absolute;inset:${border}px;border:1px solid rgba(255,255,255,.28);pointer-events:none;"></div>
+  <div style="position:absolute;inset:${border+Math.round(w*.008)}px;border:1px solid rgba(255,255,255,.10);pointer-events:none;"></div>
+  <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:${Math.round(h*.08)}px ${sp}px;">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:${Math.round(h*.008)}px;text-align:center;overflow:hidden;width:100%;">
+      ${vars.logo ? `<img src="${vars.logo}" style="height:${Math.round(h*.052)}px;max-width:${Math.round(w*.32)}px;object-fit:contain;filter:brightness(0) invert(1);opacity:.8;margin-bottom:${Math.round(h*.012)}px;" crossorigin="anonymous"/>` : `<span style="color:rgba(255,255,255,.55);font-size:${Math.round(h*.016)}px;font-weight:300;letter-spacing:.14em;text-transform:uppercase;margin-bottom:${Math.round(h*.012)}px;">${esc(vars.nomeAgencia||'')}</span>`}
+      ${etiq ? `<div style="color:${c2};font-size:${px(fw,T.BADGE,1)}px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;">${esc(etiq)}</div>` : ''}
+      ${vars.destino ? `<div style="color:rgba(255,255,255,.5);font-size:${Math.round(fw*.013)}px;letter-spacing:.1em;text-transform:uppercase;">${esc(vars.destino)}</div>` : ''}
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:${Math.round(h*.01)}px;text-align:center;overflow:hidden;width:100%;">
+      ${titulo ? `<div style="color:${tituloClr};font-size:${tituloFS}px;font-weight:400;line-height:1.12;font-family:'Playfair Display',Georgia,serif;font-style:italic;overflow:hidden;">${esc(titulo)}</div>` : ''}
+      <div style="width:${Math.round(w*.08)}px;height:1px;background:rgba(255,255,255,.35);"></div>
+      ${subtit ? `<div style="color:${subtitClr};font-size:${px(fw,T.BODY_MD,slotScale('lunademel','subtitulo'))}px;font-weight:300;letter-spacing:.04em;">${esc(subtit)}</div>` : ''}
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:${Math.round(h*.006)}px;text-align:center;overflow:hidden;width:100%;">
+      ${vars.preco ? `<div><div style="color:rgba(255,255,255,.4);font-size:${Math.round(fw*.012)}px;letter-spacing:.08em;text-transform:uppercase;">${esc(vars.textoAPartirDe||'a partir de')}</div><div style="color:${precoClr};font-size:${Math.round(fw*.052)}px;font-weight:700;line-height:1;">${esc(vars.preco)}</div>${vars.parcelamento?`<div style="color:rgba(255,255,255,.4);font-size:${Math.round(fw*.013)}px;">${esc(vars.parcelamento)}</div>`:''}</div>` : ''}
+      <div style="display:inline-flex;align-items:center;gap:${Math.round(w*.022)}px;margin-top:${Math.round(h*.008)}px;">
+        <span style="color:rgba(255,255,255,.45);font-size:${Math.round(h*.014)}px;display:inline-flex;align-items:center;gap:4px;">${vars.whatsApp?cntWA(vars.whatsApp,Math.round(h*.018)):''}</span>
+        <span style="color:rgba(255,255,255,.45);font-size:${Math.round(h*.014)}px;display:inline-flex;align-items:center;gap:4px;">${vars.instagram?cntIG(vars.instagram,Math.round(h*.018)):''}</span>
+      </div>
+    </div>
   </div>
 </div>`;
         }
@@ -1524,15 +1678,18 @@ function density(vars) {
 // Multiplicadores de escala por template × densidade
 // Layout heuristic: conteúdo leve → fontes maiores; denso → comprimido
 const DENSITY_SCALE = {
-    destino    : {low:1.10, medium:1.00, high:0.86},
-    comercial  : {low:1.05, medium:1.00, high:0.88},
-    promocional: {low:1.12, medium:1.00, high:0.85},
-    relampago  : {low:1.08, medium:1.00, high:0.86},
-    apartirde  : {low:1.05, medium:1.00, high:0.88},
-    sonhos     : {low:1.15, medium:1.00, high:0.84},
-    condicao   : {low:1.05, medium:1.00, high:0.90},
-    combo      : {low:1.05, medium:1.00, high:0.88},
-    premium    : {low:1.10, medium:1.00, high:0.86},
+    destino   : {low:1.10, medium:1.00, high:0.86},
+    promo     : {low:1.05, medium:1.00, high:0.88},
+    vertical  : {low:1.12, medium:1.00, high:0.85},
+    relampago : {low:1.08, medium:1.00, high:0.86},
+    apartirde : {low:1.05, medium:1.00, high:0.88},
+    luxury    : {low:1.15, medium:1.00, high:0.84},
+    minimal   : {low:1.05, medium:1.00, high:0.88},
+    resort    : {low:1.05, medium:1.00, high:0.88},
+    editorial : {low:1.10, medium:1.00, high:0.86},
+    flyer     : {low:1.08, medium:1.00, high:0.88},
+    passagem  : {low:1.05, medium:1.00, high:0.90},
+    lunademel : {low:1.12, medium:1.00, high:0.85},
 };
 
 // ── Size System (3 níveis: P / M / G) ────────────────────────────────────
@@ -1878,6 +2035,7 @@ async function exportarOferta(userScale) {
     document.body.appendChild(div);
 
     try {
+        await document.fonts.ready;
         const canvas = await html2canvas(div, {
             useCORS       : true,
             allowTaint    : true,
@@ -1903,18 +2061,7 @@ function csrf() {
 // MINIATURAS DOS TEMPLATES
 // ════════════════════════════════════════════════════════════════════════
 function renderThumbs() {
-    document.querySelectorAll('.template-thumb-canvas').forEach(canvas => {
-        const tplId = canvas.dataset.template;
-        const tpl   = TEMPLATES[tplId]; if (!tpl) return;
-        const div   = document.createElement('div');
-        div.style.cssText = 'position:fixed;left:-9999px;top:-9999px;width:500px;height:500px;overflow:hidden;';
-        div.innerHTML = tpl.render(state.vars, getColors(), 500, 500);
-        document.body.appendChild(div);
-        const cw = canvas.width, ch = canvas.height;
-        html2canvas(div, { useCORS:true, allowTaint:true, scale: cw/500, width:500, height:500 })
-            .then(c => { canvas.getContext('2d').drawImage(c, 0, 0, cw, ch); })
-            .finally(() => document.body.removeChild(div));
-    });
+    // Thumbnails são SVGs estáticos injetados no HTML do painel — nada a fazer aqui
 }
 
 // ════════════════════════════════════════════════════════════════════════
@@ -1985,7 +2132,7 @@ function renderThumbs() {
     updateColorSwatches();
 
     // Restaura template
-    state.templateAtivo = o.templateId || 'promocional';
+    state.templateAtivo = o.templateId || 'destino';
     document.querySelectorAll('.template-card').forEach(c => c.classList.remove('ativo'));
     const ac = document.querySelector(`.template-card[data-template="${state.templateAtivo}"]`);
     if (ac) ac.classList.add('ativo');

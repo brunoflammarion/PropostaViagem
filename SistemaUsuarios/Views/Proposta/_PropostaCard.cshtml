@@ -9,6 +9,15 @@
         @Model.StatusProposta
     </div>
 
+    @if (Model.IsConteudoDemonstracao)
+    {
+        <div style="position:absolute;top:8px;left:8px;background:rgba(37,99,235,.85);color:#fff;
+                    font-size:10px;font-weight:700;letter-spacing:.05em;padding:2px 7px;border-radius:4px;
+                    backdrop-filter:blur(4px);">
+            DEMO
+        </div>
+    }
+
     <!-- Imagem -->
     <div class="exec-image-container">
         @if (!string.IsNullOrEmpty(Model.FotoCapa))

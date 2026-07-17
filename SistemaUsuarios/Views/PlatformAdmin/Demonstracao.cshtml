@@ -1,0 +1,283 @@
+@using SistemaUsuarios.Models
+@using SistemaUsuarios.Controllers
+@model List<ConteudoDemonstracaoItemVm>
+@{
+    Layout = "~/Views/Shared/_LayoutPlatformAdmin.cshtml";
+    ViewData["Title"] = "Conteúdos de Demonstração";
+}
+
+@section Styles {
+<style>
+    .demo-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+    .demo-card {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        transition: box-shadow .12s;
+    }
+    .demo-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.08); }
+    .demo-card.inactive { opacity: .55; }
+    .demo-thumb {
+        width: 100%; height: 140px;
+        background: #f1f5f9;
+        object-fit: cover;
+        display: block;
+    }
+    .demo-thumb-ph {
+        width: 100%; height: 140px;
+        background: linear-gradient(135deg, #e2e8f0, #f1f5f9);
+        display: flex; align-items: center; justify-content: center;
+        color: #cbd5e1; font-size: 32px;
+    }
+    .demo-body { padding: 14px; flex: 1; display: flex; flex-direction: column; gap: 8px; }
+    .demo-tipo { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
+    .tipo-proposta { color: #2563eb; }
+    .tipo-oferta   { color: #7c3aed; }
+    .demo-nome { font-size: 13px; font-weight: 700; color: #0f172a; line-height: 1.3; }
+    .demo-nome-admin { font-size: 11px; color: #94a3b8; margin-top: -4px; }
+    .demo-meta { font-size: 11px; color: #94a3b8; display: flex; gap: 12px; margin-top: auto; }
+    .demo-actions { display: flex; gap: 6px; padding: 10px 14px; border-top: 1px solid #f1f5f9; }
+    .demo-chip {
+        display: inline-flex; align-items: center; gap: 4px;
+        font-size: 10px; font-weight: 700; text-transform: uppercase;
+        padding: 2px 8px; border-radius: 10px;
+    }
+    .chip-ativo   { background: #dcfce7; color: #15803d; }
+    .chip-inativo { background: #fee2e2; color: #b91c1c; }
+    .chip-auto    { background: #dbeafe; color: #1d4ed8; }
+    .add-card {
+        background: #f8fafc;
+        border: 2px dashed #cbd5e1;
+        border-radius: 10px;
+        min-height: 240px;
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+        gap: 8px; cursor: pointer;
+        transition: all .12s; text-decoration: none; color: inherit;
+    }
+    .add-card:hover { border-color: #2563eb; background: #eff6ff; color: #2563eb; }
+    .add-card i { font-size: 24px; opacity: .4; }
+    .add-card span { font-size: 13px; font-weight: 600; }
+    .modal-preview {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 14px;
+        margin-top: 12px;
+        display: none;
+    }
+    .preview-foto {
+        width: 100%; height: 120px; object-fit: cover;
+        border-radius: 6px; margin-bottom: 10px; display: block;
+    }
+    .preview-label { font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: .06em; }
+    .preview-nome  { font-size: 14px; font-weight: 700; color: #0f172a; margin-bottom: 4px; }
+    .preview-extra { font-size: 12px; color: #64748b; }
+    .empty-state { padding: 60px; text-align: center; color: #94a3b8; }
+    .empty-state i { font-size: 36px; display: block; margin-bottom: 12px; opacity: .3; }
+</style>
+}
+
+<div class="pa-card mb-4" style="border-left: 3px solid #2563eb;">
+    <div class="pa-card-body" style="padding: 14px 18px;">
+        <div style="font-size:13px;color:#334155;line-height:1.6;">
+            <strong>Como funciona:</strong> as propostas e ofertas configuradas aqui são automaticamente copiadas para novas agências no onboarding.
+            Cada agência recebe <strong>cópias independentes</strong> — pode editar, remover ou adicionar conteúdo livremente, como se tivesse criado ela mesma.
+        </div>
+    </div>
+</div>
+
+@if (Model.Any())
+{
+    <div class="demo-grid">
+        @foreach (var item in Model)
+        {
+            <div class="demo-card @(!item.Modelo.Ativo ? "inactive" : "")">
+                @if (!string.IsNullOrEmpty(item.FotoCapa))
+                {
+                    <img src="@item.FotoCapa" class="demo-thumb" alt="" />
+                }
+                else
+                {
+                    <div class="demo-thumb-ph">
+                        <i class="fas fa-@(item.Modelo.TipoConteudo == TipoConteudoDemonstracao.Proposta ? "file-alt" : "tag")"></i>
+                    </div>
+                }
+
+                <div class="demo-body">
+                    <div>
+                        <div class="demo-tipo @(item.Modelo.TipoConteudo == TipoConteudoDemonstracao.Proposta ? "tipo-proposta" : "tipo-oferta")">
+                            @item.Modelo.TipoConteudo
+                        </div>
+                        <div class="demo-nome">@item.NomeEntidade</div>
+                        @if (!string.IsNullOrEmpty(item.Modelo.NomeAdministrativo))
+                        {
+                            <div class="demo-nome-admin">@item.Modelo.NomeAdministrativo</div>
+                        }
+                    </div>
+                    <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                        <span class="demo-chip @(item.Modelo.Ativo ? "chip-ativo" : "chip-inativo")">
+                            @(item.Modelo.Ativo ? "Ativo" : "Inativo")
+                        </span>
+                        @if (item.Modelo.AplicarAutomaticamente)
+                        {
+                            <span class="demo-chip chip-auto">Auto</span>
+                        }
+                    </div>
+                    <div class="demo-meta">
+                        <span><i class="fas fa-building fa-fw"></i> @item.TotalAplicados agência(s)</span>
+                        <span>Ordem @item.Modelo.Ordem</span>
+                    </div>
+                </div>
+
+                <div class="demo-actions">
+                    <form method="post" action="/PlatformAdmin/ToggleConteudo/@item.Modelo.Id" style="display:inline;">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-sm @(item.Modelo.Ativo ? "btn-outline-secondary" : "btn-outline-success")"
+                                style="font-size:11px;padding:3px 10px;">
+                            @(item.Modelo.Ativo ? "Desativar" : "Ativar")
+                        </button>
+                    </form>
+                    <form method="post" action="/PlatformAdmin/RemoverConteudo/@item.Modelo.Id" style="display:inline;"
+                          onsubmit="return confirm('Remover este conteúdo do catálogo? As cópias já distribuídas não são afetadas.')">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-sm btn-outline-danger" style="font-size:11px;padding:3px 10px;">
+                            Remover
+                        </button>
+                    </form>
+                </div>
+            </div>
+        }
+
+        <!-- Card de adicionar -->
+        <div class="add-card" onclick="abrirModal()">
+            <i class="fas fa-plus-circle"></i>
+            <span>Adicionar conteúdo</span>
+            <div style="font-size:11px;color:#94a3b8;margin-top:-4px;">Proposta ou Oferta</div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="pa-card">
+        <div class="empty-state">
+            <i class="fas fa-star"></i>
+            <p style="font-size:14px;font-weight:600;color:#64748b;margin-bottom:8px;">Nenhum conteúdo de demonstração configurado</p>
+            <p style="font-size:13px;margin-bottom:16px;">Adicione propostas ou ofertas para novas agências receberem exemplos ao se cadastrar.</p>
+            <button class="btn btn-primary" onclick="abrirModal()">
+                <i class="fas fa-plus me-2"></i>Adicionar primeiro conteúdo
+            </button>
+        </div>
+    </div>
+}
+
+<!-- Modal de adição -->
+<div class="modal fade" id="modalAdicionar" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" style="font-size:15px;font-weight:700;">Adicionar conteúdo de demonstração</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="/PlatformAdmin/AdicionarConteudo">
+                @Html.AntiForgeryToken()
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label" style="font-size:12px;font-weight:600;">Tipo</label>
+                        <select name="tipo" id="selTipo" class="form-select form-select-sm" onchange="limparPreview()">
+                            <option value="Proposta">Proposta</option>
+                            <option value="Oferta">Oferta</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" style="font-size:12px;font-weight:600;">ID da entidade</label>
+                        <div style="display:flex;gap:8px;">
+                            <input type="text" id="inputId" class="form-control form-control-sm"
+                                   placeholder="Cole o ID (Guid) da proposta ou oferta"
+                                   style="font-family:monospace;font-size:12px;" />
+                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="buscarEntidade()" style="white-space:nowrap;">
+                                Verificar
+                            </button>
+                        </div>
+                        <div style="font-size:11px;color:#94a3b8;margin-top:4px;">
+                            Encontre o ID copiando da URL ao editar a proposta ou oferta.
+                        </div>
+                    </div>
+
+                    <div id="previewBox" class="modal-preview">
+                        <div id="previewConteudo"></div>
+                    </div>
+
+                    <input type="hidden" name="entidadeId" id="hiddenEntidadeId" />
+
+                    <div class="mb-3 mt-3">
+                        <label class="form-label" style="font-size:12px;font-weight:600;">Rótulo administrativo <span style="color:#94a3b8;font-weight:400;">(opcional)</span></label>
+                        <input type="text" name="nomeAdmin" class="form-control form-control-sm"
+                               placeholder="Ex: Europa 10 dias — Premium" maxlength="200" />
+                        <div style="font-size:11px;color:#94a3b8;margin-top:4px;">Visível apenas aqui no Platform Admin.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary btn-sm" id="btnConfirmar" disabled>
+                        <i class="fas fa-check me-1"></i>Adicionar ao catálogo
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+function abrirModal() {
+    limparPreview();
+    new bootstrap.Modal(document.getElementById('modalAdicionar')).show();
+}
+function limparPreview() {
+    document.getElementById('previewBox').style.display = 'none';
+    document.getElementById('hiddenEntidadeId').value = '';
+    document.getElementById('btnConfirmar').disabled = true;
+}
+async function buscarEntidade() {
+    const tipo = document.getElementById('selTipo').value;
+    const id   = document.getElementById('inputId').value.trim();
+    if (!id) return;
+
+    const box     = document.getElementById('previewBox');
+    const content = document.getElementById('previewConteudo');
+    box.style.display = 'block';
+    content.innerHTML = '<div style="font-size:12px;color:#94a3b8;">Buscando...</div>';
+
+    try {
+        const res  = await fetch(`/PlatformAdmin/BuscarEntidade?tipo=${tipo}&id=${id}`);
+        const data = await res.json();
+
+        if (!data.encontrado) {
+            content.innerHTML = '<div style="font-size:12px;color:#ef4444;"><i class="fas fa-times-circle me-1"></i>Não encontrada. Verifique o ID e o tipo.</div>';
+            document.getElementById('btnConfirmar').disabled = true;
+            return;
+        }
+
+        content.innerHTML = `
+            ${data.foto ? `<img src="${data.foto}" class="preview-foto" />` : ''}
+            <div class="preview-label">${data.tipo}</div>
+            <div class="preview-nome">${data.nome}</div>
+            <div class="preview-extra">${data.extra} · ${data.data}</div>
+        `;
+        document.getElementById('hiddenEntidadeId').value = id;
+        document.getElementById('btnConfirmar').disabled = false;
+    } catch(e) {
+        content.innerHTML = '<div style="font-size:12px;color:#ef4444;">Erro ao buscar. Tente novamente.</div>';
+    }
+}
+</script>
+}

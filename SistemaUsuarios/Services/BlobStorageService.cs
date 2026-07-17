@@ -64,6 +64,28 @@ public class BlobStorageService
     }
 
     /// <summary>
+    /// Copia um blob existente para uma nova pasta, gerando novo nome. Server-side — sem tráfego de bytes.
+    /// Retorna a URL do novo blob. Se a origem não existir, retorna a URL original como fallback.
+    /// </summary>
+    public async Task<string?> CopiarAsync(string? sourceUrl, string destPasta)
+    {
+        if (string.IsNullOrWhiteSpace(sourceUrl)) return null;
+        try
+        {
+            var srcUri   = new Uri(sourceUrl);
+            var ext      = Path.GetExtension(srcUri.AbsolutePath);
+            var blobName = $"{destPasta.Trim('/')}/{Guid.NewGuid()}{ext}";
+            var dest     = _container.GetBlobClient(blobName);
+            await dest.StartCopyFromUriAsync(srcUri);
+            return dest.Uri.ToString();
+        }
+        catch
+        {
+            return sourceUrl; // Blob inexistente — mantém URL original como fallback
+        }
+    }
+
+    /// <summary>
     /// Deleta um blob pela URL pública. Ignora se não existir.
     /// </summary>
     public async Task DeletarAsync(string? url)

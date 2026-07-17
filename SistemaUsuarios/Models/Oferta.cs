@@ -196,6 +196,13 @@ namespace SistemaUsuarios.Models
         public DateTime DataCriacao { get; set; } = DateTime.Now;
         public DateTime? DataModificacao { get; set; }
 
+        // ── Demonstração ──────────────────────────────────────────────────────
+        /// <summary>Quando true, esta oferta é uma cópia de demonstração criada automaticamente no onboarding.</summary>
+        public bool IsConteudoDemonstracao { get; set; } = false;
+
+        /// <summary>Id do ConteudoDemonstracao que originou esta cópia. Apenas auditoria — sem FK rígida.</summary>
+        public Guid? ConteudoDemonstracaoOrigemId { get; set; }
+
         // ── Navigation Properties ─────────────────────────────────────────────────
         public virtual Usuario Usuario { get; set; } = null!;
         public virtual Usuario? UsuarioMaster { get; set; }

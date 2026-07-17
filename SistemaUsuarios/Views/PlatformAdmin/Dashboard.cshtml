@@ -1,0 +1,214 @@
+@using SistemaUsuarios.Models.ViewModels.PlatformAdmin
+@model PlatformDashboardViewModel
+@{
+    Layout = "~/Views/Shared/_LayoutPlatformAdmin.cshtml";
+    ViewData["Title"] = "Dashboard";
+}
+
+@section Styles {
+<style>
+    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
+    .kpi-grid-2 { grid-template-columns: repeat(5, 1fr); }
+    @@media (max-width: 900px) { .kpi-grid, .kpi-grid-2 { grid-template-columns: repeat(2, 1fr); } }
+    .section-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @@media (max-width: 900px) { .section-grid { grid-template-columns: 1fr; } }
+    .chart-wrap { position: relative; height: 180px; }
+    .empty-state { padding: 32px; text-align: center; color: #94a3b8; font-size: 13px; }
+    .empty-state i { font-size: 24px; margin-bottom: 8px; display: block; opacity: .4; }
+    .agency-link { color: #2563eb; text-decoration: none; font-weight: 600; }
+    .agency-link:hover { text-decoration: underline; }
+</style>
+}
+
+<!-- KPIs: Agências -->
+<div class="kpi-grid">
+    <div class="pa-kpi-card">
+        <div class="pa-kpi-icon" style="background:#eff6ff;color:#2563eb;"><i class="fas fa-building"></i></div>
+        <div class="pa-kpi-label">Total Agências</div>
+        <div class="pa-kpi-value">@Model.TotalAgencias</div>
+    </div>
+    <div class="pa-kpi-card">
+        <div class="pa-kpi-icon" style="background:#dcfce7;color:#15803d;"><i class="fas fa-circle-check"></i></div>
+        <div class="pa-kpi-label">Ativas</div>
+        <div class="pa-kpi-value">@Model.AgenciasAtivas</div>
+    </div>
+    <div class="pa-kpi-card">
+        <div class="pa-kpi-icon" style="background:#fee2e2;color:#b91c1c;"><i class="fas fa-ban"></i></div>
+        <div class="pa-kpi-label">Bloqueadas</div>
+        <div class="pa-kpi-value">@Model.AgenciasBloqueadas</div>
+    </div>
+    <div class="pa-kpi-card">
+        <div class="pa-kpi-icon" style="background:#fef3c7;color:#b45309;"><i class="fas fa-sparkles"></i></div>
+        <div class="pa-kpi-label">Novas (30d)</div>
+        <div class="pa-kpi-value">@Model.AgenciasNovas30d</div>
+    </div>
+</div>
+
+<!-- KPIs: Plataforma -->
+<div class="kpi-grid kpi-grid-2" style="margin-bottom:24px;">
+    <div class="pa-kpi-card">
+        <div class="pa-kpi-label">Usuários</div>
+        <div class="pa-kpi-value">@Model.TotalUsuarios</div>
+    </div>
+    <div class="pa-kpi-card">
+        <div class="pa-kpi-label">Propostas</div>
+        <div class="pa-kpi-value">@Model.TotalPropostas</div>
+    </div>
+    <div class="pa-kpi-card">
+        <div class="pa-kpi-label">Clientes</div>
+        <div class="pa-kpi-value">@Model.TotalClientes</div>
+    </div>
+    <div class="pa-kpi-card">
+        <div class="pa-kpi-label">Leads</div>
+        <div class="pa-kpi-value">@Model.TotalLeads</div>
+    </div>
+    <div class="pa-kpi-card">
+        <div class="pa-kpi-label">Visualizações</div>
+        <div class="pa-kpi-value">@Model.TotalVisualizacoes.ToString("N0")</div>
+    </div>
+</div>
+
+<!-- Gráfico + Churn risk -->
+<div class="section-grid">
+
+    <!-- Crescimento mensal -->
+    <div class="pa-card">
+        <div class="pa-card-header">
+            <i class="fas fa-chart-bar" style="color:#2563eb;font-size:13px;"></i>
+            <span class="pa-card-title">Novas agências por mês</span>
+            <span class="pa-card-sub">últimos 12 meses</span>
+        </div>
+        <div class="pa-card-body">
+            @if (Model.CrescimentoMensal.Any())
+            {
+                <div class="chart-wrap">
+                    <canvas id="growthChart"></canvas>
+                </div>
+            }
+            else
+            {
+                <div class="empty-state"><i class="fas fa-chart-bar"></i>Sem dados no período.</div>
+            }
+        </div>
+    </div>
+
+    <!-- Top 5 -->
+    <div class="pa-card">
+        <div class="pa-card-header">
+            <i class="fas fa-trophy" style="color:#b45309;font-size:13px;"></i>
+            <span class="pa-card-title">Top 5 agências</span>
+            <span class="pa-card-sub">por propostas criadas</span>
+        </div>
+        <div class="pa-card-body" style="padding:0;">
+            @if (Model.TopAgencias.Any())
+            {
+                <table class="pa-table">
+                    <thead>
+                        <tr>
+                            <th>Agência</th>
+                            <th class="num">Propostas</th>
+                            <th class="num">Views</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var a in Model.TopAgencias)
+                        {
+                            <tr>
+                                <td>
+                                    <a href="/PlatformAdmin/Agencia/@a.Id" class="agency-link">@a.NomeAgencia</a>
+                                    <div style="font-size:11px;color:#94a3b8;">@a.NomeMaster</div>
+                                </td>
+                                <td class="num">@a.TotalPropostas</td>
+                                <td class="num">@a.TotalVisualizacoes</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div class="empty-state"><i class="fas fa-building"></i>Nenhuma agência ainda.</div>
+            }
+        </div>
+    </div>
+
+</div>
+
+<!-- Risco de churn -->
+@if (Model.AgenciasSemAtividade.Any())
+{
+    <div class="pa-card">
+        <div class="pa-card-header">
+            <i class="fas fa-triangle-exclamation" style="color:#b45309;font-size:13px;"></i>
+            <span class="pa-card-title">Agências sem atividade</span>
+            <span class="pa-card-sub">nenhuma proposta criada nos últimos 30 dias</span>
+        </div>
+        <div style="overflow-x:auto;">
+            <table class="pa-table">
+                <thead>
+                    <tr>
+                        <th>Agência</th>
+                        <th>Status</th>
+                        <th>Cadastro</th>
+                        <th>Última proposta</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var a in Model.AgenciasSemAtividade)
+                    {
+                        <tr>
+                            <td>
+                                <a href="/PlatformAdmin/Agencia/@a.Id" class="agency-link">@a.NomeAgencia</a>
+                            </td>
+                            <td><span class="status-dot status-@a.StatusCss">@a.StatusLabel</span></td>
+                            <td>@a.DataCriacao.ToString("dd/MM/yyyy")</td>
+                            <td style="color:#94a3b8;">
+                                @(a.UltimaAtividade.HasValue ? a.UltimaAtividade.Value.ToString("dd/MM/yyyy") : "—")
+                            </td>
+                            <td>
+                                <a href="/PlatformAdmin/Agencia/@a.Id" class="btn btn-sm btn-outline-secondary" style="font-size:11px;">Ver</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+@section Scripts {
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script>
+@if (Model.CrescimentoMensal.Any())
+{
+    <text>
+    (function() {
+        const labels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.CrescimentoMensal.Select(g => g.Label)));
+        const data   = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.CrescimentoMensal.Select(g => g.Quantidade)));
+        new Chart(document.getElementById('growthChart'), {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [{
+                    data,
+                    backgroundColor: '#2563eb',
+                    borderRadius: 4,
+                    borderSkipped: false,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+                    y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 11 } }, grid: { color: '#f1f5f9' } }
+                }
+            }
+        });
+    })();
+    </text>
+}
+</script>
+}

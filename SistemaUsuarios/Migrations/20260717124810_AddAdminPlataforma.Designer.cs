@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NetTopologySuite.Geometries;
 using SistemaUsuarios.Data;
@@ -12,9 +13,11 @@ using SistemaUsuarios.Data;
 namespace SistemaUsuarios.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260717124810_AddAdminPlataforma")]
+    partial class AddAdminPlataforma
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -307,83 +310,6 @@ namespace SistemaUsuarios.Migrations
                         .IsUnique();
 
                     b.ToTable("ConfiguracoesLembrete");
-                });
-
-            modelBuilder.Entity("SistemaUsuarios.Models.ConteudoDemonstracao", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<bool>("AplicarAutomaticamente")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("Ativo")
-                        .HasColumnType("bit");
-
-                    b.Property<Guid?>("AtualizadoPorAdminId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("CriadoPorAdminId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime?>("DataAtualizacao")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("DataCriacao")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid>("EntidadeOrigemId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("NomeAdministrativo")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("Ordem")
-                        .HasColumnType("int");
-
-                    b.Property<int>("TipoConteudo")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AtualizadoPorAdminId");
-
-                    b.HasIndex("CriadoPorAdminId");
-
-                    b.ToTable("ConteudosDemonstracao");
-                });
-
-            modelBuilder.Entity("SistemaUsuarios.Models.ConteudoDemonstracaoAplicado", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("AgenciaMasterId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("ConteudoDemonstracaoId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("DataAplicacao")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid?>("EntidadeClonadaId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("MensagemErro")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("StatusAplicacao")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ConteudoDemonstracaoId", "AgenciaMasterId")
-                        .IsUnique();
-
-                    b.ToTable("ConteudosDemonstracaoAplicados");
                 });
 
             modelBuilder.Entity("SistemaUsuarios.Models.Destino", b =>
@@ -964,9 +890,6 @@ namespace SistemaUsuarios.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
-                    b.Property<Guid?>("ConteudoDemonstracaoOrigemId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<string>("Cor1")
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
@@ -1016,9 +939,6 @@ namespace SistemaUsuarios.Migrations
                     b.Property<string>("Instagram")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
-
-                    b.Property<bool>("IsConteudoDemonstracao")
-                        .HasColumnType("bit");
 
                     b.Property<string>("LogoPath")
                         .HasMaxLength(500)
@@ -1232,9 +1152,6 @@ namespace SistemaUsuarios.Migrations
                     b.Property<string>("CondicoesPropostaHtml")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid?>("ConteudoDemonstracaoOrigemId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<DateTime>("DataCriacao")
                         .HasColumnType("datetime2");
 
@@ -1253,9 +1170,6 @@ namespace SistemaUsuarios.Migrations
                     b.Property<string>("FotoCapa")
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
-
-                    b.Property<bool>("IsConteudoDemonstracao")
-                        .HasColumnType("bit");
 
                     b.Property<int?>("LayoutId")
                         .HasColumnType("int");
@@ -2011,35 +1925,6 @@ namespace SistemaUsuarios.Migrations
                     b.Navigation("Usuario");
                 });
 
-            modelBuilder.Entity("SistemaUsuarios.Models.ConteudoDemonstracao", b =>
-                {
-                    b.HasOne("SistemaUsuarios.Models.AdminPlataforma", "AtualizadoPorAdmin")
-                        .WithMany()
-                        .HasForeignKey("AtualizadoPorAdminId")
-                        .OnDelete(DeleteBehavior.NoAction);
-
-                    b.HasOne("SistemaUsuarios.Models.AdminPlataforma", "CriadoPorAdmin")
-                        .WithMany()
-                        .HasForeignKey("CriadoPorAdminId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("AtualizadoPorAdmin");
-
-                    b.Navigation("CriadoPorAdmin");
-                });
-
-            modelBuilder.Entity("SistemaUsuarios.Models.ConteudoDemonstracaoAplicado", b =>
-                {
-                    b.HasOne("SistemaUsuarios.Models.ConteudoDemonstracao", "ConteudoDemonstracao")
-                        .WithMany("Aplicacoes")
-                        .HasForeignKey("ConteudoDemonstracaoId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("ConteudoDemonstracao");
-                });
-
             modelBuilder.Entity("SistemaUsuarios.Models.Destino", b =>
                 {
                     b.HasOne("SistemaUsuarios.Models.Proposta", "Proposta")
@@ -2372,11 +2257,6 @@ namespace SistemaUsuarios.Migrations
             modelBuilder.Entity("SistemaUsuarios.Models.Cliente", b =>
                 {
                     b.Navigation("Propostas");
-                });
-
-            modelBuilder.Entity("SistemaUsuarios.Models.ConteudoDemonstracao", b =>
-                {
-                    b.Navigation("Aplicacoes");
                 });
 
             modelBuilder.Entity("SistemaUsuarios.Models.Destino", b =>

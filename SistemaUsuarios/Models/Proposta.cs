@@ -109,6 +109,13 @@ namespace SistemaUsuarios.Models
 
         // ✅ RELACIONAMENTO COM PASSAGEIROS ADICIONAIS (1:N)
         public virtual ICollection<PassageiroProposta> PassageirosProposta { get; set; } = new List<PassageiroProposta>();
+
+        // ── DEMONSTRAÇÃO ──────────────────────────────────────────────────────
+        /// <summary>Quando true, esta proposta é uma cópia de demonstração criada automaticamente no onboarding.</summary>
+        public bool IsConteudoDemonstracao { get; set; } = false;
+
+        /// <summary>Id do ConteudoDemonstracao que originou esta cópia. Apenas auditoria — sem FK rígida.</summary>
+        public Guid? ConteudoDemonstracaoOrigemId { get; set; }
     }
 
     public enum StatusProposta
