@@ -8,4 +8,4 @@ bin/
 obj/
 
 # Logs
-*.log
+*.logappsettings.Development.json
