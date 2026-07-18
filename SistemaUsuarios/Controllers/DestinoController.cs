@@ -13,6 +13,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Moq;
 using SistemaUsuarios.Migrations;
+using SistemaUsuarios.Services;
 using Destino = SistemaUsuarios.Models.Destino;
 
 
@@ -23,10 +24,23 @@ namespace SistemaUsuarios.Controllers
     {
         private readonly IConfiguration _configuration;
         private readonly ApplicationDbContext _context;
-        public DestinoController(IConfiguration configuration, ApplicationDbContext context)
+        private readonly IAiGatewayService _aiGateway;
+
+        public DestinoController(IConfiguration configuration, ApplicationDbContext context, IAiGatewayService aiGateway)
         {
             _configuration = configuration;
             _context = context;
+            _aiGateway = aiGateway;
+        }
+
+        private bool UsuarioLogado() => HttpContext.Session.GetString("UsuarioId") != null;
+        private Guid ObterUsuarioLogadoId() => Guid.Parse(HttpContext.Session.GetString("UsuarioId")!);
+        private bool SessaoIsMaster() => HttpContext.Session.GetString("TipoUsuario") != "Associado";
+        private Guid ObterAgenciaId()
+        {
+            if (SessaoIsMaster()) return ObterUsuarioLogadoId();
+            var s = HttpContext.Session.GetString("UsuarioMasterId");
+            return string.IsNullOrEmpty(s) ? ObterUsuarioLogadoId() : Guid.Parse(s);
         }
         [HttpPost]
         public async Task<IActionResult> GerarDescricao2(string nome)
@@ -79,67 +93,38 @@ Informe os principais cuidados que o viajante deve ter. Inclua:
 
 Importante: Responda em formato JSON estruturado com as chaves correspondentes aos tópicos acima. Evite comentários fora do JSON. Use linguagem natural, clara e objetiva.";
 
-            var apiKey = _configuration["OpenAI:ApiKey"];
-            if (string.IsNullOrWhiteSpace(apiKey))
-                return BadRequest("Chave da API da OpenAI não foi configurada.");
+            if (!UsuarioLogado()) return Unauthorized();
 
-            using var httpClient = new HttpClient();
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
-
-            var requestBody = new
+            var gatewayResult = await _aiGateway.ExecutarAsync(new AiGatewayRequest
             {
-                model = "gpt-4o-mini",
-                temperature = 0.5,
-                response_format = new { type = "json_object" },
-                messages = new[]
+                AgenciaId = ObterAgenciaId(),
+                UsuarioId = ObterUsuarioLogadoId(),
+                Funcionalidade = "GerarDescricaoDestino2",
+                Modelo = "gpt-4o-mini",
+                Payload = new
                 {
-                    new { role = "system", content = "Você é um redator de viagens profissional. Responda sempre com JSON válido." },
-                    new { role = "user", content = prompt }
+                    model = "gpt-4o-mini",
+                    temperature = 0.5,
+                    response_format = new { type = "json_object" },
+                    messages = new[]
+                    {
+                        new { role = "system", content = "Você é um redator de viagens profissional. Responda sempre com JSON válido." },
+                        new { role = "user", content = prompt }
+                    }
                 }
-            };
+            });
 
-            var json = JsonConvert.SerializeObject(requestBody);
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
-            var response = await httpClient.PostAsync("https://api.openai.com/v1/chat/completions", content);
+            if (!gatewayResult.Sucesso)
+                return StatusCode(500, $"Erro ao gerar descrição: {gatewayResult.MensagemErro}");
 
-            if (!response.IsSuccessStatusCode)
-            {
-                var erro = await response.Content.ReadAsStringAsync();
-                return StatusCode((int)response.StatusCode, $"Erro ao chamar a OpenAI: {erro}");
-            }
-
-            var respostaJson = await response.Content.ReadAsStringAsync();
-            var resultado = JObject.Parse(respostaJson);
-            var jsonTexto = resultado["choices"]?[0]?["message"]?["content"]?.ToString();
-
-            /*destino.DescricaoLLM = parsed["descricao"]?.ToString();
-            destino.AtracoesLLM = parsed["atracoes"]?.ToString(Formatting.None);
-            destino.GastronomiaLLM = parsed["gastronomia"]?.ToString(Formatting.None);
-            destino.InformacoesPraticasLLM = parsed["informacoesPraticas"]?.ToString(Formatting.None);
-            destino.MalaViagemLLM = parsed["malaViagem"]?.ToString(Formatting.None);
-            destino.CuidadosLLM = parsed["cuidados"]?.ToString(Formatting.None);*/
-
+            var jsonTexto = gatewayResult.Conteudo ?? "";
             if (string.IsNullOrWhiteSpace(jsonTexto))
                 return StatusCode(500, "Resposta da OpenAI está vazia.");
 
             try
             {
-                // Remove markdown se estiver entre ```json ... ```
-                var regex = new Regex("```json\\s*(.*?)\\s*```", RegexOptions.Singleline);
-                var match = regex.Match(jsonTexto);
-                var jsonLimpo = match.Success ? match.Groups[1].Value : jsonTexto;
-
-                // Remove colchetes duplos no início e fim, se existirem
-                jsonLimpo = jsonLimpo.Trim();
-                if (jsonLimpo.StartsWith("{{") && jsonLimpo.EndsWith("}}"))
-                    jsonLimpo = jsonLimpo.Substring(1, jsonLimpo.Length - 2); // remove apenas 1 par de chaves
-
-                //var descricao = objeto["descricao"]?.ToString();
                 var jsonExtraido = ExtrairJsonDeMarkdown(jsonTexto);
-                var objeto = Content(jsonTexto.Trim(), "text/plain", Encoding.UTF8);  
-                return objeto;
-                //return Json(objeto); // <--- Retorno como JSON
-                //return Content(descricao.Trim(), "text/plain");
+                return Content(jsonExtraido, "text/plain", Encoding.UTF8);
             }
             catch (Exception ex)
             {
@@ -217,42 +202,31 @@ REGRAS CRÍTICAS:
 }}";
 
 
-            var builder = WebApplication.CreateBuilder();
-            var configuration = builder.Configuration;
-            var apiKey = configuration["OpenAI:ApiKey"];
-            
-            //var apiKey = _configuration["OpenAI:ApiKey"];
-            if (string.IsNullOrWhiteSpace(apiKey))
-                return BadRequest("Chave da API da OpenAI não foi configurada.");
+            if (!UsuarioLogado()) return Unauthorized();
 
-            using var httpClient = new HttpClient();
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
-
-            var requestBody = new
+            var gatewayResult = await _aiGateway.ExecutarAsync(new AiGatewayRequest
             {
-                model = "gpt-4o-mini",
-                temperature = 0.5,
-                response_format = new { type = "json_object" },
-                messages = new[]
+                AgenciaId = ObterAgenciaId(),
+                UsuarioId = ObterUsuarioLogadoId(),
+                Funcionalidade = "GerarDescricaoDestino",
+                Modelo = "gpt-4o-mini",
+                Payload = new
                 {
-                    new { role = "system", content = "Você é um redator de viagens profissional. Responda sempre com JSON válido." },
-                    new { role = "user", content = prompt }
+                    model = "gpt-4o-mini",
+                    temperature = 0.5,
+                    response_format = new { type = "json_object" },
+                    messages = new[]
+                    {
+                        new { role = "system", content = "Você é um redator de viagens profissional. Responda sempre com JSON válido." },
+                        new { role = "user", content = prompt }
+                    }
                 }
-            };
+            });
 
-            var json = JsonConvert.SerializeObject(requestBody);
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
-            var response = await httpClient.PostAsync("https://api.openai.com/v1/chat/completions", content);
+            if (!gatewayResult.Sucesso)
+                return StatusCode(500, $"Erro ao gerar descrição: {gatewayResult.MensagemErro}");
 
-            if (!response.IsSuccessStatusCode)
-            {
-                var erro = await response.Content.ReadAsStringAsync();
-                return StatusCode((int)response.StatusCode, $"Erro ao chamar a OpenAI: {erro}");
-            }
-
-            var respostaJson = await response.Content.ReadAsStringAsync();
-            var resultado = JObject.Parse(respostaJson);
-            var jsonTexto = resultado["choices"]?[0]?["message"]?["content"]?.ToString();
+            var jsonTexto = gatewayResult.Conteudo ?? "";
 
     if (string.IsNullOrWhiteSpace(jsonTexto))
         return StatusCode(500, "Resposta da OpenAI está vazia.");
@@ -261,7 +235,7 @@ REGRAS CRÍTICAS:
 
     try
     {
-        var parsed = JObject.Parse(jsonExtraido); // garante que é JSON válido
+        var parsed = JObject.Parse(jsonExtraido);
         return Content(parsed.ToString(Formatting.None), "application/json");
     }
     catch (JsonReaderException ex)
@@ -379,20 +353,6 @@ private static string ExtrairJsonDeMarkdown(string raw)
             var content = await response.Content.ReadAsStringAsync();
             return Content(content, "application/json");
         }
-
-        private bool UsuarioLogado()
-        {
-            return HttpContext.Session.GetString("UsuarioId") != null;
-        }
-
-        private Guid ObterUsuarioLogadoId()
-        {
-            var usuarioIdString = HttpContext.Session.GetString("UsuarioId");
-            return Guid.Parse(usuarioIdString);
-        }
-
-        private bool SessaoIsMaster() =>
-            HttpContext.Session.GetString("TipoUsuario") != "Associado";
 
         private IActionResult RedirectToEditar(Guid propostaId)
         {

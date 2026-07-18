@@ -1,0 +1,176 @@
+@model SistemaUsuarios.Models.ViewModels.PlatformAdmin.AiUsageGlobalViewModel
+@{
+    Layout = "~/Views/Shared/_PlatformAdminLayout.cshtml";
+    ViewData["Title"] = "Consumo IA";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">Consumo de IA</h1>
+    <form method="get" class="d-flex gap-2 align-items-center">
+        <select name="mes" class="form-select form-select-sm" style="width:auto;">
+            @for (int i = 1; i <= 12; i++)
+            {
+                var label = new DateTime(Model.Ano, i, 1).ToString("MMMM");
+                <option value="@i" selected="@(i == Model.Mes)">@label</option>
+            }
+        </select>
+        <select name="ano" class="form-select form-select-sm" style="width:auto;">
+            @for (int y = DateTime.UtcNow.Year; y >= 2025; y--)
+            {
+                <option value="@y" selected="@(y == Model.Ano)">@y</option>
+            }
+        </select>
+        <button type="submit" class="btn btn-sm btn-primary">Filtrar</button>
+    </form>
+</div>
+
+<p class="text-muted mb-4">@Model.MesLabel</p>
+
+<!-- Resumo -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="text-muted small mb-1">Custo Total</div>
+                <div class="fs-4 fw-bold text-dark">US$ @Model.CustoTotalUsd.ToString("N4")</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="text-muted small mb-1">Total de Chamadas</div>
+                <div class="fs-4 fw-bold">@Model.TotalChamadas.ToString("N0")</div>
+                @if (Model.ChamadasBloqueadas > 0)
+                {
+                    <div class="text-danger small">@Model.ChamadasBloqueadas bloqueadas</div>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="text-muted small mb-1">Tokens Totais</div>
+                <div class="fs-4 fw-bold">@(Model.TotalTokens / 1000)K</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="text-muted small mb-1">Agências Ativas</div>
+                <div class="fs-4 fw-bold">@Model.AgenciasAtivas</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Consumo por agência -->
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header fw-semibold">Por Agência</div>
+            <div class="table-responsive">
+                <table class="table table-sm table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Agência</th>
+                            <th class="text-end">Custo</th>
+                            <th class="text-end">Chamadas</th>
+                            <th style="width:160px">Limite</th>
+                            <th>Modo</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in Model.Agencias)
+                        {
+                            var pct = row.Percentual;
+                            var barCss = pct >= 100 ? "bg-danger" : pct >= 80 ? "bg-warning" : "bg-success";
+                            <tr>
+                                <td>@row.NomeAgencia</td>
+                                <td class="text-end font-monospace">US$ @row.CustoUsd.ToString("N4")</td>
+                                <td class="text-end">@row.Chamadas.ToString("N0")</td>
+                                <td>
+                                    @if (row.LimiteUsd.HasValue)
+                                    {
+                                        <div class="d-flex align-items-center gap-1">
+                                            <div class="progress flex-grow-1" style="height:6px;">
+                                                <div class="progress-bar @barCss" style="width:@pct%;"></div>
+                                            </div>
+                                            <span class="small text-muted" style="white-space:nowrap;">@pct%</span>
+                                        </div>
+                                        <div class="text-muted" style="font-size:0.7rem;">US$ @row.LimiteUsd.Value.ToString("N2")</div>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">sem limite</span>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="badge @(row.ModoControle == SistemaUsuarios.Models.AiModoControle.Bloqueio ? "bg-danger" : row.ModoControle == SistemaUsuarios.Models.AiModoControle.Alerta ? "bg-warning text-dark" : "bg-secondary")">
+                                        @row.ModoControle
+                                    </span>
+                                </td>
+                                <td>
+                                    <a asp-action="AiUsageAgencia" asp-route-id="@row.AgenciaId" class="btn btn-sm btn-outline-secondary py-0">Ver</a>
+                                </td>
+                            </tr>
+                        }
+                        @if (!Model.Agencias.Any())
+                        {
+                            <tr><td colspan="6" class="text-center text-muted py-4">Nenhum consumo registrado neste período.</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lado direito -->
+    <div class="col-lg-4">
+        <!-- Por funcionalidade -->
+        <div class="card mb-3">
+            <div class="card-header fw-semibold">Por Funcionalidade</div>
+            <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                    <thead class="table-light">
+                        <tr><th>Função</th><th class="text-end">Chamadas</th><th class="text-end">Custo</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var f in Model.PorFuncionalidade)
+                        {
+                            <tr>
+                                <td class="small">@f.Funcionalidade</td>
+                                <td class="text-end small">@f.Chamadas</td>
+                                <td class="text-end small font-monospace">@f.CustoUsd.ToString("N4")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <!-- Por modelo -->
+        <div class="card">
+            <div class="card-header fw-semibold">Por Modelo</div>
+            <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                    <thead class="table-light">
+                        <tr><th>Modelo</th><th class="text-end">Chamadas</th><th class="text-end">Custo</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var m in Model.PorModelo)
+                        {
+                            <tr>
+                                <td class="small">@m.Modelo</td>
+                                <td class="text-end small">@m.Chamadas</td>
+                                <td class="text-end small font-monospace">@m.CustoUsd.ToString("N4")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

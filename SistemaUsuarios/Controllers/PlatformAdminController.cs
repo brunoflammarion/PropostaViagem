@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SistemaUsuarios.Data;
 using SistemaUsuarios.Models;
+using SistemaUsuarios.Models.ViewModels.PlatformAdmin;
 using SistemaUsuarios.Services;
 
 namespace SistemaUsuarios.Controllers
@@ -159,6 +160,202 @@ namespace SistemaUsuarios.Controllers
             }
 
             return RedirectToAction("Agencia", new { id = masterId });
+        }
+
+        // ── Consumo de IA ─────────────────────────────────────────────────────
+
+        public async Task<IActionResult> AiUsage(int? ano, int? mes)
+        {
+            if (!AdminLogado()) return RedirectToAction("Login");
+            var now = DateTime.UtcNow;
+            var a = ano ?? now.Year;
+            var m = mes ?? now.Month;
+            var periodoInicio = new DateTime(a, m, 1, 0, 0, 0, DateTimeKind.Utc);
+            var periodoFim    = periodoInicio.AddMonths(1);
+
+            var records = await _db.AiUsageRecords
+                .AsNoTracking()
+                .Where(r => r.DataHoraInicio >= periodoInicio && r.DataHoraInicio < periodoFim)
+                .ToListAsync();
+
+            var agenciaIds = records.Select(r => r.AgenciaId).Distinct().ToList();
+            var nomes = await _db.Usuarios
+                .AsNoTracking()
+                .Where(u => agenciaIds.Contains(u.Id))
+                .Select(u => new { u.Id, Nome = u.NomeAgencia ?? u.Nome })
+                .ToDictionaryAsync(u => u.Id, u => u.Nome);
+
+            var limites = await _db.AiAgencyLimits
+                .AsNoTracking()
+                .Where(l => agenciaIds.Contains(l.AgenciaId))
+                .ToDictionaryAsync(l => l.AgenciaId);
+
+            var vm = new AiUsageGlobalViewModel
+            {
+                Ano = a, Mes = m,
+                CustoTotalUsd   = records.Where(r => r.Sucesso).Sum(r => r.CustoTotal),
+                TotalChamadas   = records.Count,
+                TotalTokens     = records.Sum(r => (long)r.TotalTokens),
+                AgenciasAtivas  = agenciaIds.Count,
+                ChamadasBloqueadas = records.Count(r => r.Status == "Blocked"),
+                Agencias = agenciaIds.Select(id => new AiUsageAgenciaRow
+                {
+                    AgenciaId   = id,
+                    NomeAgencia = nomes.GetValueOrDefault(id, id.ToString()[..8]),
+                    CustoUsd    = records.Where(r => r.AgenciaId == id && r.Sucesso).Sum(r => r.CustoTotal),
+                    Chamadas    = records.Count(r => r.AgenciaId == id),
+                    Tokens      = records.Where(r => r.AgenciaId == id).Sum(r => (long)r.TotalTokens),
+                    LimiteUsd   = limites.TryGetValue(id, out var l) ? l.LimiteMensalCusto : null,
+                    ModoControle = limites.TryGetValue(id, out var l2) ? l2.ModoControle : AiModoControle.Monitoramento
+                }).OrderByDescending(r => r.CustoUsd).ToList(),
+                PorFuncionalidade = records.GroupBy(r => r.Funcionalidade)
+                    .Select(g => new AiUsageFuncRow
+                    {
+                        Funcionalidade = g.Key,
+                        Chamadas = g.Count(),
+                        CustoUsd = g.Where(r => r.Sucesso).Sum(r => r.CustoTotal),
+                        Tokens = g.Sum(r => (long)r.TotalTokens)
+                    }).OrderByDescending(r => r.CustoUsd).ToList(),
+                PorModelo = records.GroupBy(r => r.Modelo)
+                    .Select(g => new AiUsageModeloRow
+                    {
+                        Modelo = g.Key,
+                        Chamadas = g.Count(),
+                        CustoUsd = g.Where(r => r.Sucesso).Sum(r => r.CustoTotal)
+                    }).OrderByDescending(r => r.CustoUsd).ToList()
+            };
+
+            ViewData["Title"] = $"Consumo IA — {vm.MesLabel}";
+            return View(vm);
+        }
+
+        public async Task<IActionResult> AiUsageAgencia(Guid id, int? ano, int? mes, int pagina = 1)
+        {
+            if (!AdminLogado()) return RedirectToAction("Login");
+            var now = DateTime.UtcNow;
+            var a = ano ?? now.Year;
+            var m = mes ?? now.Month;
+            var periodoInicio = new DateTime(a, m, 1, 0, 0, 0, DateTimeKind.Utc);
+            var periodoFim    = periodoInicio.AddMonths(1);
+
+            var agencia = await _db.Usuarios.AsNoTracking()
+                .FirstOrDefaultAsync(u => u.Id == id && u.TipoUsuario == TipoUsuario.Master);
+            if (agencia == null) return NotFound();
+
+            var limite = await _db.AiAgencyLimits.AsNoTracking()
+                .FirstOrDefaultAsync(l => l.AgenciaId == id && l.Ativo);
+
+            var query = _db.AiUsageRecords.AsNoTracking()
+                .Where(r => r.AgenciaId == id && r.DataHoraInicio >= periodoInicio && r.DataHoraInicio < periodoFim);
+
+            var records = await query.ToListAsync();
+            var total = await query.CountAsync();
+
+            var historico = await query
+                .OrderByDescending(r => r.DataHoraInicio)
+                .Skip((pagina - 1) * AiUsageAgenciaDetalheViewModel.PageSize)
+                .Take(AiUsageAgenciaDetalheViewModel.PageSize)
+                .ToListAsync();
+
+            var vm = new AiUsageAgenciaDetalheViewModel
+            {
+                AgenciaId = id,
+                NomeAgencia = agencia.NomeAgencia ?? agencia.Nome,
+                Ano = a, Mes = m,
+                CustoMesUsd = records.Where(r => r.Sucesso).Sum(r => r.CustoTotal),
+                ChamadasMes = records.Count,
+                TokensMes = records.Sum(r => (long)r.TotalTokens),
+                ChamadasBloqueadas = records.Count(r => r.Status == "Blocked"),
+                Limite = limite == null ? new AiLimiteFormViewModel { AgenciaId = id } : new AiLimiteFormViewModel
+                {
+                    AgenciaId = id,
+                    LimiteMensalCusto = limite.LimiteMensalCusto,
+                    ModoControle = limite.ModoControle,
+                    PercentualAlerta = limite.PercentualAlerta,
+                    PermitirExcedente = limite.PermitirExcedente,
+                    ValorExcedentePermitido = limite.ValorExcedentePermitido
+                },
+                PorFuncionalidade = records.GroupBy(r => r.Funcionalidade)
+                    .Select(g => new AiUsageFuncRow
+                    {
+                        Funcionalidade = g.Key,
+                        Chamadas = g.Count(),
+                        CustoUsd = g.Where(r => r.Sucesso).Sum(r => r.CustoTotal),
+                        Tokens = g.Sum(r => (long)r.TotalTokens)
+                    }).OrderByDescending(r => r.CustoUsd).ToList(),
+                Historico = historico.Select(r => new AiUsageRecordRow
+                {
+                    DataHora = r.DataHoraInicio,
+                    Funcionalidade = r.Funcionalidade,
+                    Modelo = r.Modelo,
+                    TotalTokens = r.TotalTokens,
+                    CustoUsd = r.CustoTotal,
+                    Sucesso = r.Sucesso,
+                    Status = r.Status,
+                    DuracaoMs = r.DuracaoMs
+                }).ToList(),
+                TotalHistorico = total,
+                PaginaAtual = pagina
+            };
+
+            ViewData["Title"] = $"IA — {vm.NomeAgencia}";
+            return View(vm);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SalvarLimiteAgencia(AiLimiteFormViewModel form)
+        {
+            if (!AdminLogado()) return RedirectToAction("Login");
+
+            var adminIdStr = HttpContext.Session.GetString("PlatformAdminId");
+            var adminId = adminIdStr != null ? Guid.Parse(adminIdStr) : Guid.Empty;
+
+            var limite = await _db.AiAgencyLimits
+                .FirstOrDefaultAsync(l => l.AgenciaId == form.AgenciaId && l.Ativo);
+
+            if (limite == null)
+            {
+                limite = new AiAgencyLimit { AgenciaId = form.AgenciaId, CriadoEm = DateTime.UtcNow };
+                _db.AiAgencyLimits.Add(limite);
+            }
+
+            // Registrar auditoria de cada campo alterado
+            void Audit(string campo, string? anterior, string? novo)
+            {
+                if (anterior == novo) return;
+                _db.AiLimitAuditLogs.Add(new AiLimitAuditLog
+                {
+                    AgenciaId = form.AgenciaId,
+                    AdministradorId = adminId,
+                    Campo = campo,
+                    ValorAnterior = anterior,
+                    ValorNovo = novo,
+                    Motivo = form.Motivo,
+                    DataHora = DateTime.UtcNow
+                });
+            }
+
+            Audit("LimiteMensalCusto",  limite.LimiteMensalCusto?.ToString(), form.LimiteMensalCusto?.ToString());
+            Audit("ModoControle",        limite.ModoControle.ToString(),       form.ModoControle.ToString());
+            Audit("PercentualAlerta",    limite.PercentualAlerta.ToString(),   form.PercentualAlerta.ToString());
+            Audit("PermitirExcedente",   limite.PermitirExcedente.ToString(),  form.PermitirExcedente.ToString());
+            Audit("ValorExcedentePermitido", limite.ValorExcedentePermitido?.ToString(), form.ValorExcedentePermitido?.ToString());
+
+            limite.LimiteMensalCusto         = form.LimiteMensalCusto;
+            limite.ModoControle              = form.ModoControle;
+            limite.PercentualAlerta          = form.PercentualAlerta;
+            limite.PermitirExcedente         = form.PermitirExcedente;
+            limite.ValorExcedentePermitido   = form.ValorExcedentePermitido;
+            limite.AtualizadoEm              = DateTime.UtcNow;
+            limite.AtualizadoPorAdminId      = adminId;
+
+            await _db.SaveChangesAsync();
+
+            TempData["Mensagem"]     = "Limite de IA atualizado com sucesso.";
+            TempData["MensagemTipo"] = "success";
+
+            return RedirectToAction("AiUsageAgencia", new { id = form.AgenciaId });
         }
 
         // ── Conteúdos de Demonstração ─────────────────────────────────────────

@@ -62,6 +62,7 @@
                         <th class="num">Clientes</th>
                         <th class="num">Leads</th>
                         <th class="num">Views</th>
+                        <th>Consumo IA</th>
                         <th>Última proposta</th>
                         <th>Cadastro</th>
                         <th></th>
@@ -85,6 +86,25 @@
                             <td class="num">@a.TotalClientes</td>
                             <td class="num">@a.TotalLeads</td>
                             <td class="num">@a.TotalVisualizacoes</td>
+                            <td style="font-size:11px;white-space:nowrap;">
+                                @if (a.ConsumoMensalUsd > 0 || a.LimiteMensalUsd.HasValue)
+                                {
+                                    var pct = a.PercentualConsumoIa;
+                                    var barCss = pct >= 100 ? "bg-danger" : pct >= 80 ? "bg-warning" : "bg-success";
+                                    <span>US$ @a.ConsumoMensalUsd.ToString("N2")</span>
+                                    @if (a.LimiteMensalUsd.HasValue)
+                                    {
+                                        <span style="color:#94a3b8;"> / @a.LimiteMensalUsd.Value.ToString("N2") · @pct%</span>
+                                        <div class="progress mt-1" style="height:3px;width:80px;">
+                                            <div class="progress-bar @barCss" style="width:@pct%;"></div>
+                                        </div>
+                                    }
+                                }
+                                else
+                                {
+                                    <span style="color:#cbd5e1;">—</span>
+                                }
+                            </td>
                             <td style="color:@(a.UltimaAtividade.HasValue ? "#334155" : "#cbd5e1");font-size:12px;">
                                 @(a.UltimaAtividade.HasValue ? a.UltimaAtividade.Value.ToString("dd/MM/yy") : "—")
                             </td>

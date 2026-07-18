@@ -1,0 +1,278 @@
+@model SistemaUsuarios.Models.ViewModels.PlatformAdmin.AiUsageAgenciaDetalheViewModel
+@{
+    Layout = "~/Views/Shared/_PlatformAdminLayout.cshtml";
+    ViewData["Title"] = "IA — " + Model.NomeAgencia;
+    var modoEnum = typeof(SistemaUsuarios.Models.AiModoControle);
+}
+
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a asp-action="Agencias">Agências</a></li>
+        <li class="breadcrumb-item"><a asp-action="Agencia" asp-route-id="@Model.AgenciaId">@Model.NomeAgencia</a></li>
+        <li class="breadcrumb-item active">Consumo IA</li>
+    </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">Consumo de IA — @Model.NomeAgencia</h1>
+    <form method="get" class="d-flex gap-2 align-items-center">
+        <select name="mes" class="form-select form-select-sm" style="width:auto;">
+            @for (int i = 1; i <= 12; i++)
+            {
+                var label = new DateTime(Model.Ano, i, 1).ToString("MMMM");
+                <option value="@i" selected="@(i == Model.Mes)">@label</option>
+            }
+        </select>
+        <select name="ano" class="form-select form-select-sm" style="width:auto;">
+            @for (int y = DateTime.UtcNow.Year; y >= 2025; y--)
+            {
+                <option value="@y" selected="@(y == Model.Ano)">@y</option>
+            }
+        </select>
+        <button type="submit" class="btn btn-sm btn-primary">Filtrar</button>
+    </form>
+</div>
+
+@if (TempData["Mensagem"] != null)
+{
+    <div class="alert alert-@(TempData["MensagemTipo"] ?? "info") alert-dismissible fade show">
+        @TempData["Mensagem"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Bloco 1: Cards de resumo mensal -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="text-muted small mb-1">Custo @Model.MesLabel</div>
+                <div class="fs-4 fw-bold text-dark">US$ @Model.CustoMesUsd.ToString("N4")</div>
+                @if (Model.Limite.LimiteMensalCusto.HasValue)
+                {
+                    var pct = Model.Limite.LimiteMensalCusto > 0
+                        ? (int)Math.Min(100, Math.Round(Model.CustoMesUsd / Model.Limite.LimiteMensalCusto.Value * 100))
+                        : 0;
+                    var barCss = pct >= 100 ? "bg-danger" : pct >= Model.Limite.PercentualAlerta ? "bg-warning" : "bg-success";
+                    <div class="progress mt-2" style="height:4px;"><div class="progress-bar @barCss" style="width:@pct%;"></div></div>
+                    <div class="text-muted small mt-1">@pct% do limite US$ @Model.Limite.LimiteMensalCusto.Value.ToString("N2")</div>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="text-muted small mb-1">Chamadas</div>
+                <div class="fs-4 fw-bold">@Model.ChamadasMes.ToString("N0")</div>
+                @if (Model.ChamadasBloqueadas > 0)
+                {
+                    <div class="text-danger small">@Model.ChamadasBloqueadas bloqueadas</div>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="text-muted small mb-1">Tokens</div>
+                <div class="fs-4 fw-bold">@(Model.TokensMes / 1000)K</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="text-muted small mb-1">Modo de Controle</div>
+                <div class="fs-5 fw-bold">
+                    <span class="badge @(Model.Limite.ModoControle == SistemaUsuarios.Models.AiModoControle.Bloqueio ? "bg-danger" : Model.Limite.ModoControle == SistemaUsuarios.Models.AiModoControle.Alerta ? "bg-warning text-dark" : "bg-secondary")">
+                        @Model.Limite.ModoControle
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Bloco 2: Limites editáveis -->
+    <div class="col-lg-5">
+        <div class="card h-100">
+            <div class="card-header fw-semibold">Configurar Limites</div>
+            <div class="card-body">
+                <form asp-action="SalvarLimiteAgencia" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="AgenciaId" value="@Model.AgenciaId" />
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Modo de Controle</label>
+                        <select name="ModoControle" class="form-select form-select-sm">
+                            <option value="1" selected="@(Model.Limite.ModoControle == SistemaUsuarios.Models.AiModoControle.Monitoramento)">Monitoramento (apenas log)</option>
+                            <option value="2" selected="@(Model.Limite.ModoControle == SistemaUsuarios.Models.AiModoControle.Alerta)">Alerta (avisa ao atingir limiar)</option>
+                            <option value="3" selected="@(Model.Limite.ModoControle == SistemaUsuarios.Models.AiModoControle.Bloqueio)">Bloqueio (bloqueia ao atingir limite)</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Limite Mensal (USD)</label>
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text">US$</span>
+                            <input type="number" name="LimiteMensalCusto" step="0.01" min="0"
+                                   value="@Model.Limite.LimiteMensalCusto?.ToString("F2")"
+                                   class="form-control" placeholder="sem limite" />
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Limiar de alerta (%)</label>
+                        <div class="input-group input-group-sm">
+                            <input type="number" name="PercentualAlerta" min="1" max="100"
+                                   value="@Model.Limite.PercentualAlerta" class="form-control" />
+                            <span class="input-group-text">%</span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" name="PermitirExcedente" value="true"
+                               class="form-check-input" id="chkExcedente"
+                               @(Model.Limite.PermitirExcedente ? "checked" : "") />
+                        <label class="form-check-label small" for="chkExcedente">Permitir excedente</label>
+                    </div>
+
+                    <div class="mb-3" id="excedenteCampo" style="@(Model.Limite.PermitirExcedente ? "" : "display:none;")">
+                        <label class="form-label small fw-semibold">Valor máximo de excedente (USD)</label>
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text">US$</span>
+                            <input type="number" name="ValorExcedentePermitido" step="0.01" min="0"
+                                   value="@Model.Limite.ValorExcedentePermitido?.ToString("F2")"
+                                   class="form-control" />
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Motivo da alteração</label>
+                        <input type="text" name="Motivo" class="form-control form-control-sm"
+                               placeholder="Opcional — registrado no log de auditoria" />
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-sm w-100">Salvar Configuração</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bloco 3: Por funcionalidade -->
+    <div class="col-lg-7">
+        <div class="card h-100">
+            <div class="card-header fw-semibold">Consumo por Funcionalidade</div>
+            <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Funcionalidade</th>
+                            <th class="text-end">Chamadas</th>
+                            <th class="text-end">Tokens</th>
+                            <th class="text-end">Custo (USD)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var f in Model.PorFuncionalidade)
+                        {
+                            <tr>
+                                <td class="small">@f.Funcionalidade</td>
+                                <td class="text-end small">@f.Chamadas.ToString("N0")</td>
+                                <td class="text-end small">@(f.Tokens / 1000)K</td>
+                                <td class="text-end small font-monospace">@f.CustoUsd.ToString("N4")</td>
+                            </tr>
+                        }
+                        @if (!Model.PorFuncionalidade.Any())
+                        {
+                            <tr><td colspan="4" class="text-center text-muted py-3">Nenhum consumo no período.</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bloco 4: Histórico paginado -->
+<div class="card">
+    <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
+        <span>Histórico de Chamadas</span>
+        <span class="text-muted small">@Model.TotalHistorico.ToString("N0") registros</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-sm table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Data/Hora</th>
+                    <th>Funcionalidade</th>
+                    <th>Modelo</th>
+                    <th class="text-end">Tokens</th>
+                    <th class="text-end">Custo</th>
+                    <th class="text-end">ms</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var r in Model.Historico)
+                {
+                    <tr>
+                        <td class="small text-nowrap">@r.DataHora.ToString("dd/MM HH:mm:ss")</td>
+                        <td class="small">@r.Funcionalidade</td>
+                        <td class="small">@r.Modelo</td>
+                        <td class="text-end small">@r.TotalTokens.ToString("N0")</td>
+                        <td class="text-end small font-monospace">@r.CustoUsd.ToString("N4")</td>
+                        <td class="text-end small">@r.DuracaoMs</td>
+                        <td>
+                            @if (r.Sucesso)
+                            {
+                                <span class="badge bg-success-subtle text-success">OK</span>
+                            }
+                            else if (r.Status == "Blocked")
+                            {
+                                <span class="badge bg-danger-subtle text-danger">Bloqueado</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-warning-subtle text-warning">@r.Status</span>
+                            }
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Historico.Any())
+                {
+                    <tr><td colspan="7" class="text-center text-muted py-4">Nenhum registro.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    @if (Model.TotalPaginas > 1)
+    {
+        <div class="card-footer">
+            <nav>
+                <ul class="pagination pagination-sm mb-0 justify-content-center">
+                    @for (int p = 1; p <= Model.TotalPaginas; p++)
+                    {
+                        <li class="page-item @(p == Model.PaginaAtual ? "active" : "")">
+                            <a class="page-link" asp-action="AiUsageAgencia"
+                               asp-route-id="@Model.AgenciaId"
+                               asp-route-ano="@Model.Ano"
+                               asp-route-mes="@Model.Mes"
+                               asp-route-pagina="@p">@p</a>
+                        </li>
+                    }
+                </ul>
+            </nav>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        document.getElementById('chkExcedente')?.addEventListener('change', function () {
+            document.getElementById('excedenteCampo').style.display = this.checked ? '' : 'none';
+        });
+    </script>
+}

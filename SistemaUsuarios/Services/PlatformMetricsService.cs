@@ -127,6 +127,37 @@ namespace SistemaUsuarios.Services
                 })
                 .ToListAsync();
 
+            // Enriquecer com dados de consumo de IA do mês corrente
+            var now = DateTime.UtcNow;
+            var mesInicio = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+            var mesFim    = mesInicio.AddMonths(1);
+            var agenciaIds = agencias.Select(a => a.Id).ToList();
+
+            var consumoMes = await _db.AiUsageRecords
+                .AsNoTracking()
+                .Where(r => agenciaIds.Contains(r.AgenciaId)
+                         && r.DataHoraInicio >= mesInicio
+                         && r.DataHoraInicio < mesFim
+                         && r.Sucesso)
+                .GroupBy(r => r.AgenciaId)
+                .Select(g => new { AgenciaId = g.Key, Custo = g.Sum(r => r.CustoTotal) })
+                .ToDictionaryAsync(x => x.AgenciaId, x => x.Custo);
+
+            var limites = await _db.AiAgencyLimits
+                .AsNoTracking()
+                .Where(l => agenciaIds.Contains(l.AgenciaId) && l.Ativo)
+                .ToDictionaryAsync(l => l.AgenciaId);
+
+            foreach (var ag in agencias)
+            {
+                ag.ConsumoMensalUsd = consumoMes.GetValueOrDefault(ag.Id, 0m);
+                if (limites.TryGetValue(ag.Id, out var lim))
+                {
+                    ag.LimiteMensalUsd = lim.LimiteMensalCusto;
+                    ag.ModoControleIa  = lim.ModoControle;
+                }
+            }
+
             return new AgenciaListViewModel
             {
                 Agencias     = agencias,

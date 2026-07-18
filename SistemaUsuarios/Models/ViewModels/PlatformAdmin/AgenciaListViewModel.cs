@@ -22,6 +22,14 @@ namespace SistemaUsuarios.Models.ViewModels.PlatformAdmin
         public int TotalVisualizacoes { get; set; }
         public DateTime? UltimaAtividade { get; set; }
 
+        // ── Consumo IA ────────────────────────────────────────────────────────
+        public decimal ConsumoMensalUsd { get; set; }
+        public decimal? LimiteMensalUsd { get; set; }
+        public AiModoControle ModoControleIa { get; set; } = AiModoControle.Monitoramento;
+        public int PercentualConsumoIa => LimiteMensalUsd.HasValue && LimiteMensalUsd > 0
+            ? (int)Math.Min(100, Math.Round(ConsumoMensalUsd / LimiteMensalUsd.Value * 100))
+            : 0;
+
         public string StatusLabel => Status switch
         {
             StatusUsuario.Ativo => "Ativa",

@@ -71,6 +71,9 @@ builder.Services.AddScoped<SistemaUsuarios.Services.PlatformMetricsService>();
 // Conteúdos de Demonstração
 builder.Services.AddScoped<SistemaUsuarios.Services.DemonstracaoService>();
 
+// Gateway central de IA (todas as chamadas ao provedor passam por aqui)
+builder.Services.AddScoped<IAiGatewayService, AiGatewayService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

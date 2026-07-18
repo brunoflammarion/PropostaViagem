@@ -21,12 +21,14 @@ namespace SistemaUsuarios.Controllers
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IMemoryCache _cache;
         private readonly ILogger<HospedagemController> _logger;
+        private readonly IAiGatewayService _aiGateway;
 
         // Máximo 2 chamadas simultâneas ao Google Places — proteção contra avalanche
         private static readonly SemaphoreSlim _autocompleteThrottle = new(2, 2);
 
         public HospedagemController(ApplicationDbContext context, IConfiguration configuration, BlobStorageService blob,
-            IHttpClientFactory httpClientFactory, IMemoryCache cache, ILogger<HospedagemController> logger)
+            IHttpClientFactory httpClientFactory, IMemoryCache cache, ILogger<HospedagemController> logger,
+            IAiGatewayService aiGateway)
         {
             _context = context;
             _blob = blob;
@@ -34,6 +36,7 @@ namespace SistemaUsuarios.Controllers
             _httpClientFactory = httpClientFactory;
             _cache = cache;
             _logger = logger;
+            _aiGateway = aiGateway;
         }
 
         private bool UsuarioLogado() => HttpContext.Session.GetString("UsuarioId") != null;
@@ -42,6 +45,13 @@ namespace SistemaUsuarios.Controllers
 
         private bool SessaoIsMaster() =>
             HttpContext.Session.GetString("TipoUsuario") != "Associado";
+
+        private Guid ObterAgenciaId()
+        {
+            if (SessaoIsMaster()) return ObterUsuarioLogadoId();
+            var s = HttpContext.Session.GetString("UsuarioMasterId");
+            return string.IsNullOrEmpty(s) ? ObterUsuarioLogadoId() : Guid.Parse(s);
+        }
 
         private IActionResult RedirectToEditar(Guid propostaId)
         {
@@ -228,48 +238,34 @@ Responda SOMENTE com um JSON válido, sem texto fora do objeto, no seguinte form
   ""observacoesGerais"": ""Observações importantes para os hospedes: estacionamento, pets, cafe da manha, piscina, academia, etc.""
 }}";
 
-            var apiKey = _configuration["OpenAI:ApiKey"];
-            if (string.IsNullOrWhiteSpace(apiKey))
-                return BadRequest(new { error = "Chave da API da OpenAI não configurada." });
-
             try
             {
-                var httpClient = _httpClientFactory.CreateClient("OpenAI");
-                httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
-
-                var requestBody = new
+                var gatewayResult = await _aiGateway.ExecutarAsync(new AiGatewayRequest
                 {
-                    model = "gpt-4o-mini",
-                    temperature = 0.5,
-                    response_format = new { type = "json_object" },
-                    messages = new[]
+                    AgenciaId = ObterAgenciaId(),
+                    UsuarioId = ObterUsuarioLogadoId(),
+                    Funcionalidade = "GerarDescricaoHospedagem",
+                    Modelo = "gpt-4o-mini",
+                    Payload = new
                     {
-                        new { role = "system", content = "Você é um especialista em turismo e hospitalidade. Responda sempre com JSON válido." },
-                        new { role = "user", content = prompt }
+                        model = "gpt-4o-mini",
+                        temperature = 0.5,
+                        response_format = new { type = "json_object" },
+                        messages = new[]
+                        {
+                            new { role = "system", content = "Você é um especialista em turismo e hospitalidade. Responda sempre com JSON válido." },
+                            new { role = "user", content = prompt }
+                        }
                     }
-                };
+                }, cancellationToken);
 
-                var jsonBody = JsonConvert.SerializeObject(requestBody);
-                var content = new StringContent(jsonBody, Encoding.UTF8, "application/json");
-                var response = await httpClient.PostAsync("https://api.openai.com/v1/chat/completions", content, cancellationToken);
+                if (gatewayResult.CodigoErro == "AI_MONTHLY_LIMIT_REACHED")
+                    return StatusCode(429, new { error = "Limite mensal de IA atingido.", code = "AI_MONTHLY_LIMIT_REACHED" });
 
-                if (!response.IsSuccessStatusCode)
-                {
-                    var erro = await response.Content.ReadAsStringAsync(cancellationToken);
-                    _logger.LogError("OpenAI retornou {Status} para hospedagem {Nome}: {Erro}", (int)response.StatusCode, nome, erro);
-                    return StatusCode((int)response.StatusCode, new { error = "Erro ao consultar IA." });
-                }
+                if (!gatewayResult.Sucesso)
+                    return StatusCode(500, new { error = "Erro ao consultar IA." });
 
-                var respostaJson = await response.Content.ReadAsStringAsync(cancellationToken);
-                JObject resultado;
-                try { resultado = JObject.Parse(respostaJson); }
-                catch (JsonReaderException ex)
-                {
-                    _logger.LogError(ex, "JSON inválido recebido da OpenAI para hospedagem {Nome}", nome);
-                    return StatusCode(500, new { error = "Resposta inválida da IA." });
-                }
-
-                var jsonTexto = resultado["choices"]?[0]?["message"]?["content"]?.ToString();
+                var jsonTexto = gatewayResult.Conteudo ?? "";
                 if (string.IsNullOrWhiteSpace(jsonTexto))
                     return StatusCode(500, new { error = "Resposta da OpenAI vazia." });
 

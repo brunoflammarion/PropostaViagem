@@ -60,6 +60,12 @@ namespace SistemaUsuarios.Data
         public DbSet<ConteudoDemonstracao> ConteudosDemonstracao { get; set; }
         public DbSet<ConteudoDemonstracaoAplicado> ConteudosDemonstracaoAplicados { get; set; }
 
+        // ── CONTROLE DE CONSUMO DE IA ──────────────────────────────────────
+        public DbSet<AiModelPricing> AiModelPricings { get; set; }
+        public DbSet<AiAgencyLimit> AiAgencyLimits { get; set; }
+        public DbSet<AiUsageRecord> AiUsageRecords { get; set; }
+        public DbSet<AiLimitAuditLog> AiLimitAuditLogs { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -598,6 +604,74 @@ namespace SistemaUsuarios.Data
             modelBuilder.Entity<ConteudoDemonstracaoAplicado>()
                 .HasIndex(a => new { a.ConteudoDemonstracaoId, a.AgenciaMasterId })
                 .IsUnique();
+
+            // ── AI MODEL PRICING ───────────────────────────────────────────────────
+            modelBuilder.Entity<AiModelPricing>()
+                .HasIndex(p => new { p.Provedor, p.Modelo, p.Ativo });
+
+            modelBuilder.Entity<AiModelPricing>()
+                .Property(p => p.PrecoInputPorMilhao).HasPrecision(18, 6);
+            modelBuilder.Entity<AiModelPricing>()
+                .Property(p => p.PrecoCachedInputPorMilhao).HasPrecision(18, 6);
+            modelBuilder.Entity<AiModelPricing>()
+                .Property(p => p.PrecoOutputPorMilhao).HasPrecision(18, 6);
+
+            // ── AI AGENCY LIMIT ────────────────────────────────────────────────────
+            modelBuilder.Entity<AiAgencyLimit>()
+                .HasIndex(l => l.AgenciaId).IsUnique();
+
+            modelBuilder.Entity<AiAgencyLimit>()
+                .Property(l => l.ModoControle).HasConversion<int>();
+            modelBuilder.Entity<AiAgencyLimit>()
+                .Property(l => l.LimiteMensalCusto).HasPrecision(18, 4);
+            modelBuilder.Entity<AiAgencyLimit>()
+                .Property(l => l.ValorExcedentePermitido).HasPrecision(18, 4);
+
+            // ── AI USAGE RECORDS ───────────────────────────────────────────────────
+            modelBuilder.Entity<AiUsageRecord>()
+                .HasIndex(r => new { r.AgenciaId, r.DataHoraInicio });
+            modelBuilder.Entity<AiUsageRecord>()
+                .HasIndex(r => new { r.AgenciaId, r.Funcionalidade, r.DataHoraInicio });
+            modelBuilder.Entity<AiUsageRecord>()
+                .HasIndex(r => new { r.Modelo, r.DataHoraInicio });
+            modelBuilder.Entity<AiUsageRecord>()
+                .HasIndex(r => r.CorrelationId);
+
+            modelBuilder.Entity<AiUsageRecord>()
+                .Property(r => r.PrecoInputPorMilhao).HasPrecision(18, 6);
+            modelBuilder.Entity<AiUsageRecord>()
+                .Property(r => r.PrecoCachedInputPorMilhao).HasPrecision(18, 6);
+            modelBuilder.Entity<AiUsageRecord>()
+                .Property(r => r.PrecoOutputPorMilhao).HasPrecision(18, 6);
+            modelBuilder.Entity<AiUsageRecord>()
+                .Property(r => r.CustoInput).HasPrecision(18, 8);
+            modelBuilder.Entity<AiUsageRecord>()
+                .Property(r => r.CustoCachedInput).HasPrecision(18, 8);
+            modelBuilder.Entity<AiUsageRecord>()
+                .Property(r => r.CustoOutput).HasPrecision(18, 8);
+            modelBuilder.Entity<AiUsageRecord>()
+                .Property(r => r.CustoTotal).HasPrecision(18, 8);
+
+            // Seed de preços dos modelos OpenAI (vigentes em 2026-07)
+            var seedDate = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            modelBuilder.Entity<AiModelPricing>().HasData(
+                new AiModelPricing
+                {
+                    Id = new Guid("11111111-0000-0000-0000-000000000001"),
+                    Provedor = "OpenAI", Modelo = "gpt-4o-mini",
+                    PrecoInputPorMilhao = 0.15m, PrecoCachedInputPorMilhao = 0.075m, PrecoOutputPorMilhao = 0.60m,
+                    Moeda = "USD", VigenciaInicio = seedDate, Ativo = true, Versao = 1,
+                    CriadoEm = seedDate
+                },
+                new AiModelPricing
+                {
+                    Id = new Guid("11111111-0000-0000-0000-000000000002"),
+                    Provedor = "OpenAI", Modelo = "gpt-4o",
+                    PrecoInputPorMilhao = 2.50m, PrecoCachedInputPorMilhao = 1.25m, PrecoOutputPorMilhao = 10.00m,
+                    Moeda = "USD", VigenciaInicio = seedDate, Ativo = true, Versao = 1,
+                    CriadoEm = seedDate
+                }
+            );
         }
     }
 }
