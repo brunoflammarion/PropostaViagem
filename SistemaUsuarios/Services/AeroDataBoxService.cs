@@ -4,7 +4,7 @@ namespace SistemaUsuarios.Services
 {
     public interface IFlightLookupService
     {
-        Task<FlightInfoResult> ConsultarVooAsync(string codigoVoo);
+        Task<FlightInfoResult> ConsultarVooAsync(string codigoVoo, DateOnly dataVoo);
     }
 
     public class AeroDataBoxService : IFlightLookupService
@@ -22,7 +22,7 @@ namespace SistemaUsuarios.Services
             _baseUrl = (config["AeroDataBox:BaseUrl"] ?? "https://prod.api.market/api/v1/aedbx/aerodatabox").TrimEnd('/');
         }
 
-        public async Task<FlightInfoResult> ConsultarVooAsync(string codigoVoo)
+        public async Task<FlightInfoResult> ConsultarVooAsync(string codigoVoo, DateOnly dataVoo)
         {
             if (string.IsNullOrWhiteSpace(codigoVoo))
                 return new FlightInfoResult { Erro = "Código do voo não informado." };
@@ -30,10 +30,14 @@ namespace SistemaUsuarios.Services
             if (string.IsNullOrEmpty(_apiKey) || _apiKey == "CONFIGURE_VIA_USER_SECRETS")
                 return new FlightInfoResult { Erro = "Chave AeroDataBox não configurada." };
 
-            var ident = codigoVoo.Trim().ToUpperInvariant().Replace(" ", "");
-            var url   = $"{_baseUrl}/flights/Number/{Uri.EscapeDataString(ident)}?withAircraftImage=false&withLocation=false&withFlightPlan=false";
+            var ident     = codigoVoo.Trim().ToUpperInvariant().Replace(" ", "");
+            var dataStr   = dataVoo.ToString("yyyy-MM-dd");
+            // AeroDataBox suporta filtro por data: /flights/Number/{ident}/{dateLocal}
+            var url = $"{_baseUrl}/flights/Number/{Uri.EscapeDataString(ident)}/{dataStr}?withAircraftImage=false&withLocation=false&withFlightPlan=false";
 
-            _logger.LogDebug("AeroDataBox: GET {Url}", url);
+            _logger.LogInformation(
+                "AeroDataBox ConsultarVoo | ident={Ident} data={Data} url={Url}",
+                ident, dataStr, url);
 
             try
             {
@@ -69,7 +73,7 @@ namespace SistemaUsuarios.Services
                 }
 
                 _logger.LogDebug("AeroDataBox: {Bytes} bytes para {Ident}", json.Length, ident);
-                return ParseResposta(json, ident);
+                return ParseResposta(json, ident, dataVoo, _logger);
             }
             catch (HttpRequestException ex)
             {
@@ -90,25 +94,68 @@ namespace SistemaUsuarios.Services
 
         // ── Parser ───────────────────────────────────────────────────────────────
 
-        private static FlightInfoResult ParseResposta(string json, string ident)
+        private static FlightInfoResult ParseResposta(string json, string ident, DateOnly dataVoo, ILogger logger)
         {
             var doc  = JsonDocument.Parse(json);
             var root = doc.RootElement;
 
-            JsonElement voo = default;
-            bool found = false;
+            // Coletar todos os candidatos do array/objeto retornado
+            var candidatos = new List<JsonElement>();
 
-            if (root.ValueKind == JsonValueKind.Array && root.GetArrayLength() > 0)
-            { voo = root[0]; found = true; }
+            if (root.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var el in root.EnumerateArray()) candidatos.Add(el);
+            }
             else if (root.ValueKind == JsonValueKind.Object)
             {
-                if (root.TryGetProperty("departures", out var deps) && deps.GetArrayLength() > 0)
-                { voo = deps[0]; found = true; }
-                else if (root.TryGetProperty("arrivals", out var arrs) && arrs.GetArrayLength() > 0)
-                { voo = arrs[0]; found = true; }
+                if (root.TryGetProperty("departures", out var deps))
+                    foreach (var el in deps.EnumerateArray()) candidatos.Add(el);
+                if (root.TryGetProperty("arrivals", out var arrs))
+                    foreach (var el in arrs.EnumerateArray()) candidatos.Add(el);
             }
 
-            if (!found)
+            if (candidatos.Count == 0)
+                return new FlightInfoResult { Erro = $"Nenhum voo encontrado para {ident}." };
+
+            // Logar todas as datas locais de partida encontradas
+            var dataStr = dataVoo.ToString("yyyy-MM-dd");
+            foreach (var c in candidatos)
+            {
+                var depLocal = ExtrairDataLocalPartida(c);
+                logger.LogInformation(
+                    "AeroDataBox candidato | ident={Ident} dataPartidaLocal={Data} buscada={Buscada}",
+                    ident, depLocal?.ToString("yyyy-MM-dd") ?? "null", dataStr);
+            }
+
+            // Filtrar pelo dia local de partida === data pesquisada
+            JsonElement? vooSelecionado = null;
+            foreach (var c in candidatos)
+            {
+                var depLocal = ExtrairDataLocalPartida(c);
+                if (depLocal.HasValue && DateOnly.FromDateTime(depLocal.Value) == dataVoo)
+                {
+                    vooSelecionado = c;
+                    logger.LogInformation(
+                        "AeroDataBox selecionado | ident={Ident} data={Data}",
+                        ident, dataStr);
+                    break;
+                }
+            }
+
+            if (vooSelecionado == null)
+            {
+                logger.LogWarning(
+                    "AeroDataBox nenhum candidato corresponde à data | ident={Ident} data={Data} total={Total}",
+                    ident, dataStr, candidatos.Count);
+                return new FlightInfoResult
+                {
+                    Erro = $"Encontramos informações para o voo {ident}, mas não para {dataVoo.ToString("dd/MM/yyyy")}. " +
+                           "Verifique a data, a companhia e o número informados."
+                };
+            }
+
+            var voo = vooSelecionado.Value;
+            if (!voo.ValueKind.Equals(JsonValueKind.Object))
                 return new FlightInfoResult { Erro = $"Nenhum voo encontrado para {ident}." };
 
             var r = new FlightInfoResult { CodigoBusca = ident };
@@ -280,6 +327,24 @@ namespace SistemaUsuarios.Services
             if (DateTime.TryParse(valor, null,
                 System.Globalization.DateTimeStyles.RoundtripKind, out var dt))
                 return dt.ToUniversalTime();
+            return null;
+        }
+
+        // Extrai a data local de partida de um elemento de voo (scheduledTime.local prioritário, revisedTime.local como fallback)
+        private static DateTime? ExtrairDataLocalPartida(JsonElement voo)
+        {
+            if (!voo.TryGetProperty("departure", out var dep)) return null;
+
+            if (dep.TryGetProperty("revisedTime", out var rev))
+            {
+                var loc = ParseLocalTime(StrProp(rev, "local"));
+                if (loc.HasValue) return loc;
+            }
+            if (dep.TryGetProperty("scheduledTime", out var sched))
+            {
+                var loc = ParseLocalTime(StrProp(sched, "local"));
+                if (loc.HasValue) return loc;
+            }
             return null;
         }
 

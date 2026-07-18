@@ -524,12 +524,24 @@ namespace SistemaUsuarios.Controllers
 
         // GET: Voo/ConsultarVoo?codigoVoo=AFL1482  (AJAX)
         [HttpGet]
-        public async Task<IActionResult> ConsultarVoo(string codigoVoo)
+        public async Task<IActionResult> ConsultarVoo(string codigoVoo, string dataVoo)
         {
             if (!UsuarioLogado())
                 return Unauthorized();
 
-            var r = await _flightLookup.ConsultarVooAsync(codigoVoo);
+            if (string.IsNullOrWhiteSpace(codigoVoo))
+                return BadRequest(new { erro = "Informe a companhia e o número do voo antes de buscar." });
+
+            if (string.IsNullOrWhiteSpace(dataVoo))
+                return BadRequest(new { erro = "Informe a data do voo antes de buscar." });
+
+            if (!DateOnly.TryParseExact(dataVoo, "yyyy-MM-dd",
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    System.Globalization.DateTimeStyles.None,
+                    out var data))
+                return BadRequest(new { erro = "Formato de data inválido. Use yyyy-MM-dd." });
+
+            var r = await _flightLookup.ConsultarVooAsync(codigoVoo, data);
 
             if (!string.IsNullOrEmpty(r.Erro))
                 return BadRequest(new { erro = r.Erro });

@@ -4598,9 +4598,9 @@
 
         // ─── Busca automática de dados do voo via AeroDataBox ────────────────────
 
-        async function _consultarVoo(codigoVoo, fillFn, btn, alertEl) {
-            if (!codigoVoo) {
-                mostrarAlertaVoo(alertEl, 'warning', 'Informe a companhia e o número do voo antes de buscar.');
+        async function _consultarVoo(codigoVoo, dataVoo, fillFn, btn, alertEl) {
+            if (!codigoVoo || !dataVoo) {
+                mostrarAlertaVoo(alertEl, 'warning', 'Informe a data, a companhia e o número do voo antes de buscar.');
                 return;
             }
 
@@ -4610,7 +4610,9 @@
             if (alertEl) alertEl.className = 'd-none';
 
             try {
-                const url  = '/Voo/ConsultarVoo?codigoVoo=' + encodeURIComponent(codigoVoo);
+                // dataVoo vem do <input type="date"> → já em yyyy-MM-dd sem ambiguidade de timezone
+                const url  = '/Voo/ConsultarVoo?codigoVoo=' + encodeURIComponent(codigoVoo)
+                           + '&dataVoo=' + encodeURIComponent(dataVoo);
                 const res  = await fetch(url);
                 const json = await res.json();
 
@@ -4619,9 +4621,19 @@
                     return;
                 }
 
-                fillFn(json);
-                const extra = json.status ? ` · Status: ${json.status}` : '';
-                mostrarAlertaVoo(alertEl, 'success', `Dados preenchidos automaticamente.${extra} Verifique e salve.`);
+                // Garantia extra: não sobrescrever a data pesquisada
+                const dataRetornada = json.horarioSaida ? json.horarioSaida.substring(0, 10) : null;
+                if (dataRetornada && dataRetornada !== dataVoo) {
+                    mostrarAlertaVoo(alertEl, 'warning',
+                        'Encontramos informações para esse número de voo, mas não para a data selecionada. Verifique os dados informados.');
+                    return;
+                }
+
+                fillFn(json, dataVoo);
+                const statusLabel = json.status && !['Departed','Landed'].includes(json.status)
+                    ? ` · Status: ${json.status}`
+                    : json.status ? ' · Status: Programado' : '';
+                mostrarAlertaVoo(alertEl, 'success', `Dados preenchidos automaticamente.${statusLabel} Verifique e salve.`);
 
             } catch (e) {
                 mostrarAlertaVoo(alertEl, 'warning', 'Erro de conexão. Preencha os campos manualmente.');
@@ -4635,21 +4647,27 @@
         function consultarVooCard(safeId) {
             const companhia = document.getElementById('companhia-'  + safeId)?.value?.trim();
             const numero    = document.getElementById('numero-voo-' + safeId)?.value?.trim();
+            const dataVoo   = document.getElementById('data-voo-'   + safeId)?.value?.trim();
             const btn       = document.getElementById('btn-buscar-' + safeId);
             const alrt      = document.getElementById('voo-alert-'  + safeId);
-            const codigo    = buildCodigoVoo(companhia, numero);
 
-            _consultarVoo(codigo, function (d) {
+            if (!companhia || !numero || !dataVoo) {
+                mostrarAlertaVoo(alrt, 'warning', 'Informe a data, a companhia e o número do voo antes de buscar.');
+                return;
+            }
+
+            const codigo = buildCodigoVoo(companhia, numero);
+
+            _consultarVoo(codigo, dataVoo, function (d, dataOriginal) {
                 preencherCampoVoo('companhia-' + safeId, d.companhia);
                 preencherCampoVoo('origem-'    + safeId, d.origem);
                 preencherCampoVoo('destino-'   + safeId, d.destino);
                 preencherCampoVoo('duracao-'   + safeId, d.duracao);
                 preencherCampoVoo('saida-'     + safeId, d.horarioSaida);
                 preencherCampoVoo('chegada-'   + safeId, d.horarioChegada);
-                if (d.horarioSaida) {
-                    const dataEl = document.getElementById('data-voo-' + safeId);
-                    if (dataEl) dataEl.value = d.horarioSaida.substring(0, 10);
-                }
+                // Preservar a data pesquisada pelo usuário — nunca sobrescrever
+                const dataEl = document.getElementById('data-voo-' + safeId);
+                if (dataEl) dataEl.value = dataOriginal;
             }, btn, alrt);
         }
 
@@ -4657,21 +4675,27 @@
         function consultarVooModal() {
             const companhia = document.getElementById('novo-companhia')?.value?.trim();
             const numero    = document.getElementById('novoVooNumero')?.value?.trim();
+            const dataVoo   = document.getElementById('novo-data-voo')?.value?.trim();
             const btn       = document.getElementById('btnBuscarModal');
             const alrt      = document.getElementById('novo-voo-alert');
-            const codigo    = buildCodigoVoo(companhia, numero);
 
-            _consultarVoo(codigo, function (d) {
+            if (!companhia || !numero || !dataVoo) {
+                mostrarAlertaVoo(alrt, 'warning', 'Informe a data, a companhia e o número do voo antes de buscar.');
+                return;
+            }
+
+            const codigo = buildCodigoVoo(companhia, numero);
+
+            _consultarVoo(codigo, dataVoo, function (d, dataOriginal) {
                 preencherCampoVoo('novo-companhia', d.companhia);
                 preencherCampoVoo('novo-origem',    d.origem);
                 preencherCampoVoo('novo-destino',   d.destino);
                 preencherCampoVoo('novo-duracao',   d.duracao);
                 preencherCampoVoo('novo-saida',     d.horarioSaida);
                 preencherCampoVoo('novo-chegada',   d.horarioChegada);
-                if (d.horarioSaida) {
-                    const dataEl = document.getElementById('novo-data-voo');
-                    if (dataEl) dataEl.value = d.horarioSaida.substring(0, 10);
-                }
+                // Preservar a data pesquisada pelo usuário — nunca sobrescrever
+                const dataEl = document.getElementById('novo-data-voo');
+                if (dataEl) dataEl.value = dataOriginal;
             }, btn, alrt);
         }
 
