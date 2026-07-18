@@ -590,8 +590,14 @@ footer {
             var _dias2 = (Model.DataFim.Value - Model.DataInicio.Value).Days + 1;
             <span><i class="fas fa-calendar-alt"></i>@Model.DataInicio.Value.ToString("dd/MM") – @Model.DataFim.Value.ToString("dd/MM/yy") · @_dias2 @(_dias2 == 1 ? "dia" : "dias")</span>
         }
-        @{ var _totalPax2 = Model.NumeroPassageiros + Model.NumeroCriancas; }
-        <span><i class="fas fa-users"></i>@_totalPax2 @(_totalPax2 == 1 ? "pax" : "pax")</span>
+        @{
+            var _paxNom2 = Model.PassageirosProposta?.Count ?? 0;
+            var _temCli2 = Model.Cliente != null;
+            var _totalPax2 = (_paxNom2 > 0 || _temCli2)
+                ? (_temCli2 ? 1 : 0) + _paxNom2
+                : Model.NumeroPassageiros + Model.NumeroCriancas;
+        }
+        <span><i class="fas fa-users"></i>@_totalPax2 pax</span>
     </div>
 </header>
 
@@ -719,13 +725,20 @@ footer {
                     <span class="exec-brief-sub">@_dias3 dias · @_noites3 noites</span>
                 </div>
             }
-            @{ var _paxEx = Model.NumeroPassageiros + Model.NumeroCriancas; }
+            @{
+                var _paxNomEx = Model.PassageirosProposta?.Count ?? 0;
+                var _temCliEx = Model.Cliente != null;
+                var _paxEx = (_paxNomEx > 0 || _temCliEx)
+                    ? (_temCliEx ? 1 : 0) + _paxNomEx
+                    : Model.NumeroPassageiros + Model.NumeroCriancas;
+                var _crEx = (_paxNomEx > 0 || _temCliEx) ? 0 : Model.NumeroCriancas;
+            }
             <div class="exec-brief-item">
                 <span class="exec-brief-label">Passageiros</span>
                 <span class="exec-brief-val">@_paxEx pax</span>
-                @if (Model.NumeroCriancas > 0)
+                @if (_crEx > 0)
                 {
-                    <span class="exec-brief-sub">@Model.NumeroCriancas crianças</span>
+                    <span class="exec-brief-sub">@_crEx crianças</span>
                 }
             </div>
             @if (execDestOrd.Any())

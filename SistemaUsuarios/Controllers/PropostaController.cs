@@ -260,8 +260,8 @@ namespace SistemaUsuarios.Controllers
             _context.Propostas.Add(proposta);
             await _context.SaveChangesAsync();
 
-            TempData["Sucesso"] = "Proposta criada com sucesso! Agora adicione os voos da viagem.";
-            TempData["ActiveTab"] = "aereo";
+            TempData["Sucesso"] = "Proposta criada! Agora adicione os passageiros da viagem.";
+            TempData["ActiveTab"] = "passageiros";
             return RedirectToAction("Editar", new { id = proposta.Id });
         }
 
@@ -396,14 +396,13 @@ namespace SistemaUsuarios.Controllers
                 return RedirectToAction("Index");
             }
 
-            // SE A AÇÃO FOR "gerenciar_destinos", REDIRECIONAR DIRETO
-            if (acao == "gerenciar_destinos")
+            // AÇÕES DE NAVEGAÇÃO RÁPIDA ENTRE ABAS (salvam e redirecionam)
+            if (acao == "gerenciar_passageiros" || acao == "gerenciar_destinos")
             {
-                // Salvar primeiro se houver mudanças básicas
                 try
                 {
                     await SalvarAlteracoesProposta(model);
-                    TempData["ActiveTab"] = "destinos";
+                    TempData["ActiveTab"] = acao == "gerenciar_passageiros" ? "passageiros" : "destinos";
                     return RedirectToAction("Editar", new { id = model.Id });
                 }
                 catch (Exception ex)

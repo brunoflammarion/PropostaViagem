@@ -828,10 +828,18 @@ body.has-preview-bar { padding-top: 46px; }
                     <small>@(_dias == 1 ? "dia" : "dias") · @Model.DataInicio.Value.ToString("dd/MM") a @Model.DataFim.Value.ToString("dd/MM/yy")</small>
                 </div>
             }
-            @{ var _totalPax = Model.NumeroPassageiros + Model.NumeroCriancas; }
+            @{
+                var _paxNomFam = Model.PassageirosProposta?.Count ?? 0;
+                var _temCliFam = Model.Cliente != null;
+                var _usarNomFam = _paxNomFam > 0 || _temCliFam;
+                var _totalPax = _usarNomFam
+                    ? (_temCliFam ? 1 : 0) + _paxNomFam
+                    : Model.NumeroPassageiros + Model.NumeroCriancas;
+                var _crFam = _usarNomFam ? 0 : Model.NumeroCriancas;
+            }
             <div class="fam-hero-stat">
                 <strong>@_totalPax</strong>
-                <small>@(_totalPax == 1 ? "passageiro" : "passageiros")@(Model.NumeroCriancas > 0 ? $" ({Model.NumeroCriancas} crianças)" : "")</small>
+                <small>@(_totalPax == 1 ? "passageiro" : "passageiros")@(_crFam > 0 ? $" ({_crFam} crianças)" : "")</small>
             </div>
             @if (famDestOrd.Any())
             {

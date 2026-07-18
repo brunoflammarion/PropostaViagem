@@ -340,22 +340,9 @@
                                         <span asp-validation-for="DataFim" class="text-danger"></span>
                                     </div>
                                 </div>
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label asp-for="NumeroPassageiros" class="form-label fw-bold">
-                                            <span class="text-danger">*</span> <i class="fas fa-users me-1"></i>Passageiros
-                                        </label>
-                                        <input asp-for="NumeroPassageiros" class="form-control" type="number" min="1" max="50" required />
-                                        <span asp-validation-for="NumeroPassageiros" class="text-danger"></span>
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label asp-for="NumeroCriancas" class="form-label fw-bold">
-                                            <i class="fas fa-child me-1"></i>Crianças
-                                        </label>
-                                        <input asp-for="NumeroCriancas" class="form-control" type="number" min="0" max="20" />
-                                        <span asp-validation-for="NumeroCriancas" class="text-danger"></span>
-                                    </div>
-                                </div>
+                                @* Passageiros e Crianças gerenciados na aba Passageiros (fonte única) *@
+                                <input asp-for="NumeroPassageiros" type="hidden" />
+                                <input asp-for="NumeroCriancas" type="hidden" />
 
                                 <div class="mb-3">
                                     <label class="form-label fw-bold"><i class="fas fa-camera me-1"></i>Foto de Capa</label>
@@ -542,9 +529,9 @@
                                     <button type="submit" class="btn btn-primary btn-lg" id="btnSalvar">
                                         <i class="fas fa-save me-2"></i>Salvar Alterações
                                     </button>
-                                    <button type="submit" name="acao" value="gerenciar_destinos"
-                                            class="btn btn-success" id="btnIrDestinos">
-                                        <i class="fas fa-map-marked-alt me-2"></i>Salvar e ir para Destinos
+                                    <button type="submit" name="acao" value="gerenciar_passageiros"
+                                            class="btn btn-success" id="btnIrPassageiros">
+                                        <i class="fas fa-users me-2"></i>Salvar e ir para Passageiros
                                     </button>
                                 </div>
                             </div>

@@ -271,7 +271,14 @@
                             </div>
                             <div class="col-md-2">
                                 <small class="text-muted">Passageiros</small>
-                                <p class="mb-0">@(Model.NumeroPassageiros + Model.NumeroCriancas) pessoas</p>
+                                @{
+                                    var _gerPaxNom = Model.PassageirosProposta?.Count ?? 0;
+                                    var _gerTemCli = Model.Cliente != null;
+                                    var _gerTotal = (_gerPaxNom > 0 || _gerTemCli)
+                                        ? (_gerTemCli ? 1 : 0) + _gerPaxNom
+                                        : Model.NumeroPassageiros + Model.NumeroCriancas;
+                                }
+                                <p class="mb-0">@_gerTotal pessoa(s)</p>
                             </div>
                             <div class="col-md-2">
                                 <small class="text-muted">Status</small>

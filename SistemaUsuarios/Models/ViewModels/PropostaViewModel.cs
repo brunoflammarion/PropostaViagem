@@ -22,8 +22,7 @@ namespace SistemaUsuarios.Models.ViewModels
         [DataType(DataType.Date)]
         public DateTime? DataFim { get; set; }
 
-        [Required(ErrorMessage = "Número de passageiros é obrigatório")]
-        [Range(1, 50, ErrorMessage = "Número de passageiros deve estar entre 1 e 50")]
+        [Range(0, 50, ErrorMessage = "Número de passageiros deve estar entre 0 e 50")]
         [Display(Name = "Número de Passageiros")]
         public int NumeroPassageiros { get; set; } = 1;
 

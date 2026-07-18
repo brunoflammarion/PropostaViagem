@@ -60,16 +60,14 @@
                     <p><strong>Duração:</strong> @diasViagem dia(s)</p>
                 }
 
-                <div class="row">
-                    <div class="col-md-6">
-                        <p><strong>Passageiros:</strong> @Model.NumeroPassageiros adulto(s)</p>
-                    </div>
-                    <div class="col-md-6">
-                        <p><strong>Crianças:</strong> @Model.NumeroCriancas</p>
-                    </div>
-                </div>
-
-                <p><strong>Total de Pessoas:</strong> @(Model.NumeroPassageiros + Model.NumeroCriancas)</p>
+                @{
+                    var _detPaxNom = Model.PassageirosProposta?.Count ?? 0;
+                    var _detTemCli = Model.Cliente != null;
+                    var _detTotal = (_detPaxNom > 0 || _detTemCli)
+                        ? (_detTemCli ? 1 : 0) + _detPaxNom
+                        : Model.NumeroPassageiros + Model.NumeroCriancas;
+                }
+                <p><strong>Total de Passageiros:</strong> @_detTotal pessoa(s)</p>
             </div>
         </div>
 

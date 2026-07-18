@@ -1347,11 +1347,19 @@ body.has-preview-bar { padding-top: 46px; }
                     </div>
                 }
                 @{
-                    var totalPax = Model.NumeroPassageiros + Model.NumeroCriancas;
+                    // Fonte preferencial: passageiros cadastrados individualmente
+                    // Fallback: campos legados (propostas antigas sem passageiros individuais)
+                    var _paxNom = Model.PassageirosProposta?.Count ?? 0;
+                    var _temCli = Model.Cliente != null;
+                    var _usarNom = _paxNom > 0 || _temCli;
+                    var totalPax = _usarNom
+                        ? (_temCli ? 1 : 0) + _paxNom
+                        : Model.NumeroPassageiros + Model.NumeroCriancas;
+                    var _criancasLegado = _usarNom ? 0 : Model.NumeroCriancas;
                 }
                 <div class="hero-stat">
                     <strong>@totalPax</strong>
-                    <small>@(totalPax == 1 ? "passageiro" : "passageiros")@(Model.NumeroCriancas > 0 ? $" ({Model.NumeroCriancas} crianças)" : "")</small>
+                    <small>@(totalPax == 1 ? "passageiro" : "passageiros")@(_criancasLegado > 0 ? $" ({_criancasLegado} crianças)" : "")</small>
                 </div>
                 @if (Model.Destinos.Any())
                 {

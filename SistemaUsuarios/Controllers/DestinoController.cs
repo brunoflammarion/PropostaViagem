@@ -411,6 +411,8 @@ private static string ExtrairJsonDeMarkdown(string raw)
             var isMaster = SessaoIsMaster();
             // Buscar proposta com destinos, fotos e hospedagens
             var proposta = await _context.Propostas
+                .Include(p => p.Cliente)
+                .Include(p => p.PassageirosProposta)
                 .Include(p => p.Destinos.OrderBy(d => d.Ordem))
                     .ThenInclude(d => d.Fotos.OrderBy(f => f.Ordem))
                 .Include(p => p.Destinos)
@@ -420,6 +422,7 @@ private static string ExtrairJsonDeMarkdown(string raw)
                     .ThenInclude(d => d.Hospedagens)
                         .ThenInclude(h => h.Acomodacoes.OrderBy(a => a.Ordem))
                             .ThenInclude(a => a.Fotos.OrderBy(f => f.Ordem))
+                .AsSplitQuery()
                 .FirstOrDefaultAsync(p => p.Id == propostaId && (isMaster ? p.UsuarioMasterId == usuarioId : p.UsuarioResponsavelId == usuarioId));
 
             if (proposta == null)
