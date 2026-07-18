@@ -1632,24 +1632,33 @@ else
         $('#btnHospAddComodidadeEmpty').on('click', function () { adicionarComodidadeManual('hospNovaComodidadeEmpty'); });
         $('#hospNovaComodidadeEmpty').on('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); adicionarComodidadeManual('hospNovaComodidadeEmpty'); } });
 
+        // Debounce + AbortController — modal Adicionar Hospedagem
+        var _hospAcTimer = null, _hospAcCtrl = null;
         $('#hospNomeInput').on('input', function () {
             const termo = $(this).val();
             hospNomeSelecionado = '';
             $('#btnGerarDescHosp').prop('disabled', true);
-            if (termo.length < 3) { $('#hospSugestoes').empty(); return; }
-
-            $.get('/Hospedagem/BuscarSugestoesHotel', { termo, cidade: hospCidadeAtual }, function (data) {
-                if (typeof data === 'string') data = JSON.parse(data);
-                if (!data || !data.predictions) return;
-
-                const itens = data.predictions.map(p =>
-                    `<a href="#" class="list-group-item list-group-item-action py-1 px-2 small hosp-sugestao-item"
-                        data-id="${p.place_id}" data-desc="${p.description}">
-                        <i class="fas fa-hotel text-info me-1"></i>${p.description}
-                    </a>`
-                );
-                $('#hospSugestoes').html(itens.join(''));
-            });
+            if (_hospAcTimer) { clearTimeout(_hospAcTimer); _hospAcCtrl?.abort(); }
+            if (termo.length < 4) { $('#hospSugestoes').empty(); return; }
+            _hospAcCtrl = new AbortController();
+            _hospAcTimer = setTimeout(async function () {
+                try {
+                    const qs = new URLSearchParams({ termo, cidade: hospCidadeAtual || '' });
+                    const resp = await fetch('/Hospedagem/BuscarSugestoesHotel?' + qs, { signal: _hospAcCtrl.signal });
+                    if (!resp.ok) return;
+                    const data = await resp.json();
+                    if (!data || !data.predictions) return;
+                    const itens = data.predictions.map(p =>
+                        `<a href="#" class="list-group-item list-group-item-action py-1 px-2 small hosp-sugestao-item"
+                            data-id="${p.place_id}" data-desc="${(p.description || '').replace(/"/g, '&quot;')}">
+                            <i class="fas fa-hotel text-info me-1"></i>${p.description}
+                        </a>`
+                    );
+                    $('#hospSugestoes').html(itens.join(''));
+                } catch (e) {
+                    if (e.name !== 'AbortError') console.warn('[hotel-ac] erro:', e);
+                }
+            }, 700);
         });
 
         $('#hospSugestoes').on('click', '.hosp-sugestao-item', function (e) {
@@ -1708,8 +1717,9 @@ else
             });
         });
 
-        // Limpar modal ao fechar
+        // Limpar modal ao fechar (incluindo cancelar debounce/request pendente)
         $('#modalAdicionarHospedagem').on('hidden.bs.modal', function () {
+            if (_hospAcTimer) { clearTimeout(_hospAcTimer); _hospAcCtrl?.abort(); _hospAcTimer = null; }
             $('#formAdicionarHospedagem')[0].reset();
             $('#hospSugestoes').empty();
             $('#hospCoordBadge').hide();
@@ -1724,23 +1734,33 @@ else
         // AUTOCOMPLETE + IA — EDITAR HOSPEDAGEM (modal)
         // =====================================================
 
+        // Debounce + AbortController — modal Editar Hospedagem
+        var _editHospAcTimer = null, _editHospAcCtrl = null;
         $('#editHospNomeInput').on('input', function () {
             const termo = $(this).val();
             editHospNomeSelecionado = '';
-            if (termo.length < 3) { $('#editHospSugestoes').empty(); return; }
-
-            $.get('/Hospedagem/BuscarSugestoesHotel', { termo }, function (data) {
-                if (typeof data === 'string') data = JSON.parse(data);
-                if (!data || !data.predictions) return;
-
-                const itens = data.predictions.map(p =>
-                    `<a href="#" class="list-group-item list-group-item-action py-1 px-2 small edit-hosp-modal-item"
-                        data-id="${p.place_id}" data-desc="${p.description}">
-                        <i class="fas fa-hotel text-info me-1"></i>${p.description}
-                    </a>`
-                );
-                $('#editHospSugestoes').html(itens.join(''));
-            });
+            if (_editHospAcTimer) { clearTimeout(_editHospAcTimer); _editHospAcCtrl?.abort(); }
+            if (termo.length < 4) { $('#editHospSugestoes').empty(); return; }
+            _editHospAcCtrl = new AbortController();
+            _editHospAcTimer = setTimeout(async function () {
+                try {
+                    const cidade = hospCidadeAtual || '';
+                    const qs = new URLSearchParams({ termo, cidade });
+                    const resp = await fetch('/Hospedagem/BuscarSugestoesHotel?' + qs, { signal: _editHospAcCtrl.signal });
+                    if (!resp.ok) return;
+                    const data = await resp.json();
+                    if (!data || !data.predictions) return;
+                    const itens = data.predictions.map(p =>
+                        `<a href="#" class="list-group-item list-group-item-action py-1 px-2 small edit-hosp-modal-item"
+                            data-id="${p.place_id}" data-desc="${(p.description || '').replace(/"/g, '&quot;')}">
+                            <i class="fas fa-hotel text-info me-1"></i>${p.description}
+                        </a>`
+                    );
+                    $('#editHospSugestoes').html(itens.join(''));
+                } catch (e) {
+                    if (e.name !== 'AbortError') console.warn('[hotel-ac] erro:', e);
+                }
+            }, 700);
         });
 
         $('#editHospSugestoes').on('click', '.edit-hosp-modal-item', function (e) {
@@ -1782,6 +1802,7 @@ else
         });
 
         $('#modalEditarHospedagem').on('hidden.bs.modal', function () {
+            if (_editHospAcTimer) { clearTimeout(_editHospAcTimer); _editHospAcCtrl?.abort(); _editHospAcTimer = null; }
             $('#editHospSugestoes').empty();
             $('#editHospIaLoader').addClass('d-none');
             editHospNomeSelecionado = '';

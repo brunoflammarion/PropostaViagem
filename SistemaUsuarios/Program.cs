@@ -45,6 +45,18 @@ builder.Services.AddHttpClient<AiCopilotService>();
 
 // Importação Inteligente
 builder.Services.AddHttpClient<ImportacaoIAService>();
+
+// Google Places — timeout de 12s (autocomplete + detalhes de hotel/destino)
+builder.Services.AddHttpClient("GooglePlaces", client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(12);
+});
+
+// OpenAI — timeout de 45s (geração de descrição via GPT)
+builder.Services.AddHttpClient("OpenAI", client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(45);
+});
 builder.Services.AddScoped<ImportacaoPersistenciaService>();
 
 // Armazenamento de arquivos (Azure Blob Storage)
@@ -102,6 +114,9 @@ app.MapControllerRoute(
 // ── Rota pública por slug de agência ─────────────────────────────────────
 // DEVE ser a ÚLTIMA rota registrada. A constraint garante que não conflita
 // com nenhum controller ou prefixo de rota interno do sistema.
+// Health check — usado pelo Azure e monitoramento externo
+app.MapGet("/_health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
+
 app.MapControllerRoute(
     name: "agency-public",
     pattern: "{agencySlug}",

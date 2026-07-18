@@ -2,6 +2,7 @@ using SistemaUsuarios.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Caching.Memory;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using SistemaUsuarios.Data;
@@ -17,12 +18,22 @@ namespace SistemaUsuarios.Controllers
         private readonly ApplicationDbContext _context;
         private readonly IConfiguration _configuration;
         private readonly BlobStorageService _blob;
+        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IMemoryCache _cache;
+        private readonly ILogger<HospedagemController> _logger;
 
-        public HospedagemController(ApplicationDbContext context, IConfiguration configuration, BlobStorageService blob)
+        // Máximo 2 chamadas simultâneas ao Google Places — proteção contra avalanche
+        private static readonly SemaphoreSlim _autocompleteThrottle = new(2, 2);
+
+        public HospedagemController(ApplicationDbContext context, IConfiguration configuration, BlobStorageService blob,
+            IHttpClientFactory httpClientFactory, IMemoryCache cache, ILogger<HospedagemController> logger)
         {
             _context = context;
             _blob = blob;
             _configuration = configuration;
+            _httpClientFactory = httpClientFactory;
+            _cache = cache;
+            _logger = logger;
         }
 
         private bool UsuarioLogado() => HttpContext.Session.GetString("UsuarioId") != null;
@@ -40,140 +51,248 @@ namespace SistemaUsuarios.Controllers
 
         // GET: Hospedagem/BuscarSugestoesHotel?termo=marriott&cidade=Paris
         [HttpGet]
-        public async Task<IActionResult> BuscarSugestoesHotel(string termo, string? cidade)
+        public async Task<IActionResult> BuscarSugestoesHotel(string termo, string? cidade, CancellationToken cancellationToken)
         {
-            if (string.IsNullOrWhiteSpace(termo))
-                return BadRequest("Termo obrigatório");
+            if (!UsuarioLogado())
+                return Unauthorized(new { error = "Sessão expirada." });
 
-            var apiKey = _configuration["GoogleApiKey"];
-            var input = string.IsNullOrWhiteSpace(cidade) ? termo : $"{termo} {cidade}";
-            var url = $"https://maps.googleapis.com/maps/api/place/autocomplete/json" +
-                      $"?input={Uri.EscapeDataString(input)}&types=lodging&language=pt-BR&key={apiKey}";
+            if (string.IsNullOrWhiteSpace(termo) || termo.Length < 4)
+                return BadRequest(new { error = "Mínimo 4 caracteres." });
 
-            using var http = new HttpClient();
-            var response = await http.GetAsync(url);
-            if (!response.IsSuccessStatusCode)
-                return StatusCode((int)response.StatusCode, "Erro ao consultar Google Places");
+            if (termo.Length > 200)
+                return BadRequest(new { error = "Termo muito longo." });
 
-            var content = await response.Content.ReadAsStringAsync();
-            return Content(content, "application/json");
+            var externalEnabled = _configuration.GetValue<bool>("FeatureFlags:HotelAutocompleteExternalSearch", true);
+            if (!externalEnabled)
+                return Json(new { predictions = Array.Empty<object>() });
+
+            var normalizedTermo = termo.Trim().ToLowerInvariant();
+            var normalizedCidade = cidade?.Trim().ToLowerInvariant() ?? "";
+            var cacheKey = $"hotel-ac:{normalizedTermo}:{normalizedCidade}";
+
+            if (_cache.TryGetValue(cacheKey, out string? cached))
+            {
+                _logger.LogDebug("Hotel autocomplete cache HIT {Key}", cacheKey);
+                return Content(cached!, "application/json");
+            }
+
+            if (!await _autocompleteThrottle.WaitAsync(0, cancellationToken))
+            {
+                _logger.LogWarning("Hotel autocomplete throttled — concorrência máxima atingida");
+                return StatusCode(429, new { error = "Muitas buscas simultâneas. Aguarde um momento." });
+            }
+
+            try
+            {
+                var apiKey = _configuration["GoogleApiKey"];
+                var input = string.IsNullOrWhiteSpace(cidade) ? termo : $"{termo} {cidade}";
+                var url = $"https://maps.googleapis.com/maps/api/place/autocomplete/json" +
+                          $"?input={Uri.EscapeDataString(input)}&types=lodging&language=pt-BR&key={apiKey}";
+
+                var http = _httpClientFactory.CreateClient("GooglePlaces");
+                var response = await http.GetAsync(url, cancellationToken);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogError("Google Places retornou {Status} para termo {Termo}", (int)response.StatusCode, termo);
+                    return StatusCode((int)response.StatusCode, new { error = "Erro ao consultar Places API." });
+                }
+
+                var content = await response.Content.ReadAsStringAsync(cancellationToken);
+
+                try
+                {
+                    var parsed = JObject.Parse(content);
+                    if (parsed["predictions"] is JArray predictions && predictions.Count > 10)
+                    {
+                        parsed["predictions"] = new JArray(predictions.Take(10));
+                        content = parsed.ToString(Formatting.None);
+                    }
+                }
+                catch (JsonReaderException) { /* devolve o conteúdo original se parse falhar */ }
+
+                _cache.Set(cacheKey, content, TimeSpan.FromMinutes(5));
+
+                return Content(content, "application/json");
+            }
+            catch (OperationCanceledException)
+            {
+                return StatusCode(499, new { error = "Requisição cancelada." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao buscar sugestões de hotel para {Termo}", termo);
+                return StatusCode(500, new { error = "Erro interno. Tente novamente." });
+            }
+            finally
+            {
+                _autocompleteThrottle.Release();
+            }
         }
 
         // GET: Hospedagem/BuscarDetalhesHotel?placeId=ChIJ...
         [HttpGet]
-        public async Task<IActionResult> BuscarDetalhesHotel(string placeId)
+        public async Task<IActionResult> BuscarDetalhesHotel(string placeId, CancellationToken cancellationToken)
         {
-            if (string.IsNullOrEmpty(placeId))
-                return BadRequest("placeId inválido.");
+            if (!UsuarioLogado())
+                return Unauthorized(new { error = "Sessão expirada." });
+
+            if (string.IsNullOrEmpty(placeId) || placeId.Length > 300)
+                return BadRequest(new { error = "placeId inválido." });
 
             var apiKey = _configuration["GoogleApiKey"];
             var fields = "name,formatted_address,geometry,rating,website,formatted_phone_number,types";
             var url = $"https://maps.googleapis.com/maps/api/place/details/json" +
                       $"?place_id={placeId}&fields={fields}&language=pt-BR&key={apiKey}";
 
-            using var http = new HttpClient();
-            var response = await http.GetAsync(url);
-            if (!response.IsSuccessStatusCode)
-                return StatusCode((int)response.StatusCode, "Erro ao consultar detalhes.");
-
-            var json = await response.Content.ReadAsStringAsync();
-            var obj = JsonConvert.DeserializeObject<JObject>(json);
-
-            var status = obj["status"]?.ToString();
-            if (status != "OK")
-                return BadRequest("Google Places retornou: " + status);
-
-            var result = obj["result"];
-            if (result == null)
-                return BadRequest("Detalhes não encontrados.");
-
-            var nome = result["name"]?.ToString();
-            var endereco = result["formatted_address"]?.ToString();
-            var telefone = result["formatted_phone_number"]?.ToString();
-            var website = result["website"]?.ToString();
-            var rating = result["rating"]?.ToObject<double?>();
-            double? latitude = null, longitude = null;
-
-            var location = result["geometry"]?["location"];
-            if (location != null)
+            try
             {
-                latitude = location["lat"]?.ToObject<double?>();
-                longitude = location["lng"]?.ToObject<double?>();
+                var http = _httpClientFactory.CreateClient("GooglePlaces");
+                var response = await http.GetAsync(url, cancellationToken);
+
+                if (!response.IsSuccessStatusCode)
+                    return StatusCode((int)response.StatusCode, new { error = "Erro ao consultar detalhes." });
+
+                var json = await response.Content.ReadAsStringAsync(cancellationToken);
+                JObject obj;
+                try { obj = JObject.Parse(json); }
+                catch (JsonReaderException ex)
+                {
+                    _logger.LogError(ex, "JSON inválido recebido do Google Places Details para placeId {PlaceId}", placeId);
+                    return StatusCode(500, new { error = "Resposta inválida da API." });
+                }
+
+                var status = obj["status"]?.ToString();
+                if (status != "OK")
+                {
+                    _logger.LogWarning("Google Places Details retornou status {Status} para placeId {PlaceId}", status, placeId);
+                    return BadRequest(new { error = "Local não encontrado." });
+                }
+
+                var result = obj["result"];
+                if (result == null)
+                    return BadRequest(new { error = "Detalhes não encontrados." });
+
+                var nome = result["name"]?.ToString();
+                var endereco = result["formatted_address"]?.ToString();
+                var telefone = result["formatted_phone_number"]?.ToString();
+                var website = result["website"]?.ToString();
+                var rating = result["rating"]?.ToObject<double?>();
+                double? latitude = null, longitude = null;
+
+                var location = result["geometry"]?["location"];
+                if (location != null)
+                {
+                    latitude = location["lat"]?.ToObject<double?>();
+                    longitude = location["lng"]?.ToObject<double?>();
+                }
+
+                var types = result["types"]?.ToObject<string[]>() ?? Array.Empty<string>();
+                var categoria = InferirCategoria(types);
+
+                return Json(new { nome, endereco, telefone, website, rating, latitude, longitude, categoria });
             }
-
-            // Tentar inferir categoria a partir dos types
-            var types = result["types"]?.ToObject<string[]>() ?? Array.Empty<string>();
-            var categoria = InferirCategoria(types);
-
-            return Json(new { nome, endereco, telefone, website, rating, latitude, longitude, categoria });
+            catch (OperationCanceledException)
+            {
+                return StatusCode(499, new { error = "Requisição cancelada." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao buscar detalhes do hotel {PlaceId}", placeId);
+                return StatusCode(500, new { error = "Erro interno. Tente novamente." });
+            }
         }
 
-        // POST: Hospedagem/GerarDescricaoHospedagem
+        // POST: Hospedagem/GerarDescricaoHospedagem (acionado apenas pelo clique explícito do usuário)
         [HttpPost]
-        public async Task<IActionResult> GerarDescricaoHospedagem(string nome, string? endereco, string? cidade)
+        public async Task<IActionResult> GerarDescricaoHospedagem(string nome, string? endereco, string? cidade, CancellationToken cancellationToken)
         {
-            if (string.IsNullOrWhiteSpace(nome))
-                return BadRequest("Nome da hospedagem é obrigatório.");
+            if (!UsuarioLogado())
+                return Unauthorized(new { error = "Sessão expirada." });
 
-            var contexto = string.IsNullOrWhiteSpace(cidade) ? nome : $"{nome}, {cidade}";
-            if (!string.IsNullOrWhiteSpace(endereco))
-                contexto += $" ({endereco})";
+            if (string.IsNullOrWhiteSpace(nome))
+                return BadRequest(new { error = "Nome da hospedagem é obrigatório." });
+
+            var aiEnabled = _configuration.GetValue<bool>("FeatureFlags:HotelAiEnrichment", true);
+            if (!aiEnabled)
+                return StatusCode(503, new { error = "Enriquecimento por IA temporariamente desativado." });
 
             var prompt = $@"Você é um especialista em turismo e hotéis. Gere informações completas e comerciais sobre a hospedagem ""{nome}""{(string.IsNullOrWhiteSpace(cidade) ? "" : $" localizada em {cidade}")}.
 
 Responda SOMENTE com um JSON válido, sem texto fora do objeto, no seguinte formato:
 
 {{
-  ""descricao"": ""Descrição comercial e atraente da hospedagem em até 3 parágrafos. Destaque diferenciais, localização, estilo e por que é uma boa escolha."",
+  ""descricao"": ""Descrição comercial e atraente da hospedagem em até 3 parágrafos. Destaque diferenciais, localização, estilo e por que é uma boa escolha. NUNCA use aspas duplas dentro dos valores."",
   ""comodidades"": [""lista"", ""de"", ""comodidades"", ""principais""],
   ""dicasCheckIn"": ""Dicas práticas sobre check-in, check-out, horários e procedimentos."",
-  ""observacoesGerais"": ""Observações importantes para os hóspedes: estacionamento, pets, café da manhã, piscina, academia, etc.""
+  ""observacoesGerais"": ""Observações importantes para os hospedes: estacionamento, pets, cafe da manha, piscina, academia, etc.""
 }}";
 
             var apiKey = _configuration["OpenAI:ApiKey"];
             if (string.IsNullOrWhiteSpace(apiKey))
-                return BadRequest("Chave da API da OpenAI não configurada.");
+                return BadRequest(new { error = "Chave da API da OpenAI não configurada." });
 
-            using var httpClient = new HttpClient();
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
-
-            var requestBody = new
-            {
-                model = "gpt-3.5-turbo",
-                temperature = 0.7,
-                messages = new[]
-                {
-                    new { role = "system", content = "Você é um especialista em turismo e hospitalidade." },
-                    new { role = "user", content = prompt }
-                }
-            };
-
-            var jsonBody = JsonConvert.SerializeObject(requestBody);
-            var content = new StringContent(jsonBody, Encoding.UTF8, "application/json");
-            var response = await httpClient.PostAsync("https://api.openai.com/v1/chat/completions", content);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                var erro = await response.Content.ReadAsStringAsync();
-                return StatusCode((int)response.StatusCode, $"Erro OpenAI: {erro}");
-            }
-
-            var respostaJson = await response.Content.ReadAsStringAsync();
-            var resultado = JObject.Parse(respostaJson);
-            var jsonTexto = resultado["choices"]?[0]?["message"]?["content"]?.ToString();
-
-            if (string.IsNullOrWhiteSpace(jsonTexto))
-                return StatusCode(500, "Resposta da OpenAI vazia.");
-
-            var jsonLimpo = ExtrairJson(jsonTexto);
             try
             {
-                var parsed = JObject.Parse(jsonLimpo);
-                return Content(parsed.ToString(Formatting.None), "application/json");
+                var httpClient = _httpClientFactory.CreateClient("OpenAI");
+                httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+
+                var requestBody = new
+                {
+                    model = "gpt-4o-mini",
+                    temperature = 0.5,
+                    response_format = new { type = "json_object" },
+                    messages = new[]
+                    {
+                        new { role = "system", content = "Você é um especialista em turismo e hospitalidade. Responda sempre com JSON válido." },
+                        new { role = "user", content = prompt }
+                    }
+                };
+
+                var jsonBody = JsonConvert.SerializeObject(requestBody);
+                var content = new StringContent(jsonBody, Encoding.UTF8, "application/json");
+                var response = await httpClient.PostAsync("https://api.openai.com/v1/chat/completions", content, cancellationToken);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var erro = await response.Content.ReadAsStringAsync(cancellationToken);
+                    _logger.LogError("OpenAI retornou {Status} para hospedagem {Nome}: {Erro}", (int)response.StatusCode, nome, erro);
+                    return StatusCode((int)response.StatusCode, new { error = "Erro ao consultar IA." });
+                }
+
+                var respostaJson = await response.Content.ReadAsStringAsync(cancellationToken);
+                JObject resultado;
+                try { resultado = JObject.Parse(respostaJson); }
+                catch (JsonReaderException ex)
+                {
+                    _logger.LogError(ex, "JSON inválido recebido da OpenAI para hospedagem {Nome}", nome);
+                    return StatusCode(500, new { error = "Resposta inválida da IA." });
+                }
+
+                var jsonTexto = resultado["choices"]?[0]?["message"]?["content"]?.ToString();
+                if (string.IsNullOrWhiteSpace(jsonTexto))
+                    return StatusCode(500, new { error = "Resposta da OpenAI vazia." });
+
+                var jsonLimpo = ExtrairJson(jsonTexto);
+                try
+                {
+                    var parsed = JObject.Parse(jsonLimpo);
+                    return Content(parsed.ToString(Formatting.None), "application/json");
+                }
+                catch (JsonReaderException ex)
+                {
+                    _logger.LogError(ex, "JSON inválido retornado pela IA para hospedagem {Nome}: {Raw}", nome, jsonTexto);
+                    return StatusCode(500, new { error = "JSON inválido retornado pela IA." });
+                }
             }
-            catch (JsonReaderException ex)
+            catch (OperationCanceledException)
             {
-                return StatusCode(500, $"JSON inválido retornado pela IA: {ex.Message}");
+                return StatusCode(499, new { error = "Requisição cancelada." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao gerar descrição para hospedagem {Nome}", nome);
+                return StatusCode(500, new { error = "Erro interno. Tente novamente." });
             }
         }
 

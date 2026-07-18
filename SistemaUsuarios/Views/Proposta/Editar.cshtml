@@ -4772,20 +4772,8 @@
                 });
             });
 
-            // Auto-IA hospedagem: quando card de hospedagem abre com nome preenchido e descrição vazia
-            document.querySelectorAll('[id^="hosp-edit-"]').forEach(function (collapseEl) {
-                collapseEl.addEventListener('show.bs.collapse', function () {
-                    setTimeout(function () {
-                        var $container = $(collapseEl).find('.hosp-form-container');
-                        if (!$container.length) return;
-                        var nome = $container.find('.hosp-nome-input').val().trim();
-                        var desc = $container.find('.hosp-rich-desc').text().trim();
-                        if (nome && !desc) {
-                            $container.find('.btn-gerar-desc-hosp').trigger('click');
-                        }
-                    }, 400);
-                });
-            });
+            // Auto-IA hospedagem: desativado — IA só é gerada quando o usuário clicar explicitamente no botão
+            // (disparar automaticamente causava chamadas à OpenAI em toda abertura de card)
 
             // Preview em tempo real do título (Tab 1)
             const tituloInput = document.getElementById('Titulo');
@@ -5001,25 +4989,46 @@
             }
         });
 
+        // Debounce + AbortController por container para evitar avalanche de requests ao Google Places
+        var _hospAcPending = new Map();
+
         $(document).on('input', '.hosp-nome-input', function () {
             const $container = getHospContainer(this);
+            const containerEl = $container[0];
             const termo = $(this).val();
             const cidade = $container.data('cidade') || '';
             $container.data('hosp-nome-selecionado', '');
             $container.find('.btn-gerar-desc-hosp').prop('disabled', true);
             const $sugestoes = $container.find('.hosp-sugestoes-list');
-            if (termo.length < 3) { $sugestoes.empty(); return; }
-            $.get('/Hospedagem/BuscarSugestoesHotel', { termo, cidade }, function (data) {
-                if (typeof data === 'string') data = JSON.parse(data);
-                if (!data || !data.predictions) return;
-                const itens = data.predictions.map(p =>
-                    `<a href="#" class="list-group-item list-group-item-action py-1 px-2 small hosp-sugestao-inline"
-                        data-id="${p.place_id}" data-desc="${p.description}">
-                        <i class="fas fa-hotel text-info me-1"></i>${p.description}
-                    </a>`
-                );
-                $sugestoes.html(itens.join(''));
-            });
+
+            // Cancelar debounce e request anteriores deste campo
+            const prev = _hospAcPending.get(containerEl);
+            if (prev) { clearTimeout(prev.timerId); prev.controller.abort(); }
+
+            if (termo.length < 4) { $sugestoes.empty(); _hospAcPending.delete(containerEl); return; }
+
+            const controller = new AbortController();
+            const timerId = setTimeout(async function () {
+                _hospAcPending.delete(containerEl);
+                try {
+                    const qs = new URLSearchParams({ termo, cidade });
+                    const resp = await fetch('/Hospedagem/BuscarSugestoesHotel?' + qs, { signal: controller.signal });
+                    if (!resp.ok) return;
+                    const data = await resp.json();
+                    if (!data || !data.predictions) return;
+                    const itens = data.predictions.map(p =>
+                        `<a href="#" class="list-group-item list-group-item-action py-1 px-2 small hosp-sugestao-inline"
+                            data-id="${p.place_id}" data-desc="${(p.description || '').replace(/"/g, '&quot;')}">
+                            <i class="fas fa-hotel text-info me-1"></i>${p.description}
+                        </a>`
+                    );
+                    $sugestoes.html(itens.join(''));
+                } catch (e) {
+                    if (e.name !== 'AbortError') console.warn('[hotel-ac] erro:', e);
+                }
+            }, 700);
+
+            _hospAcPending.set(containerEl, { timerId, controller });
         });
 
         $(document).on('click', '.hosp-sugestao-inline', function (e) {
