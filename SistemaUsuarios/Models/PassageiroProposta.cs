@@ -23,6 +23,20 @@ namespace SistemaUsuarios.Models
         Outro = 99
     }
 
+    public enum FaixaEtariaPassageiro
+    {
+        Bebe = 1,
+        Crianca = 2,
+        Adolescente = 3,
+        Adulto = 4
+    }
+
+    public enum ModoBebe
+    {
+        Colo = 1,
+        AssentoProprio = 2
+    }
+
     public class PassageiroProposta
     {
         public Guid Id { get; set; } = Guid.NewGuid();
@@ -47,10 +61,25 @@ namespace SistemaUsuarios.Models
 
         public DateTime DataCriacao { get; set; } = DateTime.Now;
 
+        // Vínculo opcional com cliente cadastrado
+        public Guid? ClienteId { get; set; }
+        public virtual Cliente? Cliente { get; set; }
+
+        // Faixa etária aproximada (quando data de nascimento não informada)
+        public FaixaEtariaPassageiro? FaixaEtaria { get; set; }
+        public bool FaixaIsAproximada { get; set; } = false;
+
+        // Bebê: modo de viagem
+        public ModoBebe? ModoBebe { get; set; }
+
+        // Responsável durante a viagem (para menores desacompanhados)
+        public Guid? ResponsavelId { get; set; }
+        public virtual PassageiroProposta? Responsavel { get; set; }
+
         // Navigation
         public virtual Proposta Proposta { get; set; }
 
-        // Computed
+        // Computed (usa DateTime.Today; para cálculo na data da viagem use IPassengerAgeService)
         public int? IdadeCalculada => DataNascimento.HasValue
             ? CalcularIdade(DataNascimento.Value)
             : null;
@@ -59,7 +88,9 @@ namespace SistemaUsuarios.Models
         {
             var hoje = DateTime.Today;
             var idade = hoje.Year - nascimento.Year;
-            if (nascimento.Date > hoje.AddYears(-idade)) idade--;
+            if (nascimento.Month > hoje.Month ||
+                (nascimento.Month == hoje.Month && nascimento.Day > hoje.Day))
+                idade--;
             return idade;
         }
     }

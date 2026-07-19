@@ -542,6 +542,34 @@
 .badge-convertido   { background: #d4edda; color: #155724; }
 .badge-perdido      { background: #f8d7da; color: #721c24; }
 
+/* ── Ações de linha da tabela de leads ────────────────────────── */
+.lead-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: .375rem;
+    white-space: nowrap;
+}
+
+/* Tablet: reduz texto dos botões */
+@media (max-width: 900px) and (min-width: 577px) {
+    .lead-actions .btn-text-full { display: none; }
+    .lead-actions .btn-text-short { display: inline !important; }
+}
+
+/* Mobile: empilha e ocupa largura total */
+@media (max-width: 576px) {
+    .lead-actions {
+        flex-direction: column;
+        align-items: stretch;
+        gap: .375rem;
+    }
+    .lead-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
 /* ── Estado vazio ─────────────────────────────────────────────── */
 .capture-empty-state {
     text-align: center;

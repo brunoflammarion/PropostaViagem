@@ -45,6 +45,7 @@ namespace SistemaUsuarios.Data
         // ── MÓDULO CAPTAÇÃO ────────────────────────────────────────────────────────
         public DbSet<LeadCaptureSettings> LeadCaptureSettings { get; set; }
         public DbSet<Lead> Leads { get; set; }
+        public DbSet<LeadHistorico> LeadHistoricos { get; set; }
 
         // ── MÓDULO TAREFAS ─────────────────────────────────────────────────────
         public DbSet<Tarefa> Tarefas { get; set; }
@@ -426,6 +427,30 @@ namespace SistemaUsuarios.Data
                 .Property(p => p.Relacionamento)
                 .HasConversion<int?>();
 
+            modelBuilder.Entity<PassageiroProposta>()
+                .Property(p => p.FaixaEtaria)
+                .HasConversion<int?>();
+
+            modelBuilder.Entity<PassageiroProposta>()
+                .Property(p => p.ModoBebe)
+                .HasConversion<int?>();
+
+            // PassageiroProposta → Cliente (vínculo opcional, SetNull ao deletar cliente)
+            modelBuilder.Entity<PassageiroProposta>()
+                .HasOne(p => p.Cliente)
+                .WithMany()
+                .HasForeignKey(p => p.ClienteId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .IsRequired(false);
+
+            // PassageiroProposta → Responsavel (auto-ref, NoAction para evitar ciclo)
+            modelBuilder.Entity<PassageiroProposta>()
+                .HasOne(p => p.Responsavel)
+                .WithMany()
+                .HasForeignKey(p => p.ResponsavelId)
+                .OnDelete(DeleteBehavior.NoAction)
+                .IsRequired(false);
+
             // CONFIGURAÇÃO DA TABELA TRANSPORTES
             modelBuilder.Entity<Transporte>()
                 .HasOne(t => t.Destino)
@@ -654,6 +679,34 @@ namespace SistemaUsuarios.Data
 
             // Seed de preços dos modelos OpenAI (vigentes em 2026-07)
             var seedDate = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            // ── LEAD → CLIENTE / PROPOSTA ─────────────────────────────────────────
+            modelBuilder.Entity<Lead>()
+                .HasOne(l => l.Cliente)
+                .WithMany()
+                .HasForeignKey(l => l.ClienteId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .IsRequired(false);
+
+            modelBuilder.Entity<Lead>()
+                .HasOne(l => l.Proposta)
+                .WithMany()
+                .HasForeignKey(l => l.PropostaId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .IsRequired(false);
+
+            // ── LEAD HISTÓRICO ─────────────────────────────────────────────────────
+            modelBuilder.Entity<LeadHistorico>()
+                .HasOne(h => h.Lead)
+                .WithMany()
+                .HasForeignKey(h => h.LeadId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<LeadHistorico>()
+                .HasIndex(h => h.LeadId);
+
+            modelBuilder.Entity<LeadHistorico>()
+                .HasIndex(h => new { h.AgenciaId, h.DataHora });
+
             modelBuilder.Entity<AiModelPricing>().HasData(
                 new AiModelPricing
                 {

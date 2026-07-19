@@ -19,10 +19,12 @@ namespace SistemaUsuarios.Controllers
             _demonstracao = demonstracao;
         }
 
-        // GET: Landing
-        public IActionResult Index()
+        // GET: / — Lista VIP (waitlist)
+        public IActionResult Index() => View();
+
+        // GET: /produto — Landing de produto (página original)
+        public IActionResult Produto()
         {
-            // Estatísticas reais para a landing page
             var estatisticas = new LandingStatisticsViewModel
             {
                 TotalAgentes = _context.Usuarios.Count(u => u.Status == StatusUsuario.Ativo),
@@ -33,6 +35,17 @@ namespace SistemaUsuarios.Controllers
             };
 
             return View(estatisticas);
+        }
+
+        // POST: Landing/ListaVip — Inscrição na lista VIP (waitlist)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult ListaVip(string nome, string email, string whatsapp, string agencia,
+            string? cidade, string? instagram, string? propostas)
+        {
+            Console.WriteLine($"[ListaVIP] {nome} | {email} | {whatsapp} | {agencia} | {cidade} | {instagram} | {propostas}");
+            TempData["ListaVipSucesso"] = true;
+            return RedirectToAction("Index");
         }
 
         // POST: Landing/Cadastro

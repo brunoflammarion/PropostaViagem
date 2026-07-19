@@ -49,7 +49,7 @@
     var waPhone  = Model.Usuario.Telefone?.Replace("(","").Replace(")","").Replace("-","").Replace(" ","") ?? "";
     var waMsgRaw = $"Olá! Vi a proposta \"{Model.Titulo}\" e tenho interesse!";
 
-    bool temPassageiros = Model.Cliente != null || Model.PassageirosProposta.Any();
+    bool temPassageiros = Model.PassageirosProposta.Any();
     bool temVoos        = Model.Voos.Any();
     bool temSeguros     = Model.Seguros.Any();
     bool temResumo      = !string.IsNullOrWhiteSpace(Model.ResumoProposta);
@@ -893,15 +893,6 @@ footer {
     </div>
     <div class="exec-section-body" id="body-passageiros">
         <div class="exec-pax-list">
-            @if (Model.Cliente != null)
-            {
-                var _ini3 = Model.Cliente.Nome.Length > 0 ? Model.Cliente.Nome.Substring(0,1).ToUpper() : "?";
-                <div class="exec-pax-row">
-                    <div class="exec-pax-init">@_ini3</div>
-                    <span class="exec-pax-name">@Model.Cliente.Nome</span>
-                    <span class="exec-pax-sub">Titular</span>
-                </div>
-            }
             @foreach (var pax in Model.PassageirosProposta.OrderBy(p => p.Ordem))
             {
                 var _ini4 = pax.Nome.Length > 0 ? pax.Nome.Substring(0,1).ToUpper() : "?";

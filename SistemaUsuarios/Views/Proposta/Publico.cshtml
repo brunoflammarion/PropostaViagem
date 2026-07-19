@@ -65,7 +65,7 @@
     var waPhone = Model.Usuario.Telefone?.Replace("(","").Replace(")","").Replace("-","").Replace(" ","") ?? "";
     var waMsgRaw = $"Olá! Vi a proposta \"{Model.Titulo}\" e tenho interesse!";
 
-    bool temPassageiros = Model.Cliente != null || Model.PassageirosProposta.Any();
+    bool temPassageiros = Model.PassageirosProposta.Any();
     bool temVoos        = Model.Voos.Any();
     bool temSeguros     = Model.Seguros.Any();
     bool temResumo      = !string.IsNullOrWhiteSpace(Model.ResumoProposta);
@@ -1745,10 +1745,6 @@ body.has-preview-bar { padding-top: 46px; }
 {
     var todosPassageiros = new List<(string Nome, string? FotoPath, string? Papel, int? Idade)>();
     {
-        if (Model.Cliente != null)
-        {
-            todosPassageiros.Add((Model.Cliente.Nome, Model.Cliente.FotoPath, "Titular", Model.Cliente.IdadeCalculada));
-        }
         foreach (var pax in Model.PassageirosProposta.OrderBy(p => p.Ordem))
         {
             var relL = pax.Relacionamento.HasValue ? pax.Relacionamento switch {

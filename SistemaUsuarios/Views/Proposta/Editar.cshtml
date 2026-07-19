@@ -1,6 +1,8 @@
 @model SistemaUsuarios.Models.ViewModels.PropostaViewModel
 @using System.Text.RegularExpressions
 @using System.Text.Json
+@using SistemaUsuarios.Services
+@inject IPassengerAgeService AgeService
 @{
     var proposta = ViewBag.Proposta as SistemaUsuarios.Models.Proposta;
     ViewData["Title"] = $"Editar - {Model.Titulo}";
@@ -237,10 +239,9 @@
                     id="tab-passageiros" data-bs-toggle="pill" data-bs-target="#pane-passageiros"
                     type="button" role="tab">
                 <i class="fas fa-users me-1"></i>Passageiros
-                @if (proposta?.Cliente != null || proposta?.PassageirosProposta.Any() == true)
+                @if (proposta?.PassageirosProposta.Any() == true)
                 {
-                    var totalPax = (proposta.Cliente != null ? 1 : 0) + (proposta?.PassageirosProposta.Count ?? 0);
-                    <span class="badge bg-secondary ms-1">@totalPax</span>
+                    <span class="badge bg-secondary ms-1">@proposta.PassageirosProposta.Count</span>
                 }
             </button>
         </li>
@@ -528,10 +529,6 @@
                                 <div class="d-grid gap-2">
                                     <button type="submit" class="btn btn-primary btn-lg" id="btnSalvar">
                                         <i class="fas fa-save me-2"></i>Salvar Alterações
-                                    </button>
-                                    <button type="submit" name="acao" value="gerenciar_passageiros"
-                                            class="btn btn-success" id="btnIrPassageiros">
-                                        <i class="fas fa-users me-2"></i>Salvar e ir para Passageiros
                                     </button>
                                 </div>
                             </div>
@@ -1583,7 +1580,7 @@
                                                                 <i class="fas fa-images me-1"></i>@exp.Imagens.Count
                                                                 <i class="fas fa-paperclip ms-1 me-1"></i>@exp.Arquivos.Count
                                                             </span>
-                                                            <div class="ms-auto d-flex gap-1">
+                                                            <!--<div class="ms-auto d-flex gap-1">
                                                                 <button class="btn btn-outline-primary btn-sm" type="button"
                                                                         data-bs-toggle="collapse"
                                                                         data-bs-target="#exp-det-@expSafeId">
@@ -1598,7 +1595,7 @@
                                                                         <i class="fas fa-trash"></i>
                                                                     </button>
                                                                 </form>
-                                                            </div>
+                                                            </div>-->
                                                         </div>
 
                                                         <!-- Corpo expansível da experiência -->
@@ -2841,7 +2838,8 @@
                 <!-- ── SEÇÃO: CLIENTE PRINCIPAL ───────────────────────────────── -->
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h5 class="mb-0">
-                        <i class="fas fa-user-circle me-2 text-primary"></i>Cliente Principal
+                        <i class="fas fa-user-circle me-2 text-primary"></i>Responsável pela proposta
+                        <span class="badge bg-secondary fw-normal ms-2" style="font-size:.65em;vertical-align:middle;">Opcional</span>
                     </h5>
                     @if (cliente == null)
                     {
@@ -3101,280 +3099,333 @@
                     </div>
                 }
 
+                @if (cliente != null)
+                {
+                    var clienteJaNaLista = proposta.PassageirosProposta.Any(p => p.ClienteId == cliente.Id);
+                    if (!clienteJaNaLista)
+                    {
+                        <form asp-controller="PassageiroProposta" asp-action="AdicionarCliente"
+                              method="post" class="mb-4">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="propostaId" value="@proposta.Id" />
+                            <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                <i class="fas fa-user-plus me-1"></i>Adicionar @cliente.Nome como passageiro
+                            </button>
+                        </form>
+                    }
+                    else
+                    {
+                        <p class="small text-muted mb-4">
+                            <i class="fas fa-check text-success me-1"></i>@cliente.Nome já está na lista de passageiros.
+                        </p>
+                    }
+                }
+
                 <!-- ── SEÇÃO: PASSAGEIROS ─────────────────────────────────────── -->
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h5 class="mb-0">
                         <i class="fas fa-users me-2 text-info"></i>Passageiros da Viagem
                     </h5>
-                    @if (cliente != null)
-                    {
-                        <button type="button" class="btn btn-sm btn-outline-info"
-                                data-bs-toggle="collapse" data-bs-target="#add-passageiro-form">
-                            <i class="fas fa-plus me-1"></i>Adicionar Passageiro
-                        </button>
-                    }
+                    <button type="button" class="btn btn-sm btn-outline-info"
+                            data-bs-toggle="collapse" data-bs-target="#add-passageiro-form">
+                        <i class="fas fa-plus me-1"></i>Adicionar Passageiro
+                    </button>
                 </div>
 
-                @if (cliente != null)
-                {
-                    <!-- Form inline para adicionar passageiro -->
-                    <div class="collapse mb-3" id="add-passageiro-form">
-                        <div class="bg-light rounded p-3" style="border:1px solid #dee2e6;">
-                            <h6 class="small text-muted fw-semibold mb-2">Novo Passageiro</h6>
-                            <form asp-controller="PassageiroProposta" asp-action="Adicionar" method="post">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="propostaId" value="@proposta.Id" />
-                                <div class="row g-2 mb-2">
-                                    <div class="col-md-4">
-                                        <label class="form-label form-label-sm mb-0">Nome <span class="text-danger">*</span></label>
-                                        <input type="text" name="nome" class="form-control form-control-sm"
-                                               required maxlength="200" placeholder="Nome completo..." />
-                                    </div>
-                                    <div class="col-md-3">
-                                        <label class="form-label form-label-sm mb-0">Data de Nascimento</label>
-                                        <input type="date" name="dataNascimento" class="form-control form-control-sm" />
-                                    </div>
-                                    <div class="col-md-2">
-                                        <label class="form-label form-label-sm mb-0">Gênero</label>
-                                        <select name="genero" class="form-select form-select-sm">
-                                            <option value="">—</option>
-                                            <option value="1">Masculino</option>
-                                            <option value="2">Feminino</option>
-                                            <option value="3">Outro</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <label class="form-label form-label-sm mb-0">Relacionamento</label>
-                                        <select name="relacionamento" class="form-select form-select-sm">
-                                            <option value="">— Selecionar —</option>
-                                            <option value="1">Filho</option>
-                                            <option value="2">Filha</option>
-                                            <option value="3">Amigo</option>
-                                            <option value="4">Amiga</option>
-                                            <option value="5">Esposa</option>
-                                            <option value="6">Marido</option>
-                                            <option value="7">Sogra</option>
-                                            <option value="8">Sogro</option>
-                                            <option value="9">Cunhado</option>
-                                            <option value="10">Cunhada</option>
-                                            <option value="11">Neto</option>
-                                            <option value="12">Neta</option>
-                                            <option value="13">Pai</option>
-                                            <option value="14">Mãe</option>
-                                            <option value="15">Irmão</option>
-                                            <option value="16">Irmã</option>
-                                            <option value="99">Outro</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-12">
-                                        <label class="form-label form-label-sm mb-0">Observações</label>
-                                        <input type="text" name="observacoes" class="form-control form-control-sm"
-                                               maxlength="2000" placeholder="Opcional..." />
-                                    </div>
+                <!-- Form inline para adicionar passageiro -->
+                <div class="collapse mb-3" id="add-passageiro-form">
+                    <div class="bg-light rounded p-3" style="border:1px solid #dee2e6;">
+                        <h6 class="small text-muted fw-semibold mb-2">Novo Passageiro</h6>
+                        <form asp-controller="PassageiroProposta" asp-action="Adicionar" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="propostaId" value="@proposta.Id" />
+                            <div class="row g-2 mb-2">
+                                <div class="col-md-4">
+                                    <label class="form-label form-label-sm mb-0">Nome <span class="text-danger">*</span></label>
+                                    <input type="text" name="nome" class="form-control form-control-sm"
+                                           required maxlength="200" placeholder="Nome completo..." />
                                 </div>
-                                <div class="d-flex gap-2">
-                                    <button type="submit" class="btn btn-sm btn-info text-white">
-                                        <i class="fas fa-plus me-1"></i>Adicionar
-                                    </button>
-                                    <button type="button" class="btn btn-sm btn-outline-secondary"
-                                            data-bs-toggle="collapse"
-                                            data-bs-target="#add-passageiro-form">
-                                        Cancelar
-                                    </button>
+                                <div class="col-md-3">
+                                    <label class="form-label form-label-sm mb-0">Data de Nascimento</label>
+                                    <input type="date" name="dataNascimento" id="add-pax-dob"
+                                           class="form-control form-control-sm" />
                                 </div>
-                            </form>
-                        </div>
+                                <div class="col-md-2">
+                                    <label class="form-label form-label-sm mb-0">Gênero</label>
+                                    <select name="genero" class="form-select form-select-sm">
+                                        <option value="">—</option>
+                                        <option value="1">Masculino</option>
+                                        <option value="2">Feminino</option>
+                                        <option value="3">Outro</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label form-label-sm mb-0">Relacionamento</label>
+                                    <select name="relacionamento" class="form-select form-select-sm">
+                                        <option value="">— Selecionar —</option>
+                                        <option value="1">Filho</option>
+                                        <option value="2">Filha</option>
+                                        <option value="3">Amigo</option>
+                                        <option value="4">Amiga</option>
+                                        <option value="5">Esposa</option>
+                                        <option value="6">Marido</option>
+                                        <option value="7">Sogra</option>
+                                        <option value="8">Sogro</option>
+                                        <option value="9">Cunhado</option>
+                                        <option value="10">Cunhada</option>
+                                        <option value="11">Neto</option>
+                                        <option value="12">Neta</option>
+                                        <option value="13">Pai</option>
+                                        <option value="14">Mãe</option>
+                                        <option value="15">Irmão</option>
+                                        <option value="16">Irmã</option>
+                                        <option value="99">Outro</option>
+                                    </select>
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-check mb-1">
+                                        <input type="checkbox" name="faixaIsAproximada" value="true"
+                                               id="add-faixa-chk" class="form-check-input">
+                                        <label for="add-faixa-chk" class="form-check-label small text-muted">
+                                            Data de nascimento não informada — usar faixa etária aproximada
+                                        </label>
+                                    </div>
+                                    <select name="faixaEtaria" id="add-faixa-select"
+                                            class="form-select form-select-sm mt-1" style="display:none;">
+                                        <option value="">— Faixa etária —</option>
+                                        <option value="1">Bebê (menos de 2 anos)</option>
+                                        <option value="2">Criança (2 a 11 anos)</option>
+                                        <option value="3">Adolescente (12 a 17 anos)</option>
+                                        <option value="4">Adulto (18 anos ou mais)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4" id="add-modo-bebe-wrap" style="display:none;">
+                                    <label class="form-label form-label-sm mb-0">Modo bebê</label>
+                                    <select name="modoBebe" class="form-select form-select-sm">
+                                        <option value="">— Selecionar —</option>
+                                        <option value="1">No colo</option>
+                                        <option value="2">Assento próprio</option>
+                                    </select>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label form-label-sm mb-0">Observações</label>
+                                    <input type="text" name="observacoes" class="form-control form-control-sm"
+                                           maxlength="2000" placeholder="Opcional..." />
+                                </div>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-sm btn-info text-white">
+                                    <i class="fas fa-plus me-1"></i>Adicionar
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary"
+                                        data-bs-toggle="collapse"
+                                        data-bs-target="#add-passageiro-form">
+                                    Cancelar
+                                </button>
+                            </div>
+                        </form>
                     </div>
+                </div>
 
-                    <!-- Cliente como passageiro principal -->
-                    <div class="card mb-2 border-primary">
-                        <div class="card-body py-2 d-flex align-items-center gap-3">
-                            @if (!string.IsNullOrEmpty(cliente.FotoPath))
-                            {
-                                <img src="@cliente.FotoPath" class="rounded-circle"
-                                     style="width:36px;height:36px;object-fit:cover;flex-shrink:0;" />
-                            }
-                            else
-                            {
-                                <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center flex-shrink-0"
-                                     style="width:36px;height:36px;">
-                                    <i class="fas fa-user text-white small"></i>
-                                </div>
-                            }
+                <!-- Passageiros da viagem -->
+                @foreach (var pax in proposta.PassageirosProposta.OrderBy(p => p.Ordem))
+                {
+                    var refDatePax = proposta.DataInicio ?? DateTime.Today;
+                    var paxRelLabel = pax.Relacionamento.HasValue ? pax.Relacionamento switch {
+                        SistemaUsuarios.Models.RelacionamentoPassageiro.Filho => "Filho",
+                        SistemaUsuarios.Models.RelacionamentoPassageiro.Filha => "Filha",
+                        SistemaUsuarios.Models.RelacionamentoPassageiro.Amigo => "Amigo",
+                        SistemaUsuarios.Models.RelacionamentoPassageiro.Amiga => "Amiga",
+                        SistemaUsuarios.Models.RelacionamentoPassageiro.Esposa => "Esposa",
+                        SistemaUsuarios.Models.RelacionamentoPassageiro.Marido => "Marido",
+                        SistemaUsuarios.Models.RelacionamentoPassageiro.Sogra => "Sogra",
+                        SistemaUsuarios.Models.RelacionamentoPassageiro.Sogro => "Sogro",
+                        SistemaUsuarios.Models.RelacionamentoPassageiro.Cunhado => "Cunhado",
+                        SistemaUsuarios.Models.RelacionamentoPassageiro.Cunhada => "Cunhada",
+                        SistemaUsuarios.Models.RelacionamentoPassageiro.Neto => "Neto",
+                        SistemaUsuarios.Models.RelacionamentoPassageiro.Neta => "Neta",
+                        SistemaUsuarios.Models.RelacionamentoPassageiro.Pai => "Pai",
+                        SistemaUsuarios.Models.RelacionamentoPassageiro.Mae => "Mãe",
+                        SistemaUsuarios.Models.RelacionamentoPassageiro.Irmao => "Irmão",
+                        SistemaUsuarios.Models.RelacionamentoPassageiro.Irma => "Irmã",
+                        _ => "Outro"
+                    } : null;
+                    var paxAgeOnTrip = pax.DataNascimento.HasValue
+                        ? AgeService.GetAgeOnDate(pax.DataNascimento.Value, refDatePax)
+                        : (int?)null;
+                    var paxCatOnTrip = pax.DataNascimento.HasValue
+                        ? AgeService.GetCategory(pax.DataNascimento.Value, refDatePax)
+                        : (PassengerAgeCategory?)null;
+                    var paxCatLabel = paxCatOnTrip.HasValue ? AgeService.GetCategoryLabel(paxCatOnTrip.Value) : null;
+                    var paxFaixaLabel = (!pax.DataNascimento.HasValue && pax.FaixaIsAproximada && pax.FaixaEtaria.HasValue)
+                        ? pax.FaixaEtaria switch {
+                            SistemaUsuarios.Models.FaixaEtariaPassageiro.Bebe => "Bebê (aprox.)",
+                            SistemaUsuarios.Models.FaixaEtariaPassageiro.Crianca => "Criança (aprox.)",
+                            SistemaUsuarios.Models.FaixaEtariaPassageiro.Adolescente => "Adolescente (aprox.)",
+                            _ => "Adulto (aprox.)"
+                        } : null;
+                    var _paxGenero = (int?)pax.Genero;
+                    var _paxRel = (int?)pax.Relacionamento;
+                    var _paxFaixa = (int?)pax.FaixaEtaria;
+                    var _paxModo = (int?)pax.ModoBebe;
+                    <div class="card mb-2 border-info" style="overflow:visible;">
+                        <div class="card-header bg-light d-flex align-items-center gap-2 py-2">
+                            <div class="rounded-circle bg-info d-flex align-items-center justify-content-center flex-shrink-0"
+                                 style="width:32px;height:32px;">
+                                <i class="fas fa-user text-white" style="font-size:0.7rem;"></i>
+                            </div>
                             <div class="flex-grow-1">
-                                <span class="fw-semibold">@cliente.Nome</span>
-                                <span class="badge bg-primary ms-2">Principal</span>
-                                @if (cliente.IdadeCalculada.HasValue)
+                                <span class="fw-semibold">@pax.Nome</span>
+                                @if (paxRelLabel != null)
                                 {
-                                    <span class="text-muted small ms-2">@cliente.IdadeCalculada anos</span>
+                                    <span class="badge bg-info text-dark ms-2">@paxRelLabel</span>
                                 }
-                                @if (cliente.DataNascimento.HasValue)
+                                @if (paxCatLabel != null)
                                 {
-                                    <span class="text-muted small ms-1">(@cliente.DataNascimento.Value.ToString("dd/MM/yyyy"))</span>
+                                    <span class="badge bg-secondary ms-1">@paxCatLabel</span>
                                 }
-                                @if (cliente.Genero.HasValue)
+                                else if (paxFaixaLabel != null)
+                                {
+                                    <span class="badge bg-secondary ms-1">@paxFaixaLabel</span>
+                                }
+                                @if (paxAgeOnTrip.HasValue)
+                                {
+                                    <span class="text-muted small ms-2">@paxAgeOnTrip anos na viagem</span>
+                                }
+                                @if (pax.DataNascimento.HasValue)
+                                {
+                                    <span class="text-muted small ms-1">(@pax.DataNascimento.Value.ToString("dd/MM/yyyy"))</span>
+                                }
+                                @if (pax.ModoBebe.HasValue)
                                 {
                                     <span class="text-muted small ms-2">
-                                        @(cliente.Genero == SistemaUsuarios.Models.Genero.Masculino ? "Masculino" :
-                                          cliente.Genero == SistemaUsuarios.Models.Genero.Feminino ? "Feminino" : "Outro")
+                                        @(pax.ModoBebe == SistemaUsuarios.Models.ModoBebe.Colo ? "No colo" : "Assento próprio")
                                     </span>
                                 }
+                                @if (pax.Genero.HasValue)
+                                {
+                                    <span class="text-muted small ms-2">
+                                        @(pax.Genero == SistemaUsuarios.Models.Genero.Masculino ? "Masc." :
+                                          pax.Genero == SistemaUsuarios.Models.Genero.Feminino ? "Fem." : "Outro")
+                                    </span>
+                                }
+                                @if (!string.IsNullOrEmpty(pax.Observacoes))
+                                {
+                                    <small class="text-muted ms-2 fst-italic">@pax.Observacoes</small>
+                                }
                             </div>
-                            <button type="button" class="btn btn-link btn-sm text-muted p-0 flex-shrink-0"
-                                    data-bs-toggle="collapse" data-bs-target="#edit-cliente-form">
-                                <i class="fas fa-edit me-1"></i><small>Editar cliente</small>
-                            </button>
-                        </div>
-                    </div>
-
-                }
-                else if (cliente == null && !proposta.PassageirosProposta.Any())
-                {
-                    <div class="text-center py-3 text-muted">
-                        <i class="fas fa-info-circle me-1"></i>
-                        <small>Adicione o cliente principal acima para gerenciar os passageiros.</small>
-                    </div>
-                }
-
-                <!-- Passageiros da viagem — sempre visíveis, independente de cliente vinculado -->
-                @foreach (var pax in proposta.PassageirosProposta.OrderBy(p => p.Ordem))
-                    {
-                        var paxRelLabel = pax.Relacionamento.HasValue ? pax.Relacionamento switch {
-                            SistemaUsuarios.Models.RelacionamentoPassageiro.Filho => "Filho",
-                            SistemaUsuarios.Models.RelacionamentoPassageiro.Filha => "Filha",
-                            SistemaUsuarios.Models.RelacionamentoPassageiro.Amigo => "Amigo",
-                            SistemaUsuarios.Models.RelacionamentoPassageiro.Amiga => "Amiga",
-                            SistemaUsuarios.Models.RelacionamentoPassageiro.Esposa => "Esposa",
-                            SistemaUsuarios.Models.RelacionamentoPassageiro.Marido => "Marido",
-                            SistemaUsuarios.Models.RelacionamentoPassageiro.Sogra => "Sogra",
-                            SistemaUsuarios.Models.RelacionamentoPassageiro.Sogro => "Sogro",
-                            SistemaUsuarios.Models.RelacionamentoPassageiro.Cunhado => "Cunhado",
-                            SistemaUsuarios.Models.RelacionamentoPassageiro.Cunhada => "Cunhada",
-                            SistemaUsuarios.Models.RelacionamentoPassageiro.Neto => "Neto",
-                            SistemaUsuarios.Models.RelacionamentoPassageiro.Neta => "Neta",
-                            SistemaUsuarios.Models.RelacionamentoPassageiro.Pai => "Pai",
-                            SistemaUsuarios.Models.RelacionamentoPassageiro.Mae => "Mãe",
-                            SistemaUsuarios.Models.RelacionamentoPassageiro.Irmao => "Irmão",
-                            SistemaUsuarios.Models.RelacionamentoPassageiro.Irma => "Irmã",
-                            _ => "Outro"
-                        } : null;
-                        <div class="card mb-2 border-info" style="overflow:visible;">
-                            <div class="card-header bg-light d-flex align-items-center gap-2 py-2">
-                                <div class="rounded-circle bg-info d-flex align-items-center justify-content-center flex-shrink-0"
-                                     style="width:32px;height:32px;">
-                                    <i class="fas fa-user text-white" style="font-size:0.7rem;"></i>
-                                </div>
-                                <div class="flex-grow-1">
-                                    <span class="fw-semibold">@pax.Nome</span>
-                                    @if (paxRelLabel != null)
-                                    {
-                                        <span class="badge bg-info text-dark ms-2">@paxRelLabel</span>
-                                    }
-                                    @if (pax.IdadeCalculada.HasValue)
-                                    {
-                                        <span class="text-muted small ms-2">@pax.IdadeCalculada anos</span>
-                                    }
-                                    @if (pax.DataNascimento.HasValue)
-                                    {
-                                        <span class="text-muted small ms-1">(@pax.DataNascimento.Value.ToString("dd/MM/yyyy"))</span>
-                                    }
-                                    @if (pax.Genero.HasValue)
-                                    {
-                                        <span class="text-muted small ms-2">
-                                            @(pax.Genero == SistemaUsuarios.Models.Genero.Masculino ? "Masc." :
-                                              pax.Genero == SistemaUsuarios.Models.Genero.Feminino ? "Fem." : "Outro")
-                                        </span>
-                                    }
-                                    @if (!string.IsNullOrEmpty(pax.Observacoes))
-                                    {
-                                        <small class="text-muted ms-2 fst-italic">@pax.Observacoes</small>
-                                    }
-                                </div>
-                                <div class="btn-group btn-group-sm ms-auto">
-                                    <button type="button" class="btn btn-outline-secondary btn-sm"
-                                            data-bs-toggle="collapse"
-                                            data-bs-target="#pax-edit-@pax.Id">
-                                        <i class="fas fa-edit"></i>
+                            <div class="btn-group btn-group-sm ms-auto">
+                                <button type="button" class="btn btn-outline-secondary btn-sm"
+                                        data-bs-toggle="collapse"
+                                        data-bs-target="#pax-edit-@pax.Id">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <form asp-controller="PassageiroProposta" asp-action="Excluir"
+                                      method="post" style="display:inline;"
+                                      onsubmit="return confirm('Remover passageiro @pax.Nome?');">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@pax.Id" />
+                                    <button type="submit" class="btn btn-outline-danger btn-sm">
+                                        <i class="fas fa-trash"></i>
                                     </button>
-                                    <form asp-controller="PassageiroProposta" asp-action="Excluir"
-                                          method="post" style="display:inline;"
-                                          onsubmit="return confirm('Remover passageiro @pax.Nome?');">
-                                        @Html.AntiForgeryToken()
-                                        <input type="hidden" name="id" value="@pax.Id" />
-                                        <button type="submit" class="btn btn-outline-danger btn-sm">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </form>
-                                </div>
+                                </form>
                             </div>
-                            <div class="collapse" id="pax-edit-@pax.Id">
-                                <div class="card-body">
-                                    <form asp-controller="PassageiroProposta" asp-action="Editar" method="post">
-                                        @Html.AntiForgeryToken()
-                                        <input type="hidden" name="id" value="@pax.Id" />
-                                        @{ var _paxGenero = (int?)pax.Genero; var _paxRel = (int?)pax.Relacionamento; }
-                                        <div class="row g-2 mb-2">
-                                            <div class="col-md-4">
-                                                <label class="form-label form-label-sm mb-0">Nome *</label>
-                                                <input type="text" name="nome" class="form-control form-control-sm"
-                                                       value="@pax.Nome" required maxlength="200" />
-                                            </div>
-                                            <div class="col-md-3">
-                                                <label class="form-label form-label-sm mb-0">Data de Nascimento</label>
-                                                <input type="date" name="dataNascimento" class="form-control form-control-sm"
-                                                       value="@pax.DataNascimento?.ToString("yyyy-MM-dd")" />
-                                            </div>
-                                            <div class="col-md-2">
-                                                <label class="form-label form-label-sm mb-0">Gênero</label>
-                                                <select name="genero" class="form-select form-select-sm">
-                                                    <option value="">—</option>
-                                                    <option value="1" selected="@(_paxGenero == 1 ? "selected" : null)">Masculino</option>
-                                                    <option value="2" selected="@(_paxGenero == 2 ? "selected" : null)">Feminino</option>
-                                                    <option value="3" selected="@(_paxGenero == 3 ? "selected" : null)">Outro</option>
-                                                </select>
-                                            </div>
-                                            <div class="col-md-3">
-                                                <label class="form-label form-label-sm mb-0">Relacionamento</label>
-                                                <select name="relacionamento" class="form-select form-select-sm">
-                                                    <option value="">— Selecionar —</option>
-                                                    <option value="1" selected="@(_paxRel == 1 ? "selected" : null)">Filho</option>
-                                                    <option value="2" selected="@(_paxRel == 2 ? "selected" : null)">Filha</option>
-                                                    <option value="3" selected="@(_paxRel == 3 ? "selected" : null)">Amigo</option>
-                                                    <option value="4" selected="@(_paxRel == 4 ? "selected" : null)">Amiga</option>
-                                                    <option value="5" selected="@(_paxRel == 5 ? "selected" : null)">Esposa</option>
-                                                    <option value="6" selected="@(_paxRel == 6 ? "selected" : null)">Marido</option>
-                                                    <option value="7" selected="@(_paxRel == 7 ? "selected" : null)">Sogra</option>
-                                                    <option value="8" selected="@(_paxRel == 8 ? "selected" : null)">Sogro</option>
-                                                    <option value="9" selected="@(_paxRel == 9 ? "selected" : null)">Cunhado</option>
-                                                    <option value="10" selected="@(_paxRel == 10 ? "selected" : null)">Cunhada</option>
-                                                    <option value="11" selected="@(_paxRel == 11 ? "selected" : null)">Neto</option>
-                                                    <option value="12" selected="@(_paxRel == 12 ? "selected" : null)">Neta</option>
-                                                    <option value="13" selected="@(_paxRel == 13 ? "selected" : null)">Pai</option>
-                                                    <option value="14" selected="@(_paxRel == 14 ? "selected" : null)">Mãe</option>
-                                                    <option value="15" selected="@(_paxRel == 15 ? "selected" : null)">Irmão</option>
-                                                    <option value="16" selected="@(_paxRel == 16 ? "selected" : null)">Irmã</option>
-                                                    <option value="99" selected="@(_paxRel == 99 ? "selected" : null)">Outro</option>
-                                                </select>
-                                            </div>
-                                            <div class="col-12">
-                                                <label class="form-label form-label-sm mb-0">Observações</label>
-                                                <input type="text" name="observacoes" class="form-control form-control-sm"
-                                                       value="@pax.Observacoes" maxlength="2000" />
-                                            </div>
+                        </div>
+                        <div class="collapse" id="pax-edit-@pax.Id">
+                            <div class="card-body">
+                                <form asp-controller="PassageiroProposta" asp-action="Editar" method="post">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@pax.Id" />
+                                    <div class="row g-2 mb-2">
+                                        <div class="col-md-4">
+                                            <label class="form-label form-label-sm mb-0">Nome *</label>
+                                            <input type="text" name="nome" class="form-control form-control-sm"
+                                                   value="@pax.Nome" required maxlength="200" />
                                         </div>
-                                        <button type="submit" class="btn btn-sm btn-primary">
-                                            <i class="fas fa-save me-1"></i>Salvar
-                                        </button>
-                                    </form>
-                                </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label form-label-sm mb-0">Data de Nascimento</label>
+                                            <input type="date" name="dataNascimento" class="form-control form-control-sm"
+                                                   value="@pax.DataNascimento?.ToString("yyyy-MM-dd")" />
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label form-label-sm mb-0">Gênero</label>
+                                            <select name="genero" class="form-select form-select-sm">
+                                                <option value="">—</option>
+                                                <option value="1" selected="@(_paxGenero == 1 ? "selected" : null)">Masculino</option>
+                                                <option value="2" selected="@(_paxGenero == 2 ? "selected" : null)">Feminino</option>
+                                                <option value="3" selected="@(_paxGenero == 3 ? "selected" : null)">Outro</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label form-label-sm mb-0">Relacionamento</label>
+                                            <select name="relacionamento" class="form-select form-select-sm">
+                                                <option value="">— Selecionar —</option>
+                                                <option value="1" selected="@(_paxRel == 1 ? "selected" : null)">Filho</option>
+                                                <option value="2" selected="@(_paxRel == 2 ? "selected" : null)">Filha</option>
+                                                <option value="3" selected="@(_paxRel == 3 ? "selected" : null)">Amigo</option>
+                                                <option value="4" selected="@(_paxRel == 4 ? "selected" : null)">Amiga</option>
+                                                <option value="5" selected="@(_paxRel == 5 ? "selected" : null)">Esposa</option>
+                                                <option value="6" selected="@(_paxRel == 6 ? "selected" : null)">Marido</option>
+                                                <option value="7" selected="@(_paxRel == 7 ? "selected" : null)">Sogra</option>
+                                                <option value="8" selected="@(_paxRel == 8 ? "selected" : null)">Sogro</option>
+                                                <option value="9" selected="@(_paxRel == 9 ? "selected" : null)">Cunhado</option>
+                                                <option value="10" selected="@(_paxRel == 10 ? "selected" : null)">Cunhada</option>
+                                                <option value="11" selected="@(_paxRel == 11 ? "selected" : null)">Neto</option>
+                                                <option value="12" selected="@(_paxRel == 12 ? "selected" : null)">Neta</option>
+                                                <option value="13" selected="@(_paxRel == 13 ? "selected" : null)">Pai</option>
+                                                <option value="14" selected="@(_paxRel == 14 ? "selected" : null)">Mãe</option>
+                                                <option value="15" selected="@(_paxRel == 15 ? "selected" : null)">Irmão</option>
+                                                <option value="16" selected="@(_paxRel == 16 ? "selected" : null)">Irmã</option>
+                                                <option value="99" selected="@(_paxRel == 99 ? "selected" : null)">Outro</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-12">
+                                            <div class="form-check mb-1">
+                                                <input type="checkbox" name="faixaIsAproximada" value="true"
+                                                       id="edit-faixa-chk-@pax.Id" class="form-check-input edit-faixa-chk"
+                                                       @(pax.FaixaIsAproximada ? "checked" : "")>
+                                                <label for="edit-faixa-chk-@pax.Id" class="form-check-label small text-muted">
+                                                    Data de nascimento não informada — usar faixa etária aproximada
+                                                </label>
+                                            </div>
+                                            <select name="faixaEtaria" id="edit-faixa-select-@pax.Id"
+                                                    class="form-select form-select-sm mt-1 edit-faixa-select"
+                                                    style="@(pax.FaixaIsAproximada ? "" : "display:none;")">
+                                                <option value="">— Faixa etária —</option>
+                                                <option value="1" selected="@(_paxFaixa == 1 ? "selected" : null)">Bebê (menos de 2 anos)</option>
+                                                <option value="2" selected="@(_paxFaixa == 2 ? "selected" : null)">Criança (2 a 11 anos)</option>
+                                                <option value="3" selected="@(_paxFaixa == 3 ? "selected" : null)">Adolescente (12 a 17 anos)</option>
+                                                <option value="4" selected="@(_paxFaixa == 4 ? "selected" : null)">Adulto (18 anos ou mais)</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4 edit-modo-bebe-wrap-@pax.Id"
+                                             style="@(pax.ModoBebe.HasValue || (_paxFaixa == 1 && pax.FaixaIsAproximada) ? "" : "display:none;")">
+                                            <label class="form-label form-label-sm mb-0">Modo bebê</label>
+                                            <select name="modoBebe" class="form-select form-select-sm">
+                                                <option value="">— Selecionar —</option>
+                                                <option value="1" selected="@(_paxModo == 1 ? "selected" : null)">No colo</option>
+                                                <option value="2" selected="@(_paxModo == 2 ? "selected" : null)">Assento próprio</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label form-label-sm mb-0">Observações</label>
+                                            <input type="text" name="observacoes" class="form-control form-control-sm"
+                                                   value="@pax.Observacoes" maxlength="2000" />
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-save me-1"></i>Salvar
+                                    </button>
+                                </form>
                             </div>
-                        </div><!-- /card pax -->
-                    }
+                        </div>
+                    </div><!-- /card pax -->
+                }
 
                 @if (!proposta.PassageirosProposta.Any())
                 {
                     <div class="text-center py-3 text-muted">
-                        <small>Nenhum passageiro adicional. Use "Adicionar Passageiro" para incluir familiares e acompanhantes.</small>
+                        <small>Nenhum passageiro cadastrado. Use "Adicionar Passageiro" para incluir os viajantes.</small>
                     </div>
                 }
             }
@@ -4508,10 +4559,57 @@
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 
     <script>
+
+    
         // ============================================================
         // INSTÂNCIAS DE MODAL — criadas uma única vez
         // ============================================================
         let modalUploadFoto, modalFotoAcomodacao, modalAdicionarVoo;
+
+        // ─── Passageiros — FaixaEtaria / ModoBebe ────────────────────────────────
+
+        (function () {
+            // Formulário de ADICIONAR passageiro
+            var addFaixaChk    = document.getElementById('add-faixa-chk');
+            var addFaixaSelect = document.getElementById('add-faixa-select');
+            var addModoBebe    = document.getElementById('add-modo-bebe-wrap');
+
+            function updateAddBebe() {
+                if (!addFaixaSelect || !addModoBebe) return;
+                addModoBebe.style.display = (addFaixaSelect.value === '1') ? '' : 'none';
+            }
+
+            if (addFaixaChk) {
+                addFaixaChk.addEventListener('change', function () {
+                    addFaixaSelect.style.display = this.checked ? '' : 'none';
+                    if (!this.checked) { addFaixaSelect.value = ''; addModoBebe.style.display = 'none'; }
+                    updateAddBebe();
+                });
+            }
+            if (addFaixaSelect) {
+                addFaixaSelect.addEventListener('change', updateAddBebe);
+            }
+
+            // Formulários de EDITAR passageiro (um por passageiro na página)
+            document.querySelectorAll('.edit-faixa-chk').forEach(function (chk) {
+                var id         = chk.id.replace('edit-faixa-chk-', '');
+                var sel        = document.getElementById('edit-faixa-select-' + id);
+                var modoWrap   = document.querySelector('.edit-modo-bebe-wrap-' + id);
+
+                function updateEditBebe() {
+                    if (!sel || !modoWrap) return;
+                    modoWrap.style.display = (sel.value === '1') ? '' : 'none';
+                }
+
+                chk.addEventListener('change', function () {
+                    if (sel) sel.style.display = this.checked ? '' : 'none';
+                    if (!this.checked && sel) { sel.value = ''; }
+                    if (modoWrap && !this.checked) modoWrap.style.display = 'none';
+                    updateEditBebe();
+                });
+                if (sel) sel.addEventListener('change', updateEditBebe);
+            });
+        }());
 
         // Aéreo — toggle inline de edição de passageiro
         function toggleEditPax(safeId) {

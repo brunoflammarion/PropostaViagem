@@ -23,11 +23,18 @@ namespace SistemaUsuarios.Controllers
         private bool SessaoIsMaster() =>
             HttpContext.Session.GetString("TipoUsuario") != "Associado";
 
-
         private IActionResult RedirectToPassageiros(Guid propostaId)
         {
             TempData["ActiveTab"] = "passageiros";
             return RedirectToAction("Editar", "Proposta", new { id = propostaId });
+        }
+
+        private async Task<Proposta?> ObterPropostaAutorizada(Guid propostaId, Guid usuarioId)
+        {
+            var isMaster = SessaoIsMaster();
+            return await _context.Propostas
+                .FirstOrDefaultAsync(p => p.Id == propostaId &&
+                    (isMaster ? p.UsuarioMasterId == usuarioId : p.UsuarioResponsavelId == usuarioId));
         }
 
         // POST: PassageiroProposta/Adicionar
@@ -39,16 +46,16 @@ namespace SistemaUsuarios.Controllers
             DateTime? dataNascimento,
             Genero? genero,
             RelacionamentoPassageiro? relacionamento,
-            string? observacoes)
+            string? observacoes,
+            FaixaEtariaPassageiro? faixaEtaria,
+            bool faixaIsAproximada = false,
+            ModoBebe? modoBebe = null)
         {
             if (!UsuarioLogado())
                 return RedirectToAction("Login", "Auth");
 
             var usuarioId = ObterUsuarioLogadoId();
-
-            var isMaster = SessaoIsMaster();
-            var proposta = await _context.Propostas
-                .FirstOrDefaultAsync(p => p.Id == propostaId && (isMaster ? p.UsuarioMasterId == usuarioId : p.UsuarioResponsavelId == usuarioId));
+            var proposta = await ObterPropostaAutorizada(propostaId, usuarioId);
 
             if (proposta == null)
             {
@@ -75,6 +82,9 @@ namespace SistemaUsuarios.Controllers
                 Genero = genero,
                 Relacionamento = relacionamento,
                 Observacoes = string.IsNullOrWhiteSpace(observacoes) ? null : observacoes.Trim(),
+                FaixaEtaria = faixaIsAproximada ? faixaEtaria : null,
+                FaixaIsAproximada = faixaIsAproximada && !dataNascimento.HasValue,
+                ModoBebe = modoBebe,
                 Ordem = maxOrdem + 1,
                 DataCriacao = DateTime.Now
             };
@@ -95,17 +105,20 @@ namespace SistemaUsuarios.Controllers
             DateTime? dataNascimento,
             Genero? genero,
             RelacionamentoPassageiro? relacionamento,
-            string? observacoes)
+            string? observacoes,
+            FaixaEtariaPassageiro? faixaEtaria,
+            bool faixaIsAproximada = false,
+            ModoBebe? modoBebe = null)
         {
             if (!UsuarioLogado())
                 return RedirectToAction("Login", "Auth");
 
             var usuarioId = ObterUsuarioLogadoId();
-
             var isMaster = SessaoIsMaster();
             var passageiro = await _context.PassageirosProposta
                 .Include(p => p.Proposta)
-                .FirstOrDefaultAsync(p => p.Id == id && (isMaster ? p.Proposta.UsuarioMasterId == usuarioId : p.Proposta.UsuarioResponsavelId == usuarioId));
+                .FirstOrDefaultAsync(p => p.Id == id &&
+                    (isMaster ? p.Proposta.UsuarioMasterId == usuarioId : p.Proposta.UsuarioResponsavelId == usuarioId));
 
             if (passageiro == null)
             {
@@ -124,11 +137,75 @@ namespace SistemaUsuarios.Controllers
             passageiro.Genero = genero;
             passageiro.Relacionamento = relacionamento;
             passageiro.Observacoes = string.IsNullOrWhiteSpace(observacoes) ? null : observacoes.Trim();
+            passageiro.FaixaEtaria = faixaIsAproximada ? faixaEtaria : null;
+            passageiro.FaixaIsAproximada = faixaIsAproximada && !dataNascimento.HasValue;
+            passageiro.ModoBebe = modoBebe;
 
             await _context.SaveChangesAsync();
 
             TempData["Sucesso"] = "Passageiro atualizado!";
             return RedirectToPassageiros(passageiro.PropostaId);
+        }
+
+        // POST: PassageiroProposta/AdicionarCliente
+        // Cria um passageiro a partir dos dados do cliente vinculado à proposta
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AdicionarCliente(Guid propostaId)
+        {
+            if (!UsuarioLogado())
+                return RedirectToAction("Login", "Auth");
+
+            var usuarioId = ObterUsuarioLogadoId();
+            var isMaster = SessaoIsMaster();
+
+            var proposta = await _context.Propostas
+                .Include(p => p.Cliente)
+                .FirstOrDefaultAsync(p => p.Id == propostaId &&
+                    (isMaster ? p.UsuarioMasterId == usuarioId : p.UsuarioResponsavelId == usuarioId));
+
+            if (proposta == null)
+            {
+                TempData["Erro"] = "Proposta não encontrada.";
+                return RedirectToAction("Index", "Proposta");
+            }
+
+            if (proposta.Cliente == null)
+            {
+                TempData["Erro"] = "Esta proposta não tem um responsável vinculado.";
+                return RedirectToPassageiros(propostaId);
+            }
+
+            var jaPassageiro = await _context.PassageirosProposta
+                .AnyAsync(p => p.PropostaId == propostaId && p.ClienteId == proposta.ClienteId);
+
+            if (jaPassageiro)
+            {
+                TempData["Aviso"] = "O responsável já está na lista de passageiros.";
+                return RedirectToPassageiros(propostaId);
+            }
+
+            var maxOrdem = await _context.PassageirosProposta
+                .Where(p => p.PropostaId == propostaId)
+                .MaxAsync(p => (int?)p.Ordem) ?? 0;
+
+            var passageiro = new PassageiroProposta
+            {
+                Id = Guid.NewGuid(),
+                PropostaId = propostaId,
+                ClienteId = proposta.ClienteId,
+                Nome = proposta.Cliente.Nome,
+                DataNascimento = proposta.Cliente.DataNascimento,
+                Genero = proposta.Cliente.Genero,
+                Ordem = maxOrdem + 1,
+                DataCriacao = DateTime.Now
+            };
+
+            _context.PassageirosProposta.Add(passageiro);
+            await _context.SaveChangesAsync();
+
+            TempData["Sucesso"] = $"{proposta.Cliente.Nome} adicionado(a) como passageiro!";
+            return RedirectToPassageiros(propostaId);
         }
 
         // POST: PassageiroProposta/Excluir
@@ -140,11 +217,11 @@ namespace SistemaUsuarios.Controllers
                 return RedirectToAction("Login", "Auth");
 
             var usuarioId = ObterUsuarioLogadoId();
-
             var isMaster = SessaoIsMaster();
             var passageiro = await _context.PassageirosProposta
                 .Include(p => p.Proposta)
-                .FirstOrDefaultAsync(p => p.Id == id && (isMaster ? p.Proposta.UsuarioMasterId == usuarioId : p.Proposta.UsuarioResponsavelId == usuarioId));
+                .FirstOrDefaultAsync(p => p.Id == id &&
+                    (isMaster ? p.Proposta.UsuarioMasterId == usuarioId : p.Proposta.UsuarioResponsavelId == usuarioId));
 
             if (passageiro == null)
             {

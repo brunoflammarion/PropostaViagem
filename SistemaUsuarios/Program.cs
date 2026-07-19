@@ -74,6 +74,9 @@ builder.Services.AddScoped<SistemaUsuarios.Services.DemonstracaoService>();
 // Gateway central de IA (todas as chamadas ao provedor passam por aqui)
 builder.Services.AddScoped<IAiGatewayService, AiGatewayService>();
 
+// Cálculo de idade e categoria de passageiro na data da viagem
+builder.Services.AddScoped<IPassengerAgeService, PassengerAgeService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -103,11 +106,16 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Landing}/{action=Index}/{id?}");
 
-// Adicionar rota espec�fica para landing page
+app.MapControllerRoute(
+    name: "produto",
+    pattern: "produto",
+    defaults: new { controller = "Landing", action = "Produto" });
+
+// Rota legada da landing de produto
 app.MapControllerRoute(
     name: "landing",
     pattern: "cadastro-agentes",
-    defaults: new { controller = "Landing", action = "Index" });
+    defaults: new { controller = "Landing", action = "Produto" });
 
 app.MapControllerRoute(
     name: "landing_default",

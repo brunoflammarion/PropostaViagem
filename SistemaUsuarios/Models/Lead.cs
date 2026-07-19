@@ -55,7 +55,21 @@ namespace SistemaUsuarios.Models
 
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
+        public DateTime? UpdatedAt { get; set; }
+
+        public bool IsDeleted { get; set; } = false;
+
+        public DateTime? ExcluidoEm { get; set; }
+
+        public Guid? ExcluidoPorUsuarioId { get; set; }
+
+        // Vínculos gerados ao preparar proposta
+        public Guid? ClienteId { get; set; }
+        public Guid? PropostaId { get; set; }
+
         public virtual Usuario Usuario { get; set; } = null!;
+        public virtual Cliente? Cliente { get; set; }
+        public virtual Proposta? Proposta { get; set; }
     }
 
     public enum LeadStatus

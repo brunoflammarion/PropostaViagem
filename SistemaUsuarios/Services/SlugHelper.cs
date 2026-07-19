@@ -25,6 +25,7 @@ namespace SistemaUsuarios.Services
             "uploads", "bundles", "fonts", "favicon",
             "privacy", "error", "agencia", "agencias",
             "platformadmin", "platform-admin", "admin-plataforma",
+            "produto",
         };
 
         public static bool IsReserved(string slug) => ReservedSlugs.Contains(slug);

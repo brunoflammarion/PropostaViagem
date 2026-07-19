@@ -1,0 +1,167 @@
+@model SistemaUsuarios.Models.ViewModels.LeadEditarViewModel
+@using SistemaUsuarios.Models
+@{
+    ViewData["Title"] = "Editar Lead";
+}
+
+@section Styles {
+<link rel="stylesheet" href="~/css/captacao.css" asp-append-version="true" />
+}
+
+<!-- ═══ HEADER ═══════════════════════════════════════════════════ -->
+<div class="executive-header">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div>
+            <div class="mb-1">
+                <a href="/Lead/Detalhe/@Model.Id" class="text-muted" style="font-size:.85rem;text-decoration:none;">
+                    <i class="fas fa-arrow-left me-1"></i>Voltar ao detalhe
+                </a>
+            </div>
+            <h2 class="exec-title mb-0">Editar Lead</h2>
+            <span class="exec-subtitle">@Model.FullName</span>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ ABAS ══════════════════════════════════════════════════════ -->
+<div class="capture-tabs">
+    <a href="/Lead" class="capture-tab">
+        <i class="fas fa-table me-1"></i>Leads
+    </a>
+    <a href="/Lead/Captacao" class="capture-tab">
+        <i class="fas fa-bullseye me-1"></i>Captação
+    </a>
+</div>
+
+<form asp-controller="Lead" asp-action="Editar" asp-route-id="@Model.Id" method="post" class="mt-3">
+    @Html.AntiForgeryToken()
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+
+            <!-- Identificação -->
+            <div class="capture-settings-card mb-4">
+                <div class="capture-card-header">
+                    <i class="fas fa-user me-2"></i>Identificação
+                </div>
+                <div class="p-3">
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <label class="form-label capture-card-label">Nome completo <span class="text-danger">*</span></label>
+                            <input asp-for="FullName" class="form-control form-control-sm" required maxlength="200" />
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label capture-card-label">WhatsApp <span class="text-danger">*</span></label>
+                            <input asp-for="WhatsApp" class="form-control form-control-sm" required maxlength="20" />
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label capture-card-label">E-mail</label>
+                            <input asp-for="Email" type="email" class="form-control form-control-sm" maxlength="150" />
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label capture-card-label">Cidade de origem</label>
+                            <input asp-for="OriginCity" class="form-control form-control-sm" maxlength="150" />
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label capture-card-label">Melhor horário para contato</label>
+                            <input asp-for="BestContactTime" class="form-control form-control-sm" maxlength="100" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interesse na viagem -->
+            <div class="capture-settings-card mb-4">
+                <div class="capture-card-header">
+                    <i class="fas fa-plane me-2"></i>Interesse na Viagem
+                </div>
+                <div class="p-3">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label capture-card-label">Destino <span class="text-danger">*</span></label>
+                            <input asp-for="Destination" class="form-control form-control-sm" required maxlength="300" />
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label capture-card-label">Período / Datas</label>
+                            <input asp-for="TravelDates" class="form-control form-control-sm" maxlength="100" />
+                        </div>
+                        <div class="col-sm-3">
+                            <label class="form-label capture-card-label">Adultos</label>
+                            <input asp-for="Adults" type="number" min="0" class="form-control form-control-sm" />
+                        </div>
+                        <div class="col-sm-3">
+                            <label class="form-label capture-card-label">Crianças</label>
+                            <input asp-for="Children" type="number" min="0" class="form-control form-control-sm" />
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label capture-card-label">Orçamento</label>
+                            <input asp-for="Budget" class="form-control form-control-sm" maxlength="100" />
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label capture-card-label">Tipo de viagem</label>
+                            <input asp-for="TripType" class="form-control form-control-sm" maxlength="100" />
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label capture-card-label">Preferência de hospedagem</label>
+                            <input asp-for="AccommodationPreference" class="form-control form-control-sm" maxlength="150" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Observações -->
+            <div class="capture-settings-card mb-4">
+                <div class="capture-card-header">
+                    <i class="fas fa-comment-alt me-2"></i>Observações
+                </div>
+                <div class="p-3">
+                    <textarea asp-for="Notes" class="form-control form-control-sm" rows="4" maxlength="1000"
+                              placeholder="Informações adicionais enviadas pelo lead..."></textarea>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="col-lg-4">
+
+            <!-- Status -->
+            <div class="capture-settings-card mb-4">
+                <div class="capture-card-header">
+                    <i class="fas fa-tag me-2"></i>Status
+                </div>
+                <div class="p-3">
+                    @foreach (var s in (LeadStatus[])Enum.GetValues(typeof(LeadStatus)))
+                    {
+                        var (lbl, css) = s switch
+                        {
+                            LeadStatus.Novo          => ("Novo",          "badge-novo"),
+                            LeadStatus.Contatado     => ("Contatado",     "badge-contatado"),
+                            LeadStatus.EmNegociacao  => ("Em negociação", "badge-negociacao"),
+                            LeadStatus.Convertido    => ("Convertido",    "badge-convertido"),
+                            LeadStatus.Perdido       => ("Perdido",       "badge-perdido"),
+                            _                        => (s.ToString(),    "badge-novo"),
+                        };
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="Status" id="status_@s"
+                                   value="@((int)s)" @(Model.Status == s ? "checked" : "") />
+                            <label class="form-check-label" for="status_@s">
+                                <span class="lead-badge @css">@lbl</span>
+                            </label>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Ações -->
+            <div class="d-flex flex-column gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save me-2"></i>Salvar alterações
+                </button>
+                <a href="/Lead/Detalhe/@Model.Id" class="btn btn-outline-secondary">
+                    Cancelar
+                </a>
+            </div>
+
+        </div>
+    </div>
+</form>

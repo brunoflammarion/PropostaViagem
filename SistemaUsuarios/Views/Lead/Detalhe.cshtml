@@ -1,0 +1,312 @@
+@model SistemaUsuarios.Models.ViewModels.LeadDetalheViewModel
+@using SistemaUsuarios.Models
+@{
+    ViewData["Title"] = "Detalhe do Lead";
+    var lead = Model.Lead;
+    var (statusLabel, statusCss) = lead.Status switch
+    {
+        LeadStatus.Novo          => ("Novo",          "badge-novo"),
+        LeadStatus.Contatado     => ("Contatado",     "badge-contatado"),
+        LeadStatus.EmNegociacao  => ("Em negociação", "badge-negociacao"),
+        LeadStatus.Convertido    => ("Convertido",    "badge-convertido"),
+        LeadStatus.Perdido       => ("Perdido",       "badge-perdido"),
+        _                        => ("Novo",          "badge-novo"),
+    };
+}
+
+@section Styles {
+<link rel="stylesheet" href="~/css/captacao.css" asp-append-version="true" />
+}
+
+<!-- ═══ HEADER ═══════════════════════════════════════════════════ -->
+<div class="executive-header">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div>
+            <div class="mb-1">
+                <a href="/Lead" class="text-muted" style="font-size:.85rem;text-decoration:none;">
+                    <i class="fas fa-arrow-left me-1"></i>Leads
+                </a>
+            </div>
+            <h2 class="exec-title mb-0">@lead.FullName</h2>
+            <span class="exec-subtitle">
+                <span class="lead-badge @statusCss">@statusLabel</span>
+                <span class="ms-2 text-muted" style="font-size:.8rem;">Recebido em @lead.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span>
+            </span>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="/Lead/Editar/@lead.Id" class="btn btn-outline-primary exec-btn-create">
+                <i class="fas fa-pen me-1"></i>Editar
+            </a>
+            <button type="button" class="btn btn-outline-danger exec-btn-create"
+                    data-bs-toggle="modal" data-bs-target="#modalExcluir">
+                <i class="fas fa-trash me-1"></i>Excluir
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ ABAS ══════════════════════════════════════════════════════ -->
+<div class="capture-tabs">
+    <a href="/Lead" class="capture-tab">
+        <i class="fas fa-table me-1"></i>Leads
+    </a>
+    <a href="/Lead/Captacao" class="capture-tab">
+        <i class="fas fa-bullseye me-1"></i>Captação
+    </a>
+</div>
+
+@if (TempData["Sucesso"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show mb-3 rounded-3">
+        <i class="fas fa-check-circle me-2"></i>@TempData["Sucesso"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="row g-4 mt-0">
+
+    <!-- Coluna principal -->
+    <div class="col-lg-8">
+
+        <!-- Bloco: Identificação -->
+        <div class="capture-settings-card mb-4">
+            <div class="capture-card-header">
+                <i class="fas fa-user me-2"></i>Identificação
+            </div>
+            <div class="p-3">
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <div class="capture-card-label">Nome completo</div>
+                        <div>@lead.FullName</div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="capture-card-label">WhatsApp</div>
+                        <div>
+                            <a href="https://wa.me/@(lead.WhatsApp.Replace(" ","").Replace("-","").Replace("(","").Replace(")",""))"
+                               target="_blank" class="lead-whatsapp">
+                                <i class="fab fa-whatsapp me-1"></i>@lead.WhatsApp
+                            </a>
+                        </div>
+                    </div>
+                    @if (!string.IsNullOrEmpty(lead.Email))
+                    {
+                        <div class="col-sm-6">
+                            <div class="capture-card-label">E-mail</div>
+                            <div><a href="mailto:@lead.Email">@lead.Email</a></div>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(lead.OriginCity))
+                    {
+                        <div class="col-sm-6">
+                            <div class="capture-card-label">Cidade de origem</div>
+                            <div>@lead.OriginCity</div>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(lead.BestContactTime))
+                    {
+                        <div class="col-sm-6">
+                            <div class="capture-card-label">Melhor horário para contato</div>
+                            <div>@lead.BestContactTime</div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Bloco: Interesse na viagem -->
+        <div class="capture-settings-card mb-4">
+            <div class="capture-card-header">
+                <i class="fas fa-plane me-2"></i>Interesse na Viagem
+            </div>
+            <div class="p-3">
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <div class="capture-card-label">Destino</div>
+                        <div>@lead.Destination</div>
+                    </div>
+                    @if (!string.IsNullOrEmpty(lead.TravelDates))
+                    {
+                        <div class="col-sm-6">
+                            <div class="capture-card-label">Período</div>
+                            <div>@lead.TravelDates</div>
+                        </div>
+                    }
+                    @if (lead.Adults.HasValue)
+                    {
+                        <div class="col-sm-3">
+                            <div class="capture-card-label">Adultos</div>
+                            <div>@lead.Adults</div>
+                        </div>
+                    }
+                    @if (lead.Children.HasValue)
+                    {
+                        <div class="col-sm-3">
+                            <div class="capture-card-label">Crianças</div>
+                            <div>@lead.Children</div>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(lead.Budget))
+                    {
+                        <div class="col-sm-6">
+                            <div class="capture-card-label">Orçamento</div>
+                            <div>@lead.Budget</div>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(lead.TripType))
+                    {
+                        <div class="col-sm-6">
+                            <div class="capture-card-label">Tipo de viagem</div>
+                            <div>@lead.TripType</div>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(lead.AccommodationPreference))
+                    {
+                        <div class="col-sm-6">
+                            <div class="capture-card-label">Preferência de hospedagem</div>
+                            <div>@lead.AccommodationPreference</div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrEmpty(lead.Notes))
+        {
+            <!-- Bloco: Observações -->
+            <div class="capture-settings-card mb-4">
+                <div class="capture-card-header">
+                    <i class="fas fa-comment-alt me-2"></i>Observações
+                </div>
+                <div class="p-3">
+                    <p class="mb-0" style="white-space:pre-wrap;">@lead.Notes</p>
+                </div>
+            </div>
+        }
+
+    </div>
+
+    <!-- Coluna lateral -->
+    <div class="col-lg-4">
+
+        <!-- Bloco: Status e metadados -->
+        <div class="capture-settings-card mb-4">
+            <div class="capture-card-header">
+                <i class="fas fa-info-circle me-2"></i>Informações do Lead
+            </div>
+            <div class="p-3">
+                <div class="mb-3">
+                    <div class="capture-card-label">Status atual</div>
+                    <span class="lead-badge @statusCss">@statusLabel</span>
+                </div>
+                <div class="mb-3">
+                    <div class="capture-card-label">Origem</div>
+                    <div>@lead.Source</div>
+                </div>
+                <div class="mb-3">
+                    <div class="capture-card-label">Recebido em</div>
+                    <div>@lead.CreatedAt.ToString("dd/MM/yyyy 'às' HH:mm")</div>
+                </div>
+                @if (lead.UpdatedAt.HasValue)
+                {
+                    <div>
+                        <div class="capture-card-label">Última atualização</div>
+                        <div>@lead.UpdatedAt.Value.ToString("dd/MM/yyyy 'às' HH:mm")</div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Alterar status rápido -->
+        <div class="capture-settings-card mb-4">
+            <div class="capture-card-header">
+                <i class="fas fa-exchange-alt me-2"></i>Alterar Status
+            </div>
+            <div class="p-3 d-flex flex-column gap-2">
+                @foreach (var s in (LeadStatus[])Enum.GetValues(typeof(LeadStatus)))
+                {
+                    if (s != lead.Status)
+                    {
+                        var label = s switch
+                        {
+                            LeadStatus.Novo         => "Marcar como Novo",
+                            LeadStatus.Contatado    => "Marcar como Contatado",
+                            LeadStatus.EmNegociacao => "Em negociação",
+                            LeadStatus.Convertido   => "Convertido",
+                            LeadStatus.Perdido      => "Perdido",
+                            _                       => s.ToString()
+                        };
+                        <form asp-controller="Lead" asp-action="AlterarStatus" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@lead.Id" />
+                            <input type="hidden" name="status" value="@((int)s)" />
+                            <button type="submit" class="btn btn-sm btn-outline-secondary w-100 text-start">
+                                @label
+                            </button>
+                        </form>
+                    }
+                }
+            </div>
+        </div>
+
+        <!-- Histórico de alterações -->
+        @if (Model.Historico.Any())
+        {
+            <div class="capture-settings-card">
+                <div class="capture-card-header">
+                    <i class="fas fa-history me-2"></i>Histórico
+                </div>
+                <div class="p-3">
+                    @foreach (var h in Model.Historico)
+                    {
+                        <div class="d-flex gap-2 mb-2" style="font-size:.8rem;">
+                            <div class="text-muted" style="white-space:nowrap;min-width:90px;">
+                                @h.DataHora.ToString("dd/MM HH:mm")
+                            </div>
+                            <div>
+                                @if (h.TipoAcao == "EdicaoStatus")
+                                {
+                                    <span>Status: <strong>@h.ValorAnterior</strong> → <strong>@h.ValorNovo</strong></span>
+                                }
+                                else if (h.TipoAcao == "EdicaoCampo")
+                                {
+                                    <span>@h.CampoAlterado alterado</span>
+                                }
+                                else if (h.TipoAcao == "Exclusao")
+                                {
+                                    <span class="text-danger">Lead excluído</span>
+                                }
+                                else
+                                {
+                                    <span>@h.TipoAcao</span>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+    </div>
+</div>
+
+<!-- Modal confirmação de exclusão -->
+<div class="modal fade" id="modalExcluir" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Excluir lead</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-0">Deseja excluir <strong>@lead.FullName</strong>? Os dados serão preservados mas o lead não aparecerá mais na lista.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form asp-controller="Lead" asp-action="Excluir" asp-route-id="@lead.Id" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-sm btn-danger">Excluir</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

@@ -49,7 +49,7 @@
     var waPhone  = Model.Usuario.Telefone?.Replace("(","").Replace(")","").Replace("-","").Replace(" ","") ?? "";
     var waMsgRaw = $"Olá! Vi a proposta \"{Model.Titulo}\" e tenho interesse!";
 
-    bool temPassageiros = Model.Cliente != null || Model.PassageirosProposta.Any();
+    bool temPassageiros = Model.PassageirosProposta.Any();
     bool temVoos        = Model.Voos.Any();
     bool temSeguros     = Model.Seguros.Any();
     bool temResumo      = !string.IsNullOrWhiteSpace(Model.ResumoProposta);
@@ -1278,17 +1278,6 @@ body.has-preview-bar { padding-top: 46px; }
         <h2 class="fam-section-h2"><i class="fas fa-users" style="color:var(--c-accent);"></i>Quem vai nessa aventura</h2>
         <div class="fam-section-divider"></div>
         <div class="fam-pax-grid">
-            @if (Model.Cliente != null)
-            {
-                var _ini = Model.Cliente.Nome.Length > 0 ? Model.Cliente.Nome.Substring(0,1).ToUpper() : "?";
-                <div class="fam-pax-card">
-                    <div class="fam-pax-avatar">@_ini</div>
-                    <div>
-                        <div class="fam-pax-name">@Model.Cliente.Nome</div>
-                        <div class="fam-pax-sub">Titular</div>
-                    </div>
-                </div>
-            }
             @foreach (var pax in Model.PassageirosProposta.OrderBy(p => p.Ordem))
             {
                 var _ini2 = pax.Nome.Length > 0 ? pax.Nome.Substring(0,1).ToUpper() : "?";

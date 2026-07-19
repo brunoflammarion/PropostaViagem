@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NetTopologySuite.Geometries;
 using SistemaUsuarios.Data;
@@ -12,9 +13,11 @@ using SistemaUsuarios.Data;
 namespace SistemaUsuarios.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260719120151_AddLeadClientePropostaLinks")]
+    partial class AddLeadClientePropostaLinks
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1520,25 +1523,13 @@ namespace SistemaUsuarios.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid?>("ClienteId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<DateTime>("DataCriacao")
                         .HasColumnType("datetime2");
 
                     b.Property<DateTime?>("DataNascimento")
                         .HasColumnType("datetime2");
 
-                    b.Property<int?>("FaixaEtaria")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("FaixaIsAproximada")
-                        .HasColumnType("bit");
-
                     b.Property<int?>("Genero")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("ModoBebe")
                         .HasColumnType("int");
 
                     b.Property<string>("Nome")
@@ -1559,16 +1550,9 @@ namespace SistemaUsuarios.Migrations
                     b.Property<int?>("Relacionamento")
                         .HasColumnType("int");
 
-                    b.Property<Guid?>("ResponsavelId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("ClienteId");
-
                     b.HasIndex("PropostaId");
-
-                    b.HasIndex("ResponsavelId");
 
                     b.ToTable("PassageirosProposta");
                 });
@@ -2583,27 +2567,13 @@ namespace SistemaUsuarios.Migrations
 
             modelBuilder.Entity("SistemaUsuarios.Models.PassageiroProposta", b =>
                 {
-                    b.HasOne("SistemaUsuarios.Models.Cliente", "Cliente")
-                        .WithMany()
-                        .HasForeignKey("ClienteId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("SistemaUsuarios.Models.Proposta", "Proposta")
                         .WithMany("PassageirosProposta")
                         .HasForeignKey("PropostaId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("SistemaUsuarios.Models.PassageiroProposta", "Responsavel")
-                        .WithMany()
-                        .HasForeignKey("ResponsavelId")
-                        .OnDelete(DeleteBehavior.NoAction);
-
-                    b.Navigation("Cliente");
-
                     b.Navigation("Proposta");
-
-                    b.Navigation("Responsavel");
                 });
 
             modelBuilder.Entity("SistemaUsuarios.Models.PassageiroVoo", b =>
