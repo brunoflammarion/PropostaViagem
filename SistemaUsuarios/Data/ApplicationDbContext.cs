@@ -67,6 +67,9 @@ namespace SistemaUsuarios.Data
         public DbSet<AiUsageRecord> AiUsageRecords { get; set; }
         public DbSet<AiLimitAuditLog> AiLimitAuditLogs { get; set; }
 
+        // ── LISTA VIP (WAITLIST LANÇAMENTO) ────────────────────────────────
+        public DbSet<ListaVipCadastro> ListaVipCadastros { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

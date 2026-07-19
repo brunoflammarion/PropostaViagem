@@ -494,6 +494,161 @@ namespace SistemaUsuarios.Controllers
             return RedirectToAction("Demonstracao");
         }
 
+        // ── Lista VIP ─────────────────────────────────────────────────────────
+
+        public async Task<IActionResult> ListaVip(
+            string? busca, string? periodo, string? propostas, string? ordem, int pagina = 1)
+        {
+            if (!AdminLogado()) return RedirectToAction("Login");
+
+            var hoje = DateTime.Today;
+
+            var totalGeral = await _db.ListaVipCadastros.CountAsync();
+            var totalHoje  = await _db.ListaVipCadastros.CountAsync(c => c.DataCadastro >= hoje);
+            var total7d    = await _db.ListaVipCadastros.CountAsync(c => c.DataCadastro >= hoje.AddDays(-7));
+            var total30d   = await _db.ListaVipCadastros.CountAsync(c => c.DataCadastro >= hoje.AddDays(-30));
+            var totalNovos = await _db.ListaVipCadastros.CountAsync(c => !c.Visualizado);
+
+            var query = _db.ListaVipCadastros.AsNoTracking().AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(busca))
+            {
+                var b = busca.Trim().ToLower();
+                query = query.Where(c =>
+                    c.Nome.ToLower().Contains(b) ||
+                    c.Email.ToLower().Contains(b) ||
+                    c.NomeAgencia.ToLower().Contains(b) ||
+                    c.Whatsapp.Contains(b) ||
+                    (c.Cidade != null && c.Cidade.ToLower().Contains(b)) ||
+                    (c.Instagram != null && c.Instagram.ToLower().Contains(b)));
+            }
+
+            if (!string.IsNullOrWhiteSpace(periodo))
+            {
+                DateTime? cutoff = periodo switch
+                {
+                    "hoje" => hoje,
+                    "7d"   => hoje.AddDays(-7),
+                    "30d"  => hoje.AddDays(-30),
+                    "90d"  => hoje.AddDays(-90),
+                    _      => null
+                };
+                if (cutoff.HasValue) query = query.Where(c => c.DataCadastro >= cutoff.Value);
+            }
+
+            if (!string.IsNullOrWhiteSpace(propostas))
+                query = query.Where(c => c.PropostasPorMes == propostas);
+
+            List<SistemaUsuarios.Models.ListaVipCadastro> cadastros;
+            int totalFiltrado;
+
+            if (ordem == "propostas")
+            {
+                // Ordenação por propostas exige sort in-memory (valor categórico)
+                var todos = await query.ToListAsync();
+                totalFiltrado = todos.Count;
+                cadastros = todos
+                    .OrderByDescending(c => ListaVipListaViewModel.PropostasOrdem(c.PropostasPorMes))
+                    .Skip((pagina - 1) * ListaVipListaViewModel.PageSize)
+                    .Take(ListaVipListaViewModel.PageSize)
+                    .ToList();
+            }
+            else
+            {
+                query = ordem switch
+                {
+                    "antigos" => query.OrderBy(c => c.DataCadastro),
+                    "nome"    => query.OrderBy(c => c.Nome),
+                    _         => query.OrderByDescending(c => c.DataCadastro)
+                };
+                totalFiltrado = await query.CountAsync();
+                cadastros = await query
+                    .Skip((pagina - 1) * ListaVipListaViewModel.PageSize)
+                    .Take(ListaVipListaViewModel.PageSize)
+                    .ToListAsync();
+            }
+
+            var vm = new ListaVipListaViewModel
+            {
+                Cadastros       = cadastros,
+                TotalGeral      = totalGeral,
+                TotalHoje       = totalHoje,
+                Total7d         = total7d,
+                Total30d        = total30d,
+                TotalNovos      = totalNovos,
+                TotalFiltrado   = totalFiltrado,
+                PaginaAtual     = pagina,
+                TotalPaginas    = (int)Math.Ceiling((double)totalFiltrado / ListaVipListaViewModel.PageSize),
+                Busca           = busca,
+                Periodo         = periodo,
+                FiltroPropostas = propostas,
+                Ordem           = ordem,
+            };
+
+            ViewData["Title"]        = "Lista VIP";
+            ViewBag.ListaVipNovos    = totalNovos;
+            return View(vm);
+        }
+
+        public async Task<IActionResult> ListaVipDetalhe(Guid id)
+        {
+            if (!AdminLogado()) return RedirectToAction("Login");
+
+            var cadastro = await _db.ListaVipCadastros.FindAsync(id);
+            if (cadastro == null) return NotFound();
+
+            if (!cadastro.Visualizado)
+            {
+                cadastro.Visualizado     = true;
+                cadastro.DataVisualizacao = DateTime.Now;
+                await _db.SaveChangesAsync();
+            }
+
+            ViewData["Title"]     = cadastro.Nome;
+            ViewData["ActiveNav"] = "ListaVip";
+            ViewData["Breadcrumb"]= "<a href='/PlatformAdmin/ListaVip'>Lista VIP</a>";
+            ViewBag.ListaVipNovos = await _db.ListaVipCadastros.CountAsync(c => !c.Visualizado);
+            return View(cadastro);
+        }
+
+        public async Task<IActionResult> ExportarListaVip(string? busca, string? periodo, string? propostas)
+        {
+            if (!AdminLogado()) return RedirectToAction("Login");
+
+            var query = _db.ListaVipCadastros.AsNoTracking().AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(busca))
+            {
+                var b = busca.Trim().ToLower();
+                query = query.Where(c =>
+                    c.Nome.ToLower().Contains(b) || c.Email.ToLower().Contains(b) ||
+                    c.NomeAgencia.ToLower().Contains(b) ||
+                    (c.Cidade != null && c.Cidade.ToLower().Contains(b)));
+            }
+            if (!string.IsNullOrWhiteSpace(periodo))
+            {
+                DateTime? cutoff = periodo switch { "hoje" => DateTime.Today, "7d" => DateTime.Today.AddDays(-7), "30d" => DateTime.Today.AddDays(-30), "90d" => DateTime.Today.AddDays(-90), _ => null };
+                if (cutoff.HasValue) query = query.Where(c => c.DataCadastro >= cutoff.Value);
+            }
+            if (!string.IsNullOrWhiteSpace(propostas))
+                query = query.Where(c => c.PropostasPorMes == propostas);
+
+            var dados = await query.OrderByDescending(c => c.DataCadastro).ToListAsync();
+
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine("Nome,Email,WhatsApp,Agência,Cidade,Instagram,Propostas/mês,Origem,Data");
+            foreach (var c in dados)
+            {
+                static string Esc(string? v) => $"\"{(v ?? "").Replace("\"", "\"\"")}\"";
+                sb.AppendLine($"{Esc(c.Nome)},{Esc(c.Email)},{Esc(c.Whatsapp)},{Esc(c.NomeAgencia)},{Esc(c.Cidade)},{Esc(c.Instagram)},{Esc(ListaVipListaViewModel.PropostasLabel(c.PropostasPorMes))},{Esc(c.Origem)},{Esc(c.DataCadastro.ToString("dd/MM/yyyy HH:mm"))}");
+            }
+
+            var preamble = System.Text.Encoding.UTF8.GetPreamble();
+            var content  = System.Text.Encoding.UTF8.GetBytes(sb.ToString());
+            var bytes    = preamble.Concat(content).ToArray();
+            return File(bytes, "text/csv", $"lista-vip-{DateTime.Today:yyyy-MM-dd}.csv");
+        }
+
         // AJAX: preview de entidade antes de adicionar
         [HttpGet]
         public async Task<IActionResult> BuscarEntidade(string tipo, Guid id)

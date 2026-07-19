@@ -40,10 +40,46 @@ namespace SistemaUsuarios.Controllers
         // POST: Landing/ListaVip — Inscrição na lista VIP (waitlist)
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult ListaVip(string nome, string email, string whatsapp, string agencia,
-            string? cidade, string? instagram, string? propostas)
+        public async Task<IActionResult> ListaVip(
+            string nome, string email, string whatsapp, string agencia,
+            string? cidade, string? instagram, string? propostas,
+            string? utmSource, string? utmMedium, string? utmCampaign)
         {
-            Console.WriteLine($"[ListaVIP] {nome} | {email} | {whatsapp} | {agencia} | {cidade} | {instagram} | {propostas}");
+            if (string.IsNullOrWhiteSpace(nome) || string.IsNullOrWhiteSpace(email) ||
+                string.IsNullOrWhiteSpace(whatsapp) || string.IsNullOrWhiteSpace(agencia))
+            {
+                TempData["ListaVipErro"] = true;
+                return RedirectToAction("Index");
+            }
+
+            var ip = Request.Headers.ContainsKey("X-Forwarded-For")
+                ? Request.Headers["X-Forwarded-For"].FirstOrDefault()?.Split(',')[0].Trim()
+                : HttpContext.Connection.RemoteIpAddress?.ToString();
+
+            var cadastro = new SistemaUsuarios.Models.ListaVipCadastro
+            {
+                Nome           = nome.Trim(),
+                Email          = email.Trim().ToLower(),
+                Whatsapp       = System.Text.RegularExpressions.Regex.Replace(whatsapp ?? "", @"[^\d]", ""),
+                NomeAgencia    = agencia.Trim(),
+                Cidade         = string.IsNullOrWhiteSpace(cidade) ? null : cidade.Trim(),
+                Instagram      = string.IsNullOrWhiteSpace(instagram) ? null : instagram.Trim().TrimStart('@'),
+                PropostasPorMes= propostas,
+                Origem         = "landing-vip",
+                UtmSource      = string.IsNullOrWhiteSpace(utmSource) ? null : utmSource,
+                UtmMedium      = string.IsNullOrWhiteSpace(utmMedium) ? null : utmMedium,
+                UtmCampaign    = string.IsNullOrWhiteSpace(utmCampaign) ? null : utmCampaign,
+                PaginaOrigem   = Request.Headers["Referer"].FirstOrDefault(),
+                Referrer       = Request.Headers["Referer"].FirstOrDefault(),
+                Ip             = ip,
+                UserAgent      = Request.Headers["User-Agent"].FirstOrDefault(),
+                DataCadastro   = DateTime.Now,
+                Visualizado    = false,
+            };
+
+            _context.ListaVipCadastros.Add(cadastro);
+            await _context.SaveChangesAsync();
+
             TempData["ListaVipSucesso"] = true;
             return RedirectToAction("Index");
         }

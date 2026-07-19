@@ -2,11 +2,12 @@
     var _adminNome = Context.Session.GetString("PlatformAdminNome") ?? "Admin";
     var _adminIniciais = _adminNome.Split(' ', StringSplitOptions.RemoveEmptyEntries)
         .Take(2).Select(p => char.ToUpper(p[0]).ToString()).Aggregate("", (a, b) => a + b);
-    var _ctrl   = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
-    var _action = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
+    var _ctrl      = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+    var _action    = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
+    var _activeNav = ViewData["ActiveNav"]?.ToString() ?? _action;
 
     string NavCls(string action) =>
-        _action == action ? "pa-nav-link active" : "pa-nav-link";
+        _activeNav == action ? "pa-nav-link active" : "pa-nav-link";
 }
 <!DOCTYPE html>
 <html lang="pt-br">
@@ -105,6 +106,17 @@
         .pa-nav-link:hover { background: rgba(255,255,255,.06); color: #e2e8f0; }
         .pa-nav-link.active { background: rgba(37,99,235,.18); color: #93c5fd; font-weight: 600; }
         .pa-nav-link i { width: 16px; text-align: center; font-size: 13px; }
+        .pa-nav-badge {
+            margin-left: auto;
+            background: #2563eb;
+            color: #fff;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 1px 6px;
+            border-radius: 10px;
+            line-height: 1.6;
+        }
+        .pa-nav-link.active .pa-nav-badge { background: rgba(255,255,255,.25); }
 
         .pa-sidebar-footer {
             display: flex;
@@ -302,6 +314,9 @@
             </div>
         </a>
 
+        @{
+            var _vipNovos = (int)(ViewBag.ListaVipNovos ?? 0);
+        }
         <nav class="pa-nav">
             <div class="pa-nav-section">Principal</div>
             <a href="/PlatformAdmin/Dashboard" class="@NavCls("Dashboard")">
@@ -311,6 +326,14 @@
             <a href="/PlatformAdmin/Agencias" class="@NavCls("Agencias")">
                 <i class="fas fa-building"></i>
                 <span>Agências</span>
+            </a>
+            <a href="/PlatformAdmin/ListaVip" class="@NavCls("ListaVip")">
+                <i class="fas fa-rocket"></i>
+                <span>Lista VIP</span>
+                @if (_vipNovos > 0)
+                {
+                    <span class="pa-nav-badge">@_vipNovos</span>
+                }
             </a>
             <a href="/PlatformAdmin/AiUsage" class="@NavCls("AiUsage")">
                 <i class="fas fa-robot"></i>

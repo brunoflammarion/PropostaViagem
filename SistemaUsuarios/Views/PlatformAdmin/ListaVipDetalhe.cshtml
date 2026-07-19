@@ -1,0 +1,325 @@
+@model SistemaUsuarios.Models.ListaVipCadastro
+@{
+    Layout = "~/Views/Shared/_LayoutPlatformAdmin.cshtml";
+
+    var numLimpo = System.Text.RegularExpressions.Regex.Replace(Model.Whatsapp ?? "", @"[^\d]", "");
+    var wppNum   = numLimpo.Length == 11 ? "55" + numLimpo : numLimpo.Length == 13 ? numLimpo : "55" + numLimpo;
+    var wppMsg   = Uri.EscapeDataString($"Olá {Model.Nome}! Vi que você se inscreveu na Lista VIP do Agent Tools.");
+
+    string? PropostasLabel(string? valor) => valor switch
+    {
+        "ate20"  => "Até 20/mês",
+        "20-50"  => "20 a 50/mês",
+        "50-100" => "50 a 100/mês",
+        "100+"   => "Acima de 100/mês",
+        _        => null
+    };
+
+    bool temUtm = !string.IsNullOrWhiteSpace(Model.UtmSource)
+               || !string.IsNullOrWhiteSpace(Model.UtmMedium)
+               || !string.IsNullOrWhiteSpace(Model.UtmCampaign);
+}
+
+@section Styles {
+<style>
+    .detalhe-grid {
+        display: grid;
+        grid-template-columns: 1fr 320px;
+        gap: 20px;
+        align-items: start;
+    }
+    @@media(max-width:900px){ .detalhe-grid { grid-template-columns: 1fr; } }
+
+    .dl-row {
+        display: grid;
+        grid-template-columns: 140px 1fr;
+        gap: 4px 12px;
+        padding: 10px 0;
+        border-bottom: 1px solid #f1f5f9;
+        align-items: baseline;
+    }
+    .dl-row:last-child { border-bottom: none; }
+    .dl-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: #94a3b8; }
+    .dl-value { font-size: 13px; color: #0f172a; word-break: break-word; }
+    .dl-value a { color: #2563eb; text-decoration: none; }
+    .dl-value a:hover { text-decoration: underline; }
+
+    .hero-card {
+        background: linear-gradient(135deg, #0A1F3D 0%, #1E3A5F 100%);
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 20px;
+        color: #fff;
+    }
+    .hero-avatar {
+        width: 56px; height: 56px; border-radius: 50%;
+        background: rgba(255,255,255,.12);
+        border: 2px solid rgba(255,255,255,.2);
+        color: #93c5fd;
+        font-size: 22px; font-weight: 800;
+        display: flex; align-items: center; justify-content: center;
+        margin-bottom: 14px;
+    }
+    .hero-nome { font-size: 20px; font-weight: 800; color: #fff; margin-bottom: 2px; }
+    .hero-agencia { font-size: 13px; color: #93c5fd; margin-bottom: 14px; }
+    .hero-meta { display: flex; flex-wrap: wrap; gap: 8px; }
+    .hero-chip {
+        display: inline-flex; align-items: center; gap: 5px;
+        font-size: 11px; font-weight: 600; padding: 3px 10px;
+        border-radius: 20px; background: rgba(255,255,255,.1); color: #e2e8f0;
+    }
+
+    .action-btn {
+        display: flex; align-items: center; justify-content: center; gap: 8px;
+        width: 100%; padding: 11px 16px; border-radius: 8px;
+        font-size: 13px; font-weight: 700; text-decoration: none;
+        border: none; cursor: pointer; margin-bottom: 8px;
+        transition: filter .12s, opacity .12s;
+    }
+    .action-btn:hover { filter: brightness(1.08); }
+    .action-btn-wpp  { background: #16a34a; color: #fff; }
+    .action-btn-copy { background: #2563eb; color: #fff; border: none; }
+    .action-btn-insta { background: linear-gradient(135deg,#d946ef,#e11d48); color: #fff; }
+    .action-btn-outline { background: #fff; color: #334155; border: 1px solid #e2e8f0; }
+    .action-btn-outline:hover { border-color: #2563eb; color: #2563eb; filter: none; }
+
+    .section-title {
+        font-size: 11px; font-weight: 700; text-transform: uppercase;
+        letter-spacing: .08em; color: #94a3b8;
+        padding: 14px 18px 6px; border-top: 1px solid #f1f5f9;
+    }
+    .section-title:first-child { border-top: none; }
+
+    .tag-propostas {
+        display: inline-flex; align-items: center; gap: 5px;
+        background: #eff6ff; color: #2563eb;
+        font-size: 12px; font-weight: 700; padding: 4px 12px;
+        border-radius: 20px;
+    }
+
+    .copy-toast {
+        position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+        background: #0f172a; color: #fff; padding: 9px 20px;
+        border-radius: 8px; font-size: 13px; font-weight: 600;
+        opacity: 0; transition: opacity .2s; pointer-events: none; z-index: 9999;
+    }
+    .copy-toast.show { opacity: 1; }
+</style>
+}
+
+<div class="detalhe-grid">
+
+    <!-- Coluna principal -->
+    <div>
+        <!-- Hero -->
+        <div class="hero-card">
+            @{
+                var iniciais = string.Join("", (Model.Nome ?? "?")
+                    .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                    .Take(2).Select(p => char.ToUpper(p[0])));
+            }
+            <div class="hero-avatar">@iniciais</div>
+            <div class="hero-nome">@Model.Nome</div>
+            <div class="hero-agencia"><i class="fas fa-building" style="opacity:.6;margin-right:5px"></i>@Model.NomeAgencia</div>
+            <div class="hero-meta">
+                @if (!string.IsNullOrWhiteSpace(Model.Cidade))
+                {
+                    <span class="hero-chip"><i class="fas fa-map-pin"></i> @Model.Cidade</span>
+                }
+                @if (PropostasLabel(Model.PropostasPorMes) != null)
+                {
+                    <span class="hero-chip"><i class="fas fa-file-alt"></i> @PropostasLabel(Model.PropostasPorMes)</span>
+                }
+                <span class="hero-chip" style="background:rgba(22,163,74,.2);color:#86efac">
+                    <i class="fas fa-calendar"></i> @Model.DataCadastro.ToString("dd/MM/yyyy 'às' HH:mm")
+                </span>
+            </div>
+        </div>
+
+        <!-- Dados de contato -->
+        <div class="pa-card">
+            <div class="pa-card-header">
+                <div class="pa-card-title"><i class="fas fa-address-card me-2" style="color:#2563eb"></i>Dados de contato</div>
+            </div>
+            <div class="pa-card-body" style="padding:0 18px;">
+                <div class="dl-row">
+                    <span class="dl-label">Nome</span>
+                    <span class="dl-value">@Model.Nome</span>
+                </div>
+                <div class="dl-row">
+                    <span class="dl-label">E-mail</span>
+                    <span class="dl-value">
+                        <a href="mailto:@Model.Email">@Model.Email</a>
+                    </span>
+                </div>
+                <div class="dl-row">
+                    <span class="dl-label">WhatsApp</span>
+                    <span class="dl-value">
+                        <a href="https://wa.me/@(wppNum)?text=@wppMsg" target="_blank" style="color:#16a34a">
+                            <i class="fab fa-whatsapp me-1"></i>@Model.Whatsapp
+                        </a>
+                    </span>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(Model.Instagram))
+                {
+                    <div class="dl-row">
+                        <span class="dl-label">Instagram</span>
+                        <span class="dl-value">
+                            <a href="https://instagram.com/@Model.Instagram" target="_blank" style="color:#c026d3">
+                                <i class="fab fa-instagram me-1"></i>@@@Model.Instagram
+                            </a>
+                        </span>
+                    </div>
+                }
+                <div class="dl-row">
+                    <span class="dl-label">Agência</span>
+                    <span class="dl-value">@Model.NomeAgencia</span>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(Model.Cidade))
+                {
+                    <div class="dl-row">
+                        <span class="dl-label">Cidade</span>
+                        <span class="dl-value">@Model.Cidade</span>
+                    </div>
+                }
+                @if (PropostasLabel(Model.PropostasPorMes) != null)
+                {
+                    <div class="dl-row">
+                        <span class="dl-label">Propostas/mês</span>
+                        <span class="dl-value">
+                            <span class="tag-propostas"><i class="fas fa-file-alt"></i> @PropostasLabel(Model.PropostasPorMes)</span>
+                        </span>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Origem e UTM -->
+        @if (temUtm || !string.IsNullOrWhiteSpace(Model.PaginaOrigem) || !string.IsNullOrWhiteSpace(Model.Ip))
+        {
+            <div class="pa-card">
+                <div class="pa-card-header">
+                    <div class="pa-card-title"><i class="fas fa-chart-bar me-2" style="color:#7c3aed"></i>Origem e rastreamento</div>
+                </div>
+                <div class="pa-card-body" style="padding:0 18px;">
+                    @if (!string.IsNullOrWhiteSpace(Model.Origem))
+                    {
+                        <div class="dl-row">
+                            <span class="dl-label">Canal</span>
+                            <span class="dl-value">@Model.Origem</span>
+                        </div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(Model.UtmSource))
+                    {
+                        <div class="dl-row">
+                            <span class="dl-label">UTM Source</span>
+                            <span class="dl-value" style="font-family:monospace;font-size:12px">@Model.UtmSource</span>
+                        </div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(Model.UtmMedium))
+                    {
+                        <div class="dl-row">
+                            <span class="dl-label">UTM Medium</span>
+                            <span class="dl-value" style="font-family:monospace;font-size:12px">@Model.UtmMedium</span>
+                        </div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(Model.UtmCampaign))
+                    {
+                        <div class="dl-row">
+                            <span class="dl-label">UTM Campaign</span>
+                            <span class="dl-value" style="font-family:monospace;font-size:12px">@Model.UtmCampaign</span>
+                        </div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(Model.PaginaOrigem))
+                    {
+                        <div class="dl-row">
+                            <span class="dl-label">Página</span>
+                            <span class="dl-value" style="font-size:11px;color:#64748b;word-break:break-all">@Model.PaginaOrigem</span>
+                        </div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(Model.Ip))
+                    {
+                        <div class="dl-row">
+                            <span class="dl-label">IP</span>
+                            <span class="dl-value" style="font-family:monospace;font-size:12px;color:#64748b">@Model.Ip</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Coluna lateral -->
+    <div>
+        <!-- Ações -->
+        <div class="pa-card" style="margin-bottom:16px">
+            <div class="pa-card-header">
+                <div class="pa-card-title">Contatar</div>
+            </div>
+            <div class="pa-card-body">
+                @if (!string.IsNullOrWhiteSpace(Model.Whatsapp))
+                {
+                    <a href="https://wa.me/@(wppNum)?text=@wppMsg" target="_blank" class="action-btn action-btn-wpp">
+                        <i class="fab fa-whatsapp"></i> Abrir WhatsApp
+                    </a>
+                }
+                <button onclick="copiarEmail('@Model.Email')" class="action-btn action-btn-copy">
+                    <i class="fas fa-copy"></i> Copiar e-mail
+                </button>
+                @if (!string.IsNullOrWhiteSpace(Model.Instagram))
+                {
+                    <a href="https://instagram.com/@Model.Instagram" target="_blank" class="action-btn action-btn-insta">
+                        <i class="fab fa-instagram"></i> Ver Instagram
+                    </a>
+                }
+                <a href="/PlatformAdmin/ListaVip" class="action-btn action-btn-outline">
+                    <i class="fas fa-arrow-left"></i> Voltar à lista
+                </a>
+            </div>
+        </div>
+
+        <!-- Metadados -->
+        <div class="pa-card">
+            <div class="pa-card-header">
+                <div class="pa-card-title">Metadados</div>
+            </div>
+            <div class="pa-card-body" style="padding:0 18px;">
+                <div class="dl-row">
+                    <span class="dl-label">Cadastro</span>
+                    <span class="dl-value">@Model.DataCadastro.ToString("dd/MM/yyyy HH:mm")</span>
+                </div>
+                <div class="dl-row">
+                    <span class="dl-label">Visualizado</span>
+                    <span class="dl-value">
+                        @if (Model.Visualizado && Model.DataVisualizacao.HasValue)
+                        {
+                            <span class="status-dot status-success">@Model.DataVisualizacao.Value.ToString("dd/MM HH:mm")</span>
+                        }
+                        else
+                        {
+                            <span class="status-dot status-warning">Não visualizado</span>
+                        }
+                    </span>
+                </div>
+                <div class="dl-row">
+                    <span class="dl-label">ID</span>
+                    <span class="dl-value" style="font-family:monospace;font-size:10px;color:#94a3b8">@Model.Id</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="copy-toast" id="copyToast">E-mail copiado!</div>
+
+@section Scripts {
+<script>
+function copiarEmail(email) {
+    navigator.clipboard.writeText(email).then(() => {
+        const t = document.getElementById('copyToast');
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 2000);
+    });
+}
+</script>
+}

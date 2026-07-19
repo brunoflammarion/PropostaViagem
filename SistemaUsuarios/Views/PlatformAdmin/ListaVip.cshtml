@@ -1,0 +1,268 @@
+@using SistemaUsuarios.Models.ViewModels.PlatformAdmin
+@model ListaVipListaViewModel
+@{
+    Layout = "~/Views/Shared/_LayoutPlatformAdmin.cshtml";
+    ViewData["Title"] = "Lista VIP";
+
+    string QS(string? busca, string? periodo, string? propostas, string? ordem, int pagina) {
+        var parts = new List<string>();
+        if (!string.IsNullOrWhiteSpace(busca))    parts.Add($"busca={Uri.EscapeDataString(busca)}");
+        if (!string.IsNullOrWhiteSpace(periodo))  parts.Add($"periodo={periodo}");
+        if (!string.IsNullOrWhiteSpace(propostas)) parts.Add($"propostas={propostas}");
+        if (!string.IsNullOrWhiteSpace(ordem))    parts.Add($"ordem={ordem}");
+        if (pagina > 1)                            parts.Add($"pagina={pagina}");
+        return parts.Count > 0 ? "?" + string.Join("&", parts) : "";
+    }
+    string BaseQS() => QS(Model.Busca, Model.Periodo, Model.FiltroPropostas, Model.Ordem, 1);
+}
+
+@section Styles {
+<style>
+    .vip-kpis { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 24px; }
+    @@media(max-width:900px) { .vip-kpis { grid-template-columns: repeat(2,1fr); } }
+
+    .vip-toolbar {
+        display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+        padding: 14px 18px; border-bottom: 1px solid #f1f5f9;
+    }
+    .vip-search {
+        flex: 1; min-width: 200px; max-width: 340px;
+        display: flex; align-items: center; gap: 8px;
+        border: 1px solid #e2e8f0; border-radius: 7px;
+        padding: 7px 12px; background: #f8fafc; font-size: 13px; color: #334155;
+    }
+    .vip-search input {
+        border: none; background: none; outline: none;
+        font-size: 13px; color: #334155; width: 100%;
+        font-family: inherit;
+    }
+    .vip-search input::placeholder { color: #94a3b8; }
+    .vip-search i { color: #94a3b8; font-size: 12px; flex-shrink: 0; }
+    .vip-select {
+        border: 1px solid #e2e8f0; border-radius: 7px; padding: 7px 10px;
+        font-size: 12px; color: #334155; background: #f8fafc;
+        font-family: inherit; cursor: pointer; outline: none;
+    }
+    .vip-btn {
+        padding: 7px 14px; border-radius: 7px; font-size: 12px; font-weight: 600;
+        border: 1px solid #e2e8f0; background: #fff; color: #334155;
+        cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
+        transition: border-color .12s, color .12s;
+    }
+    .vip-btn:hover { border-color: #2563eb; color: #2563eb; }
+    .vip-btn-primary { background: #2563eb; border-color: #2563eb; color: #fff; }
+    .vip-btn-primary:hover { background: #1d4ed8; border-color: #1d4ed8; color: #fff; }
+    .vip-btn-export { margin-left: auto; }
+
+    .novo-badge {
+        display: inline-flex; align-items: center; gap: 4px;
+        background: #eff6ff; color: #2563eb;
+        font-size: 10px; font-weight: 700; padding: 2px 7px;
+        border-radius: 10px; text-transform: uppercase; letter-spacing: .04em;
+    }
+    .novo-badge::before { content:''; width:5px; height:5px; border-radius:50%; background:#2563eb; }
+
+    .vip-link { color: #2563eb; text-decoration: none; font-weight: 600; font-size: 13px; }
+    .vip-link:hover { text-decoration: underline; }
+    .sub-text { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+    .wpp-link { color: #16a34a; text-decoration: none; font-size: 12px; }
+    .wpp-link:hover { text-decoration: underline; }
+
+    .pa-pagination { display: flex; align-items: center; gap: 6px; padding: 14px 18px; flex-wrap: wrap; }
+    .pa-pagination .info { font-size: 12px; color: #94a3b8; margin-right: auto; }
+    .pa-page-btn {
+        min-width: 32px; height: 32px; border-radius: 6px; border: 1px solid #e2e8f0;
+        background: #fff; color: #334155; font-size: 12px; font-weight: 600;
+        display: inline-flex; align-items: center; justify-content: center;
+        text-decoration: none; padding: 0 8px; transition: all .12s;
+    }
+    .pa-page-btn:hover { border-color: #2563eb; color: #2563eb; }
+    .pa-page-btn.active { background: #2563eb; border-color: #2563eb; color: #fff; }
+    .pa-page-btn.disabled { opacity: .35; pointer-events: none; }
+
+    .empty-state { padding: 56px 24px; text-align: center; }
+    .empty-state i { font-size: 36px; color: #e2e8f0; display: block; margin-bottom: 14px; }
+    .empty-state h4 { font-size: 15px; font-weight: 700; color: #334155; margin-bottom: 6px; }
+    .empty-state p { font-size: 13px; color: #94a3b8; margin: 0; }
+
+    tr.novo-row td:first-child { border-left: 3px solid #2563eb; }
+</style>
+}
+
+<!-- KPIs -->
+<div class="vip-kpis">
+    <div class="pa-kpi-card">
+        <div class="pa-kpi-icon" style="background:#eff6ff;color:#2563eb"><i class="fas fa-users"></i></div>
+        <div class="pa-kpi-label">Total cadastrados</div>
+        <div class="pa-kpi-value">@Model.TotalGeral</div>
+        @if (Model.TotalNovos > 0)
+        {
+            <div class="pa-kpi-sub" style="color:#2563eb;font-weight:600">@Model.TotalNovos novos</div>
+        }
+    </div>
+    <div class="pa-kpi-card">
+        <div class="pa-kpi-icon" style="background:#f0fdf4;color:#16a34a"><i class="fas fa-calendar-day"></i></div>
+        <div class="pa-kpi-label">Hoje</div>
+        <div class="pa-kpi-value">@Model.TotalHoje</div>
+    </div>
+    <div class="pa-kpi-card">
+        <div class="pa-kpi-icon" style="background:#fefce8;color:#b45309"><i class="fas fa-calendar-week"></i></div>
+        <div class="pa-kpi-label">Últimos 7 dias</div>
+        <div class="pa-kpi-value">@Model.Total7d</div>
+    </div>
+    <div class="pa-kpi-card">
+        <div class="pa-kpi-icon" style="background:#faf5ff;color:#7c3aed"><i class="fas fa-calendar-alt"></i></div>
+        <div class="pa-kpi-label">Últimos 30 dias</div>
+        <div class="pa-kpi-value">@Model.Total30d</div>
+    </div>
+</div>
+
+<div class="pa-card">
+    <!-- Toolbar -->
+    <form method="get" action="/PlatformAdmin/ListaVip" class="vip-toolbar">
+        <label class="vip-search">
+            <i class="fas fa-search"></i>
+            <input type="text" name="busca" value="@Model.Busca" placeholder="Nome, agência, e-mail, WhatsApp, cidade…" autocomplete="off">
+        </label>
+        <select name="periodo" class="vip-select" onchange="this.form.submit()">
+            <option value="">Qualquer período</option>
+            <option value="hoje"  selected="@(Model.Periodo=="hoje"  ? "selected" : null)">Hoje</option>
+            <option value="7d"    selected="@(Model.Periodo=="7d"    ? "selected" : null)">Últimos 7 dias</option>
+            <option value="30d"   selected="@(Model.Periodo=="30d"   ? "selected" : null)">Últimos 30 dias</option>
+            <option value="90d"   selected="@(Model.Periodo=="90d"   ? "selected" : null)">Últimos 90 dias</option>
+        </select>
+        <select name="propostas" class="vip-select" onchange="this.form.submit()">
+            <option value="">Todas as faixas</option>
+            <option value="ate20"  selected="@(Model.FiltroPropostas=="ate20"  ? "selected" : null)">Até 20/mês</option>
+            <option value="20-50"  selected="@(Model.FiltroPropostas=="20-50"  ? "selected" : null)">20 a 50/mês</option>
+            <option value="50-100" selected="@(Model.FiltroPropostas=="50-100" ? "selected" : null)">50 a 100/mês</option>
+            <option value="100+"   selected="@(Model.FiltroPropostas=="100+"   ? "selected" : null)">Acima de 100/mês</option>
+        </select>
+        <select name="ordem" class="vip-select" onchange="this.form.submit()">
+            <option value=""          selected="@(string.IsNullOrEmpty(Model.Ordem) ? "selected" : null)">Mais recentes</option>
+            <option value="antigos"   selected="@(Model.Ordem=="antigos"   ? "selected" : null)">Mais antigos</option>
+            <option value="nome"      selected="@(Model.Ordem=="nome"      ? "selected" : null)">Nome A–Z</option>
+            <option value="propostas" selected="@(Model.Ordem=="propostas" ? "selected" : null)">Maior volume</option>
+        </select>
+        <button type="submit" class="vip-btn vip-btn-primary"><i class="fas fa-search"></i> Buscar</button>
+        @if (!string.IsNullOrWhiteSpace(Model.Busca) || !string.IsNullOrWhiteSpace(Model.Periodo) || !string.IsNullOrWhiteSpace(Model.FiltroPropostas))
+        {
+            <a href="/PlatformAdmin/ListaVip" class="vip-btn"><i class="fas fa-times"></i> Limpar</a>
+        }
+        <a href="/PlatformAdmin/ExportarListaVip@(BaseQS())" class="vip-btn vip-btn-export" title="Exportar CSV">
+            <i class="fas fa-download"></i> Exportar CSV
+        </a>
+    </form>
+
+    <!-- Tabela -->
+    @if (Model.Cadastros.Any())
+    {
+        <div style="overflow-x:auto;">
+            <table class="pa-table">
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Nome</th>
+                        <th>Agência</th>
+                        <th>E-mail</th>
+                        <th>WhatsApp</th>
+                        <th>Cidade</th>
+                        <th>Instagram</th>
+                        <th>Propostas/mês</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var c in Model.Cadastros)
+                    {
+                        <tr class="@(!c.Visualizado ? "novo-row" : "")">
+                            <td style="white-space:nowrap">
+                                <div style="font-size:12px;font-weight:600;color:#334155">@c.DataCadastro.ToString("dd/MM/yyyy")</div>
+                                <div class="sub-text">@c.DataCadastro.ToString("HH:mm")</div>
+                                @if (!c.Visualizado)
+                                {
+                                    <span class="novo-badge">Novo</span>
+                                }
+                            </td>
+                            <td style="font-weight:600;color:#0f172a">@c.Nome</td>
+                            <td>@c.NomeAgencia</td>
+                            <td style="font-size:12px">@c.Email</td>
+                            <td>
+                                @if (!string.IsNullOrWhiteSpace(c.Whatsapp))
+                                {
+                                    var num = System.Text.RegularExpressions.Regex.Replace(c.Whatsapp, @"[^\d]", "");
+                                    var wppNum = num.Length == 11 ? "55" + num : num.Length == 13 ? num : "55" + num;
+                                    <a href="https://wa.me/@wppNum" target="_blank" class="wpp-link">
+                                        <i class="fab fa-whatsapp"></i> @c.Whatsapp
+                                    </a>
+                                }
+                            </td>
+                            <td style="font-size:12px">@(c.Cidade ?? "—")</td>
+                            <td style="font-size:12px">
+                                @if (!string.IsNullOrWhiteSpace(c.Instagram))
+                                {
+                                    <a href="https://instagram.com/@c.Instagram" target="_blank" style="color:#c026d3;text-decoration:none;">
+                                        <i class="fab fa-instagram"></i> @@@c.Instagram
+                                    </a>
+                                }
+                                else { <span style="color:#94a3b8">—</span> }
+                            </td>
+                            <td style="font-size:12px">@ListaVipListaViewModel.PropostasLabel(c.PropostasPorMes)</td>
+                            <td style="white-space:nowrap">
+                                <a href="/PlatformAdmin/ListaVipDetalhe/@c.Id" class="vip-btn" style="font-size:11px;padding:5px 10px;">
+                                    <i class="fas fa-eye"></i> Ver detalhes
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginação -->
+        @if (Model.TotalPaginas > 1 || Model.TotalFiltrado > 0)
+        {
+            <div class="pa-pagination">
+                <span class="info">
+                    @Model.TotalFiltrado cadastros
+                    @if (!string.IsNullOrWhiteSpace(Model.Busca) || !string.IsNullOrWhiteSpace(Model.Periodo) || !string.IsNullOrWhiteSpace(Model.FiltroPropostas))
+                    { <text>encontrados</text> }
+                    — página @Model.PaginaAtual de @Model.TotalPaginas
+                </span>
+                @if (Model.PaginaAtual > 1)
+                {
+                    <a href="/PlatformAdmin/ListaVip@(QS(Model.Busca, Model.Periodo, Model.FiltroPropostas, Model.Ordem, Model.PaginaAtual - 1))" class="pa-page-btn">
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                }
+                @for (int p = Math.Max(1, Model.PaginaAtual - 2); p <= Math.Min(Model.TotalPaginas, Model.PaginaAtual + 2); p++)
+                {
+                    <a href="/PlatformAdmin/ListaVip@(QS(Model.Busca, Model.Periodo, Model.FiltroPropostas, Model.Ordem, p))"
+                       class="pa-page-btn @(p == Model.PaginaAtual ? "active" : "")">@p</a>
+                }
+                @if (Model.PaginaAtual < Model.TotalPaginas)
+                {
+                    <a href="/PlatformAdmin/ListaVip@(QS(Model.Busca, Model.Periodo, Model.FiltroPropostas, Model.Ordem, Model.PaginaAtual + 1))" class="pa-page-btn">
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                }
+            </div>
+        }
+    }
+    else
+    {
+        <div class="empty-state">
+            <i class="fas fa-rocket"></i>
+            @if (!string.IsNullOrWhiteSpace(Model.Busca) || !string.IsNullOrWhiteSpace(Model.Periodo) || !string.IsNullOrWhiteSpace(Model.FiltroPropostas))
+            {
+                <h4>Nenhum cadastro encontrado</h4>
+                <p>Tente ajustar os filtros ou limpar a busca.</p>
+            }
+            else
+            {
+                <h4>Ainda não existem agentes cadastrados na Lista VIP.</h4>
+                <p>Os novos cadastros realizados pela landing page de lançamento aparecerão aqui.</p>
+            }
+        </div>
+    }
+</div>
