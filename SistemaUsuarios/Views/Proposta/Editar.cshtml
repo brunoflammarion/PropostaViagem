@@ -210,7 +210,7 @@
             <small class="text-muted">Edite os dados, destinos e hospedagens da proposta</small>
         </div>
         <div class="btn-group">
-            <a href="/Proposta/Detalhes/@Model.Id" class="btn btn-sm btn-outline-info">
+            <a target="_blank" href="/Proposta/Detalhes/@Model.Id" class="btn btn-sm btn-outline-info">
                 <i class="fas fa-eye me-1"></i>Visualizar
             </a>
             @if (Model.LinkPublicoAtivo)
@@ -1580,7 +1580,7 @@
                                                                 <i class="fas fa-images me-1"></i>@exp.Imagens.Count
                                                                 <i class="fas fa-paperclip ms-1 me-1"></i>@exp.Arquivos.Count
                                                             </span>
-                                                            <!--<div class="ms-auto d-flex gap-1">
+                                                            <div class="ms-auto d-flex gap-1">
                                                                 <button class="btn btn-outline-primary btn-sm" type="button"
                                                                         data-bs-toggle="collapse"
                                                                         data-bs-target="#exp-det-@expSafeId">
@@ -1588,14 +1588,14 @@
                                                                 </button>
                                                                 <form asp-controller="Experiencia" asp-action="Excluir"
                                                                       method="post" class="d-inline"
-                                                                      onsubmit="return confirm('Excluir experiência @Html.Raw(exp.TipoPasseio.Replace("'","\\'"))?');">
+                                                                      onsubmit="return confirm('Deseja realmente excluir a experiência &quot;@Html.Raw(exp.TipoPasseio.Replace("'","\\'"))&quot;?\nEsta ação não poderá ser desfeita.');">
                                                                     @Html.AntiForgeryToken()
                                                                     <input type="hidden" name="id" value="@exp.Id" />
-                                                                    <button type="submit" class="btn btn-xs btn-outline-danger">
+                                                                    <button type="submit" class="btn btn-sm btn-outline-danger">
                                                                         <i class="fas fa-trash"></i>
                                                                     </button>
                                                                 </form>
-                                                            </div>-->
+                                                            </div>
                                                         </div>
 
                                                         <!-- Corpo expansível da experiência -->
