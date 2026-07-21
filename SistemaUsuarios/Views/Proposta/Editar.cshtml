@@ -991,7 +991,8 @@
 
                                                 @foreach (var hospedagem in destino.Hospedagens.OrderBy(h => h.Ordem))
                                                 {
-                                                    <div class="card mb-3 border-info" style="overflow:visible;">
+                                                    var hospSafeId = hospedagem.Id.ToString("N");
+                                                    <div class="card mb-3 border-info" id="hosp-card-@hospSafeId" style="overflow:visible;">
                                                         <div class="card-header bg-light d-flex justify-content-between align-items-center py-2">
                                                             <div>
                                                                 <span class="fw-semibold">@hospedagem.Nome</span>
@@ -6110,6 +6111,42 @@
         })();
             </text>
         }
+
+        @{
+            var _destinoAberto = TempData["DestinoAberto"]?.ToString();
+            var _focoId        = TempData["FocoElementId"]?.ToString();
+        }
+        @if (!string.IsNullOrEmpty(_destinoAberto))
+        {
+            <text>
+        // Reabrir destino e destacar item após ação
+        (function () {
+            var destinoCollapseEl = document.getElementById('detalhes-@_destinoAberto');
+            if (!destinoCollapseEl) return;
+
+            var focoId = @Html.Raw(_focoId != null ? $"'{_focoId}'" : "null");
+
+            function destacarItem() {
+                if (!focoId) return;
+                var el = document.getElementById(focoId);
+                if (!el) return;
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                el.classList.add('item-destacado');
+                setTimeout(function () { el.classList.remove('item-destacado'); }, 2500);
+            }
+
+            if (destinoCollapseEl.classList.contains('show')) {
+                destacarItem();
+            } else {
+                var bsCollapse = bootstrap.Collapse.getOrCreateInstance(destinoCollapseEl, { toggle: false });
+                bsCollapse.show();
+                destinoCollapseEl.addEventListener('shown.bs.collapse', function () {
+                    destacarItem();
+                }, { once: true });
+            }
+        })();
+            </text>
+        }
     </script>
 }
 
@@ -6127,6 +6164,13 @@
     .sortable-ghost { opacity: 0.4; }
     .sortable-chosen { background-color: #e3f2fd !important; }
     .sortable-drag { opacity: 0.8; }
+
+    /* Destaque temporário após salvar item dentro de um destino */
+    .item-destacado {
+        border-color: #0d6efd !important;
+        box-shadow: 0 0 0 3px rgba(13,110,253,.18) !important;
+        transition: border-color .3s, box-shadow .3s;
+    }
 
     /* Mini rich editor — Descrição da Hospedagem */
     .hosp-rich-desc {

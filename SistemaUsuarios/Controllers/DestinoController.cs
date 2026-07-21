@@ -354,9 +354,13 @@ private static string ExtrairJsonDeMarkdown(string raw)
             return Content(content, "application/json");
         }
 
-        private IActionResult RedirectToEditar(Guid propostaId)
+        private IActionResult RedirectToEditar(Guid propostaId, Guid? destinoAberto = null, string? focoId = null)
         {
             TempData["ActiveTab"] = "destinos";
+            if (destinoAberto.HasValue)
+                TempData["DestinoAberto"] = destinoAberto.Value.ToString();
+            if (focoId != null)
+                TempData["FocoElementId"] = focoId;
             return RedirectToAction("Editar", "Proposta", new { id = propostaId });
         }
 
@@ -544,7 +548,7 @@ private static string ExtrairJsonDeMarkdown(string raw)
             await _context.SaveChangesAsync();
 
             TempData["Sucesso"] = $"Destino '{nome}' editado com sucesso!";
-            return RedirectToEditar(destino.PropostaId);
+            return RedirectToEditar(destino.PropostaId, destino.Id);
         }
 
         // POST: Destino/ExcluirDestino

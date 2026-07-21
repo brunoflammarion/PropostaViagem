@@ -27,11 +27,17 @@ namespace SistemaUsuarios.Controllers
             HttpContext.Session.GetString("TipoUsuario") != "Associado";
 
 
-        private IActionResult RedirectToEditar(Guid propostaId)
+        private IActionResult RedirectToEditar(Guid propostaId, Guid? destinoAberto = null, string? focoId = null)
         {
             TempData["ActiveTab"] = "destinos";
+            if (destinoAberto.HasValue)
+                TempData["DestinoAberto"] = destinoAberto.Value.ToString();
+            if (focoId != null)
+                TempData["FocoElementId"] = focoId;
             return RedirectToAction("Editar", "Proposta", new { id = propostaId });
         }
+
+        private static string ExpSafeId(Guid id) => id.ToString("N");
 
         // Resolve propostaId a partir de um destinoId, verificando autoria
         private async Task<(Destino? destino, Guid propostaId)> ObterDestinoVerificado(Guid destinoId, Guid usuarioId, bool isMaster)
@@ -73,13 +79,13 @@ namespace SistemaUsuarios.Controllers
             if (string.IsNullOrWhiteSpace(tipoPasseio))
             {
                 TempData["Erro"] = "Tipo de passeio é obrigatório.";
-                return RedirectToEditar(propostaId);
+                return RedirectToEditar(propostaId, destinoId);
             }
 
             if (dataInicio.HasValue && dataFim.HasValue && dataFim < dataInicio)
             {
                 TempData["Erro"] = "Data/hora de fim não pode ser anterior ao início da experiência.";
-                return RedirectToEditar(propostaId);
+                return RedirectToEditar(propostaId, destinoId);
             }
 
             var maxOrdem = await _context.Experiencias
@@ -139,7 +145,7 @@ namespace SistemaUsuarios.Controllers
                 TempData["Sucesso"] = $"Experiência \"{experiencia.TipoPasseio}\" adicionada!";
             }
 
-            return RedirectToEditar(propostaId);
+            return RedirectToEditar(propostaId, destinoId, $"exp-card-{ExpSafeId(experiencia.Id)}");
         }
 
         // POST: Experiencia/Editar
@@ -174,13 +180,13 @@ namespace SistemaUsuarios.Controllers
             if (string.IsNullOrWhiteSpace(tipoPasseio))
             {
                 TempData["Erro"] = "Tipo de passeio é obrigatório.";
-                return RedirectToEditar(experiencia.Destino.PropostaId);
+                return RedirectToEditar(experiencia.Destino.PropostaId, experiencia.DestinoId, $"exp-card-{ExpSafeId(experiencia.Id)}");
             }
 
             if (dataInicio.HasValue && dataFim.HasValue && dataFim < dataInicio)
             {
                 TempData["Erro"] = "Data/hora de fim não pode ser anterior ao início da experiência.";
-                return RedirectToEditar(experiencia.Destino.PropostaId);
+                return RedirectToEditar(experiencia.Destino.PropostaId, experiencia.DestinoId, $"exp-card-{ExpSafeId(experiencia.Id)}");
             }
 
             experiencia.TipoPasseio = tipoPasseio.Trim();
@@ -193,7 +199,7 @@ namespace SistemaUsuarios.Controllers
             await _context.SaveChangesAsync();
 
             TempData["Sucesso"] = "Experiência atualizada!";
-            return RedirectToEditar(experiencia.Destino.PropostaId);
+            return RedirectToEditar(experiencia.Destino.PropostaId, experiencia.DestinoId, $"exp-card-{ExpSafeId(experiencia.Id)}");
         }
 
         // POST: Experiencia/Excluir
@@ -221,6 +227,7 @@ namespace SistemaUsuarios.Controllers
             }
 
             var propostaId = experiencia.Destino.PropostaId;
+            var destinoId  = experiencia.DestinoId;
 
             // Remover arquivos físicos
             foreach (var img in experiencia.Imagens)
@@ -232,7 +239,7 @@ namespace SistemaUsuarios.Controllers
             await _context.SaveChangesAsync();
 
             TempData["Sucesso"] = "Experiência excluída.";
-            return RedirectToEditar(propostaId);
+            return RedirectToEditar(propostaId, destinoId);
         }
 
         // ─── IMAGENS ─────────────────────────────────────────────────────────────
@@ -263,7 +270,7 @@ namespace SistemaUsuarios.Controllers
             if (!imagensValidas.Any())
             {
                 TempData["Erro"] = "Selecione ao menos uma imagem.";
-                return RedirectToEditar(experiencia.Destino.PropostaId);
+                return RedirectToEditar(experiencia.Destino.PropostaId, experiencia.DestinoId, $"exp-card-{ExpSafeId(experiencia.Id)}");
             }
 
             try
@@ -309,7 +316,7 @@ namespace SistemaUsuarios.Controllers
                 TempData["Erro"] = ex.Message;
             }
 
-            return RedirectToEditar(experiencia.Destino.PropostaId);
+            return RedirectToEditar(experiencia.Destino.PropostaId, experiencia.DestinoId, $"exp-card-{ExpSafeId(experiencia.Id)}");
         }
 
         // POST: Experiencia/ExcluirImagem
@@ -335,7 +342,8 @@ namespace SistemaUsuarios.Controllers
                 return RedirectToAction("Index", "Proposta");
             }
 
-            var propostaId = imagem.Experiencia.Destino.PropostaId;
+            var propostaId    = imagem.Experiencia.Destino.PropostaId;
+            var destinoId     = imagem.Experiencia.DestinoId;
             var experienciaId = imagem.ExperienciaId;
             DeletarArquivoFisico(imagem.CaminhoImagem);
             _context.ExperienciaImagens.Remove(imagem);
@@ -350,7 +358,7 @@ namespace SistemaUsuarios.Controllers
             if (restantes.Any()) await _context.SaveChangesAsync();
 
             TempData["Sucesso"] = "Imagem excluída.";
-            return RedirectToEditar(propostaId);
+            return RedirectToEditar(propostaId, destinoId, $"exp-card-{ExpSafeId(experienciaId)}");
         }
 
         // POST: Experiencia/ReordenarImagens
@@ -407,13 +415,13 @@ namespace SistemaUsuarios.Controllers
             if (arquivo == null || arquivo.Length == 0)
             {
                 TempData["Erro"] = "Selecione um arquivo.";
-                return RedirectToEditar(experiencia.Destino.PropostaId);
+                return RedirectToEditar(experiencia.Destino.PropostaId, experiencia.DestinoId, $"exp-card-{ExpSafeId(experiencia.Id)}");
             }
 
             if (arquivo.Length > 20 * 1024 * 1024)
             {
                 TempData["Erro"] = "Arquivo muito grande. Máximo 20MB.";
-                return RedirectToEditar(experiencia.Destino.PropostaId);
+                return RedirectToEditar(experiencia.Destino.PropostaId, experiencia.DestinoId, $"exp-card-{ExpSafeId(experiencia.Id)}");
             }
 
             var blobUrl = await _blob.SalvarArquivoAsync(arquivo, "experiencia-arquivos");
@@ -431,7 +439,7 @@ namespace SistemaUsuarios.Controllers
             await _context.SaveChangesAsync();
 
             TempData["Sucesso"] = $"Arquivo \"{arquivo.FileName}\" adicionado!";
-            return RedirectToEditar(experiencia.Destino.PropostaId);
+            return RedirectToEditar(experiencia.Destino.PropostaId, experiencia.DestinoId, $"exp-card-{ExpSafeId(experiencia.Id)}");
         }
 
         // POST: Experiencia/ExcluirArquivo
@@ -458,12 +466,14 @@ namespace SistemaUsuarios.Controllers
             }
 
             var propostaId = arquivo.Experiencia.Destino.PropostaId;
+            var destinoId  = arquivo.Experiencia.DestinoId;
+            var expId      = arquivo.ExperienciaId;
             DeletarArquivoFisico(arquivo.CaminhoArquivo);
             _context.ExperienciaArquivos.Remove(arquivo);
             await _context.SaveChangesAsync();
 
             TempData["Sucesso"] = "Arquivo excluído.";
-            return RedirectToEditar(propostaId);
+            return RedirectToEditar(propostaId, destinoId, $"exp-card-{ExpSafeId(expId)}");
         }
 
         // GET: Experiencia/BaixarArquivo/{id}

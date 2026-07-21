@@ -53,11 +53,17 @@ namespace SistemaUsuarios.Controllers
             return string.IsNullOrEmpty(s) ? ObterUsuarioLogadoId() : Guid.Parse(s);
         }
 
-        private IActionResult RedirectToEditar(Guid propostaId)
+        private IActionResult RedirectToEditar(Guid propostaId, Guid? destinoAberto = null, string? focoId = null)
         {
             TempData["ActiveTab"] = "destinos";
+            if (destinoAberto.HasValue)
+                TempData["DestinoAberto"] = destinoAberto.Value.ToString();
+            if (focoId != null)
+                TempData["FocoElementId"] = focoId;
             return RedirectToAction("Editar", "Proposta", new { id = propostaId });
         }
+
+        private static string HospSafeId(Guid id) => id.ToString("N");
 
         // GET: Hospedagem/BuscarSugestoesHotel?termo=marriott&cidade=Paris
         [HttpGet]
@@ -355,7 +361,7 @@ Responda SOMENTE com um JSON válido, sem texto fora do objeto, no seguinte form
             if (string.IsNullOrWhiteSpace(nome))
             {
                 TempData["Erro"] = "Nome da hospedagem é obrigatório";
-                return RedirectToEditar(destino.PropostaId);
+                return RedirectToEditar(destino.PropostaId, destino.Id);
             }
 
             var maxOrdem = await _context.Hospedagens
@@ -440,7 +446,7 @@ Responda SOMENTE com um JSON válido, sem texto fora do objeto, no seguinte form
                 TempData["Sucesso"] = $"Hospedagem '{nome}' adicionada com sucesso!";
             }
 
-            return RedirectToEditar(destino.PropostaId);
+            return RedirectToEditar(destino.PropostaId, destino.Id, $"hosp-card-{HospSafeId(hospedagem.Id)}");
         }
 
         // POST: Hospedagem/AdicionarComodidade
@@ -469,13 +475,13 @@ Responda SOMENTE com um JSON válido, sem texto fora do objeto, no seguinte form
             if (string.IsNullOrWhiteSpace(nomeTrimmed))
             {
                 TempData["Erro"] = "Nome da comodidade é obrigatório";
-                return RedirectToEditar(hospedagem.Destino.PropostaId);
+                return RedirectToEditar(hospedagem.Destino.PropostaId, hospedagem.DestinoId, $"hosp-card-{HospSafeId(hospedagem.Id)}");
             }
 
             if (hospedagem.Comodidades.Any(c => c.Nome.Equals(nomeTrimmed, StringComparison.OrdinalIgnoreCase)))
             {
                 TempData["Aviso"] = $"Comodidade '{nomeTrimmed}' já existe nesta hospedagem.";
-                return RedirectToEditar(hospedagem.Destino.PropostaId);
+                return RedirectToEditar(hospedagem.Destino.PropostaId, hospedagem.DestinoId, $"hosp-card-{HospSafeId(hospedagem.Id)}");
             }
 
             var maxOrdem = hospedagem.Comodidades.Any() ? hospedagem.Comodidades.Max(c => c.Ordem) : 0;
@@ -489,7 +495,7 @@ Responda SOMENTE com um JSON válido, sem texto fora do objeto, no seguinte form
             await _context.SaveChangesAsync();
 
             TempData["Sucesso"] = $"Comodidade '{nomeTrimmed}' adicionada!";
-            return RedirectToEditar(hospedagem.Destino.PropostaId);
+            return RedirectToEditar(hospedagem.Destino.PropostaId, hospedagem.DestinoId, $"hosp-card-{HospSafeId(hospedagem.Id)}");
         }
 
         // POST: Hospedagem/ExcluirComodidade
@@ -516,11 +522,13 @@ Responda SOMENTE com um JSON válido, sem texto fora do objeto, no seguinte form
             }
 
             var propostaId = comodidade.Hospedagem.Destino.PropostaId;
+            var destinoId  = comodidade.Hospedagem.DestinoId;
+            var hospId     = comodidade.HospedagemId;
             _context.HospedagemComodidades.Remove(comodidade);
             await _context.SaveChangesAsync();
 
             TempData["Sucesso"] = "Comodidade removida.";
-            return RedirectToEditar(propostaId);
+            return RedirectToEditar(propostaId, destinoId, $"hosp-card-{HospSafeId(hospId)}");
         }
 
         // POST: Hospedagem/Editar
@@ -581,7 +589,7 @@ Responda SOMENTE com um JSON válido, sem texto fora do objeto, no seguinte form
             if (string.IsNullOrWhiteSpace(nome))
             {
                 TempData["Erro"] = "Nome da hospedagem é obrigatório";
-                return RedirectToEditar(hospedagem.Destino.PropostaId);
+                return RedirectToEditar(hospedagem.Destino.PropostaId, hospedagem.DestinoId, $"hosp-card-{HospSafeId(hospedagem.Id)}");
             }
 
             hospedagem.Nome = nome.Trim();
@@ -598,7 +606,7 @@ Responda SOMENTE com um JSON válido, sem texto fora do objeto, no seguinte form
             await _context.SaveChangesAsync();
 
             TempData["Sucesso"] = $"Hospedagem '{nome}' atualizada com sucesso!";
-            return RedirectToEditar(hospedagem.Destino.PropostaId);
+            return RedirectToEditar(hospedagem.Destino.PropostaId, hospedagem.DestinoId, $"hosp-card-{HospSafeId(hospedagem.Id)}");
         }
 
         // POST: Hospedagem/Excluir
@@ -627,6 +635,7 @@ Responda SOMENTE com um JSON válido, sem texto fora do objeto, no seguinte form
             }
 
             var propostaId = hospedagem.Destino.PropostaId;
+            var destinoId  = hospedagem.DestinoId;
             var nomeHospedagem = hospedagem.Nome;
 
             // Remover arquivos físicos das fotos do hotel
@@ -644,7 +653,7 @@ Responda SOMENTE com um JSON válido, sem texto fora do objeto, no seguinte form
             await _context.SaveChangesAsync();
 
             TempData["Sucesso"] = $"Hospedagem '{nomeHospedagem}' excluída com sucesso!";
-            return RedirectToEditar(propostaId);
+            return RedirectToEditar(propostaId, destinoId);
         }
 
         // POST: Hospedagem/AdicionarFotoHospedagem
@@ -674,7 +683,7 @@ Responda SOMENTE com um JSON válido, sem texto fora do objeto, no seguinte form
             if (!fotosValidas.Any())
             {
                 TempData["Erro"] = "Selecione ao menos uma foto";
-                return RedirectToEditar(hospedagem.Destino.PropostaId);
+                return RedirectToEditar(hospedagem.Destino.PropostaId, hospedagem.DestinoId, $"hosp-card-{HospSafeId(hospedagem.Id)}");
             }
 
             if (principal)
@@ -713,7 +722,7 @@ Responda SOMENTE com um JSON válido, sem texto fora do objeto, no seguinte form
                 ? string.Join(" | ", erros)
                 : (adicionadas == 1 ? "Foto do hotel adicionada!" : $"{adicionadas} fotos do hotel adicionadas!");
 
-            return RedirectToEditar(hospedagem.Destino.PropostaId);
+            return RedirectToEditar(hospedagem.Destino.PropostaId, hospedagem.DestinoId, $"hosp-card-{HospSafeId(hospedagem.Id)}");
         }
 
         // POST: Hospedagem/ExcluirFotoHospedagem
@@ -741,6 +750,7 @@ Responda SOMENTE com um JSON válido, sem texto fora do objeto, no seguinte form
             }
 
             var propostaId = foto.Hospedagem.Destino.PropostaId;
+            var destinoId  = foto.Hospedagem.DestinoId;
             var hospedagemId = foto.HospedagemId;
 
             ExcluirArquivoFisico(foto.CaminhoFoto);
@@ -757,7 +767,7 @@ Responda SOMENTE com um JSON válido, sem texto fora do objeto, no seguinte form
             await _context.SaveChangesAsync();
 
             TempData["Sucesso"] = "Foto do hotel excluída.";
-            return RedirectToEditar(propostaId);
+            return RedirectToEditar(propostaId, destinoId, $"hosp-card-{HospSafeId(hospedagemId)}");
         }
 
         // POST: Hospedagem/ReordenarFotosHospedagem
@@ -816,13 +826,13 @@ Responda SOMENTE com um JSON válido, sem texto fora do objeto, no seguinte form
             if (string.IsNullOrWhiteSpace(nomeTrimmed))
             {
                 TempData["Erro"] = "Nome da comodidade é obrigatório";
-                return RedirectToEditar(acomodacao.Hospedagem.Destino.PropostaId);
+                return RedirectToEditar(acomodacao.Hospedagem.Destino.PropostaId, acomodacao.Hospedagem.DestinoId, $"hosp-card-{HospSafeId(acomodacao.HospedagemId)}");
             }
 
             if (acomodacao.Comodidades.Any(c => c.Nome.Equals(nomeTrimmed, StringComparison.OrdinalIgnoreCase)))
             {
                 TempData["Aviso"] = $"Comodidade '{nomeTrimmed}' já existe nesta acomodação.";
-                return RedirectToEditar(acomodacao.Hospedagem.Destino.PropostaId);
+                return RedirectToEditar(acomodacao.Hospedagem.Destino.PropostaId, acomodacao.Hospedagem.DestinoId, $"hosp-card-{HospSafeId(acomodacao.HospedagemId)}");
             }
 
             var maxOrdem = acomodacao.Comodidades.Any() ? acomodacao.Comodidades.Max(c => c.Ordem) : 0;
@@ -836,7 +846,7 @@ Responda SOMENTE com um JSON válido, sem texto fora do objeto, no seguinte form
             await _context.SaveChangesAsync();
 
             TempData["Sucesso"] = $"Comodidade '{nomeTrimmed}' adicionada à acomodação!";
-            return RedirectToEditar(acomodacao.Hospedagem.Destino.PropostaId);
+            return RedirectToEditar(acomodacao.Hospedagem.Destino.PropostaId, acomodacao.Hospedagem.DestinoId, $"hosp-card-{HospSafeId(acomodacao.HospedagemId)}");
         }
 
         // POST: Hospedagem/ExcluirComodidadeAcomodacao
@@ -864,11 +874,13 @@ Responda SOMENTE com um JSON válido, sem texto fora do objeto, no seguinte form
             }
 
             var propostaId = comodidade.Acomodacao.Hospedagem.Destino.PropostaId;
+            var destinoId  = comodidade.Acomodacao.Hospedagem.DestinoId;
+            var hospId     = comodidade.Acomodacao.HospedagemId;
             _context.AcomodacaoComodidades.Remove(comodidade);
             await _context.SaveChangesAsync();
 
             TempData["Sucesso"] = "Comodidade da acomodação removida.";
-            return RedirectToEditar(propostaId);
+            return RedirectToEditar(propostaId, destinoId, $"hosp-card-{HospSafeId(hospId)}");
         }
 
         // POST: Hospedagem/AdicionarAcomodacao
@@ -896,7 +908,7 @@ Responda SOMENTE com um JSON válido, sem texto fora do objeto, no seguinte form
             if (string.IsNullOrWhiteSpace(nome))
             {
                 TempData["Erro"] = "Nome da acomodação é obrigatório";
-                return RedirectToEditar(hospedagem.Destino.PropostaId);
+                return RedirectToEditar(hospedagem.Destino.PropostaId, hospedagem.DestinoId, $"hosp-card-{HospSafeId(hospedagem.Id)}");
             }
 
             var maxOrdem = await _context.Acomodacoes
@@ -915,7 +927,7 @@ Responda SOMENTE com um JSON válido, sem texto fora do objeto, no seguinte form
             await _context.SaveChangesAsync();
 
             TempData["Sucesso"] = $"Acomodação '{nome}' adicionada com sucesso!";
-            return RedirectToEditar(hospedagem.Destino.PropostaId);
+            return RedirectToEditar(hospedagem.Destino.PropostaId, hospedagem.DestinoId, $"hosp-card-{HospSafeId(hospedagem.Id)}");
         }
 
         // POST: Hospedagem/EditarAcomodacao
@@ -944,7 +956,7 @@ Responda SOMENTE com um JSON válido, sem texto fora do objeto, no seguinte form
             if (string.IsNullOrWhiteSpace(nome))
             {
                 TempData["Erro"] = "Nome da acomodação é obrigatório";
-                return RedirectToEditar(acomodacao.Hospedagem.Destino.PropostaId);
+                return RedirectToEditar(acomodacao.Hospedagem.Destino.PropostaId, acomodacao.Hospedagem.DestinoId, $"hosp-card-{HospSafeId(acomodacao.HospedagemId)}");
             }
 
             acomodacao.Nome = nome.Trim();
@@ -953,7 +965,7 @@ Responda SOMENTE com um JSON válido, sem texto fora do objeto, no seguinte form
             await _context.SaveChangesAsync();
 
             TempData["Sucesso"] = "Acomodação atualizada com sucesso!";
-            return RedirectToEditar(acomodacao.Hospedagem.Destino.PropostaId);
+            return RedirectToEditar(acomodacao.Hospedagem.Destino.PropostaId, acomodacao.Hospedagem.DestinoId, $"hosp-card-{HospSafeId(acomodacao.HospedagemId)}");
         }
 
         // POST: Hospedagem/ExcluirAcomodacao
@@ -981,6 +993,8 @@ Responda SOMENTE com um JSON válido, sem texto fora do objeto, no seguinte form
             }
 
             var propostaId = acomodacao.Hospedagem.Destino.PropostaId;
+            var destinoId  = acomodacao.Hospedagem.DestinoId;
+            var hospId     = acomodacao.HospedagemId;
 
             foreach (var foto in acomodacao.Fotos)
             {
@@ -991,7 +1005,7 @@ Responda SOMENTE com um JSON válido, sem texto fora do objeto, no seguinte form
             await _context.SaveChangesAsync();
 
             TempData["Sucesso"] = "Acomodação excluída com sucesso!";
-            return RedirectToEditar(propostaId);
+            return RedirectToEditar(propostaId, destinoId, $"hosp-card-{HospSafeId(hospId)}");
         }
 
         // POST: Hospedagem/AdicionarFotoAcomodacao
@@ -1022,7 +1036,7 @@ Responda SOMENTE com um JSON válido, sem texto fora do objeto, no seguinte form
             if (!fotosValidas.Any())
             {
                 TempData["Erro"] = "Selecione ao menos uma foto para fazer upload";
-                return RedirectToEditar(acomodacao.Hospedagem.Destino.PropostaId);
+                return RedirectToEditar(acomodacao.Hospedagem.Destino.PropostaId, acomodacao.Hospedagem.DestinoId, $"hosp-card-{HospSafeId(acomodacao.HospedagemId)}");
             }
 
             try
@@ -1072,7 +1086,7 @@ Responda SOMENTE com um JSON válido, sem texto fora do objeto, no seguinte form
                 TempData["Erro"] = ex.Message;
             }
 
-            return RedirectToEditar(acomodacao.Hospedagem.Destino.PropostaId);
+            return RedirectToEditar(acomodacao.Hospedagem.Destino.PropostaId, acomodacao.Hospedagem.DestinoId, $"hosp-card-{HospSafeId(acomodacao.HospedagemId)}");
         }
 
         // POST: Hospedagem/ExcluirFotoAcomodacao
@@ -1100,6 +1114,8 @@ Responda SOMENTE com um JSON válido, sem texto fora do objeto, no seguinte form
             }
 
             var propostaId = foto.Acomodacao.Hospedagem.Destino.PropostaId;
+            var destinoId  = foto.Acomodacao.Hospedagem.DestinoId;
+            var hospId     = foto.Acomodacao.HospedagemId;
 
             ExcluirArquivoFisico(foto.CaminhoFoto);
             _context.AcomodacaoFotos.Remove(foto);
@@ -1117,7 +1133,7 @@ Responda SOMENTE com um JSON válido, sem texto fora do objeto, no seguinte form
             await _context.SaveChangesAsync();
 
             TempData["Sucesso"] = "Foto excluída com sucesso!";
-            return RedirectToEditar(propostaId);
+            return RedirectToEditar(propostaId, destinoId, $"hosp-card-{HospSafeId(hospId)}");
         }
 
         // POST: Hospedagem/ReordenarFotosAcomodacao

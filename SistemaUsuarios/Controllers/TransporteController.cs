@@ -27,11 +27,17 @@ namespace SistemaUsuarios.Controllers
             HttpContext.Session.GetString("TipoUsuario") != "Associado";
 
 
-        private IActionResult RedirectToEditar(Guid propostaId)
+        private IActionResult RedirectToEditar(Guid propostaId, Guid? destinoAberto = null, string? focoId = null)
         {
             TempData["ActiveTab"] = "destinos";
+            if (destinoAberto.HasValue)
+                TempData["DestinoAberto"] = destinoAberto.Value.ToString();
+            if (focoId != null)
+                TempData["FocoElementId"] = focoId;
             return RedirectToAction("Editar", "Proposta", new { id = propostaId });
         }
+
+        private static string TranspSafeId(Guid id) => id.ToString("N");
 
         private async Task<(Destino? destino, Guid propostaId)> ObterDestinoVerificado(Guid destinoId, Guid usuarioId, bool isMaster)
         {
@@ -69,7 +75,7 @@ namespace SistemaUsuarios.Controllers
             if (string.IsNullOrWhiteSpace(titulo))
             {
                 TempData["Erro"] = "Título é obrigatório.";
-                return RedirectToEditar(propostaId);
+                return RedirectToEditar(propostaId, destinoId);
             }
 
             var maxOrdem = await _context.Transportes
@@ -127,7 +133,7 @@ namespace SistemaUsuarios.Controllers
                 TempData["Sucesso"] = $"Transporte \"{transporte.Titulo}\" adicionado!";
             }
 
-            return RedirectToEditar(propostaId);
+            return RedirectToEditar(propostaId, destinoId, $"transp-card-{TranspSafeId(transporte.Id)}");
         }
 
         // POST: Transporte/Editar
@@ -159,7 +165,7 @@ namespace SistemaUsuarios.Controllers
             if (string.IsNullOrWhiteSpace(titulo))
             {
                 TempData["Erro"] = "Título é obrigatório.";
-                return RedirectToEditar(transporte.Destino.PropostaId);
+                return RedirectToEditar(transporte.Destino.PropostaId, transporte.DestinoId, $"transp-card-{TranspSafeId(transporte.Id)}");
             }
 
             transporte.Titulo = titulo.Trim();
@@ -169,7 +175,7 @@ namespace SistemaUsuarios.Controllers
             await _context.SaveChangesAsync();
 
             TempData["Sucesso"] = "Transporte atualizado!";
-            return RedirectToEditar(transporte.Destino.PropostaId);
+            return RedirectToEditar(transporte.Destino.PropostaId, transporte.DestinoId, $"transp-card-{TranspSafeId(transporte.Id)}");
         }
 
         // POST: Transporte/Excluir
@@ -197,6 +203,7 @@ namespace SistemaUsuarios.Controllers
             }
 
             var propostaId = transporte.Destino.PropostaId;
+            var destinoId  = transporte.DestinoId;
 
             foreach (var img in transporte.Imagens)
                 DeletarArquivoFisico(img.CaminhoImagem);
@@ -207,7 +214,7 @@ namespace SistemaUsuarios.Controllers
             await _context.SaveChangesAsync();
 
             TempData["Sucesso"] = "Transporte excluído.";
-            return RedirectToEditar(propostaId);
+            return RedirectToEditar(propostaId, destinoId);
         }
 
         // ─── IMAGENS ─────────────────────────────────────────────────────────────
@@ -239,7 +246,7 @@ namespace SistemaUsuarios.Controllers
             if (!imagensValidas.Any())
             {
                 TempData["Erro"] = "Selecione ao menos uma imagem.";
-                return RedirectToEditar(transporte.Destino.PropostaId);
+                return RedirectToEditar(transporte.Destino.PropostaId, transporte.DestinoId, $"transp-card-{TranspSafeId(transporte.Id)}");
             }
 
             try
@@ -287,7 +294,7 @@ namespace SistemaUsuarios.Controllers
                 TempData["Erro"] = ex.Message;
             }
 
-            return RedirectToEditar(transporte.Destino.PropostaId);
+            return RedirectToEditar(transporte.Destino.PropostaId, transporte.DestinoId, $"transp-card-{TranspSafeId(transporte.Id)}");
         }
 
         // POST: Transporte/ExcluirImagem
@@ -315,7 +322,8 @@ namespace SistemaUsuarios.Controllers
                 return RedirectToAction("Index", "Proposta");
             }
 
-            var propostaId = imagem.Transporte.Destino.PropostaId;
+            var propostaId   = imagem.Transporte.Destino.PropostaId;
+            var destinoId    = imagem.Transporte.DestinoId;
             var eraPrincipal = imagem.Principal;
             var transporteId = imagem.TransporteId;
 
@@ -338,7 +346,7 @@ namespace SistemaUsuarios.Controllers
             if (restantes.Any()) await _context.SaveChangesAsync();
 
             TempData["Sucesso"] = "Imagem excluída.";
-            return RedirectToEditar(propostaId);
+            return RedirectToEditar(propostaId, destinoId, $"transp-card-{TranspSafeId(transporteId)}");
         }
 
         // POST: Transporte/ReordenarImagens
@@ -395,13 +403,13 @@ namespace SistemaUsuarios.Controllers
             if (documento == null || documento.Length == 0)
             {
                 TempData["Erro"] = "Selecione um arquivo.";
-                return RedirectToEditar(transporte.Destino.PropostaId);
+                return RedirectToEditar(transporte.Destino.PropostaId, transporte.DestinoId, $"transp-card-{TranspSafeId(transporte.Id)}");
             }
 
             if (documento.Length > 20 * 1024 * 1024)
             {
                 TempData["Erro"] = "Arquivo muito grande. Máximo 20MB.";
-                return RedirectToEditar(transporte.Destino.PropostaId);
+                return RedirectToEditar(transporte.Destino.PropostaId, transporte.DestinoId, $"transp-card-{TranspSafeId(transporte.Id)}");
             }
 
             var blobUrl = await _blob.SalvarArquivoAsync(documento, "transporte-documentos");
@@ -419,7 +427,7 @@ namespace SistemaUsuarios.Controllers
             await _context.SaveChangesAsync();
 
             TempData["Sucesso"] = $"Documento \"{documento.FileName}\" adicionado!";
-            return RedirectToEditar(transporte.Destino.PropostaId);
+            return RedirectToEditar(transporte.Destino.PropostaId, transporte.DestinoId, $"transp-card-{TranspSafeId(transporte.Id)}");
         }
 
         // POST: Transporte/ExcluirDocumento
@@ -446,12 +454,14 @@ namespace SistemaUsuarios.Controllers
             }
 
             var propostaId = documento.Transporte.Destino.PropostaId;
+            var destinoId  = documento.Transporte.DestinoId;
+            var transpId   = documento.TransporteId;
             DeletarArquivoFisico(documento.CaminhoArquivo);
             _context.TransporteDocumentos.Remove(documento);
             await _context.SaveChangesAsync();
 
             TempData["Sucesso"] = "Documento excluído.";
-            return RedirectToEditar(propostaId);
+            return RedirectToEditar(propostaId, destinoId, $"transp-card-{TranspSafeId(transpId)}");
         }
 
         // GET: Transporte/BaixarDocumento/{id}
