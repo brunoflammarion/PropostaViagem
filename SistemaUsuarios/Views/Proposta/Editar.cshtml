@@ -2339,9 +2339,6 @@
                                             | @voo.HorarioSaida.Value.ToString("dd/MM HH:mm")
                                         </span>
                                     }
-                                    <span class="badge bg-light text-dark border ms-1">
-                                        <i class="fas fa-users me-1"></i>@voo.Passageiros.Count pax
-                                    </span>
                                     <div class="ms-auto d-flex gap-1">
                                         <button class="btn btn-outline-primary btn-sm" type="button"
                                                 data-bs-toggle="collapse"
@@ -2548,147 +2545,6 @@
                                             </div>
                                             <!-- /Bagagem -->
                                         </form>
-
-                                        <hr />
-
-                                        <!-- Passageiros -->
-                                        <h6 class="text-muted text-uppercase small mb-3">
-                                            <i class="fas fa-users me-1"></i>Passageiros
-                                            <span class="badge bg-secondary ms-1">@voo.Passageiros.Count</span>
-                                        </h6>
-
-                                        @if (voo.Passageiros.Any())
-                                        {
-                                            <div class="table-responsive mb-3">
-                                                <table class="table table-sm table-hover align-middle mb-0">
-                                                    <thead class="table-light">
-                                                        <tr>
-                                                            <th>Nome</th>
-                                                            <th style="width:90px">Assento</th>
-                                                            <th style="width:130px">Bagagens</th>
-                                                            <th style="width:80px"></th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        @foreach (var pax in voo.Passageiros)
-                                                        {
-                                                            var paxSafeId = pax.Id.ToString().Replace("-", "");
-                                                            <!-- Linha de exibição -->
-                                                            <tr id="pax-row-@paxSafeId" class="pax-display-row">
-                                                                <td>@pax.Nome</td>
-                                                                <td>
-                                                                    @if (!string.IsNullOrEmpty(pax.Assento))
-                                                                    {
-                                                                        <span class="badge bg-light text-dark border">@pax.Assento</span>
-                                                                    }
-                                                                    else
-                                                                    {
-                                                                        <span class="text-muted small">—</span>
-                                                                    }
-                                                                </td>
-                                                                <td>
-                                                                    @for (int b = 0; b < pax.BagagensDespachadas; b++)
-                                                                    {
-                                                                        <i class="fas fa-suitcase text-muted me-1"></i>
-                                                                    }
-                                                                    @if (pax.BagagensDespachadas == 0)
-                                                                    {
-                                                                        <span class="text-muted small">Sem despacho</span>
-                                                                    }
-                                                                </td>
-                                                                <td class="text-end">
-                                                                    <button type="button"
-                                                                            class="btn btn-xs btn-outline-secondary me-1"
-                                                                            onclick="toggleEditPax('@paxSafeId')"
-                                                                            title="Editar passageiro">
-                                                                        <i class="fas fa-pencil-alt"></i>
-                                                                    </button>
-                                                                    <form asp-controller="Voo" asp-action="ExcluirPassageiro"
-                                                                          method="post" class="d-inline"
-                                                                          onsubmit="return confirm('Remover @Html.Raw(pax.Nome.Replace("'","\\'")??"") do voo?');">
-                                                                        @Html.AntiForgeryToken()
-                                                                        <input type="hidden" name="id" value="@pax.Id" />
-                                                                        <button type="submit" class="btn btn-xs btn-outline-danger" title="Remover">
-                                                                            <i class="fas fa-times"></i>
-                                                                        </button>
-                                                                    </form>
-                                                                </td>
-                                                            </tr>
-                                                            <!-- Linha de edição inline (oculta por padrão) -->
-                                                            <tr id="pax-edit-@paxSafeId" class="pax-edit-row d-none bg-light">
-                                                                <td colspan="4">
-                                                                    <form asp-controller="Voo" asp-action="EditarPassageiro"
-                                                                          method="post" class="d-flex align-items-end gap-2 flex-wrap py-1">
-                                                                        @Html.AntiForgeryToken()
-                                                                        <input type="hidden" name="id" value="@pax.Id" />
-                                                                        <div style="flex:2; min-width:150px;">
-                                                                            <label class="form-label form-label-sm mb-0">Nome</label>
-                                                                            <input type="text" name="nome" class="form-control form-control-sm"
-                                                                                   value="@pax.Nome" required maxlength="200" />
-                                                                        </div>
-                                                                        <div style="flex:0 0 90px;">
-                                                                            <label class="form-label form-label-sm mb-0">Assento</label>
-                                                                            <input type="text" name="assento" class="form-control form-control-sm"
-                                                                                   value="@pax.Assento" maxlength="10" placeholder="23A" />
-                                                                        </div>
-                                                                        <div style="flex:0 0 100px;">
-                                                                            <label class="form-label form-label-sm mb-0">Bagagens</label>
-                                                                            <input type="number" name="bagagensDespachadas"
-                                                                                   class="form-control form-control-sm"
-                                                                                   value="@pax.BagagensDespachadas" min="0" max="10" />
-                                                                        </div>
-                                                                        <div>
-                                                                            <button type="submit" class="btn btn-sm btn-primary">
-                                                                                <i class="fas fa-save"></i>
-                                                                            </button>
-                                                                            <button type="button" class="btn btn-sm btn-outline-secondary"
-                                                                                    onclick="toggleEditPax('@paxSafeId')">
-                                                                                Cancelar
-                                                                            </button>
-                                                                        </div>
-                                                                    </form>
-                                                                </td>
-                                                            </tr>
-                                                        }
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        }
-
-                                        <!-- Formulário inline para adicionar passageiro -->
-                                        <div class="card bg-light border-0 p-3">
-                                            <h6 class="small text-muted fw-semibold mb-2">
-                                                <i class="fas fa-user-plus me-1"></i>Adicionar Passageiro
-                                            </h6>
-                                            <form asp-controller="Voo" asp-action="AdicionarPassageiro" method="post">
-                                                @Html.AntiForgeryToken()
-                                                <input type="hidden" name="vooId" value="@voo.Id" />
-                                                <div class="d-flex align-items-end gap-2 flex-wrap">
-                                                    <div style="flex:2; min-width:150px;">
-                                                        <label class="form-label form-label-sm mb-0">Nome <span class="text-danger">*</span></label>
-                                                        <input type="text" name="nome" class="form-control form-control-sm"
-                                                               required maxlength="200" placeholder="Nome completo" />
-                                                    </div>
-                                                    <div style="flex:0 0 90px;">
-                                                        <label class="form-label form-label-sm mb-0">Assento</label>
-                                                        <input type="text" name="assento" class="form-control form-control-sm"
-                                                               maxlength="10" placeholder="23A" />
-                                                    </div>
-                                                    <div style="flex:0 0 100px;">
-                                                        <label class="form-label form-label-sm mb-0">Bagagens</label>
-                                                        <input type="number" name="bagagensDespachadas"
-                                                               class="form-control form-control-sm" value="0" min="0" max="10" />
-                                                    </div>
-                                                    <div>
-                                                        <button type="submit" class="btn btn-sm btn-success">
-                                                            <i class="fas fa-plus me-1"></i>Adicionar
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </form>
-                                        </div>
-
-                                        <hr class="my-2" />
 
                                         <!-- ── OBSERVAÇÃO + ANEXOS (colapsável) ──── -->
                                         @{
@@ -4611,15 +4467,6 @@
                 if (sel) sel.addEventListener('change', updateEditBebe);
             });
         }());
-
-        // Aéreo — toggle inline de edição de passageiro
-        function toggleEditPax(safeId) {
-            const displayRow = document.getElementById('pax-row-' + safeId);
-            const editRow    = document.getElementById('pax-edit-' + safeId);
-            if (!displayRow || !editRow) return;
-            displayRow.classList.toggle('d-none');
-            editRow.classList.toggle('d-none');
-        }
 
         // ─── Companhia → ICAO ─────────────────────────────────────────────────────
 
