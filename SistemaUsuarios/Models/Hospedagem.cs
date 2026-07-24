@@ -48,6 +48,8 @@ namespace SistemaUsuarios.Models
 
         public CategoriaHospedagem Categoria { get; set; } = CategoriaHospedagem.Hotel;
 
+        public int? NumeroEstrelas { get; set; }
+
         public TipoPensao TipoPensao { get; set; } = TipoPensao.SemPensao;
 
         [MaxLength(2000)]

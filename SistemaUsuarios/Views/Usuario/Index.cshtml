@@ -17,6 +17,9 @@
     var sucessoSenha  = TempData["SucessoSenha"]      as string;
     var erroIdent     = TempData["ErroIdentidade"]    as string;
     var sucessoIdent  = TempData["SucessoIdentidade"] as string;
+    var erroLogo      = TempData["ErroLogo"]          as string;
+    var sucessoLogo   = TempData["SucessoLogo"]       as string;
+    var isMaster      = ViewBag.IsMaster as bool? ?? true;
 
     var corP = Model.CorPrimaria   ?? "#0A1128";
     var corS = Model.CorSecundaria ?? "#65a3d4";
@@ -163,6 +166,35 @@ input[type="color"].hidden-picker {
 .preview-badge {
     padding: 2px 7px; border-radius: 50px;
     font-size: .6rem; font-weight: 600;
+}
+
+/* ── Logo da agência ─────────────────────────────────── */
+.logo-current-wrap {
+    display: flex; align-items: center; justify-content: center;
+    min-width: 130px; min-height: 64px; max-width: 200px;
+    padding: 12px 16px; border-radius: 10px;
+    border: 1.5px solid #e2e8f0;
+    background: #fff;
+    flex-shrink: 0;
+}
+.logo-current-wrap img {
+    max-width: 160px; max-height: 64px; object-fit: contain; display: block;
+}
+.logo-current-dark {
+    background: #0A1128; border-color: #1e3260;
+}
+.logo-placeholder {
+    min-width: 130px; min-height: 64px; max-width: 200px; padding: 12px 16px;
+    border-radius: 10px; border: 2px dashed #dee2e6;
+    background: #f8f9fa;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 6px; flex-shrink: 0;
+}
+.logo-preview-pair {
+    display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+}
+.logo-preview-label {
+    font-size: .71rem; color: #6c757d; text-align: center; margin-top: 5px;
 }
 
 /* ── Modal de recorte de foto ────────────────────────── */
@@ -365,6 +397,186 @@ input[type="color"].hidden-picker {
                     </button>
                     <button type="button" class="btn btn-primary btn-sm" id="applyCropBtn">
                         <i class="fas fa-check me-1"></i>Aplicar recorte
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Feedback logo ────────────────────────────────────── -->
+    @if (!string.IsNullOrEmpty(sucessoLogo))
+    {
+        <div class="alert alert-success alert-dismissible fade show mb-3 rounded-3" role="alert">
+            <i class="fas fa-check-circle me-2"></i>@sucessoLogo
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (!string.IsNullOrEmpty(erroLogo))
+    {
+        <div class="alert alert-danger alert-dismissible fade show mb-3 rounded-3" role="alert">
+            <i class="fas fa-exclamation-circle me-2"></i>@erroLogo
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- ── Logo da agência ──────────────────────────────────── -->
+    <div class="section-card">
+        <h6><i class="fas fa-image me-2"></i>Logo da agência</h6>
+        <p class="text-muted mb-4" style="font-size:.83rem;line-height:1.55;">
+            Envie a logo da sua agência para personalizar suas propostas e materiais compartilhados com clientes.
+            A logo aparece automaticamente na parte final de todos os layouts de proposta.
+        </p>
+
+        @if (!string.IsNullOrEmpty(Model.LogoAgenciaPath))
+        {
+            <!-- Logo atual + previews -->
+            <div class="mb-4">
+                <div class="text-muted mb-2" style="font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Prévia</div>
+                <div class="logo-preview-pair">
+                    <div>
+                        <div class="logo-current-wrap">
+                            <img src="@Model.LogoAgenciaPath" alt="Logo da agência" />
+                        </div>
+                        <div class="logo-preview-label">Fundo claro</div>
+                    </div>
+                    <div>
+                        <div class="logo-current-wrap logo-current-dark">
+                            <img src="@Model.LogoAgenciaPath" alt="Logo da agência" />
+                        </div>
+                        <div class="logo-preview-label">Fundo escuro</div>
+                    </div>
+                </div>
+            </div>
+
+            @if (isMaster)
+            {
+                <div class="d-flex gap-2 flex-wrap">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="logoAlterarBtn">
+                        <i class="fas fa-edit me-1"></i>Alterar logo
+                    </button>
+                    <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#confirmarRemoverLogoModal">
+                        <i class="fas fa-trash me-1"></i>Remover
+                    </button>
+                </div>
+                <div id="logoUploadArea" style="display:none;margin-top:16px;">
+                    <form asp-controller="Usuario" asp-action="AlterarLogoAgencia" method="post"
+                          enctype="multipart/form-data" id="formLogo">
+                        @Html.AntiForgeryToken()
+                        <div class="foto-drop" id="logoDropZone">
+                            <input type="file" name="logo" id="logoInput" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp" />
+                            <i class="fas fa-cloud-upload-alt" style="font-size:1.6rem;color:#adb5bd;display:block;margin-bottom:8px;"></i>
+                            <div style="font-size:.88rem;font-weight:600;color:#495057;" id="logoLabel">Clique ou arraste para selecionar a nova logo</div>
+                            <div class="text-muted mt-1" style="font-size:.77rem;">PNG, JPG, WebP · máximo 5 MB · preferência por PNG transparente</div>
+                        </div>
+                    </form>
+                </div>
+            }
+            else
+            {
+                <p class="text-muted" style="font-size:.8rem;">
+                    <i class="fas fa-info-circle me-1"></i>A logo é definida pelo usuário master da agência.
+                </p>
+            }
+        }
+        else if (isMaster)
+        {
+            <!-- Sem logo — área de upload -->
+            <div class="d-flex align-items-start gap-4 flex-wrap">
+                <div class="text-center" style="flex-shrink:0;">
+                    <div class="logo-placeholder">
+                        <i class="fas fa-image" style="font-size:1.5rem;color:#adb5bd;"></i>
+                        <div style="font-size:.75rem;color:#adb5bd;">Sem logo</div>
+                    </div>
+                </div>
+                <div class="flex-grow-1">
+                    <form asp-controller="Usuario" asp-action="AlterarLogoAgencia" method="post"
+                          enctype="multipart/form-data" id="formLogo">
+                        @Html.AntiForgeryToken()
+                        <div class="foto-drop" id="logoDropZone">
+                            <input type="file" name="logo" id="logoInput" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp" />
+                            <i class="fas fa-cloud-upload-alt" style="font-size:1.6rem;color:#adb5bd;display:block;margin-bottom:8px;"></i>
+                            <div style="font-size:.88rem;font-weight:600;color:#495057;" id="logoLabel">Clique ou arraste a logo da agência</div>
+                            <div class="text-muted mt-1" style="font-size:.77rem;">PNG, JPG, WebP · máximo 5 MB · preferência por PNG transparente</div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        }
+        else
+        {
+            <p class="text-muted" style="font-size:.8rem;">
+                <i class="fas fa-info-circle me-1"></i>Nenhuma logo cadastrada pela agência.
+            </p>
+        }
+    </div>
+
+    <!-- ── Modal: confirmar remoção da logo ─────────────────── -->
+    <div class="modal fade" id="confirmarRemoverLogoModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" style="max-width:380px;">
+            <div class="modal-content">
+                <div class="modal-header py-3">
+                    <h6 class="modal-title mb-0">
+                        <i class="fas fa-trash me-2 text-danger"></i>Remover logo
+                    </h6>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-0">Tem certeza que deseja remover a logo da agência? Os layouts de proposta voltarão a exibir apenas o nome da agência.</p>
+                </div>
+                <div class="modal-footer py-2">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <form asp-controller="Usuario" asp-action="RemoverLogoAgencia" method="post" style="display:inline;">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-danger btn-sm">
+                            <i class="fas fa-trash me-1"></i>Remover
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Modal de ajuste da logo ──────────────────────────── -->
+    <div class="modal fade" id="logocropModal" tabindex="-1" aria-labelledby="logocropModalLabel"
+         aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered" style="max-width:520px;">
+            <div class="modal-content">
+                <div class="modal-header py-3">
+                    <h6 class="modal-title mb-0" id="logocopModalLabel">
+                        <i class="fas fa-crop-alt me-2 text-primary"></i>Ajustar logo
+                    </h6>
+                </div>
+                <div class="modal-body">
+                    <div class="crop-canvas-wrap" id="logoCropWrap" style="border-radius:10px;background:#111;overflow:hidden;touch-action:none;user-select:none;display:flex;justify-content:center;">
+                        <canvas id="logoCropCanvas" width="480" height="200" style="display:block;cursor:grab;max-width:100%;height:auto;"></canvas>
+                    </div>
+                    <div class="crop-zoom-row">
+                        <button type="button" class="crop-zoom-btn" id="logoZoomOutBtn" title="Reduzir"><i class="fas fa-minus"></i></button>
+                        <input type="range" id="logoZoomSlider" class="form-range" min="1" max="3" step="0.01" value="1">
+                        <button type="button" class="crop-zoom-btn" id="logoZoomInBtn" title="Ampliar"><i class="fas fa-plus"></i></button>
+                    </div>
+                    <div style="margin-top:14px;border-top:1px solid #f0f0f0;padding-top:14px;">
+                        <div class="logo-preview-pair">
+                            <div>
+                                <canvas id="logoPreviewLight" width="120" height="50"
+                                        style="display:block;border-radius:6px;border:1.5px solid #e2e8f0;background:#fff;"></canvas>
+                                <div class="logo-preview-label">Fundo claro</div>
+                            </div>
+                            <div>
+                                <canvas id="logoPreviewDark" width="120" height="50"
+                                        style="display:block;border-radius:6px;border:1.5px solid #1e3260;background:#0A1128;"></canvas>
+                                <div class="logo-preview-label">Fundo escuro</div>
+                            </div>
+                            <div class="crop-preview-label" style="flex:1;">
+                                Arraste para reposicionar · use o slider para zoom<br>
+                                <small class="text-muted">Dica: zoom mínimo preserva a logo completa</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer py-2">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="logoCancelCropBtn">Cancelar</button>
+                    <button type="button" class="btn btn-primary btn-sm" id="logoApplyCropBtn">
+                        <i class="fas fa-check me-1"></i>Salvar logo
                     </button>
                 </div>
             </div>
@@ -843,6 +1055,215 @@ input[type="color"].hidden-picker {
             openCrop(file);
         });
     })();
+})();
+
+// ── Editor de logo da agência ────────────────────────────────
+(function () {
+    var logoInput  = document.getElementById('logoInput');
+    var logoLabel  = document.getElementById('logoLabel');
+    var formLogo   = document.getElementById('formLogo');
+    var logoCanvas = document.getElementById('logoCropCanvas');
+    if (!logoInput || !logoCanvas) return;
+
+    var logoCtx    = logoCanvas.getContext('2d');
+    var prevLight  = document.getElementById('logoPreviewLight');
+    var prevDark   = document.getElementById('logoPreviewDark');
+    var prevLCtx   = prevLight  ? prevLight.getContext('2d')  : null;
+    var prevDCtx   = prevDark   ? prevDark.getContext('2d')   : null;
+    var CW = 480, CH = 200;   // canvas display
+    var OW = 800, OH = 320;   // canvas output
+
+    var imgLogo, scaleLogo, offsetLX, offsetLY;
+    var isDraggingL = false, lastLX, lastLY;
+    var touchStartDistL, touchStartScaleL;
+    var baseScaleLogo;
+
+    function initLogoState() {
+        var sw = CW / imgLogo.naturalWidth;
+        var sh = CH / imgLogo.naturalHeight;
+        baseScaleLogo = Math.min(sw, sh) * 0.9; // 90% para margem visual
+        scaleLogo  = baseScaleLogo;
+        offsetLX   = (CW - imgLogo.naturalWidth  * scaleLogo) / 2;
+        offsetLY   = (CH - imgLogo.naturalHeight * scaleLogo) / 2;
+        document.getElementById('logoZoomSlider').value = 1;
+    }
+
+    function clampLogo() {
+        var iw = imgLogo.naturalWidth  * scaleLogo;
+        var ih = imgLogo.naturalHeight * scaleLogo;
+        var m  = 20;
+        if (offsetLX > CW - m)   offsetLX = CW - m;
+        if (offsetLX + iw < m)   offsetLX = m - iw;
+        if (offsetLY > CH - m)   offsetLY = CH - m;
+        if (offsetLY + ih < m)   offsetLY = m - ih;
+    }
+
+    function drawLogo() {
+        logoCtx.clearRect(0, 0, CW, CH);
+        logoCtx.fillStyle = '#1a1a1a';
+        logoCtx.fillRect(0, 0, CW, CH);
+        // checkerboard para indicar transparência
+        var cs = 10;
+        for (var cy2 = 0; cy2 < CH; cy2 += cs) {
+            for (var cx2 = 0; cx2 < CW; cx2 += cs) {
+                logoCtx.fillStyle = ((Math.floor(cx2/cs) + Math.floor(cy2/cs)) % 2 === 0) ? '#2a2a2a' : '#1a1a1a';
+                logoCtx.fillRect(cx2, cy2, cs, cs);
+            }
+        }
+        logoCtx.drawImage(imgLogo, offsetLX, offsetLY, imgLogo.naturalWidth * scaleLogo, imgLogo.naturalHeight * scaleLogo);
+        updateLogoPreviews();
+    }
+
+    function updateLogoPreviews() {
+        if (!prevLCtx || !prevDCtx) return;
+        var pw = 120, ph = 50;
+        prevLCtx.clearRect(0, 0, pw, ph);
+        prevLCtx.fillStyle = '#fff';
+        prevLCtx.fillRect(0, 0, pw, ph);
+        prevLCtx.drawImage(logoCanvas, 0, 0, CW, CH, 0, 0, pw, ph);
+
+        prevDCtx.clearRect(0, 0, pw, ph);
+        prevDCtx.fillStyle = '#0A1128';
+        prevDCtx.fillRect(0, 0, pw, ph);
+        prevDCtx.drawImage(logoCanvas, 0, 0, CW, CH, 0, 0, pw, ph);
+    }
+
+    function applyLogoZoom(newScale) {
+        var prevW = imgLogo.naturalWidth  * scaleLogo;
+        var prevH = imgLogo.naturalHeight * scaleLogo;
+        scaleLogo = Math.max(baseScaleLogo * 0.5, Math.min(baseScaleLogo * 3, newScale));
+        offsetLX += (prevW - imgLogo.naturalWidth  * scaleLogo) / 2;
+        offsetLY += (prevH - imgLogo.naturalHeight * scaleLogo) / 2;
+        clampLogo(); drawLogo();
+        document.getElementById('logoZoomSlider').value = (scaleLogo / baseScaleLogo).toFixed(2);
+    }
+
+    function openLogoCrop(file) {
+        var reader = new FileReader();
+        reader.onload = function (e) {
+            imgLogo = new Image();
+            imgLogo.onload = function () {
+                initLogoState();
+                drawLogo();
+                new bootstrap.Modal(document.getElementById('logocropModal')).show();
+            };
+            imgLogo.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    logoCanvas.addEventListener('mousedown', function (e) {
+        isDraggingL = true; lastLX = e.clientX; lastLY = e.clientY; e.preventDefault();
+    });
+    document.addEventListener('mousemove', function (e) {
+        if (!isDraggingL || !imgLogo) return;
+        var rect = logoCanvas.getBoundingClientRect();
+        var ratio = logoCanvas.width / rect.width;
+        offsetLX += (e.clientX - lastLX) * ratio;
+        offsetLY += (e.clientY - lastLY) * ratio;
+        lastLX = e.clientX; lastLY = e.clientY;
+        clampLogo(); drawLogo();
+    });
+    document.addEventListener('mouseup', function () { isDraggingL = false; });
+
+    logoCanvas.addEventListener('touchstart', function (e) {
+        if (e.touches.length === 1) {
+            isDraggingL = true; lastLX = e.touches[0].clientX; lastLY = e.touches[0].clientY;
+        } else if (e.touches.length === 2) {
+            isDraggingL = false;
+            touchStartDistL  = Math.hypot(e.touches[1].clientX - e.touches[0].clientX, e.touches[1].clientY - e.touches[0].clientY);
+            touchStartScaleL = scaleLogo;
+        }
+        e.preventDefault();
+    }, { passive: false });
+
+    logoCanvas.addEventListener('touchmove', function (e) {
+        if (!imgLogo) return;
+        if (e.touches.length === 1 && isDraggingL) {
+            var rect = logoCanvas.getBoundingClientRect();
+            var ratio = logoCanvas.width / rect.width;
+            offsetLX += (e.touches[0].clientX - lastLX) * ratio;
+            offsetLY += (e.touches[0].clientY - lastLY) * ratio;
+            lastLX = e.touches[0].clientX; lastLY = e.touches[0].clientY;
+            clampLogo(); drawLogo();
+        } else if (e.touches.length === 2) {
+            var dist = Math.hypot(e.touches[1].clientX - e.touches[0].clientX, e.touches[1].clientY - e.touches[0].clientY);
+            applyLogoZoom(touchStartScaleL * (dist / touchStartDistL));
+        }
+        e.preventDefault();
+    }, { passive: false });
+    logoCanvas.addEventListener('touchend', function () { isDraggingL = false; });
+
+    document.getElementById('logoZoomSlider').addEventListener('input', function () {
+        if (!imgLogo) return;
+        applyLogoZoom(parseFloat(this.value) * baseScaleLogo);
+    });
+    document.getElementById('logoZoomOutBtn').addEventListener('click', function () {
+        if (!imgLogo) return; applyLogoZoom(scaleLogo - baseScaleLogo * 0.1);
+    });
+    document.getElementById('logoZoomInBtn').addEventListener('click', function () {
+        if (!imgLogo) return; applyLogoZoom(scaleLogo + baseScaleLogo * 0.1);
+    });
+
+    document.getElementById('logoCancelCropBtn').addEventListener('click', function () {
+        bootstrap.Modal.getInstance(document.getElementById('logocropModal')).hide();
+        logoInput.value = '';
+        if (logoLabel) { logoLabel.textContent = 'Clique ou arraste a logo da agência'; logoLabel.style.color = ''; }
+    });
+
+    document.getElementById('logoApplyCropBtn').addEventListener('click', function () {
+        var btn = this;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Salvando...';
+
+        var off = document.createElement('canvas');
+        off.width = OW; off.height = OH;
+        var offCtx = off.getContext('2d');
+        offCtx.drawImage(logoCanvas, 0, 0, CW, CH, 0, 0, OW, OH);
+
+        var isPng = imgLogo.src.startsWith('data:image/png') || (logoInput.files[0] && logoInput.files[0].type === 'image/png');
+        var mimeType = isPng ? 'image/png' : 'image/jpeg';
+        var fileName = isPng ? 'logo-agencia.png' : 'logo-agencia.jpg';
+
+        off.toBlob(function (blob) {
+            if (!blob) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-check me-1"></i>Salvar logo';
+                return;
+            }
+            bootstrap.Modal.getInstance(document.getElementById('logocropModal')).hide();
+            var fd = new FormData(formLogo);
+            fd.set('logo', blob, fileName);
+            fetch(formLogo.action, { method: 'POST', body: fd })
+                .then(function () { window.location.href = '/Usuario'; })
+                .catch(function () { window.location.href = '/Usuario'; });
+        }, mimeType, isPng ? undefined : 0.92);
+    });
+
+    logoInput.addEventListener('change', function () {
+        if (!this.files || !this.files[0]) return;
+        var file = this.files[0];
+        if (file.size > 5 * 1024 * 1024) {
+            alert('Arquivo muito grande. Máximo 5 MB.');
+            this.value = ''; return;
+        }
+        if (!file.type.startsWith('image/')) {
+            alert('Selecione apenas imagens (PNG, JPG, WebP).');
+            this.value = ''; return;
+        }
+        if (logoLabel) { logoLabel.textContent = file.name; logoLabel.style.color = 'var(--exec-primary, #0A1128)'; logoLabel.style.fontWeight = '600'; }
+        openLogoCrop(file);
+    });
+
+    // Botão "Alterar logo" (quando logo já existe)
+    var logoAlterarBtn = document.getElementById('logoAlterarBtn');
+    var logoUploadArea = document.getElementById('logoUploadArea');
+    if (logoAlterarBtn && logoUploadArea) {
+        logoAlterarBtn.addEventListener('click', function () {
+            logoUploadArea.style.display = 'block';
+            this.style.display = 'none';
+        });
+    }
 })();
 
 // ── Helpers de cor ────────────────────────────────────────

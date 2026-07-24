@@ -398,7 +398,6 @@
                                     <div class="col-md-6 mb-3">
                                         <label asp-for="LayoutId" class="form-label fw-bold">Layout</label>
                                         <select asp-for="LayoutId" class="form-control">
-                                            <option value="">Layout Padrão</option>
                                             @if (ViewBag.Layouts != null)
                                             {
                                                 @foreach (var layout in (List<SistemaUsuarios.Models.Layout>)ViewBag.Layouts)
@@ -849,17 +848,17 @@
                                                             <input type="hidden" name="latitude" class="hosp-lat" />
                                                             <input type="hidden" name="longitude" class="hosp-lng" />
                                                             <input type="hidden" name="comodidadesJson" class="hosp-comodidades-json" />
+                                                            <div class="mb-2 position-relative">
+                                                                <label class="form-label form-label-sm mb-0">Nome *</label>
+                                                                <input type="text" name="nome"
+                                                                       class="form-control form-control-sm hosp-nome-input"
+                                                                       required autocomplete="off"
+                                                                       placeholder="Ex: Hotel Marriott..." />
+                                                                <div class="hosp-sugestoes-list list-group mt-1"
+                                                                     style="position:absolute;z-index:9999;width:100%;max-height:220px;overflow-y:auto;"></div>
+                                                            </div>
                                                             <div class="row g-2 mb-2">
-                                                                <div class="col-md-8 position-relative">
-                                                                    <label class="form-label form-label-sm mb-0">Nome *</label>
-                                                                    <input type="text" name="nome"
-                                                                           class="form-control form-control-sm hosp-nome-input"
-                                                                           required autocomplete="off"
-                                                                           placeholder="Ex: Hotel Marriott..." />
-                                                                    <div class="hosp-sugestoes-list list-group mt-1"
-                                                                         style="position:absolute;z-index:9999;width:100%;max-height:220px;overflow-y:auto;"></div>
-                                                                </div>
-                                                                <div class="col-md-4">
+                                                                <div class="col-md-6">
                                                                     <label class="form-label form-label-sm mb-0">Categoria</label>
                                                                     <select name="categoria" class="form-select form-select-sm">
                                                                         <option value="1">Hotel</option>
@@ -870,6 +869,19 @@
                                                                         <option value="6">Camping</option>
                                                                         <option value="7">Outros</option>
                                                                     </select>
+                                                                </div>
+                                                                <div class="col-md-6">
+                                                                    <label class="form-label form-label-sm mb-0">Classificação</label>
+                                                                    <div class="hosp-star-picker d-flex align-items-center gap-1 mt-1"
+                                                                         data-val="">
+                                                                        <i class="fas fa-star hosp-star" data-val="1" title="1 estrela"></i>
+                                                                        <i class="fas fa-star hosp-star" data-val="2" title="2 estrelas"></i>
+                                                                        <i class="fas fa-star hosp-star" data-val="3" title="3 estrelas"></i>
+                                                                        <i class="fas fa-star hosp-star" data-val="4" title="4 estrelas"></i>
+                                                                        <i class="fas fa-star hosp-star" data-val="5" title="5 estrelas"></i>
+                                                                        <span class="hosp-star-label ms-1 text-muted" style="font-size:.75rem;"></span>
+                                                                    </div>
+                                                                    <input type="hidden" name="numeroEstrelas" class="hosp-estrelas-val" value="" />
                                                                 </div>
                                                             </div>
                                                             <div class="mb-2">
@@ -1031,22 +1043,22 @@
                                                                     var _latStr = hospedagem.Latitude?.ToString("G17", _ic) ?? "";
                                                                     var _lngStr = hospedagem.Longitude?.ToString("G17", _ic) ?? "";
                                                                 }
-                                                                <form asp-controller="Hospedagem" asp-action="Editar" method="post" class="mb-3">
+                                                                <form id="form-editar-hosp-@hospSafeId" asp-controller="Hospedagem" asp-action="Editar" method="post" class="mb-3">
                                                                     @Html.AntiForgeryToken()
                                                                     <input type="hidden" name="id" value="@hospedagem.Id" />
                                                                     <input type="hidden" name="latitude" class="hosp-lat" value="@_latStr" />
                                                                     <input type="hidden" name="longitude" class="hosp-lng" value="@_lngStr" />
+                                                                    <div class="mb-2 position-relative">
+                                                                        <label class="form-label form-label-sm mb-0">Nome *</label>
+                                                                        <input type="text" name="nome"
+                                                                               class="form-control form-control-sm hosp-nome-input"
+                                                                               value="@hospedagem.Nome"
+                                                                               required autocomplete="off" />
+                                                                        <div class="hosp-sugestoes-list list-group mt-1"
+                                                                             style="position:absolute;z-index:9999;width:100%;max-height:220px;overflow-y:auto;"></div>
+                                                                    </div>
                                                                     <div class="row g-2 mb-2">
-                                                                        <div class="col-md-8 position-relative">
-                                                                            <label class="form-label form-label-sm mb-0">Nome *</label>
-                                                                            <input type="text" name="nome"
-                                                                                   class="form-control form-control-sm hosp-nome-input"
-                                                                                   value="@hospedagem.Nome"
-                                                                                   required autocomplete="off" />
-                                                                            <div class="hosp-sugestoes-list list-group mt-1"
-                                                                                 style="position:absolute;z-index:9999;width:100%;max-height:220px;overflow-y:auto;"></div>
-                                                                        </div>
-                                                                        <div class="col-md-4">
+                                                                        <div class="col-md-6">
                                                                             <label class="form-label form-label-sm mb-0">Categoria</label>
                                                                             @{ var _catVal = (int)hospedagem.Categoria; }
                                                                             <select name="categoria" class="form-select form-select-sm">
@@ -1058,6 +1070,20 @@
                                                                                 <option value="6" selected="@(_catVal == 6 ? "selected" : null)">Camping</option>
                                                                                 <option value="7" selected="@(_catVal == 7 ? "selected" : null)">Outros</option>
                                                                             </select>
+                                                                        </div>
+                                                                        <div class="col-md-6">
+                                                                            <label class="form-label form-label-sm mb-0">Classificação</label>
+                                                                            <div class="hosp-star-picker d-flex align-items-center gap-1 mt-1"
+                                                                                 data-val="@(hospedagem.NumeroEstrelas?.ToString() ?? "")">
+                                                                                <i class="fas fa-star hosp-star" data-val="1" title="1 estrela"></i>
+                                                                                <i class="fas fa-star hosp-star" data-val="2" title="2 estrelas"></i>
+                                                                                <i class="fas fa-star hosp-star" data-val="3" title="3 estrelas"></i>
+                                                                                <i class="fas fa-star hosp-star" data-val="4" title="4 estrelas"></i>
+                                                                                <i class="fas fa-star hosp-star" data-val="5" title="5 estrelas"></i>
+                                                                                <span class="hosp-star-label ms-1 text-muted" style="font-size:.75rem;"></span>
+                                                                            </div>
+                                                                            <input type="hidden" name="numeroEstrelas" class="hosp-estrelas-val"
+                                                                                   value="@hospedagem.NumeroEstrelas" />
                                                                         </div>
                                                                     </div>
                                                                     <div class="mb-2">
@@ -1160,9 +1186,6 @@
                                                                                   class="form-control form-control-sm"
                                                                                   rows="1">@hospedagem.Reserva</textarea>
                                                                     </div>
-                                                                    <button type="submit" class="btn btn-sm btn-primary">
-                                                                        <i class="fas fa-save me-1"></i>Salvar
-                                                                    </button>
                                                                 </form>
 
                                                                 <hr class="my-2" />
@@ -1277,6 +1300,12 @@
                                                                                data-auto-upload />
                                                                         <p class="img-upload-hint">As imagens serão enviadas automaticamente. Depois, arraste para ordenar.</p>
                                                                     </form>
+                                                                </div>
+
+                                                                <div class="d-flex justify-content-end border-top pt-3 mt-1 mb-3">
+                                                                    <button type="submit" form="form-editar-hosp-@hospSafeId" class="btn btn-sm btn-primary px-4">
+                                                                        <i class="fas fa-save me-1"></i>Salvar
+                                                                    </button>
                                                                 </div>
 
                                                                 <hr class="my-2" />
@@ -4341,17 +4370,6 @@
                                accept="image/*" multiple required />
                         <div class="form-text">Selecione uma ou mais fotos — JPG, PNG, GIF, WebP (máx: 10 MB cada)</div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Legenda <span class="text-muted">(Opcional — aplicada a todas as fotos)</span></label>
-                        <input type="text" name="descricao" id="descricaoInput" class="form-control"
-                               placeholder="Legenda das fotos" maxlength="200" />
-                    </div>
-                    <div class="form-check">
-                        <input type="checkbox" name="principal" id="principalInput" class="form-check-input" />
-                        <label class="form-check-label" for="principalInput">
-                            <i class="fas fa-star me-1"></i>Definir primeira foto como principal
-                        </label>
-                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -4382,16 +4400,6 @@
                         <input type="file" name="fotos" id="fotoAcomodacaoInput" class="form-control"
                                accept="image/*" multiple required />
                         <div class="form-text">Selecione uma ou mais fotos — JPG, PNG, GIF, WebP (máx: 10 MB cada)</div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Legenda <span class="text-muted">(Opcional)</span></label>
-                        <input type="text" name="descricao" class="form-control" placeholder="Opcional" maxlength="200" />
-                    </div>
-                    <div class="form-check">
-                        <input type="checkbox" name="principal" class="form-check-input" id="principalAcomodacao" />
-                        <label class="form-check-label" for="principalAcomodacao">
-                            <i class="fas fa-star me-1"></i>Definir primeira foto como principal
-                        </label>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -4576,10 +4584,7 @@
                 }
 
                 fillFn(json, dataVoo);
-                const statusLabel = json.status && !['Departed','Landed'].includes(json.status)
-                    ? ` · Status: ${json.status}`
-                    : json.status ? ' · Status: Programado' : '';
-                mostrarAlertaVoo(alertEl, 'success', `Dados preenchidos automaticamente.${statusLabel} Verifique e salve.`);
+                mostrarAlertaVoo(alertEl, 'success', 'Dados preenchidos automaticamente. Verifique as informações e salve o voo.');
 
             } catch (e) {
                 mostrarAlertaVoo(alertEl, 'warning', 'Erro de conexão. Preencha os campos manualmente.');
@@ -5034,12 +5039,54 @@
                     $container.data('comodidades', merged);
                     renderHospComodidadesInContainer($container);
                 }
+                // Preencher estrelas retornadas pela IA (apenas 1-5; null não altera)
+                if (data.numeroEstrelas && Number.isInteger(data.numeroEstrelas) &&
+                    data.numeroEstrelas >= 1 && data.numeroEstrelas <= 5) {
+                    hospStarSet($container.find('.hosp-star-picker'), data.numeroEstrelas);
+                }
             }).fail(function () {
                 showErrorAlert('Erro ao consultar IA. Tente novamente.');
             }).always(function () {
                 $container.find('.hosp-ia-loader').addClass('d-none');
                 $btn.prop('disabled', false);
             });
+        });
+
+        // ── Seletor visual de estrelas ────────────────────────────────
+        function hospStarSet($picker, val) {
+            const v = parseInt(val, 10);
+            $picker.attr('data-val', isNaN(v) ? '' : v);
+            $picker.siblings('.hosp-estrelas-val').val(isNaN(v) ? '' : v);
+            $picker.find('.hosp-star').each(function () {
+                const sv = parseInt($(this).data('val'), 10);
+                $(this).toggleClass('active', sv <= v && !isNaN(v));
+            });
+            const label = isNaN(v) || v === 0 ? '' : (v === 1 ? '1 estrela' : v + ' estrelas');
+            $picker.find('.hosp-star-label').text(label);
+        }
+
+        // Init: aplicar estado salvo nos pickers já renderizados
+        document.querySelectorAll('.hosp-star-picker').forEach(function (picker) {
+            const $p = $(picker);
+            const v = parseInt($p.attr('data-val'), 10);
+            if (!isNaN(v) && v >= 1 && v <= 5) hospStarSet($p, v);
+        });
+
+        $(document).on('mouseenter', '.hosp-star', function () {
+            const $star = $(this);
+            const hv = parseInt($star.data('val'), 10);
+            $star.closest('.hosp-star-picker').find('.hosp-star').each(function () {
+                const sv = parseInt($(this).data('val'), 10);
+                $(this).toggleClass('hover', sv <= hv);
+            });
+        }).on('mouseleave', '.hosp-star-picker', function () {
+            $(this).find('.hosp-star').removeClass('hover');
+        }).on('click', '.hosp-star', function () {
+            const $picker = $(this).closest('.hosp-star-picker');
+            const clicked = parseInt($(this).data('val'), 10);
+            const current = parseInt($picker.attr('data-val'), 10);
+            // Clique na mesma estrela já selecionada → limpa
+            hospStarSet($picker, clicked === current ? 0 : clicked);
         });
 
         // ============================================================
@@ -5527,12 +5574,7 @@
                     if (ids.indexOf(destinoId) === -1) ids.push(destinoId);
                     saveOpenIds(ids);
                     setChevron(el.id, true);
-                    // Auto-gera descrição se nome preenchido mas descrição ainda vazia
-                    var nomeEl = document.getElementById('nome-dest-' + destinoId);
-                    var descEl = document.getElementById('desc-dest-' + destinoId);
-                    if (nomeEl && nomeEl.value.trim() && descEl && !descEl.value.trim()) {
-                        setTimeout(function () { gerarDescricaoDestino(destinoId); }, 400);
-                    }
+                    // Auto-IA destino: desativado — IA só é gerada quando o usuário clicar explicitamente no botão
                 });
 
                 el.addEventListener('hide.bs.collapse', function () {
@@ -5977,9 +6019,18 @@
                 if (!focoId) return;
                 var el = document.getElementById(focoId);
                 if (!el) return;
-                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 el.classList.add('item-destacado');
                 setTimeout(function () { el.classList.remove('item-destacado'); }, 2500);
+                var hospCollapseEl = el.querySelector('.collapse');
+                if (hospCollapseEl) {
+                    var hospBs = bootstrap.Collapse.getOrCreateInstance(hospCollapseEl, { toggle: false });
+                    hospBs.show();
+                    hospCollapseEl.addEventListener('shown.bs.collapse', function () {
+                        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }, { once: true });
+                } else {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
             }
 
             if (destinoCollapseEl.classList.contains('show')) {
@@ -6018,6 +6069,13 @@
         box-shadow: 0 0 0 3px rgba(13,110,253,.18) !important;
         transition: border-color .3s, box-shadow .3s;
     }
+
+    /* ── Seletor de estrelas da hospedagem ────────────────────── */
+    .hosp-star-picker { user-select: none; }
+    .hosp-star { font-size: 1.1rem; cursor: pointer; color: #d1d5db; transition: color .12s, transform .1s; }
+    .hosp-star.active  { color: #C9982E; }
+    .hosp-star.hover   { color: #D4A84B; transform: scale(1.15); }
+    .hosp-star:hover ~ .hosp-star { color: #d1d5db !important; transform: none !important; }
 
     /* Mini rich editor — Descrição da Hospedagem */
     .hosp-rich-desc {

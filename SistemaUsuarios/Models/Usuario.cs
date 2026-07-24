@@ -33,6 +33,7 @@ namespace SistemaUsuarios.Models
 
         // Foto e identidade visual
         public string? FotoPath { get; set; }
+        public string? LogoAgenciaPath { get; set; }
         public string? CorPrimaria { get; set; }
         public string? CorSecundaria { get; set; }
         public string? CorDestaque { get; set; }

@@ -293,8 +293,12 @@ body.app-body .modal-header {
     border-bottom: 1px solid rgba(30, 78, 140, 0.12) !important;
 }
 
-body.app-body .modal-title {
+body.app-body .modal-header[class*="bg-"] .modal-title {
     color: #002B45 !important;
+}
+
+body.app-body .modal-header:not([class*="bg-"]) .modal-title {
+    color: #fff !important;
 }
 
 body.app-body .modal-footer {

@@ -633,6 +633,7 @@ namespace SistemaUsuarios.Controllers
             // Carga completa
             var proposta = await _context.Propostas
                 .Include(p => p.Usuario)
+                    .ThenInclude(u => u.UsuarioMaster)
                 .Include(p => p.Layout)
                 .Include(p => p.Cliente)
                 .Include(p => p.PassageirosProposta.OrderBy(pp => pp.Ordem))
@@ -854,6 +855,7 @@ namespace SistemaUsuarios.Controllers
             // Carga completa — mesmos includes do Publico para o preview ser fiel
             var proposta = await _context.Propostas
                 .Include(p => p.Usuario)
+                    .ThenInclude(u => u.UsuarioMaster)
                 .Include(p => p.Layout)
                 .Include(p => p.Cliente)
                 .Include(p => p.PassageirosProposta.OrderBy(pp => pp.Ordem))

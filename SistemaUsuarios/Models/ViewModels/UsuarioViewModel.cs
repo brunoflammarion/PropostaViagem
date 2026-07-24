@@ -44,6 +44,7 @@ namespace SistemaUsuarios.Models.ViewModels
         public DateTime? DataCriacao { get; set; }
 
         public string? FotoPath { get; set; }
+        public string? LogoAgenciaPath { get; set; }
 
         [RegularExpression(@"^#[0-9A-Fa-f]{6}$", ErrorMessage = "Use formato hexadecimal (#RRGGBB)")]
         public string? CorPrimaria { get; set; }

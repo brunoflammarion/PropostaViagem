@@ -241,8 +241,11 @@ Responda SOMENTE com um JSON válido, sem texto fora do objeto, no seguinte form
   ""descricao"": ""Descrição comercial e atraente da hospedagem em até 3 parágrafos. Destaque diferenciais, localização, estilo e por que é uma boa escolha. NUNCA use aspas duplas dentro dos valores."",
   ""comodidades"": [""lista"", ""de"", ""comodidades"", ""principais""],
   ""dicasCheckIn"": ""Dicas práticas sobre check-in, check-out, horários e procedimentos."",
-  ""observacoesGerais"": ""Observações importantes para os hospedes: estacionamento, pets, cafe da manha, piscina, academia, etc.""
-}}";
+  ""observacoesGerais"": ""Observações importantes para os hospedes: estacionamento, pets, cafe da manha, piscina, academia, etc."",
+  ""numeroEstrelas"": null
+}}
+
+Sobre o campo numeroEstrelas: informe a classificação oficial do hotel em estrelas (1 a 5) como número inteiro. Use null se não houver classificação oficial conhecida, se for uma pousada/hostel/apartamento sem sistema de estrelas, ou se houver qualquer dúvida. NUNCA invente ou arredonde avaliações de usuários para estrelas. Apenas preencha se souber com certeza a classificação oficial.";
 
             try
             {
@@ -336,6 +339,7 @@ Responda SOMENTE com um JSON válido, sem texto fora do objeto, no seguinte form
             DateTime? checkIn,
             DateTime? checkOut,
             CategoriaHospedagem categoria,
+            int? numeroEstrelas,
             TipoPensao tipoPensao,
             string? reserva,
             string? observacoes,
@@ -379,6 +383,7 @@ Responda SOMENTE com um JSON válido, sem texto fora do objeto, no seguinte form
                 CheckIn = checkIn,
                 CheckOut = checkOut,
                 Categoria = categoria,
+                NumeroEstrelas = (numeroEstrelas >= 1 && numeroEstrelas <= 5) ? numeroEstrelas : null,
                 TipoPensao = tipoPensao,
                 Reserva = reserva?.Trim(),
                 Observacoes = observacoes?.Trim(),
@@ -566,6 +571,7 @@ Responda SOMENTE com um JSON válido, sem texto fora do objeto, no seguinte form
             DateTime? checkIn,
             DateTime? checkOut,
             CategoriaHospedagem categoria,
+            int? numeroEstrelas,
             TipoPensao tipoPensao,
             string? reserva)
         {
@@ -600,6 +606,7 @@ Responda SOMENTE com um JSON válido, sem texto fora do objeto, no seguinte form
             hospedagem.CheckIn = checkIn;
             hospedagem.CheckOut = checkOut;
             hospedagem.Categoria = categoria;
+            hospedagem.NumeroEstrelas = (numeroEstrelas >= 1 && numeroEstrelas <= 5) ? numeroEstrelas : null;
             hospedagem.TipoPensao = tipoPensao;
             hospedagem.Reserva = reserva?.Trim();
 

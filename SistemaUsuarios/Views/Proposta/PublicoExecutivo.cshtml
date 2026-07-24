@@ -352,7 +352,8 @@ body.has-preview-bar { padding-top: 46px; }
     background: var(--c-bg-alt); overflow: hidden;
 }
 .exec-hotel-thumb img { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; }
-.exec-hotel-name  { font-weight: 700; font-size: .9rem; margin-bottom: 4px; }
+.exec-hotel-name  { font-weight: 700; font-size: .9rem; margin-bottom: 2px; }
+.exec-hotel-stars { font-size: .72rem; color: #B8860B; letter-spacing: .06em; margin-bottom: 4px; }
 .exec-hotel-meta  { font-size: .77rem; color: var(--c-text-mid); display: flex; flex-wrap: wrap; gap: 4px 12px; }
 .exec-hotel-meta span { display: flex; align-items: center; gap: 4px; }
 .exec-hotel-meta i { color: var(--c-accent2); }
@@ -500,21 +501,29 @@ body.has-preview-bar { padding-top: 46px; }
     text-decoration: none; transition: opacity .2s;
 }
 .exec-btn-email:hover { opacity: .88; }
-.exec-agent-strip {
+/* ── ACC — Variante Executivo (fundo claro, 2 colunas) ── */
+.acc-executivo {
     margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--c-line);
-    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    display: flex; flex-direction: row; align-items: center; gap: 0; flex-wrap: wrap;
 }
-.exec-agent-avatar {
-    width: 44px; height: 44px; border-radius: 50%;
+.acc-executivo .acc-brand {
+    flex-shrink: 0; display: flex; flex-direction: column; align-items: center;
+    padding-right: 22px; margin-right: 22px; border-right: 1px solid var(--c-line);
+}
+.acc-executivo .acc-logo    { max-width: 130px; max-height: 50px; }
+.acc-executivo .acc-agency  { color: var(--c-text-mid); font-size: .75rem; font-weight: 500; text-align: center; }
+.acc-executivo .acc-sep     { display: none; }
+.acc-executivo .acc-right   { flex: 1; gap: 6px; min-width: 0; }
+.acc-executivo .acc-agent   { gap: 10px; }
+.acc-executivo .acc-avatar  {
+    width: 40px; height: 40px;
     background: var(--c-bg-alt); border: 1.5px solid var(--c-line);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1rem; color: var(--c-text-mid); overflow: hidden; flex-shrink: 0;
+    color: var(--c-text-mid); font-size: .88rem;
 }
-.exec-agent-info { font-size: .82rem; color: var(--c-text-mid); }
-.exec-agent-info strong { color: var(--c-text); font-size: .88rem; display: block; margin-bottom: 2px; }
-.exec-agent-contact { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: .78rem; color: var(--c-text-mid); }
-.exec-agent-contact span { display: flex; align-items: center; gap: 4px; }
-.exec-agent-contact i { color: var(--c-accent2); }
+.acc-executivo .acc-agent-name { color: var(--c-text); font-size: .86rem; }
+.acc-executivo .acc-agent-sub  { color: var(--c-text-mid); font-size: .75rem; }
+.acc-executivo .acc-contacts   { font-size: .76rem; color: var(--c-text-mid); gap: 4px 14px; padding-top: 4px; }
+.acc-executivo .acc-contact i  { color: var(--c-accent2); font-size: .78rem; }
 
 /* ── FOOTER ── */
 footer {
@@ -1011,8 +1020,12 @@ footer {
                     <div>
                         <div class="exec-hotel-dest">@dest.Nome</div>
                         <div class="exec-hotel-name">@hosp.Nome</div>
+                        @if (hosp.NumeroEstrelas.HasValue && hosp.NumeroEstrelas > 0)
+                        {
+                            <div class="exec-hotel-stars">@for (int _s = 0; _s < hosp.NumeroEstrelas; _s++) { <i class="fas fa-star"></i> }</div>
+                        }
                         <div class="exec-hotel-meta">
-                            <span><i class="fas fa-star"></i>@hosp.Categoria.ToString()</span>
+                            <span><i class="fas fa-hotel"></i>@hosp.Categoria.ToString()</span>
                             @if (_hNoites > 0) { <span><i class="fas fa-moon"></i>@_hNoites noite@(_hNoites != 1 ? "s" : "")</span> }
                             @if (hosp.CheckIn.HasValue) { <span><i class="fas fa-sign-in-alt"></i>Check-in: @hosp.CheckIn.Value.ToString("dd/MM/yyyy HH:mm")</span> }
                             @if (hosp.CheckOut.HasValue) { <span><i class="fas fa-sign-out-alt"></i>Check-out: @hosp.CheckOut.Value.ToString("dd/MM/yyyy HH:mm")</span> }
@@ -1297,30 +1310,21 @@ footer {
                     </a>
                 }
             </div>
-            <div class="exec-agent-strip">
-                <div class="exec-agent-avatar">
-                    @if (!string.IsNullOrEmpty(Model.Usuario.FotoPath))
-                    {
-                        <img src="@Model.Usuario.FotoPath" alt="@Model.Usuario.Nome"
-                             style="width:100%;height:100%;object-fit:cover;" />
-                    }
-                    else { <i class="fas fa-user-tie"></i> }
-                </div>
-                <div class="exec-agent-info">
-                    <strong>@Model.Usuario.Nome</strong>
-                    <span>@(string.IsNullOrEmpty(Model.Usuario.NomeAgencia) ? "Consultor de Viagens" : Model.Usuario.NomeAgencia)</span>
-                </div>
-                <div class="exec-agent-contact">
-                    @if (!string.IsNullOrEmpty(Model.Usuario.Email))
-                    {
-                        <span><i class="fas fa-envelope"></i>@Model.Usuario.Email</span>
-                    }
-                    @if (!string.IsNullOrEmpty(Model.Usuario.Telefone))
-                    {
-                        <span><i class="fas fa-phone"></i>@Model.Usuario.Telefone</span>
-                    }
-                </div>
-            </div>
+            @{
+                var _execAccLogo = !string.IsNullOrEmpty(Model.Usuario.LogoAgenciaPath)
+                    ? Model.Usuario.LogoAgenciaPath
+                    : Model.Usuario.UsuarioMaster?.LogoAgenciaPath;
+            }
+            @await Html.PartialAsync("_CardContatoAgente", null, new ViewDataDictionary(ViewData)
+            {
+                ["Logo"]     = _execAccLogo,
+                ["Foto"]     = Model.Usuario.FotoPath,
+                ["Nome"]     = Model.Usuario.Nome,
+                ["Agencia"]  = Model.Usuario.NomeAgencia,
+                ["Email"]    = Model.Usuario.Email,
+                ["Telefone"] = Model.Usuario.Telefone,
+                ["Variante"] = "executivo"
+            })
         </div>
     </div>
 </section>

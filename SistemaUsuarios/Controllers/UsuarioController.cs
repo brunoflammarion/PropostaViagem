@@ -53,6 +53,18 @@ namespace SistemaUsuarios.Controllers
                 SlugAgencia   = usuario.SlugAgencia,
             };
 
+            ViewBag.IsMaster = usuario.TipoUsuario == TipoUsuario.Master;
+            if (usuario.TipoUsuario == TipoUsuario.Associado && usuario.UsuarioMasterId.HasValue)
+            {
+                var master = await _context.Usuarios.FindAsync(usuario.UsuarioMasterId.Value);
+                ViewBag.LogoAgenciaMaster = master?.LogoAgenciaPath;
+                model.LogoAgenciaPath = master?.LogoAgenciaPath;
+            }
+            else
+            {
+                model.LogoAgenciaPath = usuario.LogoAgenciaPath;
+            }
+
             return View(model);
         }
 
@@ -355,6 +367,71 @@ namespace SistemaUsuarios.Controllers
                 TempData["Erro"] = ex.Message;
             }
 
+            return RedirectToAction("Index");
+        }
+
+        // POST /Usuario/AlterarLogoAgencia
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AlterarLogoAgencia(IFormFile logo)
+        {
+            if (!UsuarioLogado())
+                return RedirectToAction("Login", "Auth");
+
+            var usuarioId = ObterUsuarioLogadoId();
+            var usuario   = await _context.Usuarios.FindAsync(usuarioId);
+            if (usuario == null) return RedirectToAction("Logout", "Auth");
+
+            if (usuario.TipoUsuario != TipoUsuario.Master)
+            {
+                TempData["ErroLogo"] = "Apenas o usuário master pode alterar a logo da agência.";
+                return RedirectToAction("Index");
+            }
+
+            if (logo == null || logo.Length == 0)
+            {
+                TempData["ErroLogo"] = "Selecione uma imagem para fazer upload.";
+                return RedirectToAction("Index");
+            }
+
+            try
+            {
+                var logoPath = await _blob.SalvarAsync(logo, "logos-agencia");
+                _ = _blob.DeletarAsync(usuario.LogoAgenciaPath);
+                usuario.LogoAgenciaPath = logoPath;
+                await _context.SaveChangesAsync();
+                TempData["SucessoLogo"] = "Logo da agência atualizada!";
+            }
+            catch (InvalidOperationException ex)
+            {
+                TempData["ErroLogo"] = ex.Message;
+            }
+
+            return RedirectToAction("Index");
+        }
+
+        // POST /Usuario/RemoverLogoAgencia
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RemoverLogoAgencia()
+        {
+            if (!UsuarioLogado())
+                return RedirectToAction("Login", "Auth");
+
+            var usuarioId = ObterUsuarioLogadoId();
+            var usuario   = await _context.Usuarios.FindAsync(usuarioId);
+            if (usuario == null) return RedirectToAction("Logout", "Auth");
+
+            if (usuario.TipoUsuario != TipoUsuario.Master)
+            {
+                TempData["ErroLogo"] = "Apenas o usuário master pode remover a logo da agência.";
+                return RedirectToAction("Index");
+            }
+
+            _ = _blob.DeletarAsync(usuario.LogoAgenciaPath);
+            usuario.LogoAgenciaPath = null;
+            await _context.SaveChangesAsync();
+            TempData["SucessoLogo"] = "Logo da agência removida.";
             return RedirectToAction("Index");
         }
 

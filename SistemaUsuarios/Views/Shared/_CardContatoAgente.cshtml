@@ -1,0 +1,103 @@
+@{
+    var logoUrl    = ViewData["Logo"]     as string;
+    var fotoUrl    = ViewData["Foto"]     as string;
+    var nomeAg     = ViewData["Nome"]     as string ?? "";
+    var agencia    = ViewData["Agencia"]  as string;
+    var emailAg    = ViewData["Email"]    as string;
+    var telefoneAg = ViewData["Telefone"] as string;
+    var variante   = ViewData["Variante"] as string ?? "padrao";
+
+    var hasLogo    = !string.IsNullOrEmpty(logoUrl);
+    var hasFoto    = !string.IsNullOrEmpty(fotoUrl);
+    var hasAgencia = !string.IsNullOrEmpty(agencia);
+    var hasEmail   = !string.IsNullOrEmpty(emailAg);
+    var hasTel     = !string.IsNullOrEmpty(telefoneAg);
+    var hasBrand   = hasLogo || hasAgencia;
+
+    // Sub-label sob o nome do agente:
+    // se agência já aparece no bloco de marca acima → não repete
+    // se não há logo mas há agência → mostra agência como sub
+    // se não há agência → "Consultor de Viagens"
+    var agentSub = (hasAgencia && hasLogo) ? "" : (hasAgencia ? agencia : "Consultor de Viagens");
+}
+<style>
+/* ── Agent Contact Card — estilos comuns ───────────────────── */
+.acc-logo       { max-width: 200px; max-height: 80px; object-fit: contain; display: block; }
+.acc-agency     { font-size: .82rem; font-weight: 600; margin-top: 6px; letter-spacing: .01em; }
+.acc-sep        { height: 1px; }
+.acc-right      { display: flex; flex-direction: column; }
+.acc-agent      { display: flex; align-items: center; gap: 12px; }
+.acc-avatar     {
+    width: 52px; height: 52px; border-radius: 50%; flex-shrink: 0; overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+}
+.acc-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block; }
+.acc-agent-name { font-weight: 700; font-size: .95rem; line-height: 1.3; }
+.acc-agent-sub  { font-size: .79rem; margin-top: 2px; }
+.acc-contacts   { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 18px; font-size: .82rem; }
+.acc-contact    { display: flex; align-items: center; gap: 5px; min-width: 0; word-break: break-all; }
+@@media (max-width: 576px) {
+    .acc-padrao  .acc-agent,
+    .acc-familiar .acc-agent { flex-direction: column; text-align: center; }
+    .acc-padrao  .acc-contacts,
+    .acc-familiar .acc-contacts { justify-content: center; flex-direction: column; gap: 6px; align-items: center; }
+    .acc-executivo { flex-wrap: wrap !important; }
+    .acc-executivo .acc-brand {
+        border-right: none !important;
+        border-bottom: 1px solid var(--c-line, #e2e8f0);
+        padding-right: 0 !important; margin-right: 0 !important;
+        padding-bottom: 12px; margin-bottom: 12px; width: 100%;
+    }
+}
+</style>
+
+<div class="acc-card acc-@variante">
+    @if (hasBrand)
+    {
+        <div class="acc-brand">
+            @if (hasLogo)
+            {
+                <img src="@logoUrl" alt="Logo da agência" class="acc-logo" />
+            }
+            @if (hasAgencia)
+            {
+                <div class="acc-agency">@agencia</div>
+            }
+        </div>
+        <div class="acc-sep"></div>
+    }
+    <div class="acc-right">
+        <div class="acc-agent">
+            <div class="acc-avatar">
+                @if (hasFoto)
+                {
+                    <img src="@fotoUrl" alt="@nomeAg" />
+                }
+                else
+                {
+                    <i class="fas fa-user-tie"></i>
+                }
+            </div>
+            <div class="acc-agent-text">
+                <div class="acc-agent-name">@nomeAg</div>
+                @if (!string.IsNullOrEmpty(agentSub))
+                {
+                    <div class="acc-agent-sub">@agentSub</div>
+                }
+            </div>
+        </div>
+        @if (hasEmail || hasTel)
+        {
+            <div class="acc-contacts">
+                @if (hasEmail)
+                {
+                    <span class="acc-contact"><i class="fas fa-envelope"></i>@emailAg</span>
+                }
+                @if (hasTel)
+                {
+                    <span class="acc-contact"><i class="fas fa-phone"></i>@telefoneAg</span>
+                }
+            </div>
+        }
+    </div>
+</div>

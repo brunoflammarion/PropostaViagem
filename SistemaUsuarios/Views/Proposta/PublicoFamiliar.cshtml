@@ -381,7 +381,8 @@ body { font-family: var(--ff-body); background: var(--c-bg); color: var(--c-text
     text-transform: uppercase; color: var(--c-accent);
     background: var(--c-bg-alt); border-radius: 50px; padding: 3px 10px; margin-bottom: 10px;
 }
-.fam-hotel-name { font-size: 1.3rem; font-weight: 800; color: var(--c-text); margin-bottom: 6px; }
+.fam-hotel-name { font-size: 1.3rem; font-weight: 800; color: var(--c-text); margin-bottom: 4px; }
+.fam-hotel-stars { font-size: .85rem; color: #C9982E; letter-spacing: .1em; margin-bottom: 8px; }
 .fam-hotel-address {
     font-size: .83rem; color: var(--c-text-mid); margin-bottom: 14px;
     display: flex; align-items: center; gap: 5px;
@@ -654,21 +655,32 @@ body { font-family: var(--ff-body); background: var(--c-bg); color: var(--c-text
     text-decoration: none; transition: opacity .2s;
 }
 .btn-email:hover { opacity: .82; }
-.fam-agent-card {
-    display: inline-flex; flex-direction: column; align-items: center; gap: 10px;
-    background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2);
-    border-radius: 20px; padding: 20px 28px; color: rgba(255,255,255,.9);
+/* ── ACC — Variante Familiar (fundo gradiente, centrado e acolhedor) ── */
+.acc-familiar {
+    display: inline-flex; flex-direction: column; align-items: center; gap: 0;
+    background: rgba(255,255,255,.11); border: 1px solid rgba(255,255,255,.2);
+    border-radius: 20px; overflow: hidden; backdrop-filter: blur(10px);
+    color: rgba(255,255,255,.9); min-width: 260px; max-width: 480px;
 }
-.fam-agent-avatar {
-    width: 60px; height: 60px; border-radius: 50%;
-    background: rgba(255,255,255,.15); border: 2px solid rgba(255,255,255,.4);
-    display: flex; align-items: center; justify-content: center; font-size: 1.4rem; overflow: hidden;
+.acc-familiar .acc-brand {
+    padding: 20px 28px 12px; text-align: center; width: 100%;
+    display: flex; flex-direction: column; align-items: center;
+    background: rgba(255,255,255,.04);
 }
-.fam-agent-name   { font-weight: 800; font-size: 1rem; }
-.fam-agent-agency { font-size: .82rem; opacity: .7; }
-.fam-agent-contact { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; font-size: .82rem; }
-.fam-agent-contact span { display: flex; align-items: center; gap: 5px; }
-.fam-agent-contact i { color: var(--c-warm); }
+.acc-familiar .acc-logo    { max-width: 180px; max-height: 68px; }
+.acc-familiar .acc-agency  { color: rgba(255,255,255,.65); }
+.acc-familiar .acc-sep     { background: rgba(255,255,255,.1); width: calc(100% - 32px); }
+.acc-familiar .acc-right   { padding: 16px 28px 22px; gap: 12px; align-items: center; width: 100%; }
+.acc-familiar .acc-agent   { justify-content: center; }
+.acc-familiar .acc-avatar  {
+    width: 56px; height: 56px;
+    background: rgba(255,255,255,.16); border: 2px solid rgba(255,255,255,.35);
+    color: #fff; font-size: 1.25rem;
+}
+.acc-familiar .acc-agent-name { color: #fff; font-weight: 800; font-size: 1rem; }
+.acc-familiar .acc-agent-sub  { color: rgba(255,255,255,.58); }
+.acc-familiar .acc-contacts   { justify-content: center; color: rgba(255,255,255,.72); border-top: 1px solid rgba(255,255,255,.08); padding-top: 12px; width: 100%; }
+.acc-familiar .acc-contact i  { color: var(--c-warm, #fbbf24); }
 
 /* ── FOOTER ── */
 footer {
@@ -1119,12 +1131,16 @@ body.has-preview-bar { padding-top: 46px; }
                     <div class="fam-hotel-body">
                         <span class="fam-hotel-dest-tag" style="color:@_destCor3;">@dest.Nome</span>
                         <div class="fam-hotel-name">@hosp.Nome</div>
+                        @if (hosp.NumeroEstrelas.HasValue && hosp.NumeroEstrelas > 0)
+                        {
+                            <div class="fam-hotel-stars">@for (int _s = 0; _s < hosp.NumeroEstrelas; _s++) { <i class="fas fa-star"></i> }</div>
+                        }
                         @if (!string.IsNullOrEmpty(hosp.Endereco))
                         {
                             <div class="fam-hotel-address"><i class="fas fa-map-marker-alt" style="color:var(--c-accent);"></i>@hosp.Endereco</div>
                         }
                         <div class="fam-hotel-meta">
-                            <span class="fam-hotel-chip"><i class="fas fa-star"></i>@hosp.Categoria.ToString()</span>
+                            <span class="fam-hotel-chip"><i class="fas fa-hotel"></i>@hosp.Categoria.ToString()</span>
                             @if (_noites > 0) { <span class="fam-hotel-chip"><i class="fas fa-moon"></i>@_noites @(_noites == 1 ? "noite" : "noites")</span> }
                             @if (hosp.TipoPensao != TipoPensao.SemPensao) { <span class="fam-hotel-chip"><i class="fas fa-utensils"></i>@hosp.TipoPensao.ToString()</span> }
                         </div>
@@ -1608,30 +1624,21 @@ body.has-preview-bar { padding-top: 46px; }
             </a>
         }
     </div>
-    <div class="fam-agent-card">
-        <div class="fam-agent-avatar">
-            @if (!string.IsNullOrEmpty(Model.Usuario.FotoPath))
-            {
-                <img src="@Model.Usuario.FotoPath" alt="@Model.Usuario.Nome"
-                     style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />
-            }
-            else { <i class="fas fa-user-tie"></i> }
-        </div>
-        <div class="fam-agent-name">@Model.Usuario.Nome</div>
-        <div class="fam-agent-agency">
-            @(string.IsNullOrEmpty(Model.Usuario.NomeAgencia) ? "Consultor de Viagens" : Model.Usuario.NomeAgencia)
-        </div>
-        <div class="fam-agent-contact">
-            @if (!string.IsNullOrEmpty(Model.Usuario.Email))
-            {
-                <span><i class="fas fa-envelope"></i>@Model.Usuario.Email</span>
-            }
-            @if (!string.IsNullOrEmpty(Model.Usuario.Telefone))
-            {
-                <span><i class="fas fa-phone"></i>@Model.Usuario.Telefone</span>
-            }
-        </div>
-    </div>
+    @{
+        var _famAccLogo = !string.IsNullOrEmpty(Model.Usuario.LogoAgenciaPath)
+            ? Model.Usuario.LogoAgenciaPath
+            : Model.Usuario.UsuarioMaster?.LogoAgenciaPath;
+    }
+    @await Html.PartialAsync("_CardContatoAgente", null, new ViewDataDictionary(ViewData)
+    {
+        ["Logo"]     = _famAccLogo,
+        ["Foto"]     = Model.Usuario.FotoPath,
+        ["Nome"]     = Model.Usuario.Nome,
+        ["Agencia"]  = Model.Usuario.NomeAgencia,
+        ["Email"]    = Model.Usuario.Email,
+        ["Telefone"] = Model.Usuario.Telefone,
+        ["Variante"] = "familiar"
+    })
 </section>
 
 <!-- FOOTER -->
