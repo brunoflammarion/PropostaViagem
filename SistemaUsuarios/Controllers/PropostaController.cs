@@ -262,6 +262,13 @@ namespace SistemaUsuarios.Controllers
 
             TempData["Sucesso"] = "Proposta criada! Agora adicione os passageiros da viagem.";
             TempData["ActiveTab"] = "passageiros";
+            var totalPax = proposta.NumeroPassageiros + proposta.NumeroCriancas;
+            TempData["AnalyticsEvents"] = System.Text.Json.JsonSerializer.Serialize(new object[] {
+                new { name = "proposal_created", parameters = new {
+                    has_existing_client = false,
+                    passenger_count_range = totalPax <= 1 ? "1" : totalPax <= 3 ? "2_to_3" : totalPax <= 5 ? "4_to_5" : "6_plus"
+                }}
+            });
             return RedirectToAction("Editar", new { id = proposta.Id });
         }
 
@@ -593,6 +600,12 @@ namespace SistemaUsuarios.Controllers
             };
 
             TempData["Sucesso"] = mensagem;
+            if (status == StatusProposta.Enviada)
+            {
+                TempData["AnalyticsEvents"] = System.Text.Json.JsonSerializer.Serialize(new object[] {
+                    new { name = "proposal_published" }
+                });
+            }
             return RedirectToAction("Index");
         }
 
@@ -685,6 +698,15 @@ namespace SistemaUsuarios.Controllers
             ViewBag.Title = proposta.Titulo;
             ViewBag.GoogleApiKey = _configuration["GoogleApiKey"] ?? "";
             var layoutDispatch = (proposta.Layout?.Nome ?? "Padrão").ToLower();
+
+            // Dados para analytics (layout público — cliente real)
+            ViewBag.IsPreview = false;
+            ViewBag.AnalyticsPropostaId = id.ToString();
+            ViewBag.AnalyticsLayoutName = layoutDispatch.Contains("executivo") ? "executive"
+                                        : layoutDispatch.Contains("familiar")  ? "family"
+                                        : "standard";
+            ViewBag.AnalyticsDestinoCount = proposta.Destinos?.Count ?? 0;
+
             if (layoutDispatch.Contains("executivo"))
                 return View("PublicoExecutivo", proposta);
             else if (layoutDispatch.Contains("familiar"))

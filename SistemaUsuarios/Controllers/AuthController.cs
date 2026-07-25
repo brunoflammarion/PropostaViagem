@@ -77,6 +77,9 @@ namespace SistemaUsuarios.Controllers
                     HttpContext.Session.SetString("NomeMaster", master.Nome);
             }
 
+            TempData["AnalyticsEvents"] = System.Text.Json.JsonSerializer.Serialize(new object[] {
+                new { name = "login", parameters = new { method = "email" } }
+            });
             return RedirectToAction("Index", "Home");
         }
 

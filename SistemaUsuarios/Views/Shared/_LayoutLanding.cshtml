@@ -36,38 +36,10 @@
     <!-- AOS Animation -->
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
 
-    <!-- Google Analytics (opcional) -->
-    @if (!string.IsNullOrEmpty(ViewBag.GoogleAnalyticsId))
+    @if (Analytics.Enabled && !string.IsNullOrEmpty(Analytics.GoogleTagManagerId))
     {
-        <!-- Global site tag (gtag.js) - Google Analytics -->
-        <script async src="https://www.googletagmanager.com/gtag/js?id=@ViewBag.GoogleAnalyticsId"></script>
-        <script>
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', '@ViewBag.GoogleAnalyticsId');
-        </script>
-    }
-
-    <!-- Facebook Pixel (opcional) -->
-    @if (!string.IsNullOrEmpty(ViewBag.FacebookPixelId))
-    {
-        <script>
-            !function(f,b,e,v,n,t,s)
-            {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-            n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-            if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-            n.queue=[];t=b.createElement(e);t.async=!0;
-            t.src=v;s=b.getElementsByTagName(e)[0];
-            s.parentNode.insertBefore(t,s)}(window, document,'script',
-            'https://connect.facebook.net/en_US/fbevents.js');
-            fbq('init', '@ViewBag.FacebookPixelId');
-            fbq('track', 'PageView');
-        </script>
-        <noscript>
-            <img height="1" width="1" style="display:none"
-                 src="https://www.facebook.com/tr?id=@ViewBag.FacebookPixelId&ev=PageView&noscript=1" />
-        </noscript>
+        <script src="~/js/analytics.js" asp-append-version="true"></script>
+        <script>window.agentToolsAnalytics.init('@Analytics.GoogleTagManagerId', true);</script>
     }
 
     <!-- JSON-LD Structured Data -->
@@ -286,6 +258,11 @@
 </head>
 
 <body>
+@if (Analytics.Enabled && !string.IsNullOrEmpty(Analytics.GoogleTagManagerId))
+{
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=@Analytics.GoogleTagManagerId"
+        height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+}
     @RenderBody()
 
     <!-- Bootstrap JS -->
@@ -294,6 +271,37 @@
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
 
     @await RenderSectionAsync("Scripts", required: false)
+
+    @* Flush de eventos analytics enviados pelo backend via TempData *@
+    @if (Analytics.Enabled && TempData["AnalyticsEvents"] is string landingEventsJson && !string.IsNullOrEmpty(landingEventsJson))
+    {
+        <script>
+        (function () {
+            var events = @Html.Raw(landingEventsJson);
+            if (!window.agentToolsAnalytics || !Array.isArray(events)) return;
+            events.forEach(function (e) {
+                window.agentToolsAnalytics.track(e.name, e.parameters || {});
+            });
+        })();
+        </script>
+    }
+
+    @* Evento de generate_lead quando lead foi salvo com sucesso (AgencyPublic) *@
+    @if (Analytics.Enabled && ViewBag.AnalyticsGenerateLead is bool glFlag && glFlag)
+    {
+        <script>
+        window.agentToolsAnalytics && window.agentToolsAnalytics.track('generate_lead', {
+            form_name: 'agency_public_captacao',
+            form_location: 'agency_public_page'
+        });
+        </script>
+    }
+
+    @* Banner de consentimento de cookies *@
+    @if (Analytics.Enabled && !string.IsNullOrEmpty(Analytics.GoogleTagManagerId))
+    {
+        @await Html.PartialAsync("_CookieConsentBanner")
+    }
 
     <script>
         // Initialize AOS

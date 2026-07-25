@@ -216,6 +216,9 @@ namespace SistemaUsuarios.Controllers
                 HttpContext.Session.SetString("UsuarioNome", usuario.Nome);
 
                 TempData["Sucesso"] = "Bem-vindo! Sua conta foi criada com sucesso. Vamos criar sua primeira proposta!";
+                TempData["AnalyticsEvents"] = System.Text.Json.JsonSerializer.Serialize(new object[] {
+                    new { name = "sign_up", parameters = new { method = "email" } }
+                });
 
                 return RedirectToAction("Criar", "Proposta");
             }

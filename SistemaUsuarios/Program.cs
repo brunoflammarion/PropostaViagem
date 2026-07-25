@@ -77,6 +77,10 @@ builder.Services.AddScoped<IAiGatewayService, AiGatewayService>();
 // Cálculo de idade e categoria de passageiro na data da viagem
 builder.Services.AddScoped<IPassengerAgeService, PassengerAgeService>();
 
+// Analytics (GA4 via GTM) — configurável por Azure App Settings
+var analyticsSettings = builder.Configuration.GetSection("Analytics").Get<AnalyticsSettings>() ?? new AnalyticsSettings();
+builder.Services.AddSingleton(analyticsSettings);
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

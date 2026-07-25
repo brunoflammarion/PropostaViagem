@@ -152,6 +152,7 @@ namespace SistemaUsuarios.Controllers
             await _tarefaService.GerarTarefaNovoLeadAsync(lead.Id);
 
             vm.Enviado = true;
+            ViewBag.AnalyticsGenerateLead = true;
             return View(vm);
         }
 

@@ -1,0 +1,57 @@
+<style>
+#at-cookie-banner {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 10500;
+    background: #1A2B3C;
+    color: #E8EDF2;
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    box-shadow: 0 -4px 24px rgba(0,0,0,.3);
+    font-size: .875rem;
+    line-height: 1.5;
+}
+#at-cookie-banner[hidden] { display: none !important; }
+.at-cb-text { flex: 1; min-width: 220px; }
+.at-cb-text a { color: #5BA8FF; text-underline-offset: 2px; }
+.at-cb-actions { display: flex; gap: 10px; flex-shrink: 0; }
+.at-cb-btn {
+    padding: 8px 18px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-size: .875rem;
+    font-weight: 600;
+    line-height: 1;
+    transition: opacity .15s;
+    white-space: nowrap;
+}
+.at-cb-btn:hover, .at-cb-btn:focus-visible { opacity: .82; outline: 2px solid #5BA8FF; outline-offset: 2px; }
+.at-cb-accept { background: #1E4E8C; color: #fff; }
+.at-cb-deny  { background: transparent; color: #9BA8B5; border: 1px solid #3D4F60; }
+@@media (max-width: 600px) {
+    #at-cookie-banner { flex-direction: column; align-items: flex-start; gap: 12px; }
+    .at-cb-actions { width: 100%; }
+    .at-cb-btn { flex: 1; text-align: center; }
+}
+</style>
+
+<div id="at-cookie-banner" hidden role="dialog" aria-label="Preferências de cookies" aria-live="polite">
+    <div class="at-cb-text">
+        Usamos cookies analíticos para entender como o site é usado e melhorar sua experiência. Nenhum dado pessoal é compartilhado.
+        <a href="/politica-privacidade" target="_blank" rel="noopener noreferrer">Política de Privacidade</a>
+    </div>
+    <div class="at-cb-actions">
+        <button class="at-cb-btn at-cb-deny"
+                onclick="window.agentToolsAnalytics && window.agentToolsAnalytics.deny()"
+                type="button">Recusar</button>
+        <button class="at-cb-btn at-cb-accept"
+                onclick="window.agentToolsAnalytics && window.agentToolsAnalytics.accept()"
+                type="button">Aceitar cookies</button>
+    </div>
+</div>

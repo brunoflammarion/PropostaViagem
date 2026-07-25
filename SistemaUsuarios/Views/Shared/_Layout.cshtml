@@ -62,8 +62,19 @@
     }
 
     <link href="~/css/agenttools-app.css" rel="stylesheet" asp-append-version="true">
+
+    @if (Analytics.Enabled && !string.IsNullOrEmpty(Analytics.GoogleTagManagerId))
+    {
+        <script src="~/js/analytics.js" asp-append-version="true"></script>
+        <script>window.agentToolsAnalytics.init('@Analytics.GoogleTagManagerId', true);</script>
+    }
 </head>
 <body class="app-body">
+@if (Analytics.Enabled && !string.IsNullOrEmpty(Analytics.GoogleTagManagerId))
+{
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=@Analytics.GoogleTagManagerId"
+        height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+}
 <div class="app-shell">
 
     <!-- ══ DESKTOP NAVBAR — visível apenas ≥ 992 px ═══════════════ -->
@@ -378,6 +389,26 @@
         }
     })();
     </script>
+
+    @* Flush de eventos analytics enviados pelo backend via TempData *@
+    @if (Analytics.Enabled && TempData["AnalyticsEvents"] is string analyticsEventsJson && !string.IsNullOrEmpty(analyticsEventsJson))
+    {
+        <script>
+        (function () {
+            var events = @Html.Raw(analyticsEventsJson);
+            if (!window.agentToolsAnalytics || !Array.isArray(events)) return;
+            events.forEach(function (e) {
+                window.agentToolsAnalytics.track(e.name, e.parameters || {});
+            });
+        })();
+        </script>
+    }
+
+    @* Banner de consentimento de cookies *@
+    @if (Analytics.Enabled && !string.IsNullOrEmpty(Analytics.GoogleTagManagerId))
+    {
+        @await Html.PartialAsync("_CookieConsentBanner")
+    }
 </div><!-- /.app-shell -->
 </body>
 </html>

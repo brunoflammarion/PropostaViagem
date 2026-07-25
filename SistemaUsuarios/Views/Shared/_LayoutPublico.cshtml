@@ -59,8 +59,19 @@
     </style>
 
     @await RenderSectionAsync("Styles", required: false)
+
+    @if (Analytics.Enabled && !string.IsNullOrEmpty(Analytics.GoogleTagManagerId))
+    {
+        <script src="~/js/analytics.js" asp-append-version="true"></script>
+        <script>window.agentToolsAnalytics.init('@Analytics.GoogleTagManagerId', true);</script>
+    }
 </head>
 <body>
+@if (Analytics.Enabled && !string.IsNullOrEmpty(Analytics.GoogleTagManagerId))
+{
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=@Analytics.GoogleTagManagerId"
+        height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+}
     <main>
         @RenderBody()
     </main>
@@ -179,5 +190,87 @@
     </script>
 
     @await RenderSectionAsync("Scripts", required: false)
+
+    @{
+        bool _pubIsPreview       = ViewBag.IsPreview is bool _bp && _bp;
+        string _pubPropostaId    = ViewBag.AnalyticsPropostaId as string ?? "";
+        string _pubLayoutName    = ViewBag.AnalyticsLayoutName as string ?? "standard";
+        int _pubDestinoCount     = ViewBag.AnalyticsDestinoCount is int _dc ? _dc : 0;
+        bool _analyticsOk        = Analytics.Enabled && !string.IsNullOrEmpty(Analytics.GoogleTagManagerId);
+    }
+
+    @if (_analyticsOk && !_pubIsPreview && !string.IsNullOrEmpty(_pubPropostaId))
+    {
+        <script>
+        (function () {
+            var analytics = window.agentToolsAnalytics;
+            if (!analytics) return;
+
+            // Detecta bots e crawlers básicos — não registrar como visualização real
+            var ua = navigator.userAgent || '';
+            var isCrawler = /bot|crawler|spider|slurp|facebookexternalhit|whatsapp|twitterbot|linkedinbot|googlebot/i.test(ua);
+            if (isCrawler) return;
+
+            document.addEventListener('DOMContentLoaded', function () {
+
+                // proposal_public_view — uma vez por sessão por proposta
+                analytics.trackOnce('ppv_@_pubPropostaId', 'proposal_public_view', {
+                    layout_name: '@_pubLayoutName',
+                    device_type: window.innerWidth < 768 ? 'mobile' : 'desktop',
+                    destination_count_range: analytics.countRange(@_pubDestinoCount)
+                });
+
+                // proposal_section_view via Intersection Observer (requer data-analytics-section nas views)
+                var sectionsFired = {};
+                if ('IntersectionObserver' in window) {
+                    var observer = new IntersectionObserver(function (entries) {
+                        entries.forEach(function (entry) {
+                            if (!entry.isIntersecting) return;
+                            var name = entry.target.getAttribute('data-analytics-section');
+                            if (name && !sectionsFired[name]) {
+                                sectionsFired[name] = true;
+                                analytics.track('proposal_section_view', { section_name: name });
+                                observer.unobserve(entry.target);
+                            }
+                        });
+                    }, { threshold: 0.35 });
+                    document.querySelectorAll('[data-analytics-section]').forEach(function (el) {
+                        observer.observe(el);
+                    });
+                }
+
+                // contact (WhatsApp) — detecta cliques em links wa.me
+                document.addEventListener('click', function (e) {
+                    var el = e.target.closest('a[href*="wa.me"], a[href*="whatsapp.com/send"]');
+                    if (!el) return;
+                    var loc = el.closest('[data-wa-location]');
+                    analytics.track('contact', {
+                        method: 'whatsapp',
+                        contact_location: loc ? loc.getAttribute('data-wa-location') : 'proposal_page'
+                    });
+                }, { passive: true });
+
+                // proposal_item_rated — delegação via data-analytics-rating
+                document.addEventListener('click', function (e) {
+                    var el = e.target.closest('[data-analytics-rating]');
+                    if (!el) return;
+                    analytics.track('proposal_item_rated', {
+                        item_type: el.getAttribute('data-analytics-rating-type') || '',
+                        rating_type: el.getAttribute('data-analytics-rating') || '',
+                        rating_value: el.getAttribute('data-analytics-rating-val') || ''
+                    });
+                }, { passive: true });
+            });
+        })();
+        </script>
+
+        @* Banner de consentimento de cookies *@
+        @await Html.PartialAsync("_CookieConsentBanner")
+    }
+    else if (_analyticsOk && _pubIsPreview)
+    {
+        @* Preview do agente: nenhum evento de visualização pública é disparado *@
+        @await Html.PartialAsync("_CookieConsentBanner")
+    }
 </body>
 </html>

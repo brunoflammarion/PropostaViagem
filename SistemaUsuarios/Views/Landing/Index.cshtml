@@ -365,8 +365,19 @@ footer{background:#060E1C;padding:36px 24px}
   .trust-grid{grid-template-columns:1fr 1fr}
 }
 </style>
+
+@if (Analytics.Enabled && !string.IsNullOrEmpty(Analytics.GoogleTagManagerId))
+{
+    <script src="~/js/analytics.js" asp-append-version="true"></script>
+    <script>window.agentToolsAnalytics.init('@Analytics.GoogleTagManagerId', true);</script>
+}
 </head>
 <body>
+@if (Analytics.Enabled && !string.IsNullOrEmpty(Analytics.GoogleTagManagerId))
+{
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=@Analytics.GoogleTagManagerId"
+        height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+}
 
 <nav id="nav" aria-label="Navegação principal">
   <div class="nav-i">
@@ -394,7 +405,7 @@ footer{background:#060E1C;padding:36px 24px}
         Pare de perder<br>horas montando<br><em>propostas.</em>
       </h1>
       <p class="hero-sub" data-a data-d="2">
-        Transforme PDFs, imagens e orçamentos enviados por fornecedores em propostas profissionais em minutos utilizando Inteligência Artificial.
+        Transforme PDFs de fornecedores em propostas profissionais com a identidade da sua agência — prontas para enviar em poucos minutos com IA.
       </p>
       <p class="hero-accent" data-a data-d="3">
         Mais tempo vendendo.<br>Menos tempo copiando informações.
@@ -409,7 +420,7 @@ footer{background:#060E1C;padding:36px 24px}
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M3 7h8M7.5 3.5L11 7l-3.5 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </a>
       </div>
-      <p class="hero-note" data-a data-d="5">Os primeiros agentes terão condições exclusivas de lançamento.</p>
+      <p class="hero-note" data-a data-d="5">Quem entrar para a Lista VIP garante um desconto exclusivo de lançamento.</p>
     </div>
     <div class="mock-wrap" aria-hidden="true" data-a data-d="2">
       <div class="mock-browser">
@@ -462,7 +473,7 @@ footer{background:#060E1C;padding:36px 24px}
       <p class="lead light-txt">Todo agente conhece esse ciclo. Ele acontece em cada proposta, todos os dias.</p>
     </div>
     <div class="flow">
-      <div class="flow-step" data-a data-d="1"><div class="flow-n">1</div><span class="flow-t">Gera orçamento do fornecedor</span></div>
+      <div class="flow-step" data-a data-d="1"><div class="flow-n">1</div><span class="flow-t">Gerar orçamento do fornecedor</span></div>
       <div class="flow-arrow" aria-hidden="true"></div>
       <div class="flow-step" data-a data-d="2"><div class="flow-n">2</div><span class="flow-t">Copiar informações manualmente</span></div>
       <div class="flow-arrow" aria-hidden="true"></div>
@@ -834,8 +845,34 @@ footer{background:#060E1C;padding:36px 24px}
     <text>
     document.getElementById('form-box').classList.add('hidden');
     document.getElementById('form-success').classList.add('vis');
+    // generate_lead: waitlist VIP
+    if (window.agentToolsAnalytics) {
+        window.agentToolsAnalytics.track('generate_lead', {
+            form_name: 'vip_waitlist',
+            form_location: 'landing_page'
+        });
+    }
     </text>
   }
+
+  // pre_registration_started: primeiro campo preenchido
+  (function () {
+      var form = document.getElementById('registro-form');
+      if (!form) return;
+      var fired = false;
+      form.querySelectorAll('input, select, textarea').forEach(function (el) {
+          el.addEventListener('focus', function () {
+              if (fired) return;
+              fired = true;
+              if (window.agentToolsAnalytics) {
+                  window.agentToolsAnalytics.track('pre_registration_started', {
+                      form_name: 'vip_waitlist',
+                      form_location: 'landing_page'
+                  });
+              }
+          }, { once: true });
+      });
+  })();
 
   document.querySelectorAll('a[href^="#"]').forEach(function (a) {
     a.addEventListener('click', function (e) {
@@ -848,5 +885,10 @@ footer{background:#060E1C;padding:36px 24px}
   });
 }());
 </script>
+
+@if (Analytics.Enabled && !string.IsNullOrEmpty(Analytics.GoogleTagManagerId))
+{
+    @await Html.PartialAsync("_CookieConsentBanner")
+}
 </body>
 </html>
