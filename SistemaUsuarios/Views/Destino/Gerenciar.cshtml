@@ -84,10 +84,67 @@
         return char.ToUpper(s[0]) + s[1..];
     }
 
+    static string RenderInsightesAgente(string json)
+    {
+        if (string.IsNullOrWhiteSpace(json)) return "";
+        System.Text.Json.JsonDocument? doc = null;
+        try { doc = System.Text.Json.JsonDocument.Parse(json); } catch { }
+        if (doc == null) return "";
+
+        var sb = new System.Text.StringBuilder();
+        var root = doc.RootElement;
+        var arr = root.ValueKind == System.Text.Json.JsonValueKind.Array ? root
+                : root.ValueKind == System.Text.Json.JsonValueKind.Object && root.TryGetProperty("insightsAgente", out var inner) ? inner
+                : default;
+
+        if (arr.ValueKind != System.Text.Json.JsonValueKind.Array) { doc.Dispose(); return ""; }
+
+        foreach (var item in arr.EnumerateArray())
+        {
+            if (item.ValueKind != System.Text.Json.JsonValueKind.Object) continue;
+
+            var titulo      = item.TryGetProperty("titulo",          out var t) ? t.GetString() ?? "" : "";
+            var explicacao  = item.TryGetProperty("explicacao",      out var e) ? e.GetString() ?? "" : "";
+            var impacto     = item.TryGetProperty("impactoProposta", out var i) ? i.GetString() ?? "" : "";
+            var acao        = item.TryGetProperty("acaoRecomendada", out var a) ? a.GetString() ?? "" : "";
+            var prio        = item.TryGetProperty("prioridade",      out var p) ? p.GetString() ?? "" : "";
+
+            var prioCls = prio?.ToLower() switch { "alta" => "insight-prio-alta", "media" => "insight-prio-media", _ => "insight-prio-baixa" };
+
+            sb.Append("<div class=\"insight-card\">");
+            sb.Append($"<div class=\"insight-header\"><span class=\"insight-titulo\">{System.Net.WebUtility.HtmlEncode(titulo)}</span>");
+            if (!string.IsNullOrEmpty(prio))
+                sb.Append($"<span class=\"insight-prio {prioCls}\">{System.Net.WebUtility.HtmlEncode(prio)}</span>");
+            sb.Append("</div>");
+            if (!string.IsNullOrEmpty(explicacao))
+                sb.Append($"<div class=\"insight-row\"><span class=\"insight-label\">Contexto</span><span class=\"insight-val\">{System.Net.WebUtility.HtmlEncode(explicacao)}</span></div>");
+            if (!string.IsNullOrEmpty(impacto))
+                sb.Append($"<div class=\"insight-row\"><span class=\"insight-label\">Impacto</span><span class=\"insight-val\">{System.Net.WebUtility.HtmlEncode(impacto)}</span></div>");
+            if (!string.IsNullOrEmpty(acao))
+                sb.Append($"<div class=\"insight-row insight-acao\"><i class=\"fas fa-arrow-right me-1\"></i><span class=\"insight-val\">{System.Net.WebUtility.HtmlEncode(acao)}</span></div>");
+            sb.Append("</div>");
+        }
+
+        doc.Dispose();
+        return sb.ToString();
+    }
+
     static string RenderTemasAccordion(SistemaUsuarios.Models.Destino d, string accId)
     {
         var sb = new System.Text.StringBuilder();
         sb.Append($"<div class=\"accordion\" id=\"{System.Net.WebUtility.HtmlEncode(accId)}\">");
+
+        if (!string.IsNullOrEmpty(d.InsightesAgenteLLM))
+        {
+            var insightsHtml = RenderInsightesAgente(d.InsightesAgenteLLM);
+            if (!string.IsNullOrEmpty(insightsHtml))
+            {
+                var id = "insights-" + d.Id.ToString("N");
+                sb.Append(AccordionItem(accId, id,
+                    "fas fa-lightbulb text-warning", "Insights para o Agente",
+                    "border-warning", insightsHtml));
+            }
+        }
 
         if (!string.IsNullOrEmpty(d.CuidadosLLM))
         {
@@ -747,7 +804,8 @@
 
                                     @{
                                         var _accId = "acc-dest-" + destino.Id.ToString("N");
-                                        var _hasInsights = !string.IsNullOrEmpty(destino.CuidadosLLM)
+                                        var _hasInsights = !string.IsNullOrEmpty(destino.InsightesAgenteLLM)
+                                            || !string.IsNullOrEmpty(destino.CuidadosLLM)
                                             || !string.IsNullOrEmpty(destino.GastronomiaLLM)
                                             || !string.IsNullOrEmpty(destino.PratosTipicosLLM)
                                             || !string.IsNullOrEmpty(destino.AtracoesLLM)
@@ -870,6 +928,8 @@ else
 
                     <label class="form-label mt-3">Cuidados (JSON)</label>
                     <textarea id="CuidadosLLM" name="CuidadosLLM" rows="5" class="form-control"></textarea>
+
+                    <input type="hidden" id="insightesAgenteLLM" name="insightesAgenteLLM" />
                     </div>
                 </form>
             </div>
@@ -1215,6 +1275,64 @@ else
     opacity: .55;
     margin-bottom: 10px;
 }
+.insight-card {
+    border: 1px solid rgba(245,158,11,.3);
+    border-left: 3px solid #f59e0b;
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin-bottom: 10px;
+    background: rgba(255,251,235,.5);
+}
+.insight-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 6px;
+    gap: 8px;
+}
+.insight-titulo {
+    font-size: .85rem;
+    font-weight: 700;
+    color: #1a1a2e;
+    flex: 1;
+}
+.insight-prio {
+    font-size: .68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    padding: 2px 7px;
+    border-radius: 20px;
+    flex-shrink: 0;
+}
+.insight-prio-alta { background: #fee2e2; color: #dc2626; }
+.insight-prio-media { background: #fef3c7; color: #d97706; }
+.insight-prio-baixa { background: #e0f2fe; color: #0284c7; }
+.insight-row {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 4px;
+    font-size: .82rem;
+    line-height: 1.4;
+}
+.insight-label {
+    font-size: .7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: #6b7280;
+    min-width: 58px;
+    flex-shrink: 0;
+    padding-top: 1px;
+}
+.insight-val { color: #374151; }
+.insight-acao {
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px dashed rgba(245,158,11,.3);
+    color: #374151;
+    font-weight: 500;
+}
 </style>
 }
 
@@ -1368,40 +1486,48 @@ else
     </script>-->
     <script>
         document.getElementById('btnGerarDesc').addEventListener('click', async () => {
-        const nome = (document.getElementById('Nome').value || '').trim();
-        if (!nome) { alert('Preencha o nome do destino/cidade.'); return; }
+            const nome = (document.getElementById('Nome').value || '').trim();
+            if (!nome) { alert('Preencha o nome do destino/cidade.'); return; }
 
-        const btn = document.getElementById('btnGerarDesc');
-        btn.disabled = true; btn.textContent = 'Gerando...';
+            const btn = document.getElementById('btnGerarDesc');
+            btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Gerando...';
 
-        try {
-            const resp = await fetch('@Url.Action("GerarDescricao","Destino")', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
-            body: new URLSearchParams({ nome })
-            });
+            const params = {
+                nome,
+                propostaId: '@Model.Id',
+                dataChegada: document.querySelector('[name="dataChegada"]')?.value ?? '',
+                dataSaida:   document.querySelector('[name="dataSaida"]')?.value ?? ''
+            };
 
-            const text = await resp.text();
-            if (!resp.ok) throw new Error(text);
+            try {
+                const resp = await fetch('@Url.Action("GerarDescricao","Destino")', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+                    body: new URLSearchParams(params)
+                });
 
-            const data = JSON.parse(text);
+                const text = await resp.text();
+                if (!resp.ok) throw new Error(text);
 
-            // Preenche os campos para o agente revisar/editar
-            document.getElementById('Descricao').value = data.descricao ?? '';
-            document.getElementById('AtracoesLLM').value = JSON.stringify(data.atracoes ?? [], null, 2);
-            document.getElementById('GastronomiaLLM').value = JSON.stringify(data.gastronomia ?? [], null, 2);
-            document.getElementById('InformacoesPraticasLLM').value = JSON.stringify(data.informacoesPraticas ?? {}, null, 2);
-            document.getElementById('MalaViagemLLM').value = JSON.stringify(data.malaViagem ?? [], null, 2);
-            document.getElementById('pratosTipicosLLM').value = JSON.stringify(data.pratosTipicos ?? [], null, 2);
-            document.getElementById('CuidadosLLM').value = JSON.stringify(data.cuidados ?? [], null, 2);
+                const data = JSON.parse(text);
 
-            document.getElementById('editor-llm').classList.remove('d-none');
-            renderInsightsPreview(data);
-        } catch (err) {
-            alert('Erro ao gerar descrição: ' + err.message);
-        } finally {
-            btn.disabled = false; btn.textContent = 'Gerar descrição com IA';
-        }
+                document.getElementById('Descricao').value = data.descricao ?? '';
+                document.getElementById('AtracoesLLM').value = JSON.stringify(data.atracoes ?? [], null, 2);
+                document.getElementById('GastronomiaLLM').value = JSON.stringify(data.gastronomia ?? [], null, 2);
+                document.getElementById('InformacoesPraticasLLM').value = JSON.stringify(data.informacoesPraticas ?? {}, null, 2);
+                document.getElementById('MalaViagemLLM').value = JSON.stringify(data.malaViagem ?? [], null, 2);
+                document.getElementById('pratosTipicosLLM').value = JSON.stringify(data.pratosTipicos ?? [], null, 2);
+                document.getElementById('CuidadosLLM').value = JSON.stringify(data.cuidados ?? [], null, 2);
+                const insEl = document.getElementById('insightesAgenteLLM');
+                if (insEl) insEl.value = JSON.stringify(data.insightsAgente ?? [], null, 2);
+
+                document.getElementById('editor-llm').classList.remove('d-none');
+                renderInsightsPreview(data);
+            } catch (err) {
+                alert('Erro ao gerar descrição: ' + err.message);
+            } finally {
+                btn.disabled = false; btn.innerHTML = '<i class="fas fa-magic me-1"></i>Gerar descrição com IA';
+            }
         });
 
         // ── Renderiza preview de insights após geração de IA ──────────────
@@ -1410,16 +1536,40 @@ else
             if (!body) return;
             body.innerHTML = '';
 
+            // Insights para o Agente — seção principal, renderização própria
+            const insights = data.insightsAgente;
+            if (Array.isArray(insights) && insights.length > 0) {
+                const itemId = 'preview-insights-agente';
+                const cardsHtml = insights.map(function(ins) {
+                    if (!ins || typeof ins !== 'object') return '';
+                    const prio = (ins.prioridade || '').toLowerCase();
+                    const prioCls = prio === 'alta' ? 'insight-prio-alta' : prio === 'media' ? 'insight-prio-media' : 'insight-prio-baixa';
+                    const prioLabel = ins.prioridade ? '<span class="insight-prio ' + prioCls + '">' + escHtml(ins.prioridade) + '</span>' : '';
+                    const acao = ins.acaoRecomendada ? '<div class="insight-row insight-acao"><i class="fas fa-arrow-right me-1"></i><span class="insight-val">' + escHtml(ins.acaoRecomendada) + '</span></div>' : '';
+                    const impacto = ins.impactoProposta ? '<div class="insight-row"><span class="insight-label">Impacto</span><span class="insight-val">' + escHtml(ins.impactoProposta) + '</span></div>' : '';
+                    const expl = ins.explicacao ? '<div class="insight-row"><span class="insight-label">Contexto</span><span class="insight-val">' + escHtml(ins.explicacao) + '</span></div>' : '';
+                    return '<div class="insight-card"><div class="insight-header"><span class="insight-titulo">' + escHtml(ins.titulo || '') + '</span>' + prioLabel + '</div>' + expl + impacto + acao + '</div>';
+                }).join('');
+                body.insertAdjacentHTML('beforeend',
+                    '<div class="accordion-item border-warning border-opacity-25 rounded-3 mb-2 overflow-hidden">'
+                    + '<h2 class="accordion-header"><button class="accordion-button py-2 px-3" type="button" data-bs-toggle="collapse" data-bs-target="#' + itemId + '">'
+                    + '<i class="fas fa-lightbulb text-warning me-2" style="font-size:.85rem;"></i>'
+                    + '<span class="small fw-semibold">Insights para o Agente</span></button></h2>'
+                    + '<div id="' + itemId + '" class="accordion-collapse collapse show">'
+                    + '<div class="accordion-body py-2 px-3">' + cardsHtml + '</div></div></div>'
+                );
+            }
+
             const sections = [
-                { key: 'cuidados',            icon: 'fa-exclamation-triangle text-danger',  label: 'Cuidados & Atenção',            border: 'border-danger'   },
-                { key: 'gastronomia',          icon: 'fa-utensils text-warning',             label: 'Gastronomia & Pratos',          border: 'border-warning'  },
-                { key: 'atracoes',             icon: 'fa-map-marked-alt text-info',          label: 'Atrações & Pontos de Interesse', border: 'border-info'     },
-                { key: 'informacoesPraticas',  icon: 'fa-info-circle text-primary',          label: 'Informações Práticas',          border: 'border-primary'  },
-                { key: 'malaViagem',           icon: 'fa-suitcase text-secondary',           label: 'Mala de Viagem',                border: 'border-secondary'},
+                { key: 'cuidados',            icon: 'fa-exclamation-triangle text-danger',  label: 'Cuidados &amp; Atenção',            border: 'border-danger'   },
+                { key: 'gastronomia',          icon: 'fa-utensils text-warning',             label: 'Gastronomia &amp; Pratos',          border: 'border-warning'  },
+                { key: 'atracoes',             icon: 'fa-map-marked-alt text-info',          label: 'Atrações &amp; Pontos de Interesse', border: 'border-info'     },
+                { key: 'informacoesPraticas',  icon: 'fa-info-circle text-primary',          label: 'Informações Práticas',              border: 'border-primary'  },
+                { key: 'malaViagem',           icon: 'fa-suitcase text-secondary',           label: 'Mala de Viagem',                    border: 'border-secondary'},
             ];
 
-            let hasAny = false;
-            sections.forEach(function(s, i) {
+            let hasAny = Array.isArray(insights) && insights.length > 0;
+            sections.forEach(function(s) {
                 const val = data[s.key];
                 if (!val || (Array.isArray(val) && val.length === 0)) return;
                 const itemId = 'preview-' + s.key;

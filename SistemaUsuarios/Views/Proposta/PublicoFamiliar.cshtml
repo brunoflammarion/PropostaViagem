@@ -46,8 +46,13 @@
 }
 @{
     var layoutNome = (Model.Layout?.Nome ?? "Familiar").ToLower();
-    var waPhone  = Model.Usuario.Telefone?.Replace("(","").Replace(")","").Replace("-","").Replace(" ","") ?? "";
-    var waMsgRaw = $"Olá! Vi a proposta \"{Model.Titulo}\" e tenho interesse!";
+    var agenteResponsavel = Model.UsuarioResponsavel ?? Model.Usuario;
+    var waNomeAgente  = agenteResponsavel?.Nome ?? "agente";
+    var waDestino     = Model.Destinos?.FirstOrDefault()?.Nome;
+    var waMsgRaw      = waDestino != null
+        ? $"Olá! Estou visualizando a proposta \"{Model.Titulo}\" ({waDestino}) e gostaria de conversar sobre a viagem."
+        : $"Olá! Estou visualizando a proposta \"{Model.Titulo}\" e gostaria de conversar sobre a viagem.";
+    var waUrl         = WhatsAppHelper.MontarUrl(agenteResponsavel?.Telefone, waMsgRaw);
 
     bool temPassageiros = Model.PassageirosProposta.Any();
     bool temVoos        = Model.Voos.Any();
@@ -1609,12 +1614,19 @@ body.has-preview-bar { padding-top: 46px; }
     <h2>Adorou? Vamos confirmar!</h2>
     <p>Fale com a gente agora e transforme essa proposta na viagem mais incrível da família!</p>
     <div class="fam-cta-btns">
-        @if (!string.IsNullOrEmpty(waPhone))
+        @if (waUrl != null)
         {
-            <a href="https://wa.me/55@waPhone?text=@Uri.EscapeDataString(waMsgRaw)"
-               class="btn-wa" data-track="whatsapp" target="_blank">
+            <a href="@waUrl"
+               class="btn-wa" data-track="whatsapp" target="_blank" rel="noopener noreferrer"
+               aria-label="Conversar no WhatsApp com @waNomeAgente">
                 <i class="fab fa-whatsapp fa-lg"></i>Conversar no WhatsApp
             </a>
+        }
+        else
+        {
+            <span class="btn-wa" style="opacity:.5;cursor:default;" aria-disabled="true">
+                <i class="fab fa-whatsapp fa-lg"></i>Contato indisponível
+            </span>
         }
         @if (!string.IsNullOrEmpty(Model.Usuario.Email))
         {

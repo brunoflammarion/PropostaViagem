@@ -3,16 +3,19 @@ using Microsoft.EntityFrameworkCore;
 using SistemaUsuarios.Data;
 using SistemaUsuarios.Models;
 using SistemaUsuarios.Models.ViewModels;
+using SistemaUsuarios.Services;
 
 namespace SistemaUsuarios.Controllers
 {
     public class HomeController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly ITarefaService _tarefaService;
 
-        public HomeController(ApplicationDbContext context)
+        public HomeController(ApplicationDbContext context, ITarefaService tarefaService)
         {
-            _context = context;
+            _context      = context;
+            _tarefaService = tarefaService;
         }
 
         public async Task<IActionResult> Index()
@@ -94,7 +97,25 @@ namespace SistemaUsuarios.Controllers
                     p.DataInicio.Value.Date <= hoje.AddDays(15))
             };
 
-            BuildFilaAtencao(vm, propostas, leads, visualizacoes7d, hoje, agora);
+            // Fila de tarefas — mesma fonte que /Tarefa, max 5 por aba
+            var todasAll      = await _tarefaService.ListarTodasPendentesAsync(usuarioId);
+            var atrasadasAll  = await _tarefaService.ListarAtrasadasAsync(usuarioId);
+            var hojeAll       = await _tarefaService.ListarHojeAsync(usuarioId);
+            var semanaAll     = await _tarefaService.ListarPorUsuarioAsync(usuarioId,
+                de: hoje.AddDays(1), ate: hoje.AddDays(7), status: TarefaStatus.Pendente);
+            var concluidasAll = await _tarefaService.ListarPorUsuarioAsync(usuarioId,
+                de: hoje.AddDays(-30), status: TarefaStatus.Concluida);
+
+            vm.TotalTodas        = todasAll.Count;
+            vm.TotalAtrasadas    = atrasadasAll.Count;
+            vm.TotalHoje         = hojeAll.Count;
+            vm.TotalSemana       = semanaAll.Count;
+            vm.TarefasTodas      = todasAll.Take(5).ToList();
+            vm.TarefasAtrasadas  = atrasadasAll.Take(5).ToList();
+            vm.TarefasHoje       = hojeAll.Take(5).ToList();
+            vm.TarefasSemana     = semanaAll.Take(5).ToList();
+            vm.TarefasConcluidas = concluidasAll.Take(5).ToList();
+
             BuildContinueList(vm, propostas, leads, agora);
             BuildViagensAgenda(vm, propostas, hoje);
 
@@ -111,138 +132,6 @@ namespace SistemaUsuarios.Controllers
             };
 
             return View(vm);
-        }
-
-        // ── Fila de atenção ──────────────────────────────────────────────────────
-
-        private static void BuildFilaAtencao(HomeDashboardViewModel vm, List<Proposta> propostas,
-            List<Lead> leads, List<Viz7> viz7d, DateTime hoje, DateTime agora)
-        {
-            var ultimaViz = viz7d
-                .GroupBy(v => v.PropostaId)
-                .ToDictionary(g => g.Key, g => g.Max(v => v.DataCriacao));
-
-            var items = new List<AttentionItem>();
-
-            // Prioridade 1 — Viagens em andamento
-            foreach (var p in propostas.Where(p =>
-                p.StatusProposta == StatusProposta.Aprovada &&
-                p.DataInicio.HasValue && p.DataFim.HasValue &&
-                p.DataInicio.Value.Date <= hoje && p.DataFim.Value.Date >= hoje))
-            {
-                var diasRet = (int)(p.DataFim!.Value.Date - hoje).TotalDays;
-                var destino = p.Destinos.FirstOrDefault()?.Nome ?? p.Titulo;
-                items.Add(new AttentionItem
-                {
-                    TipoIcon = "fas fa-plane", TipoBadge = "Em viagem", TipoCss = "atq-viagem",
-                    NomeContato      = p.Cliente?.Nome ?? p.Titulo,
-                    Descricao        = $"em viagem — {destino}",
-                    Contexto         = diasRet == 0 ? "Retorna hoje" : $"Retorna em {diasRet}d",
-                    Url              = $"/Proposta/Editar/{p.Id}",
-                    AcaoLabel        = "Ver viagem",
-                    Prioridade       = 1,
-                    SecondarySortKey = p.DataFim.Value
-                });
-            }
-
-            // Prioridade 2 — Leads novos
-            foreach (var l in leads.Where(l => l.Status == LeadStatus.Novo))
-            {
-                var diff  = agora - l.CreatedAt;
-                var tempo = diff.TotalHours < 1  ? $"há {(int)diff.TotalMinutes}min"
-                          : diff.TotalHours < 24 ? $"há {(int)diff.TotalHours}h"
-                          : $"há {(int)diff.TotalDays}d";
-                items.Add(new AttentionItem
-                {
-                    TipoIcon = "fas fa-user-plus", TipoBadge = "Lead novo", TipoCss = "atq-lead",
-                    NomeContato      = l.FullName,
-                    Descricao        = $"quer ir para {l.Destination}",
-                    Contexto         = $"Recebido {tempo}",
-                    Url              = "/Lead",
-                    AcaoLabel        = "Responder",
-                    Prioridade       = 2,
-                    SecondarySortKey = l.CreatedAt
-                });
-            }
-
-            // Prioridade 3 — Propostas visualizadas (não fechadas)
-            var abertas = propostas.Where(p =>
-                p.StatusProposta != StatusProposta.Aprovada &&
-                p.StatusProposta != StatusProposta.Cancelada &&
-                p.StatusProposta != StatusProposta.Rejeitada).ToList();
-
-            foreach (var p in abertas)
-            {
-                if (!ultimaViz.TryGetValue(p.Id, out var ultima)) continue;
-                var diff  = agora - ultima;
-                var tempo = diff.TotalHours < 1  ? $"há {(int)diff.TotalMinutes}min"
-                          : diff.TotalHours < 24 ? $"hoje às {ultima:HH:mm}"
-                          : $"há {(int)diff.TotalDays}d";
-                items.Add(new AttentionItem
-                {
-                    TipoIcon = "fas fa-eye", TipoBadge = "Visualizada", TipoCss = "atq-viz",
-                    NomeContato      = p.Cliente?.Nome ?? p.Titulo,
-                    Descricao        = $"abriu a proposta \"{p.Titulo}\"",
-                    Contexto         = $"Viu {tempo}",
-                    Url              = $"/Proposta/Editar/{p.Id}",
-                    AcaoLabel        = "Follow-up",
-                    Prioridade       = 3,
-                    SecondarySortKey = ultima
-                });
-            }
-
-            // Prioridade 4 — Viagens próximas 15d
-            foreach (var p in propostas.Where(p =>
-                p.StatusProposta == StatusProposta.Aprovada &&
-                p.DataInicio.HasValue && p.DataFim.HasValue &&
-                p.DataInicio.Value.Date > hoje &&
-                p.DataInicio.Value.Date <= hoje.AddDays(15)))
-            {
-                var dias    = (int)(p.DataInicio!.Value.Date - hoje).TotalDays;
-                var destino = p.Destinos.FirstOrDefault()?.Nome ?? p.Titulo;
-                items.Add(new AttentionItem
-                {
-                    TipoIcon = "fas fa-plane-departure", TipoBadge = "Próxima viagem", TipoCss = "atq-proxima",
-                    NomeContato      = p.Cliente?.Nome ?? p.Titulo,
-                    Descricao        = $"viagem para {destino}",
-                    Contexto         = dias == 1 ? "Embarca amanhã!" : $"Embarca em {dias} dias",
-                    Url              = $"/Proposta/Editar/{p.Id}",
-                    AcaoLabel        = "Revisar",
-                    Prioridade       = 4,
-                    SecondarySortKey = p.DataInicio.Value
-                });
-            }
-
-            // Prioridade 5 — Propostas paradas há 3d+ (sem visualização recente)
-            foreach (var p in abertas.Where(p =>
-                p.StatusProposta == StatusProposta.Rascunho ||
-                p.StatusProposta == StatusProposta.Enviada))
-            {
-                if (ultimaViz.ContainsKey(p.Id)) continue;
-                var dataRef = p.DataModificacao ?? p.DataCriacao;
-                var dias    = (int)(agora - dataRef).TotalDays;
-                if (dias < 3) continue;
-                var statusLabel = p.StatusProposta == StatusProposta.Rascunho ? "Rascunho" : "Enviada";
-                items.Add(new AttentionItem
-                {
-                    TipoIcon = "fas fa-clock", TipoBadge = "Follow-up", TipoCss = "atq-followup",
-                    NomeContato      = p.Cliente?.Nome ?? p.Titulo,
-                    Descricao        = $"sem atualização há {dias} dias",
-                    Contexto         = statusLabel,
-                    Url              = $"/Proposta/Editar/{p.Id}",
-                    AcaoLabel        = "Abrir",
-                    Prioridade       = 5,
-                    SecondarySortKey = dataRef
-                });
-            }
-
-            vm.FilaAtencao = items.Where(i => i.Prioridade == 1).OrderBy(i => i.SecondarySortKey)
-                .Concat(items.Where(i => i.Prioridade == 2).OrderByDescending(i => i.SecondarySortKey))
-                .Concat(items.Where(i => i.Prioridade == 3).OrderByDescending(i => i.SecondarySortKey))
-                .Concat(items.Where(i => i.Prioridade == 4).OrderBy(i => i.SecondarySortKey))
-                .Concat(items.Where(i => i.Prioridade == 5).OrderBy(i => i.SecondarySortKey))
-                .Take(8)
-                .ToList();
         }
 
         // ── Continue de onde parou ────────────────────────────────────────────────

@@ -1,0 +1,143 @@
+@model SistemaUsuarios.Models.Tarefa
+@using SistemaUsuarios.Models
+
+@{
+    var concluirFn  = (string?)ViewData["ConcluirFn"]  ?? "concluir";
+    var restaurarFn = (string?)ViewData["RestaurarFn"] ?? "restaurar";
+    var isConcluida = (bool?)ViewData["IsConcluida"]   ?? false;
+    var isAtrasada  = (bool?)ViewData["IsAtrasada"]    ?? false;
+    var showDate    = (bool?)ViewData["ShowDate"]      ?? true;
+    var actionsMode = (string?)ViewData["ActionsMode"] ?? "";
+
+    var hasLead = Model.LeadId.HasValue && Model.Lead != null;
+}
+
+@functions {
+    static string CardPrioridade(string? p) => p switch
+    {
+        TarefaPrioridade.Alta  => "badge-prioridade-alta",
+        TarefaPrioridade.Media => "badge-prioridade-media",
+        _                      => "badge-prioridade-baixa"
+    };
+
+    static string CardTipoBadge(string? t) => t switch
+    {
+        TarefaTipo.Followup    => "badge-tipo-followup",
+        TarefaTipo.Operacional => "badge-tipo-operacional",
+        TarefaTipo.Comercial   => "badge-tipo-comercial",
+        TarefaTipo.Aniversario => "badge-tipo-aniversario",
+        _                      => "badge-tipo-geral"
+    };
+
+    static string CardTipoIcone(string? t) => t switch
+    {
+        TarefaTipo.Followup    => "fa-phone",
+        TarefaTipo.Operacional => "fa-cog",
+        TarefaTipo.Comercial   => "fa-handshake",
+        TarefaTipo.Aniversario => "fa-birthday-cake",
+        _                      => "fa-tasks"
+    };
+
+    static string CardFormatarData(DateTime d)
+    {
+        var hoje = DateTime.Today;
+        if (d.Date == hoje)             return "Hoje";
+        if (d.Date == hoje.AddDays(1))  return "Amanhã";
+        if (d.Date == hoje.AddDays(-1)) return "Ontem";
+        return d.ToString("dd/MM/yyyy");
+    }
+}
+
+<li class="tf-item @(isConcluida ? "concluida" : Model.Prioridade?.ToLower()) @(isAtrasada ? "atrasada" : "")" data-id="@Model.Id">
+    @if (isConcluida)
+    {
+        <div class="tf-check checked">
+            <i class="fas fa-check"></i>
+        </div>
+    }
+    else
+    {
+        <div class="tf-check" onclick="@($"{concluirFn}('{Model.Id}', this)")" title="Marcar como concluída">
+            <i class="fas fa-check"></i>
+        </div>
+    }
+
+    <div class="tf-body">
+        <div class="tf-titulo @(isConcluida ? "riscado" : "")">
+            @Model.Titulo
+        </div>
+        <div class="tf-meta">
+            @if (isConcluida)
+            {
+                <span class="tf-data">
+                    <i class="fas fa-check-circle" style="color:#10b981"></i>
+                    Concluída em @(Model.DataConclusao?.ToString("dd/MM") ?? "—")
+                </span>
+                <span class="badge-tipo @CardTipoBadge(Model.Tipo)">
+                    <i class="fas @CardTipoIcone(Model.Tipo)"></i>@Model.Tipo
+                </span>
+                @if (Model.Cliente != null)
+                {
+                    <span class="tf-cliente-pill"><i class="fas fa-user"></i>@Model.Cliente.Nome</span>
+                }
+                @if (hasLead)
+                {
+                    <a class="tf-lead-pill" href="@Url.Action("Detalhe", "Lead", new { id = Model.LeadId })" title="Ver detalhes do lead">
+                        <i class="fas fa-user-plus"></i>@Model.Lead.FullName
+                    </a>
+                }
+            }
+            else
+            {
+                @if (showDate)
+                {
+                    <span class="tf-data"><i class="fas fa-clock"></i>@CardFormatarData(Model.DataVencimento)</span>
+                }
+                <span class="badge-tipo @CardTipoBadge(Model.Tipo)">
+                    <i class="fas @CardTipoIcone(Model.Tipo)"></i>@Model.Tipo
+                </span>
+                @if (!string.IsNullOrEmpty(Model.Prioridade))
+                {
+                    <span class="badge-prioridade @CardPrioridade(Model.Prioridade)">@Model.Prioridade</span>
+                }
+                @if (Model.Cliente != null)
+                {
+                    <span class="tf-cliente-pill"><i class="fas fa-user"></i>@Model.Cliente.Nome</span>
+                }
+                @if (hasLead)
+                {
+                    <a class="tf-lead-pill" href="@Url.Action("Detalhe", "Lead", new { id = Model.LeadId })" title="Ver detalhes do lead">
+                        <i class="fas fa-user-plus"></i>@Model.Lead.FullName
+                    </a>
+                }
+                @if (Model.Proposta != null)
+                {
+                    <a class="tf-proposta-pill" href="/Proposta/Editar/@Model.PropostaId">
+                        <i class="fas fa-file-alt"></i>@Model.Proposta.Titulo
+                    </a>
+                }
+            }
+        </div>
+        @if (!isConcluida && !string.IsNullOrEmpty(Model.Descricao))
+        {
+            <div class="tf-rel mt-1">@Model.Descricao</div>
+        }
+    </div>
+
+    @if (actionsMode == "home")
+    {
+        <div class="tf-actions">
+            <a href="/Tarefa" class="tf-btn" title="Ver tarefas">
+                <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+    }
+    else if (actionsMode == "restore")
+    {
+        <div class="tf-actions">
+            <button class="tf-btn tf-btn-restore" onclick="@($"{restaurarFn}('{Model.Id}', this)")" title="Restaurar tarefa">
+                <i class="fas fa-undo"></i> Restaurar
+            </button>
+        </div>
+    }
+</li>

@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using SistemaUsuarios.Data;
 using SistemaUsuarios.Models;
 using SistemaUsuarios.Models.ViewModels;
+using SistemaUsuarios.Services;
 using System.Text.RegularExpressions;
 
 namespace SistemaUsuarios.Controllers
@@ -10,10 +11,12 @@ namespace SistemaUsuarios.Controllers
     public class AgencyPublicController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly ITarefaService _tarefaService;
 
-        public AgencyPublicController(ApplicationDbContext context)
+        public AgencyPublicController(ApplicationDbContext context, ITarefaService tarefaService)
         {
-            _context = context;
+            _context      = context;
+            _tarefaService = tarefaService;
         }
 
         // GET /{agencySlug}
@@ -145,6 +148,8 @@ namespace SistemaUsuarios.Controllers
 
             _context.Leads.Add(lead);
             await _context.SaveChangesAsync();
+
+            await _tarefaService.GerarTarefaNovoLeadAsync(lead.Id);
 
             vm.Enviado = true;
             return View(vm);

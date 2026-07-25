@@ -52,11 +52,12 @@ namespace SistemaUsuarios.Models
         public Point? Localizacao { get; set; }
 
         public string? DescricaoLLM { get; set; }
-        public string? AtracoesLLM { get; set; } // Pode ser serializado como JSON
+        public string? AtracoesLLM { get; set; }
         public string? GastronomiaLLM { get; set; }
         public string? InformacoesPraticasLLM { get; set; }
         public string? MalaViagemLLM { get; set; }
         public string? CuidadosLLM { get; set; }
         public string? PratosTipicosLLM { get; set; }
+        public string? InsightesAgenteLLM { get; set; }
     }
 }

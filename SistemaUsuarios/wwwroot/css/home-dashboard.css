@@ -83,6 +83,19 @@
     text-decoration: none;
 }
 
+/* Variante outline — sobrescreve apenas cor/fundo/borda; estrutura herdada de .home-actions-cta */
+.home-actions-cta--outline {
+    background: transparent;
+    border: 1.5px solid rgba(255, 255, 255, 0.65);
+    color: #FFFFFF;
+}
+.home-actions-cta.home-actions-cta--outline:hover {
+    background: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 4px 16px rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.90);
+    color: #FFFFFF;
+}
+
 /* ══════════════════════════════════════════════════════════════════
    CARDS DE RESUMO — 4 colunas
 ══════════════════════════════════════════════════════════════════ */
@@ -185,7 +198,7 @@
 .home-empty p  { font-size: .85rem; margin: 0; }
 
 /* ══════════════════════════════════════════════════════════════════
-   FILA DE ATENÇÃO
+   FILA DE ATENÇÃO — cards de tarefa (CSS em tarefa-cards.css)
 ══════════════════════════════════════════════════════════════════ */
 .attention-queue { margin-bottom: 28px; }
 
@@ -442,9 +455,11 @@
     .home-summary-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
     .atq-meta { display: none; }
     .cnt-right { display: none; }
+
 }
 
 @media (max-width: 480px) {
     .home-summary-grid { grid-template-columns: 1fr 1fr; }
-    .home-actions-cta { padding: 8px 14px; font-size: .8rem; }
+    .home-actions { flex-direction: column; align-items: stretch; width: 100%; }
+    .home-actions-cta { justify-content: center; }
 }

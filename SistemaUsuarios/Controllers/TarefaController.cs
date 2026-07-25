@@ -39,6 +39,7 @@ namespace SistemaUsuarios.Controllers
 
             var vm = new TarefaIndexViewModel
             {
+                TarefasTodas      = await _tarefaService.ListarTodasPendentesAsync(uid),
                 TarefasHoje       = await _tarefaService.ListarHojeAsync(uid),
                 TarefasAtrasadas  = await _tarefaService.ListarAtrasadasAsync(uid),
                 TarefasSemana     = await _tarefaService.ListarPorUsuarioAsync(uid,
@@ -135,17 +136,28 @@ namespace SistemaUsuarios.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Concluir(Guid id)
+        public async Task<IActionResult> Concluir([FromBody] Guid id)
         {
-            if (!UsuarioLogado()) return Json(new { ok = false });
-            await _tarefaService.ConcluirTarefaAsync(id, UsuarioId());
-            return Json(new { ok = true });
+            if (!UsuarioLogado()) return Json(new { ok = false, erro = "Não autorizado." });
+            if (id == Guid.Empty)  return Json(new { ok = false, erro = "ID inválido." });
+            var ok = await _tarefaService.ConcluirTarefaAsync(id, UsuarioId());
+            return Json(new { ok });
         }
 
         [HttpPost]
-        public async Task<IActionResult> Cancelar(Guid id)
+        public async Task<IActionResult> Reabrir([FromBody] Guid id)
         {
-            if (!UsuarioLogado()) return Json(new { ok = false });
+            if (!UsuarioLogado()) return Json(new { ok = false, erro = "Não autorizado." });
+            if (id == Guid.Empty)  return Json(new { ok = false, erro = "ID inválido." });
+            var ok = await _tarefaService.ReabrirTarefaAsync(id, UsuarioId());
+            return Json(new { ok });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Cancelar([FromBody] Guid id)
+        {
+            if (!UsuarioLogado()) return Json(new { ok = false, erro = "Não autorizado." });
+            if (id == Guid.Empty)  return Json(new { ok = false, erro = "ID inválido." });
             await _tarefaService.CancelarTarefaAsync(id, UsuarioId());
             return Json(new { ok = true });
         }

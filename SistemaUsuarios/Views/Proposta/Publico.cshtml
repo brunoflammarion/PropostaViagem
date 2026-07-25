@@ -62,8 +62,13 @@
     bool isFamiliar  = layoutNome.Contains("familiar");
     var themeClass   = isExecutivo ? "theme-executivo" : isFamiliar ? "theme-familiar" : "theme-padrao";
 
-    var waPhone = Model.Usuario.Telefone?.Replace("(","").Replace(")","").Replace("-","").Replace(" ","") ?? "";
-    var waMsgRaw = $"Olá! Vi a proposta \"{Model.Titulo}\" e tenho interesse!";
+    var agenteResponsavel = Model.UsuarioResponsavel ?? Model.Usuario;
+    var waNomeAgente  = agenteResponsavel?.Nome ?? "agente";
+    var waDestino     = Model.Destinos?.FirstOrDefault()?.Nome;
+    var waMsgRaw      = waDestino != null
+        ? $"Olá! Estou visualizando a proposta \"{Model.Titulo}\" ({waDestino}) e gostaria de conversar sobre a viagem."
+        : $"Olá! Estou visualizando a proposta \"{Model.Titulo}\" e gostaria de conversar sobre a viagem.";
+    var waUrl         = WhatsAppHelper.MontarUrl(agenteResponsavel?.Telefone, waMsgRaw);
 
     bool temPassageiros = Model.PassageirosProposta.Any();
     bool temVoos        = Model.Voos.Any();
@@ -3125,12 +3130,19 @@ body.has-preview-bar { padding-top: 46px; }
         </div>
 
         <div class="d-flex flex-wrap justify-content-center gap-3 mb-5">
-            @if (!string.IsNullOrEmpty(waPhone))
+            @if (waUrl != null)
             {
-                <a href="https://wa.me/55@waPhone?text=@Uri.EscapeDataString(waMsgRaw)"
-                   class="btn-wa" data-track="whatsapp" target="_blank">
+                <a href="@waUrl"
+                   class="btn-wa" data-track="whatsapp" target="_blank" rel="noopener noreferrer"
+                   aria-label="Conversar no WhatsApp com @waNomeAgente">
                     <i class="fab fa-whatsapp fa-lg"></i>Conversar no WhatsApp
                 </a>
+            }
+            else
+            {
+                <span class="btn-wa" style="opacity:.5;cursor:default;" aria-disabled="true">
+                    <i class="fab fa-whatsapp fa-lg"></i>Contato indisponível
+                </span>
             }
             @if (!string.IsNullOrEmpty(Model.Usuario.Email))
             {
@@ -3193,11 +3205,13 @@ body.has-preview-bar { padding-top: 46px; }
 </footer>
 
 <!-- FLOATING CTA mobile -->
-@if (!string.IsNullOrEmpty(waPhone))
+@if (waUrl != null)
 {
     <div class="floating-cta">
-        <a href="https://wa.me/55@waPhone?text=@Uri.EscapeDataString(waMsgRaw)"
-           class="btn-wa" data-track="whatsapp" target="_blank" style="font-size:.9rem;padding:11px 22px;">
+        <a href="@waUrl"
+           class="btn-wa" data-track="whatsapp" target="_blank" rel="noopener noreferrer"
+           style="font-size:.9rem;padding:11px 22px;"
+           aria-label="Falar agora no WhatsApp com @waNomeAgente">
             <i class="fab fa-whatsapp"></i>Falar agora
         </a>
     </div>

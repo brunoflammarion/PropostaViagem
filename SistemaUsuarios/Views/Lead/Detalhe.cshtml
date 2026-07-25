@@ -34,6 +34,21 @@
             </span>
         </div>
         <div class="d-flex gap-2 flex-wrap">
+            @if (lead.PropostaId.HasValue)
+            {
+                <a href="/Proposta/Editar/@lead.PropostaId" class="btn btn-success exec-btn-create">
+                    <i class="fas fa-file-alt me-1"></i>Abrir proposta
+                </a>
+            }
+            else
+            {
+                <button type="button"
+                        class="btn btn-primary exec-btn-create prep-btn"
+                        data-lead-id="@lead.Id"
+                        data-lead-nome="@Html.Raw(lead.FullName.Replace("\"", "&quot;"))">
+                    <i class="fas fa-file-alt me-1"></i>Preparar proposta
+                </button>
+            }
             <a href="/Lead/Editar/@lead.Id" class="btn btn-outline-primary exec-btn-create">
                 <i class="fas fa-pen me-1"></i>Editar
             </a>
@@ -289,6 +304,28 @@
     </div>
 </div>
 
+<!-- Modal: confirmar preparar proposta -->
+<div class="modal fade" id="modalPrepararProposta" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Preparar proposta</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-1">Preparar proposta para <strong id="prepNomeLead"></strong>?</p>
+                <p class="text-muted mb-0" style="font-size:.88rem;">Os dados disponíveis serão utilizados para criar o cliente e iniciar uma nova proposta. Você poderá revisar e completar as informações antes de publicar.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" id="btnConfirmarPrep" class="btn btn-primary btn-sm">
+                    <i class="fas fa-file-alt me-1"></i>Preparar proposta
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Modal confirmação de exclusão -->
 <div class="modal fade" id="modalExcluir" tabindex="-1">
     <div class="modal-dialog modal-sm">
@@ -310,3 +347,61 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+<script>
+    (function () {
+        var prepLeadId   = null;
+        var token        = document.querySelector('input[name="__RequestVerificationToken"]');
+        var modalEl      = document.getElementById('modalPrepararProposta');
+        var modal        = new bootstrap.Modal(modalEl);
+        var btnConfirmar = document.getElementById('btnConfirmarPrep');
+
+        document.addEventListener('click', function (e) {
+            var btn = e.target.closest('.prep-btn');
+            if (!btn) return;
+            prepLeadId = btn.dataset.leadId;
+            document.getElementById('prepNomeLead').textContent = btn.dataset.leadNome;
+            modal.show();
+        });
+
+        btnConfirmar.addEventListener('click', function () {
+            if (!prepLeadId) return;
+
+            btnConfirmar.disabled = true;
+            btnConfirmar.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>Preparando...';
+
+            var fd = new FormData();
+            if (token) fd.append('__RequestVerificationToken', token.value);
+
+            fetch('/Lead/PrepararProposta/' + prepLeadId, {
+                method: 'POST',
+                body: fd
+            })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                modal.hide();
+                if (data.success) {
+                    window.location.href = '/Proposta/Editar/' + data.propostaId;
+                } else {
+                    alert(data.message || 'Não foi possível preparar a proposta. Tente novamente.');
+                    btnConfirmar.disabled = false;
+                    btnConfirmar.innerHTML = '<i class="fas fa-file-alt me-1"></i>Preparar proposta';
+                }
+            })
+            .catch(function () {
+                modal.hide();
+                alert('Não foi possível preparar a proposta. Tente novamente.');
+                btnConfirmar.disabled = false;
+                btnConfirmar.innerHTML = '<i class="fas fa-file-alt me-1"></i>Preparar proposta';
+            });
+        });
+
+        modalEl.addEventListener('hidden.bs.modal', function () {
+            btnConfirmar.disabled = false;
+            btnConfirmar.innerHTML = '<i class="fas fa-file-alt me-1"></i>Preparar proposta';
+            prepLeadId = null;
+        });
+    }());
+</script>
+}

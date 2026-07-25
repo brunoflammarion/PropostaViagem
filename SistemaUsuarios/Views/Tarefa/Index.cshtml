@@ -12,31 +12,6 @@
 }
 
 @functions {
-    static string PrioridadeBadge(string? p) => p switch
-    {
-        TarefaPrioridade.Alta  => "badge-prioridade-alta",
-        TarefaPrioridade.Media => "badge-prioridade-media",
-        _                      => "badge-prioridade-baixa"
-    };
-
-    static string TipoBadge(string? t) => t switch
-    {
-        TarefaTipo.Followup    => "badge-tipo-followup",
-        TarefaTipo.Operacional => "badge-tipo-operacional",
-        TarefaTipo.Comercial   => "badge-tipo-comercial",
-        TarefaTipo.Aniversario => "badge-tipo-aniversario",
-        _                      => "badge-tipo-geral"
-    };
-
-    static string TipoIcone(string? t) => t switch
-    {
-        TarefaTipo.Followup    => "fa-phone",
-        TarefaTipo.Operacional => "fa-cog",
-        TarefaTipo.Comercial   => "fa-handshake",
-        TarefaTipo.Aniversario => "fa-birthday-cake",
-        _                      => "fa-tasks"
-    };
-
     static string FormatarData(DateTime d)
     {
         var hoje = DateTime.Today;
@@ -48,22 +23,8 @@
 }
 
 @section Styles {
+<link rel="stylesheet" href="~/css/tarefa-cards.css" />
 <style>
-#tarefas-page {
-    --c-primary:   #6366f1;
-    --c-success:   #10b981;
-    --c-danger:    #ef4444;
-    --c-warning:   #f59e0b;
-    --c-muted:     #94a3b8;
-    --c-border:    #e2e8f0;
-    --c-bg:        #f8fafc;
-    --radius-md:   10px;
-    --radius-sm:   6px;
-    --shadow-sm:   0 2px 8px rgba(0,0,0,.07);
-    --shadow-md:   0 6px 20px rgba(0,0,0,.1);
-}
-#tarefas-page body { background: var(--c-bg); }
-
 /* ── Header stat cards ── */
 .tf-stat-grid {
     display: grid;
@@ -92,141 +53,6 @@
 .tf-stat-card.atrasadas .tf-stat-num { color: #ef4444; }
 .tf-stat-card.hoje      .tf-stat-num { color: #6366f1; }
 .tf-stat-card.semana    .tf-stat-num { color: #10b981; }
-
-/* ── Tabs ── */
-.tf-tabs {
-    display: flex;
-    gap: 4px;
-    border-bottom: 2px solid var(--c-border);
-    margin-bottom: 20px;
-    overflow-x: auto;
-    scrollbar-width: none;
-}
-.tf-tabs::-webkit-scrollbar { display: none; }
-.tf-tab {
-    padding: 8px 18px;
-    border: none;
-    background: none;
-    font-size: .88rem;
-    font-weight: 600;
-    color: var(--c-muted);
-    border-bottom: 2px solid transparent;
-    margin-bottom: -2px;
-    white-space: nowrap;
-    cursor: pointer;
-    transition: color .15s, border-color .15s;
-}
-.tf-tab:hover { color: var(--c-primary); }
-.tf-tab.active { color: var(--c-primary); border-bottom-color: var(--c-primary); }
-.tf-tab .tf-tab-count {
-    background: var(--c-primary);
-    color: #fff;
-    border-radius: 50px;
-    font-size: .65rem;
-    padding: 1px 7px;
-    margin-left: 5px;
-    font-weight: 700;
-}
-.tf-tab-count.danger { background: #ef4444; }
-
-/* ── Task list ── */
-.tf-panel { display: none; }
-.tf-panel.active { display: block; }
-
-.tf-list { list-style: none; margin: 0; padding: 0; }
-
-.tf-item {
-    background: #fff;
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-sm);
-    padding: 14px 18px;
-    margin-bottom: 8px;
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    transition: box-shadow .15s;
-    border-left: 3px solid transparent;
-}
-.tf-item:hover { box-shadow: var(--shadow-md); }
-.tf-item.alta   { border-left-color: #ef4444; }
-.tf-item.media  { border-left-color: #f59e0b; }
-.tf-item.baixa  { border-left-color: #10b981; }
-.tf-item.concluida { opacity: .55; }
-.tf-item.atrasada .tf-data { color: #ef4444; font-weight: 700; }
-
-/* Phase 1: Check button with visible affordance */
-.tf-check {
-    width: 24px; height: 24px; border-radius: 50%;
-    border: 2px solid #cbd5e1;
-    flex-shrink: 0; margin-top: 1px;
-    cursor: pointer; display: flex; align-items: center; justify-content: center;
-    transition: border-color .15s, background .15s, box-shadow .15s;
-    position: relative;
-}
-.tf-check:hover {
-    border-color: #10b981;
-    background: #f0fdf4;
-    box-shadow: 0 0 0 3px rgba(16,185,129,.12);
-}
-.tf-check:hover i { display: flex !important; color: #10b981; opacity: .5; }
-.tf-check.checked { border-color: #10b981; background: #10b981; }
-.tf-check.checked i { display: flex !important; color: #fff; opacity: 1; font-size: .75rem; }
-.tf-check i { font-size: .75rem; display: none; }
-
-.tf-body  { flex: 1; min-width: 0; }
-.tf-titulo { font-weight: 600; font-size: .92rem; color: #1e293b; margin-bottom: 4px; line-height: 1.3; }
-.tf-titulo.riscado { text-decoration: line-through; color: var(--c-muted); }
-.tf-meta  { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-.tf-data  { font-size: .76rem; color: var(--c-muted); display: flex; align-items: center; gap: 3px; }
-.tf-rel   { font-size: .73rem; color: #64748b; }
-
-.tf-actions { display: flex; gap: 4px; flex-shrink: 0; }
-.tf-btn {
-    background: none; border: 1px solid var(--c-border);
-    border-radius: var(--radius-sm); padding: 4px 8px;
-    font-size: .72rem; cursor: pointer; color: #64748b;
-    transition: background .15s, color .15s;
-    display: flex; align-items: center; gap: 3px;
-}
-.tf-btn:hover { background: var(--c-bg); color: #1e293b; }
-.tf-btn.danger:hover { border-color: #ef4444; color: #ef4444; background: #fff5f5; }
-
-/* ── Badges ── */
-.badge-tipo, .badge-prioridade {
-    display: inline-flex; align-items: center; gap: 3px;
-    border-radius: 50px; padding: 2px 8px; font-size: .65rem; font-weight: 700;
-}
-.badge-tipo-followup    { background: #ede9fe; color: #7c3aed; }
-.badge-tipo-operacional { background: #e0f2fe; color: #0369a1; }
-.badge-tipo-comercial   { background: #fef3c7; color: #b45309; }
-.badge-tipo-aniversario { background: #fce7f3; color: #9d174d; }
-.badge-tipo-geral       { background: #f1f5f9; color: #475569; }
-.badge-prioridade-alta  { background: #fee2e2; color: #dc2626; }
-.badge-prioridade-media { background: #fef3c7; color: #92400e; }
-.badge-prioridade-baixa { background: #d1fae5; color: #065f46; }
-
-/* ── Proposta / cliente pill ── */
-.tf-proposta-pill {
-    font-size: .7rem; color: #6366f1; background: #eef2ff;
-    border-radius: 50px; padding: 2px 8px; text-decoration: none;
-    display: inline-flex; align-items: center; gap: 3px;
-    max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.tf-proposta-pill:hover { background: #e0e7ff; color: #4f46e5; }
-.tf-cliente-pill {
-    font-size: .7rem; color: #059669; background: #ecfdf5;
-    border-radius: 50px; padding: 2px 8px;
-    display: inline-flex; align-items: center; gap: 3px;
-    max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-
-/* ── Empty state ── */
-.tf-empty {
-    text-align: center; padding: 56px 20px;
-    color: var(--c-muted);
-}
-.tf-empty i { font-size: 2.5rem; margin-bottom: 12px; display: block; opacity: .4; }
-.tf-empty p { font-size: .9rem; margin: 0; }
 
 /* ── Botão nova tarefa ── */
 .btn-nova-tarefa {
@@ -267,14 +93,6 @@
 .btn-tf-cancel { background: #f1f5f9; border: none; border-radius: 7px; padding: 9px 20px; font-weight: 600; font-size: .87rem; cursor: pointer; }
 .btn-tf-save   { background: #6366f1; color: #fff; border: none; border-radius: 7px; padding: 9px 22px; font-weight: 700; font-size: .87rem; cursor: pointer; }
 .btn-tf-save:hover { background: #4f46e5; }
-
-/* ── Separador de data ── */
-.tf-date-sep {
-    font-size: .72rem; font-weight: 700; text-transform: uppercase;
-    letter-spacing: .6px; color: var(--c-muted);
-    padding: 10px 0 6px; border-bottom: 1px solid var(--c-border);
-    margin-bottom: 8px;
-}
 
 /* ── Phase 2: Calendário ── */
 .tfcal-header {
@@ -450,11 +268,15 @@
 
 <!-- ── Tabs ── -->
 <div class="tf-tabs">
-    <button class="tf-tab @(Model.TotalAtrasadas > 0 ? "active" : "")" data-panel="atrasadas" id="tab-atrasadas">
+    <button class="tf-tab active" data-panel="todas" id="tab-todas">
+        Todas
+        @if (Model.TotalTodas > 0) { <span class="tf-tab-count">@Model.TotalTodas</span> }
+    </button>
+    <button class="tf-tab" data-panel="atrasadas" id="tab-atrasadas">
         Atrasadas
         @if (Model.TotalAtrasadas > 0) { <span class="tf-tab-count danger">@Model.TotalAtrasadas</span> }
     </button>
-    <button class="tf-tab @(Model.TotalAtrasadas == 0 ? "active" : "")" data-panel="hoje" id="tab-hoje">
+    <button class="tf-tab" data-panel="hoje" id="tab-hoje">
         Hoje
         @if (Model.TotalHoje > 0) { <span class="tf-tab-count">@Model.TotalHoje</span> }
     </button>
@@ -470,8 +292,32 @@
     </button>
 </div>
 
+<!-- ── Panel: Todas ── -->
+<div class="tf-panel active" id="panel-todas">
+    @if (!Model.TarefasTodas.Any())
+    {
+        <div class="tf-empty">
+            <i class="fas fa-check-double"></i>
+            <p><strong>Tudo em dia!</strong><br>Você não possui tarefas pendentes no momento.</p>
+        </div>
+    }
+    else
+    {
+        <ul class="tf-list">
+            @foreach (var t in Model.TarefasTodas)
+            {
+                var hoje2 = DateTime.Today;
+                var isAtrasada = t.DataVencimento.Date < hoje2;
+                @await Html.PartialAsync("_TarefaCard", t, new ViewDataDictionary(ViewData) {
+                    ["IsAtrasada"] = isAtrasada, ["ShowDate"] = true
+                })
+            }
+        </ul>
+    }
+</div>
+
 <!-- ── Panel: Atrasadas ── -->
-<div class="tf-panel @(Model.TotalAtrasadas > 0 ? "active" : "")" id="panel-atrasadas">
+<div class="tf-panel" id="panel-atrasadas">
     @if (!Model.TarefasAtrasadas.Any())
     {
         <div class="tf-empty">
@@ -484,32 +330,16 @@
         <ul class="tf-list">
             @foreach (var t in Model.TarefasAtrasadas)
             {
-                <li class="tf-item @(t.Prioridade?.ToLower()) atrasada" data-id="@t.Id">
-                    <div class="tf-check" onclick="concluir('@t.Id', this)" title="Marcar como concluída">
-                        <i class="fas fa-check"></i>
-                    </div>
-                    <div class="tf-body">
-                        <div class="tf-titulo">@t.Titulo</div>
-                        <div class="tf-meta">
-                            <span class="tf-data"><i class="fas fa-clock"></i>@FormatarData(t.DataVencimento)</span>
-                            <span class="badge-tipo @TipoBadge(t.Tipo)"><i class="fas @TipoIcone(t.Tipo)"></i>@t.Tipo</span>
-                            @if (!string.IsNullOrEmpty(t.Prioridade)) { <span class="badge-prioridade @PrioridadeBadge(t.Prioridade)">@t.Prioridade</span> }
-                            @if (t.Cliente != null) { <span class="tf-cliente-pill"><i class="fas fa-user"></i>@t.Cliente.Nome</span> }
-                            @if (t.Proposta != null) { <a class="tf-proposta-pill" href="/Proposta/Editar/@t.PropostaId"><i class="fas fa-file-alt"></i>@t.Proposta.Titulo</a> }
-                        </div>
-                        @if (!string.IsNullOrEmpty(t.Descricao)) { <div class="tf-rel mt-1">@t.Descricao</div> }
-                    </div>
-                    <div class="tf-actions">
-                        <button class="tf-btn danger" onclick="cancelar('@t.Id', this)" title="Cancelar"><i class="fas fa-times"></i></button>
-                    </div>
-                </li>
+                @await Html.PartialAsync("_TarefaCard", t, new ViewDataDictionary(ViewData) {
+                    ["IsAtrasada"] = true, ["ShowDate"] = true
+                })
             }
         </ul>
     }
 </div>
 
 <!-- ── Panel: Hoje ── -->
-<div class="tf-panel @(Model.TotalAtrasadas == 0 ? "active" : "")" id="panel-hoje">
+<div class="tf-panel" id="panel-hoje">
     @if (!Model.TarefasHoje.Any())
     {
         <div class="tf-empty">
@@ -522,24 +352,9 @@
         <ul class="tf-list">
             @foreach (var t in Model.TarefasHoje)
             {
-                <li class="tf-item @(t.Prioridade?.ToLower())" data-id="@t.Id">
-                    <div class="tf-check" onclick="concluir('@t.Id', this)" title="Marcar como concluída">
-                        <i class="fas fa-check"></i>
-                    </div>
-                    <div class="tf-body">
-                        <div class="tf-titulo">@t.Titulo</div>
-                        <div class="tf-meta">
-                            <span class="badge-tipo @TipoBadge(t.Tipo)"><i class="fas @TipoIcone(t.Tipo)"></i>@t.Tipo</span>
-                            @if (!string.IsNullOrEmpty(t.Prioridade)) { <span class="badge-prioridade @PrioridadeBadge(t.Prioridade)">@t.Prioridade</span> }
-                            @if (t.Cliente != null) { <span class="tf-cliente-pill"><i class="fas fa-user"></i>@t.Cliente.Nome</span> }
-                            @if (t.Proposta != null) { <a class="tf-proposta-pill" href="/Proposta/Editar/@t.PropostaId"><i class="fas fa-file-alt"></i>@t.Proposta.Titulo</a> }
-                        </div>
-                        @if (!string.IsNullOrEmpty(t.Descricao)) { <div class="tf-rel mt-1">@t.Descricao</div> }
-                    </div>
-                    <div class="tf-actions">
-                        <button class="tf-btn danger" onclick="cancelar('@t.Id', this)" title="Cancelar"><i class="fas fa-times"></i></button>
-                    </div>
-                </li>
+                @await Html.PartialAsync("_TarefaCard", t, new ViewDataDictionary(ViewData) {
+                    ["ShowDate"] = false
+                })
             }
         </ul>
     }
@@ -563,24 +378,9 @@
             <ul class="tf-list">
                 @foreach (var t in grupo)
                 {
-                    <li class="tf-item @(t.Prioridade?.ToLower())" data-id="@t.Id">
-                        <div class="tf-check" onclick="concluir('@t.Id', this)" title="Marcar como concluída">
-                            <i class="fas fa-check"></i>
-                        </div>
-                        <div class="tf-body">
-                            <div class="tf-titulo">@t.Titulo</div>
-                            <div class="tf-meta">
-                                <span class="badge-tipo @TipoBadge(t.Tipo)"><i class="fas @TipoIcone(t.Tipo)"></i>@t.Tipo</span>
-                                @if (!string.IsNullOrEmpty(t.Prioridade)) { <span class="badge-prioridade @PrioridadeBadge(t.Prioridade)">@t.Prioridade</span> }
-                                @if (t.Cliente != null) { <span class="tf-cliente-pill"><i class="fas fa-user"></i>@t.Cliente.Nome</span> }
-                                @if (t.Proposta != null) { <a class="tf-proposta-pill" href="/Proposta/Editar/@t.PropostaId"><i class="fas fa-file-alt"></i>@t.Proposta.Titulo</a> }
-                            </div>
-                            @if (!string.IsNullOrEmpty(t.Descricao)) { <div class="tf-rel mt-1">@t.Descricao</div> }
-                        </div>
-                        <div class="tf-actions">
-                            <button class="tf-btn danger" onclick="cancelar('@t.Id', this)" title="Cancelar"><i class="fas fa-times"></i></button>
-                        </div>
-                    </li>
+                    @await Html.PartialAsync("_TarefaCard", t, new ViewDataDictionary(ViewData) {
+                        ["ShowDate"] = false
+                    })
                 }
             </ul>
         }
@@ -601,19 +401,9 @@
         <ul class="tf-list">
             @foreach (var t in Model.TarefasConcluidas.OrderByDescending(x => x.DataConclusao))
             {
-                <li class="tf-item concluida" data-id="@t.Id">
-                    <div class="tf-check checked">
-                        <i class="fas fa-check"></i>
-                    </div>
-                    <div class="tf-body">
-                        <div class="tf-titulo riscado">@t.Titulo</div>
-                        <div class="tf-meta">
-                            <span class="tf-data"><i class="fas fa-check-circle" style="color:#10b981"></i>Concluída em @(t.DataConclusao?.ToString("dd/MM") ?? "—")</span>
-                            <span class="badge-tipo @TipoBadge(t.Tipo)"><i class="fas @TipoIcone(t.Tipo)"></i>@t.Tipo</span>
-                            @if (t.Cliente != null) { <span class="tf-cliente-pill"><i class="fas fa-user"></i>@t.Cliente.Nome</span> }
-                        </div>
-                    </div>
-                </li>
+                @await Html.PartialAsync("_TarefaCard", t, new ViewDataDictionary(ViewData) {
+                    ["IsConcluida"] = true, ["ActionsMode"] = "restore"
+                })
             }
         </ul>
     }
@@ -790,10 +580,12 @@ function ativarTab(panel) {
 
 // ── Concluir ──────────────────────────────────────────────────────────────────
 async function concluir(id, checkEl) {
+    if (checkEl.classList.contains('checked')) return;
     checkEl.classList.add('checked');
     checkEl.querySelector('i').style.display = 'flex';
     const item = checkEl.closest('.tf-item');
-    item.style.opacity = '.5';
+    item.style.transition = 'opacity .4s';
+    item.style.opacity = '.4';
 
     const r = await fetch('/Tarefa/Concluir', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -801,33 +593,112 @@ async function concluir(id, checkEl) {
     });
     const data = await r.json();
     if (data.ok) {
-        setTimeout(() => item.remove(), 500);
-        atualizarContadores();
+        const titulo = item.querySelector('.tf-titulo')?.textContent?.trim() || '';
+        setTimeout(() => {
+            // Remove todas as instâncias desta tarefa em todos os panels
+            document.querySelectorAll('.tf-item[data-id="' + id + '"]').forEach(el => el.remove());
+            adicionarNoConcluidas(id, titulo);
+            atualizarContadores();
+        }, 400);
     } else {
         item.style.opacity = '1';
         checkEl.classList.remove('checked');
+        checkEl.querySelector('i').style.display = 'none';
     }
 }
 
-// ── Cancelar ──────────────────────────────────────────────────────────────────
-async function cancelar(id, btn) {
-    if (!confirm('Cancelar esta tarefa?')) return;
-    const item = btn.closest('.tf-item');
-    const r = await fetch('/Tarefa/Cancelar', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(id)
-    });
-    const data = await r.json();
-    if (data.ok) { item.remove(); atualizarContadores(); }
+function adicionarNoConcluidas(id, titulo) {
+    const panel = document.getElementById('panel-concluidas');
+    const empty = panel.querySelector('.tf-empty');
+    if (empty) empty.remove();
+
+    let list = panel.querySelector('.tf-list');
+    if (!list) {
+        list = document.createElement('ul');
+        list.className = 'tf-list';
+        panel.prepend(list);
+    }
+
+    const hoje = new Date();
+    const dataStr = String(hoje.getDate()).padStart(2, '0') + '/' + String(hoje.getMonth() + 1).padStart(2, '0');
+
+    const li = document.createElement('li');
+    li.className = 'tf-item concluida';
+    li.dataset.id = id;
+    li.innerHTML =
+        '<div class="tf-check checked"><i class="fas fa-check" style="display:flex;color:#fff;font-size:.75rem;opacity:1;"></i></div>' +
+        '<div class="tf-body">' +
+          '<div class="tf-titulo riscado">' + escHtml(titulo) + '</div>' +
+          '<div class="tf-meta">' +
+            '<span class="tf-data"><i class="fas fa-check-circle" style="color:#10b981"></i>Concluída em ' + dataStr + '</span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="tf-actions">' +
+          '<button class="tf-btn tf-btn-restore" title="Restaurar tarefa" onclick="restaurar(\'' + escHtml(id) + '\', this)">' +
+            '<i class="fas fa-undo"></i> Restaurar' +
+          '</button>' +
+        '</div>';
+    list.prepend(li);
+}
+
+// ── Restaurar ─────────────────────────────────────────────────────────────────
+async function restaurar(id, btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Restaurando…';
+
+    try {
+        const r = await fetch('/Tarefa/Reabrir', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(id)
+        });
+        const data = await r.json();
+        if (data.ok) {
+            const item = btn.closest('.tf-item');
+            item.style.transition = 'opacity .35s';
+            item.style.opacity = '0';
+            setTimeout(() => location.reload(), 400);
+        } else {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-undo"></i> Restaurar';
+            mostrarErroRestore(btn, 'Não foi possível restaurar a tarefa. Tente novamente.');
+        }
+    } catch {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-undo"></i> Restaurar';
+        mostrarErroRestore(btn, 'Erro de conexão. Tente novamente.');
+    }
+}
+
+function mostrarErroRestore(btn, msg) {
+    const el = document.createElement('span');
+    el.style.cssText = 'font-size:.72rem;color:#ef4444;margin-left:6px;';
+    el.textContent = msg;
+    btn.insertAdjacentElement('afterend', el);
+    setTimeout(() => el.remove(), 4000);
+}
+
+function escHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
 }
 
 function atualizarContadores() {
-    ['hoje','atrasadas','semana'].forEach(p => {
+    ['todas','hoje','atrasadas','semana'].forEach(p => {
         const count = document.querySelectorAll('#panel-' + p + ' .tf-item').length;
-        const span  = document.querySelector('#tab-' + p + ' .tf-tab-count');
-        if (span) {
-            if (count > 0) span.textContent = count;
-            else span.remove();
+        const tab   = document.getElementById('tab-' + p);
+        if (tab) {
+            let span = tab.querySelector('.tf-tab-count');
+            if (count > 0) {
+                if (!span) {
+                    span = document.createElement('span');
+                    span.className = 'tf-tab-count' + (p === 'atrasadas' ? ' danger' : '');
+                    tab.appendChild(span);
+                }
+                span.textContent = count;
+            } else if (span) {
+                span.remove();
+            }
         }
         const numEl = document.querySelector('.tf-stat-card.' + p + ' .tf-stat-num');
         if (numEl) numEl.textContent = count;

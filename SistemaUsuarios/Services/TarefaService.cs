@@ -33,11 +33,13 @@ namespace SistemaUsuarios.Services
     {
         Task<Tarefa> CriarTarefaManualAsync(CriarTarefaDto dto);
         Task         EditarTarefaAsync(EditarTarefaDto dto);
-        Task         ConcluirTarefaAsync(Guid tarefaId, Guid usuarioId);
+        Task<bool>   ConcluirTarefaAsync(Guid tarefaId, Guid usuarioId);
+        Task<bool>   ReabrirTarefaAsync(Guid tarefaId, Guid usuarioId);
         Task         CancelarTarefaAsync(Guid tarefaId, Guid usuarioId);
 
         Task GerarTarefasParaViagemAsync(Guid propostaId);
         Task GerarTarefaFollowUpVisualizacaoAsync(Guid propostaId);
+        Task GerarTarefaNovoLeadAsync(Guid leadId);
         Task ProcessarAniversariosDoUsuarioAsync(Guid usuarioId);
 
         // Scheduler-ready — não depende de HttpContext
@@ -47,6 +49,7 @@ namespace SistemaUsuarios.Services
         Task<List<Tarefa>> ListarPorUsuarioAsync(Guid usuarioId, DateTime? de = null, DateTime? ate = null, string? status = null);
         Task<List<Tarefa>> ListarHojeAsync(Guid usuarioId);
         Task<List<Tarefa>> ListarAtrasadasAsync(Guid usuarioId);
+        Task<List<Tarefa>> ListarTodasPendentesAsync(Guid usuarioId);
 
         Task<List<ConfiguracaoLembrete>> ObterConfiguracoesAsync(Guid usuarioId);
         Task SalvarConfiguracoesAsync(Guid usuarioId, List<(string TemplateCodigo, bool Habilitado)> configs);
@@ -65,12 +68,15 @@ namespace SistemaUsuarios.Services
         public const string PEDIR_FEEDBACK        = "PEDIR_FEEDBACK";
         public const string PEDIR_INDICACAO       = "PEDIR_INDICACAO";
         public const string ANIVERSARIO_CLIENTE   = "ANIVERSARIO_CLIENTE";
+        public const string NOVO_LEAD             = "NOVO_LEAD";
+        public const string PROXIMA_VIAGEM        = "PROXIMA_VIAGEM";
 
         // Definição de todos os templates com valores padrão
         private static readonly (string Tipo, string Codigo, bool HabPadrao, int OffsetDias, string Momento)[] DefaultTemplates =
         {
             (TarefaTipo.Followup,    FOLLOWUP_VISUALIZACAO, true,   0, MomentoReferenciaLembrete.DiaEvento),
             (TarefaTipo.Followup,    OFERECER_SEGURO,       true, -15, MomentoReferenciaLembrete.AntesInicio),
+            (TarefaTipo.Followup,    NOVO_LEAD,             true,   0, MomentoReferenciaLembrete.DiaEvento),
             (TarefaTipo.Operacional, REVISAR_VOUCHERS,      true,  -7, MomentoReferenciaLembrete.AntesInicio),
             (TarefaTipo.Operacional, CHECKIN_VOO,           true,  -2, MomentoReferenciaLembrete.AntesInicio),
             (TarefaTipo.Operacional, CONFIRMAR_HOTEL,       true,  -3, MomentoReferenciaLembrete.AntesInicio),
@@ -78,6 +84,7 @@ namespace SistemaUsuarios.Services
             (TarefaTipo.Comercial,   PEDIR_FEEDBACK,        true,  +2, MomentoReferenciaLembrete.AposFim),
             (TarefaTipo.Comercial,   PEDIR_INDICACAO,       true,  +7, MomentoReferenciaLembrete.AposFim),
             (TarefaTipo.Aniversario, ANIVERSARIO_CLIENTE,   true,   0, MomentoReferenciaLembrete.DiaEvento),
+            (TarefaTipo.Aniversario, PROXIMA_VIAGEM,        true,   0, MomentoReferenciaLembrete.DiaEvento),
         };
 
         private readonly ApplicationDbContext _context;
@@ -127,16 +134,43 @@ namespace SistemaUsuarios.Services
             await _context.SaveChangesAsync();
         }
 
-        public async Task ConcluirTarefaAsync(Guid tarefaId, Guid usuarioId)
+        public async Task<bool> ConcluirTarefaAsync(Guid tarefaId, Guid usuarioId)
         {
             var tarefa = await _context.Tarefas
                 .FirstOrDefaultAsync(t => t.Id == tarefaId && t.UsuarioId == usuarioId && !t.IsDeleted);
-            if (tarefa == null) return;
+            if (tarefa == null)
+            {
+                _logger.LogWarning("ConcluirTarefa: tarefa {TarefaId} não encontrada para usuário {UsuarioId}", tarefaId, usuarioId);
+                return false;
+            }
 
             tarefa.Status          = TarefaStatus.Concluida;
             tarefa.DataConclusao   = DateTime.Now;
             tarefa.DataAtualizacao = DateTime.Now;
-            await _context.SaveChangesAsync();
+            var linhas = await _context.SaveChangesAsync();
+            _logger.LogInformation("ConcluirTarefa: tarefa {TarefaId} concluída. Linhas afetadas: {Linhas}", tarefaId, linhas);
+            return linhas > 0;
+        }
+
+        public async Task<bool> ReabrirTarefaAsync(Guid tarefaId, Guid usuarioId)
+        {
+            var tarefa = await _context.Tarefas
+                .FirstOrDefaultAsync(t => t.Id == tarefaId
+                    && t.UsuarioId == usuarioId
+                    && !t.IsDeleted
+                    && t.Status == TarefaStatus.Concluida);
+            if (tarefa == null)
+            {
+                _logger.LogWarning("ReabrirTarefa: tarefa {TarefaId} não encontrada ou não está concluída (usuário {UsuarioId})", tarefaId, usuarioId);
+                return false;
+            }
+
+            tarefa.Status          = TarefaStatus.Pendente;
+            tarefa.DataConclusao   = null;
+            tarefa.DataAtualizacao = DateTime.Now;
+            var linhas = await _context.SaveChangesAsync();
+            _logger.LogInformation("ReabrirTarefa: tarefa {TarefaId} restaurada. Linhas afetadas: {Linhas}", tarefaId, linhas);
+            return linhas > 0;
         }
 
         public async Task CancelarTarefaAsync(Guid tarefaId, Guid usuarioId)
@@ -227,6 +261,40 @@ namespace SistemaUsuarios.Services
             }
         }
 
+        public async Task GerarTarefaNovoLeadAsync(Guid leadId)
+        {
+            try
+            {
+                var lead = await _context.Leads.AsNoTracking()
+                    .FirstOrDefaultAsync(l => l.Id == leadId);
+                if (lead == null) return;
+
+                var configs = await ObterConfigsDicionario(lead.UsuarioId);
+                if (!configs.TryGetValue(NOVO_LEAD, out var cfg) || !cfg.Habilitado)
+                    return;
+
+                _context.Tarefas.Add(new Tarefa
+                {
+                    UsuarioId             = lead.UsuarioId,
+                    LeadId                = lead.Id,
+                    Titulo                = $"Novo lead: {lead.FullName}",
+                    Descricao             = DescricaoTemplate(NOVO_LEAD),
+                    DataVencimento        = DateTime.Today,
+                    Tipo                  = TarefaTipo.Followup,
+                    Prioridade            = TarefaPrioridade.Alta,
+                    Status                = TarefaStatus.Pendente,
+                    Origem                = TarefaOrigem.Automatica,
+                    GeradaAutomaticamente = true,
+                    TemplateCodigo        = NOVO_LEAD
+                });
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao gerar tarefa de novo lead {LeadId}", leadId);
+            }
+        }
+
         public async Task ProcessarAniversariosDoUsuarioAsync(Guid usuarioId)
         {
             var configs = await ObterConfigsDicionario(usuarioId);
@@ -299,6 +367,7 @@ namespace SistemaUsuarios.Services
                     await GerarTarefasParaViagemAsync(pid);
 
                 await ProcessarAniversariosDoUsuarioAsync(usuarioId);
+                await ProcessarProximasViagensDoUsuarioAsync(usuarioId);
             }
             catch (Exception ex)
             {
@@ -339,6 +408,7 @@ namespace SistemaUsuarios.Services
             var q = _context.Tarefas
                 .Include(t => t.Cliente)
                 .Include(t => t.Proposta)
+                .Include(t => t.Lead)
                 .Where(t => t.UsuarioId == usuarioId && !t.IsDeleted)
                 .AsQueryable();
 
@@ -355,6 +425,7 @@ namespace SistemaUsuarios.Services
             return await _context.Tarefas
                 .Include(t => t.Cliente)
                 .Include(t => t.Proposta)
+                .Include(t => t.Lead)
                 .Where(t => t.UsuarioId == usuarioId && !t.IsDeleted
                     && t.Status == TarefaStatus.Pendente
                     && t.DataVencimento.Date == hoje)
@@ -368,11 +439,35 @@ namespace SistemaUsuarios.Services
             return await _context.Tarefas
                 .Include(t => t.Cliente)
                 .Include(t => t.Proposta)
+                .Include(t => t.Lead)
                 .Where(t => t.UsuarioId == usuarioId && !t.IsDeleted
                     && t.Status == TarefaStatus.Pendente
                     && t.DataVencimento.Date < hoje)
                 .OrderBy(t => t.DataVencimento)
                 .ToListAsync();
+        }
+
+        public async Task<List<Tarefa>> ListarTodasPendentesAsync(Guid usuarioId)
+        {
+            var hoje = DateTime.Today;
+            var semanaFim = hoje.AddDays(7);
+            var lista = await _context.Tarefas
+                .Include(t => t.Cliente)
+                .Include(t => t.Proposta)
+                .Include(t => t.Lead)
+                .Where(t => t.UsuarioId == usuarioId && !t.IsDeleted
+                    && t.Status == TarefaStatus.Pendente)
+                .ToListAsync();
+
+            return lista
+                .OrderBy(t => t.DataVencimento.Date < hoje      ? 0 :
+                              t.DataVencimento.Date == hoje      ? 1 :
+                              t.DataVencimento.Date <= semanaFim ? 2 : 3)
+                .ThenBy(t => t.Prioridade == TarefaPrioridade.Alta  ? 0 :
+                             t.Prioridade == TarefaPrioridade.Media ? 1 : 2)
+                .ThenBy(t => t.DataVencimento)
+                .ThenBy(t => t.DataCriacao)
+                .ToList();
         }
 
         // ── Configurações ────────────────────────────────────────────────────────
@@ -399,6 +494,68 @@ namespace SistemaUsuarios.Services
                 {
                     cfg.Habilitado      = habilitado;
                     cfg.DataAtualizacao = DateTime.Now;
+                }
+            }
+            await _context.SaveChangesAsync();
+        }
+
+        private async Task ProcessarProximasViagensDoUsuarioAsync(Guid usuarioId)
+        {
+            var configs = await ObterConfigsDicionario(usuarioId);
+            if (!configs.TryGetValue(PROXIMA_VIAGEM, out var cfg) || !cfg.Habilitado)
+                return;
+
+            var hoje = DateTime.Today;
+            var ate  = hoje.AddDays(30);
+
+            var clientes = await _context.Clientes
+                .Where(c => c.UsuarioId == usuarioId && !c.IsDeleted)
+                .Select(c => new { c.Id, c.Nome })
+                .AsNoTracking()
+                .ToListAsync();
+
+            foreach (var cliente in clientes)
+            {
+                var ultimaViagem = await _context.Propostas
+                    .Where(p => p.ClienteId == cliente.Id
+                        && (p.UsuarioResponsavelId == usuarioId || p.UsuarioMasterId == usuarioId)
+                        && p.StatusProposta == StatusProposta.Aprovada
+                        && p.DataFim.HasValue
+                        && p.DataFim.Value.Date < hoje)
+                    .OrderByDescending(p => p.DataFim)
+                    .Select(p => new { p.DataFim })
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync();
+
+                if (ultimaViagem == null) continue;
+
+                var dataVencimento = ultimaViagem.DataFim!.Value.Date.AddYears(1).AddDays(-30);
+
+                if (dataVencimento < hoje || dataVencimento > ate) continue;
+
+                var jaExiste = await _context.Tarefas.AnyAsync(t =>
+                    t.UsuarioId == usuarioId
+                    && t.ClienteId == cliente.Id
+                    && t.TemplateCodigo == PROXIMA_VIAGEM
+                    && t.DataVencimento.Year == dataVencimento.Year
+                    && !t.IsDeleted);
+
+                if (!jaExiste)
+                {
+                    _context.Tarefas.Add(new Tarefa
+                    {
+                        UsuarioId             = usuarioId,
+                        ClienteId             = cliente.Id,
+                        Titulo                = $"Planejar próxima viagem: {cliente.Nome}",
+                        Descricao             = DescricaoTemplate(PROXIMA_VIAGEM),
+                        DataVencimento        = dataVencimento,
+                        Tipo                  = TarefaTipo.Aniversario,
+                        Prioridade            = TarefaPrioridade.Alta,
+                        Status                = TarefaStatus.Pendente,
+                        Origem                = TarefaOrigem.Automatica,
+                        GeradaAutomaticamente = true,
+                        TemplateCodigo        = PROXIMA_VIAGEM
+                    });
                 }
             }
             await _context.SaveChangesAsync();
@@ -502,6 +659,8 @@ namespace SistemaUsuarios.Services
             PEDIR_FEEDBACK        => "Pedir feedback da viagem",
             PEDIR_INDICACAO       => "Pedir indicação de novos clientes",
             ANIVERSARIO_CLIENTE   => "Aniversário do cliente",
+            NOVO_LEAD             => "Novo lead recebido",
+            PROXIMA_VIAGEM        => "Hora de planejar a próxima viagem",
             _                     => codigo
         };
 
@@ -516,6 +675,8 @@ namespace SistemaUsuarios.Services
             PEDIR_FEEDBACK        => "Entre em contato para ouvir como foi a experiência da viagem.",
             PEDIR_INDICACAO       => "Peça ao cliente satisfeito que indique amigos e familiares.",
             ANIVERSARIO_CLIENTE   => "Parabenize o cliente pelo aniversário.",
+            NOVO_LEAD             => "Um novo potencial cliente entrou em contato. Faça o primeiro atendimento o quanto antes para aumentar as chances de conversão.",
+            PROXIMA_VIAGEM        => "Já faz quase um ano da última viagem do cliente. Entre em contato e ajude-o a começar a planejar a próxima experiência.",
             _                     => ""
         };
 
@@ -523,6 +684,8 @@ namespace SistemaUsuarios.Services
         {
             FOLLOWUP_VISUALIZACAO => "No mesmo dia em que a proposta for visualizada",
             ANIVERSARIO_CLIENTE   => "No dia do aniversário do cliente",
+            NOVO_LEAD             => "No mesmo dia em que o lead entrar em contato",
+            PROXIMA_VIAGEM        => "30 dias antes de completar 1 ano da última viagem do cliente",
             _ => momento switch
             {
                 MomentoReferenciaLembrete.AntesInicio => offsetDias.HasValue
@@ -546,6 +709,8 @@ namespace SistemaUsuarios.Services
             PEDIR_FEEDBACK        => TarefaPrioridade.Media,
             PEDIR_INDICACAO       => TarefaPrioridade.Baixa,
             ANIVERSARIO_CLIENTE   => TarefaPrioridade.Media,
+            NOVO_LEAD             => TarefaPrioridade.Alta,
+            PROXIMA_VIAGEM        => TarefaPrioridade.Alta,
             _                     => TarefaPrioridade.Media
         };
     }

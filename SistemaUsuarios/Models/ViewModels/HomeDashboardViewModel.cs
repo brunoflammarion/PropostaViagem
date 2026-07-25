@@ -1,3 +1,5 @@
+using SistemaUsuarios.Models;
+
 namespace SistemaUsuarios.Models.ViewModels
 {
     public class HomeDashboardViewModel
@@ -11,8 +13,16 @@ namespace SistemaUsuarios.Models.ViewModels
         public int ViagensAndamento { get; set; }
         public int ViagensProximas15d { get; set; }
 
-        // Fila de atenção (max 8)
-        public List<AttentionItem> FilaAtencao { get; set; } = new();
+        // Fila de atenção — tabs de tarefa (max 5 exibidas por aba)
+        public List<Tarefa> TarefasTodas      { get; set; } = new();
+        public List<Tarefa> TarefasAtrasadas  { get; set; } = new();
+        public List<Tarefa> TarefasHoje       { get; set; } = new();
+        public List<Tarefa> TarefasSemana     { get; set; } = new();
+        public List<Tarefa> TarefasConcluidas { get; set; } = new();
+        public int TotalTodas      { get; set; }
+        public int TotalAtrasadas  { get; set; }
+        public int TotalHoje       { get; set; }
+        public int TotalSemana     { get; set; }
 
         // Continue de onde parou (max 6)
         public List<ContinueItem> ContinueList { get; set; } = new();
@@ -22,20 +32,6 @@ namespace SistemaUsuarios.Models.ViewModels
 
         // Captação / página pública
         public CaptacaoHomeInfo? Captacao { get; set; }
-    }
-
-    public class AttentionItem
-    {
-        public string TipoIcon { get; set; } = "";
-        public string TipoBadge { get; set; } = "";
-        public string TipoCss { get; set; } = "";
-        public string NomeContato { get; set; } = "";
-        public string Descricao { get; set; } = "";
-        public string Contexto { get; set; } = "";
-        public string Url { get; set; } = "";
-        public string AcaoLabel { get; set; } = "";
-        public int Prioridade { get; set; }
-        public DateTime SecondarySortKey { get; set; }
     }
 
     public class ContinueItem

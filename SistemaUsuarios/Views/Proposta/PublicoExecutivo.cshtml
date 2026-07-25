@@ -46,8 +46,13 @@
 }
 @{
     var layoutNome = (Model.Layout?.Nome ?? "Executivo").ToLower();
-    var waPhone  = Model.Usuario.Telefone?.Replace("(","").Replace(")","").Replace("-","").Replace(" ","") ?? "";
-    var waMsgRaw = $"Olá! Vi a proposta \"{Model.Titulo}\" e tenho interesse!";
+    var agenteResponsavel = Model.UsuarioResponsavel ?? Model.Usuario;
+    var waNomeAgente  = agenteResponsavel?.Nome ?? "agente";
+    var waDestino     = Model.Destinos?.FirstOrDefault()?.Nome;
+    var waMsgRaw      = waDestino != null
+        ? $"Olá! Estou visualizando a proposta \"{Model.Titulo}\" ({waDestino}) e gostaria de conversar sobre a viagem."
+        : $"Olá! Estou visualizando a proposta \"{Model.Titulo}\" e gostaria de conversar sobre a viagem.";
+    var waUrl         = WhatsAppHelper.MontarUrl(agenteResponsavel?.Telefone, waMsgRaw);
 
     bool temPassageiros = Model.PassageirosProposta.Any();
     bool temVoos        = Model.Voos.Any();
@@ -697,16 +702,17 @@ footer {
         }
         <div class="exec-sb-agent-name">@Model.Usuario.Nome</div>
         <div class="exec-sb-agent-agency">@(string.IsNullOrEmpty(Model.Usuario.NomeAgencia) ? "Consultor de Viagens" : Model.Usuario.NomeAgencia)</div>
-        @if (!string.IsNullOrEmpty(waPhone))
+        @if (waUrl != null)
         {
-            <a href="https://wa.me/55@waPhone?text=@Uri.EscapeDataString(waMsgRaw)"
-               class="exec-sb-cta" data-track="whatsapp" target="_blank">
+            <a href="@waUrl"
+               class="exec-sb-cta" data-track="whatsapp" target="_blank" rel="noopener noreferrer"
+               aria-label="Conversar no WhatsApp com @waNomeAgente">
                 <i class="fab fa-whatsapp"></i>Conversar
             </a>
         }
-        else if (!string.IsNullOrEmpty(Model.Usuario.Email))
+        else if (!string.IsNullOrEmpty(agenteResponsavel?.Email))
         {
-            <a href="mailto:@Model.Usuario.Email?subject=Proposta: @Model.Titulo" class="exec-sb-cta" data-track="email">
+            <a href="mailto:@agenteResponsavel!.Email?subject=Proposta: @Model.Titulo" class="exec-sb-cta" data-track="email">
                 <i class="fas fa-envelope"></i>Contato
             </a>
         }
@@ -1295,16 +1301,23 @@ footer {
             <h3>Pronto para confirmar?</h3>
             <p>Entre em contato para finalizarmos os detalhes e garantirmos a melhor experiência para você.</p>
             <div class="exec-cta-btns">
-                @if (!string.IsNullOrEmpty(waPhone))
+                @if (waUrl != null)
                 {
-                    <a href="https://wa.me/55@waPhone?text=@Uri.EscapeDataString(waMsgRaw)"
-                       class="exec-btn-wa" data-track="whatsapp" target="_blank">
+                    <a href="@waUrl"
+                       class="exec-btn-wa" data-track="whatsapp" target="_blank" rel="noopener noreferrer"
+                       aria-label="Falar agora no WhatsApp com @waNomeAgente">
                         <i class="fab fa-whatsapp"></i>WhatsApp
                     </a>
                 }
-                @if (!string.IsNullOrEmpty(Model.Usuario.Email))
+                else
                 {
-                    <a href="mailto:@Model.Usuario.Email?subject=Proposta: @Model.Titulo"
+                    <span class="exec-btn-wa" style="opacity:.5;cursor:default;" aria-disabled="true">
+                        <i class="fab fa-whatsapp"></i>Contato indisponível
+                    </span>
+                }
+                @if (!string.IsNullOrEmpty(agenteResponsavel?.Email))
+                {
+                    <a href="mailto:@agenteResponsavel!.Email?subject=Proposta: @Model.Titulo"
                        class="exec-btn-email" data-track="email">
                         <i class="fas fa-envelope"></i>E-mail
                     </a>

@@ -13,6 +13,8 @@ namespace SistemaUsuarios.Models
 
         public Guid? PropostaId { get; set; }
 
+        public Guid? LeadId { get; set; }
+
         [Required]
         [MaxLength(200)]
         public string Titulo { get; set; } = "";
@@ -47,6 +49,7 @@ namespace SistemaUsuarios.Models
         public virtual Usuario Usuario { get; set; } = null!;
         public virtual Cliente? Cliente { get; set; }
         public virtual Proposta? Proposta { get; set; }
+        public virtual Lead? Lead { get; set; }
     }
 
     public static class TarefaStatus

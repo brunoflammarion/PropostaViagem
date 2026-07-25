@@ -3,7 +3,7 @@
 @using SistemaUsuarios.Models.ViewModels
 @{
     ViewData["Title"] = "Início";
-
+    var hoje = DateTime.Today;
     var hora = DateTime.Now.Hour;
     var saudacao = hora < 12 ? "Bom dia" : hora < 18 ? "Boa tarde" : "Boa noite";
     var primeiroNome = Model.NomeUsuario.Split(' ')[0];
@@ -23,6 +23,7 @@
 }
 
 @section Styles {
+    <link rel="stylesheet" href="~/css/tarefa-cards.css" />
     <link rel="stylesheet" href="~/css/home-dashboard.css" />
 }
 
@@ -49,6 +50,10 @@
         </div>
     </div>
     <div class="home-actions">
+        <a href="#" class="home-actions-cta home-actions-cta--outline"
+           onclick="event.preventDefault(); abrirCriarComIA();">
+            <i class="fas fa-file-import"></i> Importar PDF/Imagem
+        </a>
         <a href="@Url.Action("Criar", "Proposta")" class="home-actions-cta">
             <i class="fas fa-plus"></i> Nova proposta
         </a>
@@ -119,45 +124,190 @@
     <!-- COLUNA PRINCIPAL -->
     <div class="col-lg-8">
 
-        <!-- Fila de atenção -->
-        <div class="attention-queue">
+        <!-- Fila de atenção — tarefas (mesma fonte que /Tarefa) -->
+        <div class="attention-queue" id="home-atencao">
             <div class="home-section-head">
                 <h2><i class="fas fa-list-check"></i>Sua fila de atenção</h2>
-                @if (Model.FilaAtencao.Any())
+                <a href="@Url.Action("Index", "Tarefa")" class="home-section-link">
+                    Ver tudo <i class="fas fa-arrow-right" style="font-size:.65rem;"></i>
+                </a>
+            </div>
+
+            <!-- Abas -->
+            <div class="tf-tabs">
+                <button class="tf-tab active"
+                        data-home-panel="todas" id="htab-todas">
+                    Todas
+                    @if (Model.TotalTodas > 0) { <span class="tf-tab-count">@Model.TotalTodas</span> }
+                </button>
+                <button class="tf-tab"
+                        data-home-panel="atrasadas" id="htab-atrasadas">
+                    Atrasadas
+                    @if (Model.TotalAtrasadas > 0) { <span class="tf-tab-count danger">@Model.TotalAtrasadas</span> }
+                </button>
+                <button class="tf-tab"
+                        data-home-panel="hoje" id="htab-hoje">
+                    Hoje
+                    @if (Model.TotalHoje > 0) { <span class="tf-tab-count">@Model.TotalHoje</span> }
+                </button>
+                <button class="tf-tab" data-home-panel="semana" id="htab-semana">
+                    Esta semana
+                    @if (Model.TotalSemana > 0) { <span class="tf-tab-count">@Model.TotalSemana</span> }
+                </button>
+                <button class="tf-tab" data-home-panel="concluidas" id="htab-concluidas">
+                    Concluídas
+                </button>
+            </div>
+
+            <!-- Panel: Todas -->
+            <div class="tf-panel active" id="hpanel-todas">
+                @if (!Model.TarefasTodas.Any())
                 {
-                    <a href="@Url.Action("Index", "Proposta")" class="home-section-link">
-                        Ver tudo <i class="fas fa-arrow-right" style="font-size:.65rem;"></i>
-                    </a>
+                    <div class="tf-empty">
+                        <i class="fas fa-check-double"></i>
+                        <p><strong>Tudo em dia!</strong><br>Você não possui tarefas pendentes no momento.</p>
+                    </div>
+                }
+                else
+                {
+                    <ul class="tf-list">
+                        @foreach (var t in Model.TarefasTodas)
+                        {
+                            var hojeHome = DateTime.Today;
+                            var isAtrasadaHome = t.DataVencimento.Date < hojeHome;
+                            @await Html.PartialAsync("_TarefaCard", t, new ViewDataDictionary(ViewData) {
+                                ["IsAtrasada"] = isAtrasadaHome, ["ShowDate"] = true,
+                                ["ActionsMode"] = "home",
+                                ["ConcluirFn"] = "concluirHome", ["RestaurarFn"] = "restaurarHome"
+                            })
+                        }
+                    </ul>
+                    @if (Model.TotalTodas > 5)
+                    {
+                        <div class="tf-mais">
+                            <a href="@Url.Action("Index", "Tarefa")" class="home-section-link">
+                                <i class="fas fa-plus-circle me-1"></i>+@(Model.TotalTodas - 5) mais · Ver tudo em /Tarefa
+                            </a>
+                        </div>
+                    }
                 }
             </div>
 
-            @if (!Model.FilaAtencao.Any())
-            {
-                <div class="home-empty">
-                    <i class="fas fa-check-circle" style="color:#10b981;opacity:.5;"></i>
-                    <p>Tudo certo por aqui. Nenhuma pendência importante no momento.</p>
-                </div>
-            }
-            else
-            {
-                @foreach (var item in Model.FilaAtencao)
+            <!-- Panel: Atrasadas -->
+            <div class="tf-panel" id="hpanel-atrasadas">
+                @if (!Model.TarefasAtrasadas.Any())
                 {
-                    <a href="@item.Url" class="attention-item @item.TipoCss">
-                        <div class="atq-icon-wrap">
-                            <i class="@item.TipoIcon"></i>
-                        </div>
-                        <div class="atq-body">
-                            <div class="atq-nome">@item.NomeContato</div>
-                            <div class="atq-desc">@item.Descricao</div>
-                        </div>
-                        <div class="atq-meta">
-                            <span class="atq-badge">@item.TipoBadge</span>
-                            <span class="atq-contexto">@item.Contexto</span>
-                        </div>
-                        <span class="atq-action">@item.AcaoLabel</span>
-                    </a>
+                    <div class="tf-empty">
+                        <i class="fas fa-check-circle"></i>
+                        <p>Nenhuma tarefa atrasada</p>
+                    </div>
                 }
-            }
+                else
+                {
+                    <ul class="tf-list">
+                        @foreach (var t in Model.TarefasAtrasadas)
+                        {
+                            @await Html.PartialAsync("_TarefaCard", t, new ViewDataDictionary(ViewData) {
+                                ["IsAtrasada"] = true, ["ShowDate"] = true, ["ActionsMode"] = "home",
+                                ["ConcluirFn"] = "concluirHome", ["RestaurarFn"] = "restaurarHome"
+                            })
+                        }
+                    </ul>
+                    @if (Model.TotalAtrasadas > 5)
+                    {
+                        <div class="tf-mais">
+                            <a href="@Url.Action("Index", "Tarefa")" class="home-section-link">
+                                <i class="fas fa-plus-circle me-1"></i>+@(Model.TotalAtrasadas - 5) mais · Ver tudo em /Tarefa
+                            </a>
+                        </div>
+                    }
+                }
+            </div>
+
+            <!-- Panel: Hoje -->
+            <div class="tf-panel" id="hpanel-hoje">
+                @if (!Model.TarefasHoje.Any())
+                {
+                    <div class="tf-empty">
+                        <i class="fas fa-sun"></i>
+                        <p>Nenhuma tarefa para hoje</p>
+                    </div>
+                }
+                else
+                {
+                    <ul class="tf-list">
+                        @foreach (var t in Model.TarefasHoje)
+                        {
+                            @await Html.PartialAsync("_TarefaCard", t, new ViewDataDictionary(ViewData) {
+                                ["ShowDate"] = false, ["ActionsMode"] = "home",
+                                ["ConcluirFn"] = "concluirHome", ["RestaurarFn"] = "restaurarHome"
+                            })
+                        }
+                    </ul>
+                    @if (Model.TotalHoje > 5)
+                    {
+                        <div class="tf-mais">
+                            <a href="@Url.Action("Index", "Tarefa")" class="home-section-link">
+                                <i class="fas fa-plus-circle me-1"></i>+@(Model.TotalHoje - 5) mais · Ver tudo em /Tarefa
+                            </a>
+                        </div>
+                    }
+                }
+            </div>
+
+            <!-- Panel: Esta semana -->
+            <div class="tf-panel" id="hpanel-semana">
+                @if (!Model.TarefasSemana.Any())
+                {
+                    <div class="tf-empty">
+                        <i class="fas fa-calendar-check"></i>
+                        <p>Nenhuma tarefa para os próximos 7 dias</p>
+                    </div>
+                }
+                else
+                {
+                    <ul class="tf-list">
+                        @foreach (var t in Model.TarefasSemana)
+                        {
+                            @await Html.PartialAsync("_TarefaCard", t, new ViewDataDictionary(ViewData) {
+                                ["ShowDate"] = false, ["ActionsMode"] = "home",
+                                ["ConcluirFn"] = "concluirHome", ["RestaurarFn"] = "restaurarHome"
+                            })
+                        }
+                    </ul>
+                    @if (Model.TotalSemana > 5)
+                    {
+                        <div class="tf-mais">
+                            <a href="@Url.Action("Index", "Tarefa")" class="home-section-link">
+                                <i class="fas fa-plus-circle me-1"></i>+@(Model.TotalSemana - 5) mais · Ver tudo em /Tarefa
+                            </a>
+                        </div>
+                    }
+                }
+            </div>
+
+            <!-- Panel: Concluídas -->
+            <div class="tf-panel" id="hpanel-concluidas">
+                @if (!Model.TarefasConcluidas.Any())
+                {
+                    <div class="tf-empty">
+                        <i class="fas fa-clipboard-check"></i>
+                        <p>Nenhuma tarefa concluída recentemente</p>
+                    </div>
+                }
+                else
+                {
+                    <ul class="tf-list">
+                        @foreach (var t in Model.TarefasConcluidas)
+                        {
+                            @await Html.PartialAsync("_TarefaCard", t, new ViewDataDictionary(ViewData) {
+                                ["IsConcluida"] = true, ["ActionsMode"] = "restore",
+                                ["RestaurarFn"] = "restaurarHome"
+                            })
+                        }
+                    </ul>
+                }
+            </div>
         </div>
 
         <!-- Continue de onde parou -->
@@ -314,8 +464,120 @@
 
 </div><!-- .home-dashboard -->
 
+@await Html.PartialAsync("_ImportarPDFImagem")
+
 @section Scripts {
 <script>
+// ── Troca de abas da fila de atenção na Home ─────────────────────────────────
+function ativarTabHome(panel) {
+    const container = document.getElementById('home-atencao');
+    if (!container) return;
+    container.querySelectorAll('[data-home-panel]').forEach(b => b.classList.remove('active'));
+    container.querySelectorAll('[id^="hpanel-"]').forEach(p => p.classList.remove('active'));
+    container.querySelector('[data-home-panel="' + panel + '"]')?.classList.add('active');
+    document.getElementById('hpanel-' + panel)?.classList.add('active');
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('[data-home-panel]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            ativarTabHome(this.getAttribute('data-home-panel'));
+        });
+    });
+});
+
+// ── Concluir tarefa pela Home ────────────────────────────────────────────────
+async function concluirHome(id, checkEl) {
+    if (checkEl.classList.contains('checked')) return;
+    checkEl.classList.add('checked');
+    checkEl.querySelector('i').style.display = 'flex';
+    const item = checkEl.closest('.tf-item');
+    item.style.transition = 'opacity .4s';
+    item.style.opacity    = '.4';
+
+    try {
+        const r = await fetch('/Tarefa/Concluir', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(id)
+        });
+        const data = await r.json();
+        if (data.ok) {
+            setTimeout(() => {
+                // Remove todas as instâncias desta tarefa em todos os panels da Home
+                document.querySelectorAll('#home-atencao .tf-item[data-id="' + id + '"]').forEach(el => {
+                    const panel = el.closest('.tf-panel');
+                    el.remove();
+                    if (panel && !panel.querySelector('.tf-item')) {
+                        panel.querySelector('.tf-list')?.remove();
+                        panel.querySelector('.tf-mais')?.remove();
+                        const empty = document.createElement('div');
+                        empty.className = 'tf-empty';
+                        empty.innerHTML = '<i class="fas fa-check-circle" style="color:#10b981"></i><p>Nenhuma tarefa nesta aba</p>';
+                        panel.appendChild(empty);
+                    }
+                });
+                atualizarContadoresHome();
+            }, 400);
+        } else {
+            item.style.opacity = '1';
+            checkEl.classList.remove('checked');
+            checkEl.querySelector('i').style.display = 'none';
+        }
+    } catch {
+        item.style.opacity = '1';
+        checkEl.classList.remove('checked');
+        checkEl.querySelector('i').style.display = 'none';
+    }
+}
+
+function atualizarContadoresHome() {
+    ['todas','atrasadas','hoje','semana'].forEach(p => {
+        const count = document.querySelectorAll('#hpanel-' + p + ' .tf-item').length;
+        const tab   = document.getElementById('htab-' + p);
+        if (tab) {
+            let span = tab.querySelector('.tf-tab-count');
+            if (count > 0) {
+                if (!span) {
+                    span = document.createElement('span');
+                    span.className = 'tf-tab-count' + (p === 'atrasadas' ? ' danger' : '');
+                    tab.appendChild(span);
+                }
+                span.textContent = count;
+            } else if (span) {
+                span.remove();
+            }
+        }
+    });
+}
+
+// ── Restaurar tarefa pela Home ───────────────────────────────────────────────
+async function restaurarHome(id, btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+    try {
+        const r = await fetch('/Tarefa/Reabrir', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(id)
+        });
+        const data = await r.json();
+        if (data.ok) {
+            const item = btn.closest('.tf-item');
+            item.style.transition = 'opacity .35s';
+            item.style.opacity = '0';
+            setTimeout(() => location.reload(), 400);
+        } else {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-undo"></i> Restaurar';
+        }
+    } catch {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-undo"></i> Restaurar';
+    }
+}
+
 function copiarLink(url, btn) {
     navigator.clipboard.writeText(url).then(function () {
         var orig = btn.innerHTML;
@@ -324,6 +586,5 @@ function copiarLink(url, btn) {
         setTimeout(function () { btn.innerHTML = orig; btn.style.color = ''; }, 2000);
     });
 }
-
 </script>
 }

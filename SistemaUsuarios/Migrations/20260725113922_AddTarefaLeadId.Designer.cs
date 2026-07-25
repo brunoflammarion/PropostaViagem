@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NetTopologySuite.Geometries;
 using SistemaUsuarios.Data;
@@ -12,9 +13,11 @@ using SistemaUsuarios.Data;
 namespace SistemaUsuarios.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260725113922_AddTarefaLeadId")]
+    partial class AddTarefaLeadId
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -721,9 +724,6 @@ namespace SistemaUsuarios.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("InformacoesPraticasLLM")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("InsightesAgenteLLM")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<double?>("Latitude")

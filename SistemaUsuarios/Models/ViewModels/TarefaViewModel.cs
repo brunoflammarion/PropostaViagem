@@ -4,11 +4,13 @@ namespace SistemaUsuarios.Models.ViewModels
 {
     public class TarefaIndexViewModel
     {
+        public List<Tarefa> TarefasTodas     { get; set; } = new();
         public List<Tarefa> TarefasHoje      { get; set; } = new();
         public List<Tarefa> TarefasAtrasadas { get; set; } = new();
         public List<Tarefa> TarefasSemana    { get; set; } = new();
         public List<Tarefa> TarefasConcluidas { get; set; } = new();
 
+        public int TotalTodas     => TarefasTodas.Count;
         public int TotalHoje      => TarefasHoje.Count;
         public int TotalAtrasadas => TarefasAtrasadas.Count;
         public int TotalSemana    => TarefasSemana.Count;
