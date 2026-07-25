@@ -52,6 +52,12 @@ namespace SistemaUsuarios.Controllers
                 return RedirectToAction("Index");
             }
 
+            if (!Services.TelefoneValidator.EhValido(whatsapp))
+            {
+                TempData["ListaVipErro"] = true;
+                return RedirectToAction("Index");
+            }
+
             var ip = Request.Headers.ContainsKey("X-Forwarded-For")
                 ? Request.Headers["X-Forwarded-For"].FirstOrDefault()?.Split(',')[0].Trim()
                 : HttpContext.Connection.RemoteIpAddress?.ToString();
@@ -110,7 +116,11 @@ namespace SistemaUsuarios.Controllers
                     });
                 }
 
-                // Limpar formatação do telefone
+                // Validar e normalizar telefone
+                if (!Services.TelefoneValidator.EhValido(model.Telefone))
+                {
+                    return Json(new { success = false, message = "Informe um número de WhatsApp válido." });
+                }
                 string telefoneLimpo = LimparTelefone(model.Telefone);
 
                 // Criar usuário
@@ -253,10 +263,8 @@ namespace SistemaUsuarios.Controllers
             return System.Text.RegularExpressions.Regex.Replace(cpf ?? "", @"[^\d]", "");
         }
 
-        private string LimparTelefone(string telefone)
-        {
-            return System.Text.RegularExpressions.Regex.Replace(telefone ?? "", @"[^\d]", "");
-        }
+        private static string LimparTelefone(string telefone)
+            => Services.TelefoneValidator.Normalizar(telefone);
 
         private string FormatarTelefone(string telefone)
         {

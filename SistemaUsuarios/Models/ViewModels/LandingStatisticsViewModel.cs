@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using SistemaUsuarios.Services;
 
 namespace SistemaUsuarios.Models.ViewModels
 {
@@ -93,14 +94,10 @@ namespace SistemaUsuarios.Models.ViewModels
                 results.Add(new ValidationResult("CPF inválido", new[] { nameof(CPF) }));
             }
 
-            // Validação de telefone (formato brasileiro)
-            if (!string.IsNullOrEmpty(Telefone))
+            // Validação de telefone
+            if (!string.IsNullOrEmpty(Telefone) && !TelefoneValidator.EhValido(Telefone))
             {
-                var telefoneNumeros = System.Text.RegularExpressions.Regex.Replace(Telefone, @"[^\d]", "");
-                if (telefoneNumeros.Length < 10 || telefoneNumeros.Length > 11)
-                {
-                    results.Add(new ValidationResult("Telefone deve ter 10 ou 11 dígitos", new[] { nameof(Telefone) }));
-                }
+                results.Add(new ValidationResult("Informe um número de WhatsApp válido.", new[] { nameof(Telefone) }));
             }
 
             return results;

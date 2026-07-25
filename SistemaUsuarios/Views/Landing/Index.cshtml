@@ -494,9 +494,8 @@ footer{background:#060E1C;padding:36px 24px}
       <div class="flow-arrow" aria-hidden="true"></div>
       <div class="flow-step" data-a data-d="3"><div class="flow-n">4</div><span class="flow-t">Montar no Word, PowerPoint ou Canva</span></div>
       <div class="flow-arrow" aria-hidden="true"></div>
-      <div class="flow-arrow" aria-hidden="true"></div>
-      <div class="flow-step" data-a data-d="5"><div class="flow-n">6</div><span class="flow-t">Aguardar retorno sem visibilidade</span></div>
-      <div class="flow-break" data-a data-d="6">O Agent Tools foi criado para eliminar esse trabalho operacional.</div>
+      <div class="flow-step" data-a data-d="4"><div class="flow-n">6</div><span class="flow-t">Aguardar retorno sem visibilidade</span></div>
+      <div class="flow-break" data-a data-d="5">O Agent Tools foi criado para eliminar esse trabalho operacional.</div>
     </div>
   </div>
 </section>
@@ -723,7 +722,7 @@ footer{background:#060E1C;padding:36px 24px}
       <p class="lead light-txt" style="margin:0 auto">Desenvolvido ao lado de agentes de viagens reais. Cada funcionalidade nasce de um problema real identificado em campo.</p>
     </div>
     <div class="trust-grid">
-      <div class="trust-item" data-a data-d="1"><div class="trust-n">IA</div><div class="trust-l">Integrada para descrições de destinos, hospedagens e insghts</div></div>
+      <div class="trust-item" data-a data-d="1"><div class="trust-n">IA</div><div class="trust-l">Integrada para descrições de destinos, hospedagens e insights</div></div>
       <div class="trust-item" data-a data-d="2"><div class="trust-n">100%</div><div class="trust-l">Focado para agentes de viagem</div></div>
       <div class="trust-item" data-a data-d="3"><div class="trust-n">0</div><div class="trust-l">Ferramentas externas necessárias</div></div>
       <div class="trust-item" data-a data-d="4"><div class="trust-n">∞</div><div class="trust-l">Evoluções contínuas com a comunidade</div></div>
@@ -750,7 +749,11 @@ footer{background:#060E1C;padding:36px 24px}
             <div class="f-field"><label for="f-email">E-mail *</label><input type="email" id="f-email" name="email" placeholder="seu@email.com" required autocomplete="email"></div>
           </div>
           <div class="f-row">
-            <div class="f-field"><label for="f-wpp">WhatsApp *</label><input type="tel" id="f-wpp" name="whatsapp" placeholder="(11) 99999-9999" required autocomplete="tel"></div>
+            <div class="f-field">
+              <label for="f-wpp">WhatsApp *</label>
+              <input type="tel" id="f-wpp" name="whatsapp" placeholder="(11) 99999-9999" required autocomplete="tel" inputmode="numeric" maxlength="16">
+              <span id="f-wpp-error" style="display:none;color:rgba(239,68,68,.9);font-size:12px;margin-top:4px"></span>
+            </div>
             <div class="f-field"><label for="f-agencia">Nome da Agência *</label><input type="text" id="f-agencia" name="agencia" placeholder="Nome da sua agência" required></div>
           </div>
           <div class="f-row">
@@ -786,11 +789,9 @@ footer{background:#060E1C;padding:36px 24px}
       <img src="~/images/logo.png" alt="" width="24" height="24" style="filter:brightness(0) invert(1);opacity:.7;display:block;flex-shrink:0">
       Agent Tools
     </div>
-    <span class="foot-copy">&copy; 2025 Agent Tools. Todos os direitos reservados.</span>
+    <span class="foot-copy">&copy; 2026 Agent Tools. Todos os direitos reservados.</span>
     <nav class="foot-links">
       <a href="#lista-vip">Lista VIP</a>
-      <a asp-action="Produto" asp-controller="Landing">Produto</a>
-      <a asp-action="Login" asp-controller="Auth">Entrar</a>
     </nav>
   </div>
 </footer>
@@ -829,16 +830,92 @@ footer{background:#060E1C;padding:36px 24px}
   var success = document.getElementById('form-success');
   var submitBtn = document.getElementById('f-submit');
 
+  // ── Validação de telefone brasileiro ──────────────────────────────────────
+  var DDDS_VALIDOS = [
+    11,12,13,14,15,16,17,18,19,
+    21,22,24,27,28,
+    31,32,33,34,35,37,38,
+    41,42,43,44,45,46,47,48,49,
+    51,53,54,55,
+    61,62,63,64,65,66,67,68,69,
+    71,73,74,75,77,79,
+    81,82,83,84,85,86,87,88,89,
+    91,92,93,94,95,96,97,98,99
+  ];
+
+  function normalizarTelefone(v) {
+    var d = v.replace(/\D/g, '');
+    if ((d.length === 12 || d.length === 13) && d.indexOf('55') === 0) d = d.slice(2);
+    return d;
+  }
+
+  function telefoneEhValido(v) {
+    var d = normalizarTelefone(v);
+    if (d.length !== 10 && d.length !== 11) return false;
+    var ddd = parseInt(d.slice(0, 2), 10);
+    if (DDDS_VALIDOS.indexOf(ddd) === -1) return false;
+    if (d.length === 11 && d[2] !== '9') return false;
+    // Todos dígitos iguais
+    if (/^(.)\1+$/.test(d)) return false;
+    // Sequência ascendente ou descendente mod 10
+    var asc = true, desc = true;
+    for (var i = 1; i < d.length; i++) {
+      var cur = +d[i], prev = +d[i - 1];
+      if ((cur - prev + 10) % 10 !== 1) asc  = false;
+      if ((prev - cur + 10) % 10 !== 1) desc = false;
+    }
+    if (asc || desc) return false;
+    return true;
+  }
+
+  function setWppError(msg) {
+    var el = document.getElementById('f-wpp-error');
+    var inp = document.getElementById('f-wpp');
+    if (!el || !inp) return;
+    if (msg) {
+      el.textContent = msg;
+      el.style.display = 'block';
+      inp.style.borderColor = 'rgba(239,68,68,.7)';
+    } else {
+      el.style.display = 'none';
+      el.textContent = '';
+      inp.style.borderColor = '';
+    }
+  }
+
+  function validarWpp() {
+    var inp = document.getElementById('f-wpp');
+    if (!inp || !inp.value.trim()) { setWppError('Informe um número de WhatsApp válido.'); return false; }
+    if (!telefoneEhValido(inp.value)) { setWppError('Informe um número de WhatsApp válido.'); return false; }
+    setWppError(null);
+    return true;
+  }
+
+  // ── Máscara: (DD) DDDDD-DDDD ─────────────────────────────────────────────
+  var wppInput = document.getElementById('f-wpp');
+  if (wppInput) {
+    wppInput.addEventListener('input', function () {
+      var v = this.value.replace(/\D/g, '').slice(0, 11);
+      if (v.length > 6) this.value = '(' + v.slice(0,2) + ') ' + v.slice(2,7) + '-' + v.slice(7);
+      else if (v.length > 2) this.value = '(' + v.slice(0,2) + ') ' + v.slice(2);
+      else if (v.length > 0) this.value = '(' + v;
+      else this.value = v;
+      if (document.getElementById('f-wpp-error').style.display !== 'none') setWppError(null);
+    });
+    wppInput.addEventListener('blur', validarWpp);
+  }
+
   if (form) {
     form.addEventListener('submit', function (e) {
       var nome = document.getElementById('f-nome').value.trim();
       var email = document.getElementById('f-email').value.trim();
-      var wpp = document.getElementById('f-wpp').value.trim();
       var agencia = document.getElementById('f-agencia').value.trim();
       var propostas = document.getElementById('f-propostas').value;
-      if (!nome || !email || !wpp || !agencia || !propostas) {
+      var wppOk = validarWpp();
+      if (!nome || !email || !wppOk || !agencia || !propostas) {
         var first = form.querySelector('input:invalid, select:invalid');
-        if (first) { first.focus(); first.style.borderColor = 'rgba(239,68,68,.7)'; }
+        if (first && first.id !== 'f-wpp') { first.focus(); first.style.borderColor = 'rgba(239,68,68,.7)'; }
+        else if (!wppOk) document.getElementById('f-wpp').focus();
         e.preventDefault();
         return;
       }
@@ -846,7 +923,7 @@ footer{background:#060E1C;padding:36px 24px}
       submitBtn.textContent = 'Enviando...';
     });
     form.querySelectorAll('input, select').forEach(function (el) {
-      el.addEventListener('input', function () { el.style.borderColor = ''; });
+      if (el.id !== 'f-wpp') el.addEventListener('input', function () { el.style.borderColor = ''; });
     });
   }
 
