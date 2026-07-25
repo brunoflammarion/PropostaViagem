@@ -39,7 +39,7 @@
     @if (Analytics.Enabled && !string.IsNullOrEmpty(Analytics.GoogleTagManagerId))
     {
         <script src="~/js/analytics.js" asp-append-version="true"></script>
-        <script>window.agentToolsAnalytics.init('@Analytics.GoogleTagManagerId', true);</script>
+        <script>window.agentToolsAnalytics.init('@Analytics.GoogleTagManagerId', true, '@Analytics.GA4MeasurementId');</script>
     }
 
     <!-- JSON-LD Structured Data -->

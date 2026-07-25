@@ -2,7 +2,7 @@
  * Agent Tools Analytics — camada centralizada de eventos GA4/GTM
  *
  * Uso:
- *   window.agentToolsAnalytics.init(gtmId, enabled)
+ *   window.agentToolsAnalytics.init(gtmId, enabled, ga4Id)
  *   window.agentToolsAnalytics.track(eventName, params)
  *   window.agentToolsAnalytics.accept()
  *   window.agentToolsAnalytics.deny()
@@ -53,7 +53,9 @@
         debug: false,
         _enabled: false,
         _gtmId: null,
+        _ga4Id: null,
         _gtmLoaded: false,
+        _ga4Loaded: false,
         _firedKeys: {},
 
         // ── helpers internos ───────────────────────────────────────────────────
@@ -90,6 +92,19 @@
             this._log('GTM carregado', this._gtmId);
         },
 
+        _loadGA4: function () {
+            if (this._ga4Loaded || !this._ga4Id) return;
+            this._ga4Loaded = true;
+            var s = document.createElement('script');
+            s.async = true;
+            s.src = 'https://www.googletagmanager.com/gtag/js?id=' + this._ga4Id;
+            var f = document.getElementsByTagName('script')[0];
+            if (f && f.parentNode) f.parentNode.insertBefore(s, f);
+            _gtag('js', new Date());
+            _gtag('config', this._ga4Id, { send_page_view: true });
+            this._log('GA4 carregado', this._ga4Id);
+        },
+
         _showBannerEl: function () {
             var el = document.getElementById('at-cookie-banner');
             if (el) el.removeAttribute('hidden');
@@ -102,9 +117,10 @@
 
         // ── API pública ────────────────────────────────────────────────────────
 
-        init: function (gtmId, enabled) {
+        init: function (gtmId, enabled, ga4Id) {
             this._enabled = !!enabled && !!gtmId;
             this._gtmId = gtmId || null;
+            this._ga4Id = (ga4Id && ga4Id !== '') ? ga4Id : null;
 
             if (!this._enabled) {
                 this._log('desabilitado (sem GTM ID ou fora de produção)');
@@ -130,10 +146,11 @@
                 }
             }
 
-            // Carrega GTM em todos os casos — ele respeita o Consent Mode
+            // Carrega GTM e GA4 (GA4 direto garante coleta mesmo sem tag no GTM configurada)
             this._loadGTM();
+            this._loadGA4();
             this.captureUtm();
-            this._log('init', { enabled: true, consent: consent || 'pending' });
+            this._log('init', { enabled: true, gtmId: this._gtmId, ga4Id: this._ga4Id, consent: consent || 'pending' });
         },
 
         hasConsent: function () {
@@ -167,9 +184,12 @@
 
         track: function (eventName, params) {
             if (!this._enabled || !eventName) return;
+            var p = cleanParams(params);
+            // Envia via dataLayer (GTM) e diretamente via gtag (GA4)
             window.dataLayer = window.dataLayer || [];
-            window.dataLayer.push({ event: eventName, eventParams: cleanParams(params) });
-            this._log('track', eventName, cleanParams(params));
+            window.dataLayer.push({ event: eventName, eventParams: p });
+            if (this._ga4Id) _gtag('event', eventName, p);
+            this._log('track', eventName, p);
         },
 
         trackOnce: function (key, eventName, params) {

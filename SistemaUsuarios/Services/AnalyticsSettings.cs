@@ -4,5 +4,6 @@ namespace SistemaUsuarios.Services
     {
         public bool Enabled { get; set; }
         public string? GoogleTagManagerId { get; set; }
+        public string? GA4MeasurementId { get; set; }
     }
 }
