@@ -366,6 +366,20 @@ footer{background:#060E1C;padding:36px 24px}
 }
 </style>
 
+@if (Analytics.Enabled && !string.IsNullOrEmpty(Analytics.GA4MeasurementId))
+{
+    <!-- Google tag (gtag.js) -->
+    <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('consent', 'default', {
+        ad_storage: 'denied', analytics_storage: 'denied',
+        ad_user_data: 'denied', ad_personalization: 'denied', wait_for_update: 500
+    });
+    </script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=@Analytics.GA4MeasurementId"></script>
+    <script>gtag('js', new Date()); gtag('config', '@Analytics.GA4MeasurementId');</script>
+}
 @if (Analytics.Enabled && !string.IsNullOrEmpty(Analytics.GoogleTagManagerId))
 {
     <script src="~/js/analytics.js" asp-append-version="true"></script>

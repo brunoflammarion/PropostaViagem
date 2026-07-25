@@ -146,9 +146,8 @@
                 }
             }
 
-            // Carrega GTM e GA4 (GA4 direto garante coleta mesmo sem tag no GTM configurada)
+            // GA4 (gtag.js) já está no HTML estaticamente — carrega apenas GTM
             this._loadGTM();
-            this._loadGA4();
             this.captureUtm();
             this._log('init', { enabled: true, gtmId: this._gtmId, ga4Id: this._ga4Id, consent: consent || 'pending' });
         },
