@@ -1089,12 +1089,13 @@ footer {
                             </div>
                         }
                     </div>
-                    <div>
+                    <div style="flex:1;min-width:0;">
                         <div class="exec-exp-name">@exp.TipoPasseio</div>
                         <div class="exec-exp-sub">
                             @if (exp.DataInicio.HasValue) { <text>@exp.DataInicio.Value.ToString("dd/MM/yyyy", execPtBR)@(exp.DataInicio.Value.Hour != 0 ? " " + exp.DataInicio.Value.ToString("HH:mm") : "") · </text> }
                             @if (!string.IsNullOrEmpty(exp.Descricao)) { @(exp.Descricao.Length > 80 ? exp.Descricao.Substring(0,80) + "…" : exp.Descricao) }
                         </div>
+                        @await Html.PartialAsync("_VouchersExperiencia", exp.Arquivos.AsEnumerable())
                     </div>
                 </div>
             }

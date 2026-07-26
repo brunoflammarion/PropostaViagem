@@ -216,7 +216,7 @@ body { font-family: var(--ff-body); background: var(--c-bg); color: var(--c-text
 
 /* ── HERO ── */
 .fam-hero {
-    position: relative; min-height: 75vh; display: flex; align-items: center;
+    position: relative; min-height: 82vh; display: flex; align-items: flex-end;
     overflow: hidden;
 }
 .fam-hero-bg {
@@ -235,7 +235,7 @@ body { font-family: var(--ff-body); background: var(--c-bg); color: var(--c-text
 .fam-hero-content {
     position: relative; z-index: 2;
     width: 100%; max-width: 1100px; margin: 0 auto;
-    padding: 80px 24px 60px;
+    padding: 48px 24px 52px;
 }
 .fam-hero-pill {
     display: inline-flex; align-items: center; gap: 7px;
@@ -251,16 +251,14 @@ body { font-family: var(--ff-body); background: var(--c-bg); color: var(--c-text
 .fam-hero-sub {
     font-size: 1.05rem; color: rgba(255,255,255,.82); max-width: 500px; margin-bottom: 28px;
 }
-.fam-hero-stats {
-    display: flex; flex-wrap: wrap; gap: 12px;
+.fam-hero-date-badge {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.22);
+    border-radius: 50px; padding: 8px 20px; color: #fff;
+    backdrop-filter: blur(6px);
 }
-.fam-hero-stat {
-    background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2);
-    border-radius: 12px; padding: 12px 18px; color: #fff; text-align: center;
-    backdrop-filter: blur(4px);
-}
-.fam-hero-stat strong { display: block; font-size: 1.5rem; font-weight: 800; line-height: 1; }
-.fam-hero-stat small  { font-size: .75rem; opacity: .8; }
+.fam-hero-date-badge strong { font-size: 1rem; font-weight: 700; }
+.fam-hero-date-badge span   { font-size: .82rem; opacity: .8; }
 
 /* ── HIGHLIGHTS ── */
 .fam-highlights {
@@ -741,16 +739,14 @@ body.has-preview-bar { padding-top: 46px; }
 @@media (max-width: 768px) {
     .fam-exp-card { grid-template-columns: 1fr; }
     .fam-exp-card-media { min-height: 180px; }
-    .fam-hero { min-height: 60vh; }
+    .fam-hero { min-height: 70vh; }
     .fam-hero h1 { font-size: 1.9rem; }
     .fam-hotel-gallery { height: 200px; }
     .fam-hotel-gallery .carousel-item img { height: 200px; }
     .fam-section { padding: 48px 16px; }
 }
 @@media (max-width: 480px) {
-    .fam-hero-stats { gap: 8px; }
-    .fam-hero-stat { padding: 10px 14px; }
-    .fam-hero-stat strong { font-size: 1.2rem; }
+    .fam-hero-date-badge { padding: 6px 16px; font-size: .9rem; }
     .fam-acmd-grid { grid-template-columns: 1fr; }
 }
 </style>
@@ -836,43 +832,14 @@ body.has-preview-bar { padding-top: 46px; }
         {
             <p class="fam-hero-sub">@(Model.ObservacoesGerais.Length > 140 ? Model.ObservacoesGerais.Substring(0,140) + "…" : Model.ObservacoesGerais)</p>
         }
-        <div class="fam-hero-stats">
-            @if (Model.DataInicio.HasValue && Model.DataFim.HasValue)
-            {
-                var _dias = (Model.DataFim.Value - Model.DataInicio.Value).Days + 1;
-                <div class="fam-hero-stat">
-                    <strong>@_dias</strong>
-                    <small>@(_dias == 1 ? "dia" : "dias") · @Model.DataInicio.Value.ToString("dd/MM") a @Model.DataFim.Value.ToString("dd/MM/yy")</small>
-                </div>
-            }
-            @{
-                var _paxNomFam = Model.PassageirosProposta?.Count ?? 0;
-                var _temCliFam = Model.Cliente != null;
-                var _usarNomFam = _paxNomFam > 0 || _temCliFam;
-                var _totalPax = _usarNomFam
-                    ? (_temCliFam ? 1 : 0) + _paxNomFam
-                    : Model.NumeroPassageiros + Model.NumeroCriancas;
-                var _crFam = _usarNomFam ? 0 : Model.NumeroCriancas;
-            }
-            <div class="fam-hero-stat">
-                <strong>@_totalPax</strong>
-                <small>@(_totalPax == 1 ? "passageiro" : "passageiros")@(_crFam > 0 ? $" ({_crFam} crianças)" : "")</small>
+        @if (Model.DataInicio.HasValue && Model.DataFim.HasValue)
+        {
+            var _dias = (Model.DataFim.Value - Model.DataInicio.Value).Days + 1;
+            <div class="fam-hero-date-badge">
+                <strong>@_dias @(_dias == 1 ? "dia" : "dias")</strong>
+                <span>@Model.DataInicio.Value.ToString("dd/MM") – @Model.DataFim.Value.ToString("dd/MM/yy")</span>
             </div>
-            @if (famDestOrd.Any())
-            {
-                <div class="fam-hero-stat">
-                    <strong>@famDestOrd.Count</strong>
-                    <small>@(famDestOrd.Count == 1 ? "destino" : "destinos")</small>
-                </div>
-            }
-            @if (temVoos)
-            {
-                <div class="fam-hero-stat">
-                    <strong>@Model.Voos.Count</strong>
-                    <small>@(Model.Voos.Count == 1 ? "voo" : "voos")</small>
-                </div>
-            }
-        </div>
+        }
     </div>
 </section>
 
@@ -1282,6 +1249,7 @@ body.has-preview-bar { padding-top: 46px; }
                                     </button>
                                 </div>
                             }
+                            @await Html.PartialAsync("_VouchersExperiencia", exp.Arquivos.AsEnumerable())
                         </div>
                     </div>
                 }

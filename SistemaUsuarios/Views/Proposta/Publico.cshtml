@@ -240,7 +240,7 @@ body {
 
 /* ── HERO ── */
 .hero {
-    position: relative; min-height: 480px;
+    position: relative; min-height: 82vh;
     display: flex; align-items: flex-end;
     overflow: hidden;
 }
@@ -279,18 +279,14 @@ body {
 
 .hero-sub { color:rgba(255,255,255,.85); font-size:1.05rem; max-width:560px; }
 
-.hero-stat-strip {
-    display:flex; flex-wrap:wrap; gap:10px; margin-top:28px;
+.hero-date-badge {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.25);
+    backdrop-filter: blur(6px); border-radius: 50px;
+    padding: 8px 20px; color: #fff; margin-top: 24px;
 }
-.hero-stat {
-    background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.25);
-    backdrop-filter:blur(6px); border-radius: var(--radius-md);
-    padding: 12px 20px; text-align:center; color:#fff; min-width:120px;
-}
-.hero-stat strong { display:block; font-size:1.3rem; font-weight:700; }
-.hero-stat small { font-size:.75rem; opacity:.85; }
-.theme-executivo .hero-stat { border-color:rgba(201,168,76,.4); }
-.theme-familiar .hero-stat { background:rgba(255,255,255,.18); }
+.hero-date-badge strong { font-size: 1rem; font-weight: 700; }
+.hero-date-badge span   { font-size: .82rem; opacity: .82; }
 
 /* ── SECTION ── */
 .prop-section { padding: 72px 0; }
@@ -655,15 +651,13 @@ footer a { color:#94a3b8; }
     /* section padding reduced on mobile */
     .prop-section { padding:44px 0; }
     .section-head { margin-bottom:28px; }
-    .hero { min-height:380px; }
+    .hero { min-height:70vh; }
     .destino-hero-img { height:240px; }
     .photo-grid { grid-template-columns: repeat(2,1fr); }
     /* better touch targets */
     .btn-wa, .btn-email { padding:14px 24px; font-size:.95rem; }
     .floating-cta .btn-wa { padding:14px 22px; }
-    /* hero stat strip: scroll horizontally */
-    .hero-stat-strip { flex-wrap:nowrap; overflow-x:auto; padding-bottom:4px; }
-    .hero-stat { min-width:100px; flex-shrink:0; }
+    .hero-date-badge { padding: 6px 16px; font-size: .9rem; }
 }
 
 /* analytics debug */
@@ -1360,45 +1354,14 @@ body.has-preview-bar { padding-top: 46px; }
                 <p class="hero-sub mt-2">@(Model.ObservacoesGerais.Length > 120 ? Model.ObservacoesGerais.Substring(0,120) + "…" : Model.ObservacoesGerais)</p>
             }
 
-            <div class="hero-stat-strip">
-                @if (Model.DataInicio.HasValue && Model.DataFim.HasValue)
-                {
-                    var dias = (Model.DataFim.Value - Model.DataInicio.Value).Days + 1;
-                    <div class="hero-stat">
-                        <strong>@dias</strong>
-                        <small>@(dias == 1 ? "dia" : "dias") · @Model.DataInicio.Value.ToString("dd/MM") ao @Model.DataFim.Value.ToString("dd/MM/yy")</small>
-                    </div>
-                }
-                @{
-                    // Fonte preferencial: passageiros cadastrados individualmente
-                    // Fallback: campos legados (propostas antigas sem passageiros individuais)
-                    var _paxNom = Model.PassageirosProposta?.Count ?? 0;
-                    var _temCli = Model.Cliente != null;
-                    var _usarNom = _paxNom > 0 || _temCli;
-                    var totalPax = _usarNom
-                        ? (_temCli ? 1 : 0) + _paxNom
-                        : Model.NumeroPassageiros + Model.NumeroCriancas;
-                    var _criancasLegado = _usarNom ? 0 : Model.NumeroCriancas;
-                }
-                <div class="hero-stat">
-                    <strong>@totalPax</strong>
-                    <small>@(totalPax == 1 ? "passageiro" : "passageiros")@(_criancasLegado > 0 ? $" ({_criancasLegado} crianças)" : "")</small>
+            @if (Model.DataInicio.HasValue && Model.DataFim.HasValue)
+            {
+                var dias = (Model.DataFim.Value - Model.DataInicio.Value).Days + 1;
+                <div class="hero-date-badge">
+                    <strong>@dias @(dias == 1 ? "dia" : "dias")</strong>
+                    <span>@Model.DataInicio.Value.ToString("dd/MM") – @Model.DataFim.Value.ToString("dd/MM/yy")</span>
                 </div>
-                @if (Model.Destinos.Any())
-                {
-                    <div class="hero-stat">
-                        <strong>@Model.Destinos.Count</strong>
-                        <small>@(Model.Destinos.Count == 1 ? "destino" : "destinos")</small>
-                    </div>
-                }
-                @if (temVoos)
-                {
-                    <div class="hero-stat">
-                        <strong>@Model.Voos.Count</strong>
-                        <small>@(Model.Voos.Count == 1 ? "voo" : "voos")</small>
-                    </div>
-                }
-            </div>
+            }
         </div>
     </div>
 </section>
@@ -2535,6 +2498,7 @@ body.has-preview-bar { padding-top: 46px; }
                                                                 {
                                                                     <p class="text-muted small mb-0 flex-grow-1">@exp.Descricao</p>
                                                                 }
+                                                                @await Html.PartialAsync("_VouchersExperiencia", exp.Arquivos.AsEnumerable())
                                                             </div>
                                                         </div>
                                                     </div>
@@ -2622,6 +2586,7 @@ body.has-preview-bar { padding-top: 46px; }
                                                     {
                                                         <p class="text-muted small mb-0 flex-grow-1">@exp.Descricao</p>
                                                     }
+                                                    @await Html.PartialAsync("_VouchersExperiencia", exp.Arquivos.AsEnumerable())
                                                 </div>
                                             </div>
                                         </div>

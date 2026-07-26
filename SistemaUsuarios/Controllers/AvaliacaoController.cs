@@ -2,16 +2,19 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SistemaUsuarios.Data;
 using SistemaUsuarios.Models;
+using SistemaUsuarios.Services;
 
 namespace SistemaUsuarios.Controllers
 {
     public class AvaliacaoController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly ITarefaService       _tarefaService;
 
-        public AvaliacaoController(ApplicationDbContext context)
+        public AvaliacaoController(ApplicationDbContext context, ITarefaService tarefaService)
         {
-            _context = context;
+            _context       = context;
+            _tarefaService = tarefaService;
         }
 
         /// <summary>
@@ -70,6 +73,10 @@ namespace SistemaUsuarios.Controllers
             }
 
             await _context.SaveChangesAsync();
+
+            var temNotaBaixa = request.Itens.Any(i => i.Nota >= 1 && i.Nota <= 3);
+            await _tarefaService.GerarTarefaAvaliacaoClienteAsync(request.PropostaId, temNotaBaixa);
+
             return Ok(new { ok = true });
         }
     }

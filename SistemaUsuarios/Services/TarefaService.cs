@@ -40,6 +40,7 @@ namespace SistemaUsuarios.Services
         Task GerarTarefasParaViagemAsync(Guid propostaId);
         Task GerarTarefaFollowUpVisualizacaoAsync(Guid propostaId);
         Task GerarTarefaNovoLeadAsync(Guid leadId);
+        Task GerarTarefaAvaliacaoClienteAsync(Guid propostaId, bool temNotaBaixa);
         Task ProcessarAniversariosDoUsuarioAsync(Guid usuarioId);
 
         // Scheduler-ready — não depende de HttpContext
@@ -70,6 +71,7 @@ namespace SistemaUsuarios.Services
         public const string ANIVERSARIO_CLIENTE   = "ANIVERSARIO_CLIENTE";
         public const string NOVO_LEAD             = "NOVO_LEAD";
         public const string PROXIMA_VIAGEM        = "PROXIMA_VIAGEM";
+        public const string RETORNO_AVALIACAO     = "RETORNO_AVALIACAO_CLIENTE";
 
         // Definição de todos os templates com valores padrão
         private static readonly (string Tipo, string Codigo, bool HabPadrao, int OffsetDias, string Momento)[] DefaultTemplates =
@@ -85,6 +87,7 @@ namespace SistemaUsuarios.Services
             (TarefaTipo.Comercial,   PEDIR_INDICACAO,       true,  +7, MomentoReferenciaLembrete.AposFim),
             (TarefaTipo.Aniversario, ANIVERSARIO_CLIENTE,   true,   0, MomentoReferenciaLembrete.DiaEvento),
             (TarefaTipo.Aniversario, PROXIMA_VIAGEM,        true,   0, MomentoReferenciaLembrete.DiaEvento),
+            (TarefaTipo.Followup,    RETORNO_AVALIACAO,     true,   0, MomentoReferenciaLembrete.DiaEvento),
         };
 
         private readonly ApplicationDbContext _context;
@@ -292,6 +295,52 @@ namespace SistemaUsuarios.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao gerar tarefa de novo lead {LeadId}", leadId);
+            }
+        }
+
+        public async Task GerarTarefaAvaliacaoClienteAsync(Guid propostaId, bool temNotaBaixa)
+        {
+            try
+            {
+                var proposta = await _context.Propostas.AsNoTracking()
+                    .FirstOrDefaultAsync(p => p.Id == propostaId);
+                if (proposta is null) return;
+
+                var usuarioId = proposta.UsuarioResponsavelId ?? proposta.UsuarioMasterId ?? proposta.UsuarioId;
+                var configs   = await ObterConfigsDicionario(usuarioId);
+
+                if (!configs.TryGetValue(RETORNO_AVALIACAO, out var cfg) || !cfg.Habilitado)
+                    return;
+
+                // Idempotência: só cria se não houver tarefa PENDENTE para esta proposta
+                var jaTemPendente = await _context.Tarefas.AnyAsync(t =>
+                    t.PropostaId   == propostaId
+                    && t.TemplateCodigo == RETORNO_AVALIACAO
+                    && t.Status        == TarefaStatus.Pendente
+                    && !t.IsDeleted);
+
+                if (jaTemPendente) return;
+
+                _context.Tarefas.Add(new Tarefa
+                {
+                    UsuarioId             = usuarioId,
+                    ClienteId             = proposta.ClienteId,
+                    PropostaId            = propostaId,
+                    Titulo                = $"Avaliação recebida: {proposta.Titulo}",
+                    Descricao             = DescricaoTemplate(RETORNO_AVALIACAO),
+                    DataVencimento        = DateTime.Today,
+                    Tipo                  = TarefaTipo.Followup,
+                    Prioridade            = temNotaBaixa ? TarefaPrioridade.Alta : TarefaPrioridade.Media,
+                    Status                = TarefaStatus.Pendente,
+                    Origem                = TarefaOrigem.Automatica,
+                    GeradaAutomaticamente = true,
+                    TemplateCodigo        = RETORNO_AVALIACAO
+                });
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao gerar tarefa de avaliação para proposta {PropostaId}", propostaId);
             }
         }
 
@@ -661,6 +710,7 @@ namespace SistemaUsuarios.Services
             ANIVERSARIO_CLIENTE   => "Aniversário do cliente",
             NOVO_LEAD             => "Novo lead recebido",
             PROXIMA_VIAGEM        => "Hora de planejar a próxima viagem",
+            RETORNO_AVALIACAO     => "Retornar avaliação do cliente",
             _                     => codigo
         };
 
@@ -677,6 +727,7 @@ namespace SistemaUsuarios.Services
             ANIVERSARIO_CLIENTE   => "Parabenize o cliente pelo aniversário.",
             NOVO_LEAD             => "Um novo potencial cliente entrou em contato. Faça o primeiro atendimento o quanto antes para aumentar as chances de conversão.",
             PROXIMA_VIAGEM        => "Já faz quase um ano da última viagem do cliente. Entre em contato e ajude-o a começar a planejar a próxima experiência.",
+            RETORNO_AVALIACAO     => "O cliente avaliou a proposta. Analise o feedback e entre em contato para responder, esclarecer dúvidas ou avançar no atendimento.",
             _                     => ""
         };
 
@@ -686,6 +737,7 @@ namespace SistemaUsuarios.Services
             ANIVERSARIO_CLIENTE   => "No dia do aniversário do cliente",
             NOVO_LEAD             => "No mesmo dia em que o lead entrar em contato",
             PROXIMA_VIAGEM        => "30 dias antes de completar 1 ano da última viagem do cliente",
+            RETORNO_AVALIACAO     => "Imediatamente após o cliente registrar uma nova avaliação",
             _ => momento switch
             {
                 MomentoReferenciaLembrete.AntesInicio => offsetDias.HasValue
@@ -711,6 +763,7 @@ namespace SistemaUsuarios.Services
             ANIVERSARIO_CLIENTE   => TarefaPrioridade.Media,
             NOVO_LEAD             => TarefaPrioridade.Alta,
             PROXIMA_VIAGEM        => TarefaPrioridade.Alta,
+            RETORNO_AVALIACAO     => TarefaPrioridade.Alta,
             _                     => TarefaPrioridade.Media
         };
     }

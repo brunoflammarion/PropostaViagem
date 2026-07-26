@@ -1,0 +1,25 @@
+@model IEnumerable<SistemaUsuarios.Models.ExperienciaArquivo>
+@if (Model != null && Model.Any())
+{
+    <div class="exp-vouchers">
+        <div class="exp-vouchers-label">
+            <i class="fas fa-file-alt"></i>
+            <span>Documentos da experiência</span>
+        </div>
+        <ul class="exp-vouchers-list">
+            @foreach (var arq in Model)
+            {
+                var isPdf   = (arq.TipoArquivo ?? "").Equals("application/pdf", StringComparison.OrdinalIgnoreCase);
+                var isImage = (arq.TipoArquivo ?? "").StartsWith("image/", StringComparison.OrdinalIgnoreCase);
+                var icon    = isPdf ? "fa-file-pdf" : isImage ? "fa-file-image" : "fa-file-alt";
+                <li>
+                    <a href="@arq.CaminhoArquivo" target="_blank" rel="noopener noreferrer"
+                       class="exp-voucher-link" title="@arq.NomeOriginal">
+                        <i class="fas @icon"></i>
+                        <span>@arq.NomeOriginal</span>
+                    </a>
+                </li>
+            }
+        </ul>
+    </div>
+}
