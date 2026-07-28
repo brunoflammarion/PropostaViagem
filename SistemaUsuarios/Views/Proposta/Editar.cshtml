@@ -425,10 +425,11 @@
                                 @if (Model.LinkPublicoAtivo)
                                 {
                                     var codigoAtual = proposta?.CodigoAcesso;
-                                    <div class="rounded-3 border p-3 mb-0" style="background:#f8f9ff;">
+                                    <!-- Link + código (quando código é exigido) -->
+                                    <div class="rounded-3 border p-3 mb-3" style="background:#f8f9ff;">
                                         <div class="row g-2 align-items-end">
                                             <!-- Link público -->
-                                            <div class="col-md-7">
+                                            <div class="@(Model.ExigirCodigoAcesso ? "col-md-7" : "col-12")">
                                                 <label class="form-label small fw-semibold text-muted mb-1">
                                                     <i class="fas fa-link me-1"></i>Link da proposta
                                                 </label>
@@ -441,36 +442,95 @@
                                                             onclick="copiarLinkPublico()" title="Copiar link" id="btnCopiarLink">
                                                         <i class="fas fa-copy"></i>
                                                     </button>
-                                                    
                                                 </div>
                                             </div>
-                                            <!-- Código de acesso -->
-                                            <div class="col-md-5">
-                                                <label class="form-label small fw-semibold text-muted mb-1">
-                                                    <i class="fas fa-key me-1"></i>Código de acesso
-                                                </label>
-                                                <div class="input-group">
-                                                    <input type="text" class="form-control form-control-sm fw-bold text-center"
-                                                           id="codigoAcesso"
-                                                           value="@(codigoAtual ?? "—")"
-                                                           readonly
-                                                           style="letter-spacing:.18em;font-size:.95rem;" />
-                                                    <button class="btn btn-sm btn-outline-success" type="button"
-                                                            onclick="copiarCodigo()" title="Copiar código" id="btnCopiarCodigo"
-                                                            @(codigoAtual == null ? "disabled" : "")>
-                                                        <i class="fas fa-copy"></i>
-                                                    </button>
-                                                    <button class="btn btn-sm btn-outline-secondary" type="button"
-                                                            onclick="gerarNovoCodigo('@Model.Id')" title="Gerar novo código" id="btnGerarCodigo">
-                                                        <i class="fas fa-sync-alt"></i>
-                                                    </button>
+                                            @if (Model.ExigirCodigoAcesso)
+                                            {
+                                                <!-- Código de acesso -->
+                                                <div class="col-md-5">
+                                                    <label class="form-label small fw-semibold text-muted mb-1">
+                                                        <i class="fas fa-key me-1"></i>Código de acesso
+                                                    </label>
+                                                    <div class="input-group">
+                                                        <input type="text" class="form-control form-control-sm fw-bold text-center"
+                                                               id="codigoAcesso"
+                                                               value="@(codigoAtual ?? "—")"
+                                                               readonly
+                                                               style="letter-spacing:.18em;font-size:.95rem;" />
+                                                        <button class="btn btn-sm btn-outline-success" type="button"
+                                                                onclick="copiarCodigo()" title="Copiar código" id="btnCopiarCodigo"
+                                                                @(codigoAtual == null ? "disabled" : "")>
+                                                            <i class="fas fa-copy"></i>
+                                                        </button>
+                                                        <button class="btn btn-sm btn-outline-secondary" type="button"
+                                                                onclick="gerarNovoCodigo('@Model.Id')" title="Gerar novo código" id="btnGerarCodigo">
+                                                            <i class="fas fa-sync-alt"></i>
+                                                        </button>
+                                                    </div>
+                                                    <div class="mt-1" style="font-size:.72rem;color:#888;">
+                                                        <i class="fas fa-info-circle me-1"></i>Compartilhe com o cliente para liberação do acesso
+                                                    </div>
                                                 </div>
-                                                <div class="mt-1" style="font-size:.72rem;color:#888;">
-                                                    <i class="fas fa-info-circle me-1"></i>Compartilhe com o cliente para liberação do acesso
+                                            }
+                                            else
+                                            {
+                                                <div class="col-12 mt-2">
+                                                    <div class="d-flex align-items-start gap-2 p-2 rounded-2" style="background:#fff8e1;border:1px solid #ffe082;">
+                                                        <i class="fas fa-unlock-alt mt-1" style="color:#f59e0b;flex-shrink:0;"></i>
+                                                        <div>
+                                                            <div class="fw-semibold" style="font-size:.8rem;color:#92400e;">Esta proposta poderá ser acessada diretamente pelo link público.</div>
+                                                            <div class="mt-1" style="font-size:.72rem;color:#b45309;">Qualquer pessoa com o link poderá visualizar esta proposta enquanto o link estiver ativo.</div>
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                            </div>
+                                            }
                                         </div>
                                     </div>
+                                    <!-- ── Proteção da proposta ──────────────────────────────── -->
+                                    <form asp-action="SalvarProtecaoProposta" asp-controller="Proposta" method="post"
+                                          id="formProtecaoProposta">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@Model.Id" />
+                                        <div class="mb-2">
+                                            <label class="form-label small fw-semibold text-muted mb-2 d-block">
+                                                <i class="fas fa-shield-alt me-1"></i>Proteção da proposta
+                                            </label>
+                                            <div class="d-flex gap-2 flex-wrap">
+                                                <label class="radio-card flex-grow-1 @(Model.ExigirCodigoAcesso ? "radio-card--selected" : "")">
+                                                    <input type="radio" name="exigirCodigoAcesso" value="true"
+                                                           class="radio-card__input"
+                                                           @(Model.ExigirCodigoAcesso ? "checked" : "") />
+                                                    <div class="radio-card__body">
+                                                        <div class="d-flex align-items-center gap-2 mb-1">
+                                                            <i class="fas fa-lock" style="color:#0d6efd;font-size:.85rem;"></i>
+                                                            <span class="fw-semibold" style="font-size:.8rem;">Exigir código de acesso</span>
+                                                            <span class="badge bg-primary ms-auto" style="font-size:.6rem;padding:.2em .45em;">Recomendado</span>
+                                                        </div>
+                                                        <div class="text-muted" style="font-size:.72rem;line-height:1.4;">
+                                                            O cliente deverá informar um código para visualizar esta proposta.
+                                                        </div>
+                                                    </div>
+                                                </label>
+                                                <label class="radio-card flex-grow-1 @(!Model.ExigirCodigoAcesso ? "radio-card--selected" : "")">
+                                                    <input type="radio" name="exigirCodigoAcesso" value="false"
+                                                           class="radio-card__input"
+                                                           @(!Model.ExigirCodigoAcesso ? "checked" : "") />
+                                                    <div class="radio-card__body">
+                                                        <div class="d-flex align-items-center gap-2 mb-1">
+                                                            <i class="fas fa-link" style="color:#6c757d;font-size:.85rem;"></i>
+                                                            <span class="fw-semibold" style="font-size:.8rem;">Permitir acesso direto pelo link</span>
+                                                        </div>
+                                                        <div class="text-muted" style="font-size:.72rem;line-height:1.4;">
+                                                            Qualquer pessoa que possuir este link poderá visualizar a proposta sem informar um código.
+                                                        </div>
+                                                    </div>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <button type="submit" class="btn btn-sm btn-primary px-3">
+                                            <i class="fas fa-save me-1"></i>Salvar proteção
+                                        </button>
+                                    </form>
                                 }
                             </div>
                         </div>
@@ -2223,19 +2283,11 @@
                 </div>
 
 <!-- ── Configuração de avaliação pelo cliente ──────────────────────── -->
-                <form asp-action="Editar" asp-controller="Proposta" method="post"
-                      enctype="multipart/form-data" id="formAvaliacaoConfig"
+                <form asp-action="SalvarAvaliacaoConfig" asp-controller="Proposta" method="post"
+                      id="formAvaliacaoConfig"
                       class="mb-4">
                     @Html.AntiForgeryToken()
-                    @* Hidden fields para preservar todos os outros campos da proposta *@
-                    <input type="hidden" asp-for="Id" />
-                    <input type="hidden" asp-for="Titulo" />
-                    <input type="hidden" asp-for="NumeroPassageiros" />
-                    <input type="hidden" asp-for="NumeroCriancas" />
-                    <input type="hidden" asp-for="StatusProposta" />
-                    <input type="hidden" asp-for="LinkPublicoAtivo" />
-                    <input type="hidden" asp-for="FotoCapa" />
-                    <input type="hidden" asp-for="LayoutId" />
+                    <input type="hidden" name="id" value="@Model.Id" />
 
                     <div class="card border-0 shadow-sm">
                         <div class="card-header bg-white d-flex align-items-center gap-2 py-2">
@@ -4769,8 +4821,8 @@
                         dataFim.value = '';
                     }
                 }
-                dataInicio.addEventListener('change', validarDatas);
-                dataFim.addEventListener('change', validarDatas);
+                dataInicio.addEventListener('blur', validarDatas);
+                dataFim.addEventListener('blur', validarDatas);
             }
 
             // Preview foto de capa (Tab 1)
@@ -6103,6 +6155,24 @@
 }
 
 <style>
+    /* ── Radio cards — Proteção da proposta ──────────────────── */
+    .radio-card {
+        display: flex;
+        align-items: flex-start;
+        gap: .5rem;
+        padding: .6rem .75rem;
+        border: 1.5px solid #dee2e6;
+        border-radius: .5rem;
+        cursor: pointer;
+        transition: border-color .15s, box-shadow .15s, background .15s;
+        background: #fff;
+        min-width: 160px;
+    }
+    .radio-card:hover { border-color: #86b7fe; background: #f0f5ff; }
+    .radio-card--selected { border-color: #0d6efd; background: #f0f5ff; box-shadow: 0 0 0 3px rgba(13,110,253,.12); }
+    .radio-card__input { flex-shrink: 0; margin-top: .15rem; accent-color: #0d6efd; }
+    .radio-card__body { flex: 1; }
+
     /* Botões extra-small para ações inline de passageiros */
     .btn-xs { padding: 0.15rem 0.4rem; font-size: 0.75rem; line-height: 1.2; }
 

@@ -66,6 +66,9 @@ namespace SistemaUsuarios.Models
         [MaxLength(10)]
         public string? CodigoAcesso { get; set; }
 
+        /// <summary>Quando false, o cliente acessa a proposta diretamente pelo link, sem precisar informar o código.</summary>
+        public bool ExigirCodigoAcesso { get; set; } = true;
+
         /// <summary>Resumo/fechamento da proposta escrito pelo agente (HTML do editor rico).</summary>
         public string? ResumoProposta { get; set; }
 

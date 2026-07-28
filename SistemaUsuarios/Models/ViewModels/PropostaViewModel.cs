@@ -67,6 +67,8 @@ namespace SistemaUsuarios.Models.ViewModels
         [DataType(DataType.DateTime)]
         public DateTime? DataExpiracaoLink { get; set; }
 
+        public bool ExigirCodigoAcesso { get; set; } = true;
+
         // Campos somente leitura para informações do sistema
         public DateTime? DataCriacao { get; set; }
         public DateTime? DataModificacao { get; set; }

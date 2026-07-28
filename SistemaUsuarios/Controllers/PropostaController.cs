@@ -366,6 +366,7 @@ namespace SistemaUsuarios.Controllers
                 StatusProposta = proposta.StatusProposta,
                 LinkPublicoAtivo = proposta.LinkPublicoAtivo,
                 DataExpiracaoLink = proposta.DataExpiracaoLink,
+                ExigirCodigoAcesso = proposta.ExigirCodigoAcesso,
                 DataCriacao = proposta.DataCriacao,
                 DataModificacao = proposta.DataModificacao,
                 SolicitarAvaliacaoHospedagem  = proposta.SolicitarAvaliacaoHospedagem,
@@ -507,6 +508,82 @@ namespace SistemaUsuarios.Controllers
             await _context.SaveChangesAsync();
         }
 
+        /// <summary>Salva exclusivamente as 3 flags de avaliação pelo cliente, sem tocar em nenhum outro campo.</summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SalvarAvaliacaoConfig(
+            Guid id,
+            bool solicitarAvaliacaoHospedagem,
+            bool solicitarAvaliacaoAcomodacao,
+            bool solicitarAvaliacaoExperiencia)
+        {
+            if (!UsuarioLogado())
+                return RedirectToAction("Login", "Auth");
+
+            var proposta = await _context.Propostas.FindAsync(id);
+            if (proposta == null)
+            {
+                TempData["Erro"] = "Proposta não encontrada.";
+                return RedirectToAction("Index");
+            }
+
+            var usuarioLogadoId = ObterUsuarioLogadoId();
+            if (!PropostaAutorizada(proposta, usuarioLogadoId))
+            {
+                TempData["Erro"] = "Você não tem permissão para editar esta proposta.";
+                return RedirectToAction("Index");
+            }
+
+            proposta.SolicitarAvaliacaoHospedagem  = solicitarAvaliacaoHospedagem;
+            proposta.SolicitarAvaliacaoAcomodacao  = solicitarAvaliacaoAcomodacao;
+            proposta.SolicitarAvaliacaoExperiencia = solicitarAvaliacaoExperiencia;
+            proposta.DataModificacao = DateTime.Now;
+
+            await _context.SaveChangesAsync();
+
+            TempData["Sucesso"] = "Configuração de avaliação salva.";
+            TempData["ActiveTab"] = "destinos";
+            return RedirectToAction("Editar", new { id });
+        }
+
+        /// <summary>Salva exclusivamente a flag ExigirCodigoAcesso, sem tocar em nenhum outro campo.</summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SalvarProtecaoProposta(Guid id, bool exigirCodigoAcesso)
+        {
+            if (!UsuarioLogado())
+                return RedirectToAction("Login", "Auth");
+
+            var proposta = await _context.Propostas.FindAsync(id);
+            if (proposta == null)
+            {
+                TempData["Erro"] = "Proposta não encontrada.";
+                return RedirectToAction("Index");
+            }
+
+            var usuarioLogadoId = ObterUsuarioLogadoId();
+            if (!PropostaAutorizada(proposta, usuarioLogadoId))
+            {
+                TempData["Erro"] = "Você não tem permissão para editar esta proposta.";
+                return RedirectToAction("Index");
+            }
+
+            // Se ativando proteção e ainda não há código → gera um agora
+            if (exigirCodigoAcesso && string.IsNullOrEmpty(proposta.CodigoAcesso))
+                proposta.CodigoAcesso = GerarCodigoCurto();
+
+            proposta.ExigirCodigoAcesso = exigirCodigoAcesso;
+            proposta.DataModificacao    = DateTime.Now;
+
+            await _context.SaveChangesAsync();
+
+            TempData["Sucesso"] = exigirCodigoAcesso
+                ? "Proteção por código ativada."
+                : "Acesso direto pelo link ativado.";
+            TempData["ActiveTab"] = "dados";
+            return RedirectToAction("Editar", new { id });
+        }
+
         /// <summary>Salva apenas o ResumoProposta via AJAX (auto-save do editor rico na aba Revisão).</summary>
         [HttpPost]
         public async Task<IActionResult> SalvarResumoProposta(Guid id, string? conteudo)
@@ -615,7 +692,7 @@ namespace SistemaUsuarios.Controllers
             // Validação leve antes de carregar tudo
             var meta = await _context.Propostas
                 .Where(p => p.Id == id)
-                .Select(p => new { p.Id, p.LinkPublicoAtivo, p.DataExpiracaoLink, p.CodigoAcesso, p.Titulo })
+                .Select(p => new { p.Id, p.LinkPublicoAtivo, p.DataExpiracaoLink, p.CodigoAcesso, p.Titulo, p.ExigirCodigoAcesso })
                 .FirstOrDefaultAsync();
 
             if (meta == null)
@@ -636,7 +713,7 @@ namespace SistemaUsuarios.Controllers
             }
 
             // Portão de código de acesso
-            if (!string.IsNullOrEmpty(meta.CodigoAcesso))
+            if (meta.ExigirCodigoAcesso && !string.IsNullOrEmpty(meta.CodigoAcesso))
             {
                 var sessionKey = $"proposta_acesso_{id}";
                 if (HttpContext.Session.GetString(sessionKey) != "ok")
@@ -724,7 +801,7 @@ namespace SistemaUsuarios.Controllers
         {
             var meta = await _context.Propostas
                 .Where(p => p.Id == id)
-                .Select(p => new { p.Id, p.Titulo, p.FotoCapa, p.LinkPublicoAtivo, p.DataExpiracaoLink, p.CodigoAcesso })
+                .Select(p => new { p.Id, p.Titulo, p.FotoCapa, p.LinkPublicoAtivo, p.DataExpiracaoLink, p.CodigoAcesso, p.ExigirCodigoAcesso })
                 .FirstOrDefaultAsync();
 
             if (meta == null)
@@ -744,8 +821,8 @@ namespace SistemaUsuarios.Controllers
                 return View("PropostaIndisponivel");
             }
 
-            // Sem código → acesso direto
-            if (string.IsNullOrEmpty(meta.CodigoAcesso))
+            // Acesso direto configurado ou sem código → passa direto
+            if (!meta.ExigirCodigoAcesso || string.IsNullOrEmpty(meta.CodigoAcesso))
                 return RedirectToAction("Publico", new { id });
 
             // Já autenticado → acesso direto

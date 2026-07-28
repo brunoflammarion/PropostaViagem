@@ -4,22 +4,35 @@ namespace SistemaUsuarios.Models
 {
     public enum CategoriaHospedagem
     {
+        [Display(Name = "Hotel")]
         Hotel = 1,
+        [Display(Name = "Pousada")]
         Pousada = 2,
+        [Display(Name = "Resort")]
         Resort = 3,
+        [Display(Name = "Hotel fazenda")]
         HotelFazenda = 4,
+        [Display(Name = "Aluguel de casa")]
         AluguelCasa = 5,
+        [Display(Name = "Camping")]
         Camping = 6,
+        [Display(Name = "Outros")]
         Outros = 7
     }
 
     public enum TipoPensao
     {
+        [Display(Name = "Sem refeições")]
         SemPensao = 1,
+        [Display(Name = "Café da manhã")]
         CafeDaManha = 2,
+        [Display(Name = "Meia pensão")]
         MeiaPensao = 3,
+        [Display(Name = "Pensão completa")]
         PensaoCompleta = 4,
+        [Display(Name = "All-inclusive")]
         AllInclusive = 5,
+        [Display(Name = "Outros")]
         Outros = 6
     }
 

@@ -319,8 +319,16 @@ body {
 .badge-theme {
     background: var(--c-badge-bg); color: var(--c-badge-txt);
     border-radius:50px; padding:3px 12px; font-size:.75rem; font-weight:600;
+    display:inline-flex; align-items:center;
 }
 .theme-executivo .badge-theme { border-radius: var(--radius-sm); letter-spacing:.4px; }
+.hosp-badge-neutral {
+    display:inline-flex; align-items:center;
+    background: rgba(0,0,0,.05); border: 1px solid rgba(0,0,0,.10);
+    color: var(--c-text); border-radius:50px;
+    padding:3px 12px; font-size:.75rem; font-weight:600;
+}
+.theme-executivo .hosp-badge-neutral { border-radius: var(--radius-sm); }
 
 /* ── PASSAGEIROS ── */
 .pax-card {
@@ -621,7 +629,6 @@ footer a { color:#94a3b8; }
     border-radius: 0 var(--radius-md) var(--radius-md) 0;
     padding:20px 24px;
 }
-.pensao-badge { font-size:.72rem; text-transform:uppercase; letter-spacing:.5px; padding:2px 8px; }
 .hosp-stars-pub { color:#C9982E; font-size:.8rem; letter-spacing:.05em; line-height:1; white-space:nowrap; }
 
 /* ── MOBILE NAV: horizontal scrollable chip bar ── */
@@ -2265,11 +2272,11 @@ body.has-preview-bar { padding-top: 46px; }
                                                     <div class="d-flex gap-2 flex-wrap">
                                                         @if (hosp.Categoria != default)
                                                         {
-                                                            <span class="badge-theme">@hosp.Categoria.ToString()</span>
+                                                            <span class="badge-theme">@hosp.Categoria.GetDisplayName()</span>
                                                         }
-                                                        @if (hosp.TipoPensao != default)
+                                                        @if (hosp.TipoPensao != TipoPensao.SemPensao)
                                                         {
-                                                            <span class="badge bg-light text-secondary border pensao-badge">@hosp.TipoPensao.ToString()</span>
+                                                            <span class="hosp-badge-neutral">@hosp.TipoPensao.GetDisplayName()</span>
                                                         }
                                                     </div>
                                                 </div>
@@ -2893,7 +2900,7 @@ body.has-preview-bar { padding-top: 46px; }
                                 {
                                     <div class="aval-card-sub"><i class="fas fa-map-marker-alt me-1"></i>@hosp.Endereco</div>
                                 }
-                                <div class="aval-card-sub">@hosp.Categoria.ToString()</div>
+                                <div class="aval-card-sub">@hosp.Categoria.GetDisplayName()</div>
                                 <div class="star-rating" data-tipo="Hospedagem" data-id="@hospId">
                                     @for (int s = 5; s >= 1; s--)
                                     {

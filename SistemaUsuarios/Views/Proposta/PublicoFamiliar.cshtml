@@ -944,14 +944,7 @@ body.has-preview-bar { padding-top: 46px; }
                                             <span class="fam-dp-item-name">@_h.Nome</span>
                                             @if (_h.TipoPensao != TipoPensao.SemPensao)
                                             {
-                                                var _tp = _h.TipoPensao switch {
-                                                    TipoPensao.CafeDaManha     => "Café da manhã",
-                                                    TipoPensao.MeiaPensao      => "Meia pensão",
-                                                    TipoPensao.PensaoCompleta  => "Pensão completa",
-                                                    TipoPensao.AllInclusive    => "All inclusive",
-                                                    _                          => _h.TipoPensao.ToString()
-                                                };
-                                                <span class="fam-dp-item-sub">@_tp</span>
+                                                <span class="fam-dp-item-sub">@_h.TipoPensao.GetDisplayName()</span>
                                             }
                                         </div>
                                     </div>
@@ -1112,9 +1105,9 @@ body.has-preview-bar { padding-top: 46px; }
                             <div class="fam-hotel-address"><i class="fas fa-map-marker-alt" style="color:var(--c-accent);"></i>@hosp.Endereco</div>
                         }
                         <div class="fam-hotel-meta">
-                            <span class="fam-hotel-chip"><i class="fas fa-hotel"></i>@hosp.Categoria.ToString()</span>
+                            <span class="fam-hotel-chip"><i class="fas fa-hotel"></i>@hosp.Categoria.GetDisplayName()</span>
                             @if (_noites > 0) { <span class="fam-hotel-chip"><i class="fas fa-moon"></i>@_noites @(_noites == 1 ? "noite" : "noites")</span> }
-                            @if (hosp.TipoPensao != TipoPensao.SemPensao) { <span class="fam-hotel-chip"><i class="fas fa-utensils"></i>@hosp.TipoPensao.ToString()</span> }
+                            @if (hosp.TipoPensao != TipoPensao.SemPensao) { <span class="fam-hotel-chip"><i class="fas fa-utensils"></i>@hosp.TipoPensao.GetDisplayName()</span> }
                         </div>
                         @if (hosp.CheckIn.HasValue || hosp.CheckOut.HasValue)
                         {
@@ -1485,7 +1478,7 @@ body.has-preview-bar { padding-top: 46px; }
                             {
                                 <div class="aval-card-sub"><i class="fas fa-map-marker-alt me-1"></i>@_ah.Endereco</div>
                             }
-                            <div class="aval-card-sub">@_ah.Categoria.ToString()</div>
+                            <div class="aval-card-sub">@_ah.Categoria.GetDisplayName()</div>
                             <div class="star-rating" data-tipo="Hospedagem" data-id="@_ahId">
                                 @for (int s = 5; s >= 1; s--) {
                                     <input type="radio" name="aval-hosp-@_ahId" id="aval-hosp-@(_ahId)-@s" value="@s" />

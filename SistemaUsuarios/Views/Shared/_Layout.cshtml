@@ -121,24 +121,6 @@
                             <i class="fas fa-tasks me-1"></i>Tarefas
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link @NavCls("Oferta")" href="@Url.Action("Index", "Oferta")">
-                            <i class="fas fa-bullhorn me-1"></i>Ofertas
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link @NavCls("Lead")" href="@Url.Action("Index", "Lead")">
-                            <i class="fas fa-user-plus me-1"></i>Leads
-                        </a>
-                    </li>
-                    @if (Context.Session.GetString("UsuarioId") != null && _uIsMaster)
-                    {
-                        <li class="nav-item">
-                            <a class="nav-link @NavCls("Usuario","GerenciarEquipe")" href="@Url.Action("GerenciarEquipe", "Usuario")">
-                                <i class="fas fa-users-cog me-1"></i>Equipe
-                            </a>
-                        </li>
-                    }
                 </ul>
 
                 <ul class="navbar-nav">
@@ -242,18 +224,6 @@
             <a class="at-drawer-link @NavCls("Tarefa")" href="@Url.Action("Index", "Tarefa")">
                 <i class="fas fa-tasks"></i><span>Tarefas</span>
             </a>
-            <a class="at-drawer-link @NavCls("Oferta")" href="@Url.Action("Index", "Oferta")">
-                <i class="fas fa-bullhorn"></i><span>Ofertas</span>
-            </a>
-            <a class="at-drawer-link @NavCls("Lead")" href="@Url.Action("Index", "Lead")">
-                <i class="fas fa-user-plus"></i><span>Leads</span>
-            </a>
-            @if (Context.Session.GetString("UsuarioId") != null && _uIsMaster)
-            {
-                <a class="at-drawer-link @NavCls("Usuario","GerenciarEquipe")" href="@Url.Action("GerenciarEquipe", "Usuario")">
-                    <i class="fas fa-users-cog"></i><span>Equipe</span>
-                </a>
-            }
         </nav>
 
         @if (Context.Session.GetString("UsuarioId") != null)

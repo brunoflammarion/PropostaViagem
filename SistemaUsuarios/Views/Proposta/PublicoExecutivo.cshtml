@@ -1031,11 +1031,11 @@ footer {
                             <div class="exec-hotel-stars">@for (int _s = 0; _s < hosp.NumeroEstrelas; _s++) { <i class="fas fa-star"></i> }</div>
                         }
                         <div class="exec-hotel-meta">
-                            <span><i class="fas fa-hotel"></i>@hosp.Categoria.ToString()</span>
+                            <span><i class="fas fa-hotel"></i>@hosp.Categoria.GetDisplayName()</span>
                             @if (_hNoites > 0) { <span><i class="fas fa-moon"></i>@_hNoites noite@(_hNoites != 1 ? "s" : "")</span> }
                             @if (hosp.CheckIn.HasValue) { <span><i class="fas fa-sign-in-alt"></i>Check-in: @hosp.CheckIn.Value.ToString("dd/MM/yyyy HH:mm")</span> }
                             @if (hosp.CheckOut.HasValue) { <span><i class="fas fa-sign-out-alt"></i>Check-out: @hosp.CheckOut.Value.ToString("dd/MM/yyyy HH:mm")</span> }
-                            @if (hosp.TipoPensao != TipoPensao.SemPensao) { <span><i class="fas fa-utensils"></i>@hosp.TipoPensao.ToString()</span> }
+                            @if (hosp.TipoPensao != TipoPensao.SemPensao) { <span><i class="fas fa-utensils"></i>@hosp.TipoPensao.GetDisplayName()</span> }
                         </div>
                     </div>
                 </div>
