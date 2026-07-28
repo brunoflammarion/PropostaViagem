@@ -1714,7 +1714,6 @@ namespace SistemaUsuarios.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<bool>("ExigirCodigoAcesso")
-                        .HasDefaultValue(true)
                         .HasColumnType("bit");
 
                     b.Property<string>("FotoCapa")
