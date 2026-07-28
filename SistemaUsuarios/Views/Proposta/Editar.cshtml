@@ -427,7 +427,7 @@
                                     var codigoAtual = proposta?.CodigoAcesso;
                                     <!-- Link + código (quando código é exigido) -->
                                     <div class="rounded-3 border p-3 mb-3" style="background:#f8f9ff;">
-                                        <div class="row g-2 align-items-end">
+                                        <div class="row g-3 align-items-start">
                                             <!-- Link público -->
                                             <div class="@(Model.ExigirCodigoAcesso ? "col-md-7" : "col-12")">
                                                 <label class="form-label small fw-semibold text-muted mb-1">
@@ -437,7 +437,8 @@
                                                     <input type="text" class="form-control form-control-sm"
                                                            id="linkPublico"
                                                            value="@(Context.Request.Scheme)://@(Context.Request.Host)/Proposta/Publico/@Model.Id"
-                                                           readonly />
+                                                           readonly
+                                                           style="text-overflow:ellipsis;" />
                                                     <button class="btn btn-sm btn-outline-primary" type="button"
                                                             onclick="copiarLinkPublico()" title="Copiar link" id="btnCopiarLink">
                                                         <i class="fas fa-copy"></i>
@@ -451,18 +452,18 @@
                                                     <label class="form-label small fw-semibold text-muted mb-1">
                                                         <i class="fas fa-key me-1"></i>Código de acesso
                                                     </label>
-                                                    <div class="input-group">
-                                                        <input type="text" class="form-control form-control-sm fw-bold text-center"
+                                                    <div class="d-flex gap-1 align-items-stretch">
+                                                        <input type="text" class="form-control form-control-sm fw-bold text-center flex-grow-1"
                                                                id="codigoAcesso"
                                                                value="@(codigoAtual ?? "—")"
                                                                readonly
-                                                               style="letter-spacing:.18em;font-size:.95rem;" />
-                                                        <button class="btn btn-sm btn-outline-success" type="button"
+                                                               style="letter-spacing:.18em;font-size:.95rem;min-width:0;" />
+                                                        <button class="btn btn-sm btn-outline-success flex-shrink-0" type="button"
                                                                 onclick="copiarCodigo()" title="Copiar código" id="btnCopiarCodigo"
                                                                 @(codigoAtual == null ? "disabled" : "")>
                                                             <i class="fas fa-copy"></i>
                                                         </button>
-                                                        <button class="btn btn-sm btn-outline-secondary" type="button"
+                                                        <button class="btn btn-sm btn-outline-secondary flex-shrink-0" type="button"
                                                                 onclick="gerarNovoCodigo('@Model.Id')" title="Gerar novo código" id="btnGerarCodigo">
                                                             <i class="fas fa-sync-alt"></i>
                                                         </button>
@@ -474,7 +475,7 @@
                                             }
                                             else
                                             {
-                                                <div class="col-12 mt-2">
+                                                <div class="col-12">
                                                     <div class="d-flex align-items-start gap-2 p-2 rounded-2" style="background:#fff8e1;border:1px solid #ffe082;">
                                                         <i class="fas fa-unlock-alt mt-1" style="color:#f59e0b;flex-shrink:0;"></i>
                                                         <div>
