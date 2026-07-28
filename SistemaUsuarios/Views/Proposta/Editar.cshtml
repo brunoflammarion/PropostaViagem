@@ -487,50 +487,56 @@
                                         </div>
                                     </div>
                                     <!-- ── Proteção da proposta ──────────────────────────────── -->
-                                    <form asp-action="SalvarProtecaoProposta" asp-controller="Proposta" method="post"
-                                          id="formProtecaoProposta">
-                                        @Html.AntiForgeryToken()
-                                        <input type="hidden" name="id" value="@Model.Id" />
-                                        <div class="mb-2">
-                                            <label class="form-label small fw-semibold text-muted mb-2 d-block">
-                                                <i class="fas fa-shield-alt me-1"></i>Proteção da proposta
+                                    @*
+                                        O <form id="formProtecaoProposta"> está fora do formEditarProposta
+                                        (após o </form> principal) para evitar aninhamento HTML inválido.
+                                        Os inputs abaixo usam form="formProtecaoProposta" para se associarem
+                                        a ele independentemente de posição no DOM.
+                                    *@
+                                    <input type="hidden" name="id" value="@Model.Id"
+                                           form="formProtecaoProposta" />
+                                    <div class="mb-2">
+                                        <label class="form-label small fw-semibold text-muted mb-2 d-block">
+                                            <i class="fas fa-shield-alt me-1"></i>Proteção da proposta
+                                        </label>
+                                        <div class="d-flex gap-2 flex-wrap">
+                                            <label class="radio-card flex-grow-1 @(Model.ExigirCodigoAcesso ? "radio-card--selected" : "")">
+                                                <input type="radio" name="exigirCodigoAcesso" value="true"
+                                                       class="radio-card__input"
+                                                       form="formProtecaoProposta"
+                                                       @(Model.ExigirCodigoAcesso ? "checked" : "") />
+                                                <div class="radio-card__body">
+                                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                                        <i class="fas fa-lock" style="color:#0d6efd;font-size:.85rem;"></i>
+                                                        <span class="fw-semibold" style="font-size:.8rem;">Exigir código de acesso</span>
+                                                        <span class="badge bg-primary ms-auto" style="font-size:.6rem;padding:.2em .45em;">Recomendado</span>
+                                                    </div>
+                                                    <div class="text-muted" style="font-size:.72rem;line-height:1.4;">
+                                                        O cliente deverá informar um código para visualizar esta proposta.
+                                                    </div>
+                                                </div>
                                             </label>
-                                            <div class="d-flex gap-2 flex-wrap">
-                                                <label class="radio-card flex-grow-1 @(Model.ExigirCodigoAcesso ? "radio-card--selected" : "")">
-                                                    <input type="radio" name="exigirCodigoAcesso" value="true"
-                                                           class="radio-card__input"
-                                                           @(Model.ExigirCodigoAcesso ? "checked" : "") />
-                                                    <div class="radio-card__body">
-                                                        <div class="d-flex align-items-center gap-2 mb-1">
-                                                            <i class="fas fa-lock" style="color:#0d6efd;font-size:.85rem;"></i>
-                                                            <span class="fw-semibold" style="font-size:.8rem;">Exigir código de acesso</span>
-                                                            <span class="badge bg-primary ms-auto" style="font-size:.6rem;padding:.2em .45em;">Recomendado</span>
-                                                        </div>
-                                                        <div class="text-muted" style="font-size:.72rem;line-height:1.4;">
-                                                            O cliente deverá informar um código para visualizar esta proposta.
-                                                        </div>
+                                            <label class="radio-card flex-grow-1 @(!Model.ExigirCodigoAcesso ? "radio-card--selected" : "")">
+                                                <input type="radio" name="exigirCodigoAcesso" value="false"
+                                                       class="radio-card__input"
+                                                       form="formProtecaoProposta"
+                                                       @(!Model.ExigirCodigoAcesso ? "checked" : "") />
+                                                <div class="radio-card__body">
+                                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                                        <i class="fas fa-link" style="color:#6c757d;font-size:.85rem;"></i>
+                                                        <span class="fw-semibold" style="font-size:.8rem;">Permitir acesso direto pelo link</span>
                                                     </div>
-                                                </label>
-                                                <label class="radio-card flex-grow-1 @(!Model.ExigirCodigoAcesso ? "radio-card--selected" : "")">
-                                                    <input type="radio" name="exigirCodigoAcesso" value="false"
-                                                           class="radio-card__input"
-                                                           @(!Model.ExigirCodigoAcesso ? "checked" : "") />
-                                                    <div class="radio-card__body">
-                                                        <div class="d-flex align-items-center gap-2 mb-1">
-                                                            <i class="fas fa-link" style="color:#6c757d;font-size:.85rem;"></i>
-                                                            <span class="fw-semibold" style="font-size:.8rem;">Permitir acesso direto pelo link</span>
-                                                        </div>
-                                                        <div class="text-muted" style="font-size:.72rem;line-height:1.4;">
-                                                            Qualquer pessoa que possuir este link poderá visualizar a proposta sem informar um código.
-                                                        </div>
+                                                    <div class="text-muted" style="font-size:.72rem;line-height:1.4;">
+                                                        Qualquer pessoa que possuir este link poderá visualizar a proposta sem informar um código.
                                                     </div>
-                                                </label>
-                                            </div>
+                                                </div>
+                                            </label>
                                         </div>
-                                        <button type="submit" class="btn btn-sm btn-primary px-3">
-                                            <i class="fas fa-save me-1"></i>Salvar proteção
-                                        </button>
-                                    </form>
+                                    </div>
+                                    <button type="submit" class="btn btn-sm btn-primary px-3"
+                                            form="formProtecaoProposta">
+                                        <i class="fas fa-save me-1"></i>Salvar proteção
+                                    </button>
                                 }
                             </div>
                         </div>
@@ -649,6 +655,16 @@
                         }
                     </div>
                 </div>
+            </form>
+
+            @*
+                Form de proteção da proposta.
+                Deve ficar FORA do formEditarProposta para evitar aninhamento HTML inválido.
+                Os inputs e o botão acima referenciam este form via form="formProtecaoProposta".
+            *@
+            <form asp-action="SalvarProtecaoProposta" asp-controller="Proposta" method="post"
+                  id="formProtecaoProposta">
+                @Html.AntiForgeryToken()
             </form>
 
             @*
