@@ -204,11 +204,6 @@ body.has-preview-bar { padding-top: 46px; }
     display: grid; grid-template-columns: var(--exec-sb-w) 1fr;
     min-height: calc(100vh - 58px);
 }
-@@media (max-width: 900px) {
-    .exec-layout { grid-template-columns: 1fr; }
-    .exec-sidebar { display: none; }
-}
-
 /* ── SIDEBAR ── */
 .exec-sidebar {
     position: sticky; top: 58px; height: calc(100vh - 58px); overflow-y: auto;
@@ -251,7 +246,6 @@ body.has-preview-bar { padding-top: 46px; }
 
 /* ── MAIN CONTENT ── */
 .exec-main { padding: 0 32px 64px; }
-@@media (max-width: 900px) { .exec-main { padding: 0 16px 48px; } }
 
 /* ── SECTIONS ── */
 .exec-section { padding: 32px 0; border-bottom: 1px solid var(--c-line); }
@@ -425,13 +419,27 @@ body.has-preview-bar { padding-top: 46px; }
 }
 
 /* ── RICHTEXT ── */
-.exec-richtext { font-size: .88rem; line-height: 1.7; color: var(--c-text-mid); }
+.exec-richtext {
+    font-size: .88rem; line-height: 1.7; color: var(--c-text-mid);
+    overflow-wrap: break-word; word-break: break-word; min-width: 0;
+}
 .exec-richtext h1, .exec-richtext h2, .exec-richtext h3 { color: var(--c-text); margin: 12px 0 6px; font-size: 1rem; }
 .exec-richtext ul, .exec-richtext ol { padding-left: 1.4em; }
-.exec-richtext table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+/* Tabelas: block + overflow-x:auto para scroll lateral sem quebrar o layout */
+.exec-richtext table {
+    display: block; overflow-x: auto; -webkit-overflow-scrolling: touch;
+    width: 100%; max-width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums;
+}
 .exec-richtext td, .exec-richtext th { padding: 7px 10px; border: 1px solid var(--c-line); font-size: .84rem; }
 .exec-richtext th { background: var(--c-bg-alt); font-weight: 700; }
 .exec-richtext tr:hover td { background: var(--c-bg-alt); }
+/* Imagens e mídias: nunca ultrapassam o container */
+.exec-richtext img, .exec-richtext video { max-width: 100%; height: auto; display: block; }
+.exec-richtext iframe { max-width: 100%; width: 100%; aspect-ratio: 16/9; }
+/* Código: scroll lateral em vez de overflow */
+.exec-richtext pre, .exec-richtext code { overflow-x: auto; white-space: pre-wrap; max-width: 100%; }
+/* Links longos: quebram linha */
+.exec-richtext a { overflow-wrap: break-word; word-break: break-all; }
 
 /* ── SEGURO ── */
 .exec-seguro-row {
@@ -545,6 +553,72 @@ footer {
 .exec-share-btn:hover { opacity: .75; }
 
 /* lightbox → _LayoutPublico.cshtml */
+
+/* ═══ RESPONSIVE — colocado após todas as regras base (ordem de cascata correta) ══════ */
+
+/* Botão mobile (oculto no desktop) */
+.exec-btn-menu {
+    display: none; align-items: center; gap: 5px; flex-shrink: 0;
+    background: none; border: 1px solid var(--c-line); border-radius: 8px;
+    padding: 5px 10px; font-size: .78rem; font-weight: 600; color: var(--c-text-mid);
+    cursor: pointer; transition: background .15s, color .15s;
+}
+.exec-btn-menu:hover { background: var(--c-bg-alt); color: var(--c-accent); }
+
+/* Botão fechar dentro da sidebar (oculto no desktop) */
+.exec-sb-close {
+    display: none; position: absolute; top: 12px; right: 12px;
+    width: 30px; height: 30px; border-radius: 50%;
+    background: var(--c-bg-alt); border: 1px solid var(--c-line);
+    color: var(--c-text-mid); cursor: pointer;
+    align-items: center; justify-content: center; font-size: .85rem;
+    flex-shrink: 0;
+}
+
+/* Backdrop do drawer mobile */
+.exec-sb-backdrop {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.45); z-index: 1049; cursor: pointer;
+}
+
+@@media (max-width: 900px) {
+    /* Layout single-column */
+    .exec-layout { grid-template-columns: 1fr; }
+
+    /* Conteúdo ocupa 100% — sem margem reservada para sidebar */
+    .exec-main { padding: 0 16px 48px; }
+
+    /* Header compacto */
+    .exec-header { padding: 0 12px; gap: 8px; }
+    .exec-header-badge { display: none; }
+    .exec-header-brand { max-width: none; flex: 1; min-width: 0; }
+
+    /* Botão mobile visível */
+    .exec-btn-menu { display: flex; }
+
+    /* Botão fechar visível na sidebar mobile */
+    .exec-sb-close { display: flex; }
+
+    /* SIDEBAR: transforma em drawer fixo, inicialmente fora da tela */
+    .exec-sidebar {
+        position: fixed; top: 0; left: 0; bottom: 0;
+        width: min(280px, 85vw); height: 100dvh;
+        z-index: 1050;
+        transform: translateX(-100%);
+        transition: transform .28s ease;
+        padding-top: 0;
+    }
+    /* Estado aberto */
+    .exec-sidebar.exec-sb-open { transform: translateX(0); }
+
+    /* Backdrop visível quando drawer está aberto */
+    .exec-sb-backdrop.exec-sb-open { display: block; }
+}
+@@media (max-width: 480px) {
+    .exec-header-meta { display: none; }
+}
+/* Proteção global após correção das causas estruturais */
+html, body { max-width: 100%; overflow-x: hidden; }
 </style>
 }
 
@@ -595,6 +669,9 @@ footer {
     };
 }
 <header class="exec-header">
+    <button class="exec-btn-menu" id="execMenuBtn" type="button" aria-label="Abrir navegação de seções">
+        <i class="fas fa-bars"></i><span>Seções</span>
+    </button>
     <span class="exec-header-brand">@Model.Titulo</span>
     <span class="exec-header-badge">Executivo</span>
     <span class="exec-header-status@(_execStatus.Item2)">@_execStatus.Item1</span>
@@ -615,10 +692,16 @@ footer {
     </div>
 </header>
 
+<!-- BACKDROP MOBILE -->
+<div class="exec-sb-backdrop" id="execSbBackdrop" aria-hidden="true"></div>
+
 <div class="exec-layout">
 
-<!-- SIDEBAR -->
-<aside class="exec-sidebar" id="execSidebar">
+<!-- SIDEBAR (desktop: sticky; mobile: drawer via transform) -->
+<aside class="exec-sidebar" id="execSidebar" aria-label="Navegação de seções">
+    <button class="exec-sb-close" id="execSbClose" type="button" aria-label="Fechar menu">
+        <i class="fas fa-times"></i>
+    </button>
     <div class="exec-sb-label">Seções</div>
 
     <a href="#exec-resumo" class="exec-nav-link active" id="sb-resumo">
@@ -1384,7 +1467,7 @@ function showNotif(msg, type) {
     setTimeout(() => el.remove(), 4000);
 }
 
-/* ── sidebar active via IntersectionObserver ── */
+/* ── sidebar + drawer active via IntersectionObserver ── */
 (function () {
     var sbLinks = {
         'exec-resumo':       'sb-resumo',
@@ -1404,10 +1487,7 @@ function showNotif(msg, type) {
     var sbObs = new IntersectionObserver(function (entries) {
         entries.forEach(function (entry) {
             var sbId = sbLinks[entry.target.id];
-            if (sbId) {
-                var el = document.getElementById(sbId);
-                if (el) el.classList.toggle('active', entry.isIntersecting);
-            }
+            if (sbId) { var el = document.getElementById(sbId); if (el) el.classList.toggle('active', entry.isIntersecting); }
         });
     }, { threshold: .25 });
     Object.keys(sbLinks).forEach(function (id) {
@@ -1415,15 +1495,49 @@ function showNotif(msg, type) {
         if (el) sbObs.observe(el);
     });
 
-    // Smooth scroll on sidebar link clicks
+    // Smooth scroll — fecha drawer mobile antes de rolar
     document.querySelectorAll('.exec-nav-link').forEach(function (a) {
         a.addEventListener('click', function (e) {
             e.preventDefault();
             var target = document.querySelector(a.getAttribute('href'));
-            if (target) target.scrollIntoView({ behavior: 'smooth' });
+            var isMobile = window.innerWidth < 900;
+            if (isMobile) {
+                closeSidebar();
+                setTimeout(function () { if (target) target.scrollIntoView({ behavior: 'smooth' }); }, 300);
+            } else {
+                if (target) target.scrollIntoView({ behavior: 'smooth' });
+            }
         });
     });
 })();
+
+/* ── mobile drawer — toggle por classe, sem Bootstrap Offcanvas ── */
+var _sidebar   = document.getElementById('execSidebar');
+var _backdrop  = document.getElementById('execSbBackdrop');
+var _menuBtn   = document.getElementById('execMenuBtn');
+var _closeBtn  = document.getElementById('execSbClose');
+
+function openSidebar() {
+    if (!_sidebar) return;
+    _sidebar.classList.add('exec-sb-open');
+    if (_backdrop) _backdrop.classList.add('exec-sb-open');
+    document.body.style.overflow = 'hidden';
+}
+function closeSidebar() {
+    if (!_sidebar) return;
+    _sidebar.classList.remove('exec-sb-open');
+    if (_backdrop) _backdrop.classList.remove('exec-sb-open');
+    document.body.style.overflow = '';
+}
+
+if (_menuBtn)  _menuBtn.addEventListener('click', openSidebar);
+if (_closeBtn) _closeBtn.addEventListener('click', closeSidebar);
+if (_backdrop) _backdrop.addEventListener('click', closeSidebar);
+
+// Fecha drawer ao girar para landscape
+window.addEventListener('resize', function () {
+    if (window.innerWidth >= 900) closeSidebar();
+});
 
 /* ── mobile accordion ── */
 (function () {

@@ -22,6 +22,9 @@ namespace SistemaUsuarios.Controllers
         // GET: / — Lista VIP (waitlist)
         public IActionResult Index() => View();
 
+        // GET: Landing/VipSucesso — Confirmação de inscrição na lista VIP
+        public IActionResult VipSucesso() => View();
+
         // GET: /produto — Landing de produto (página original)
         public IActionResult Produto()
         {
@@ -86,8 +89,7 @@ namespace SistemaUsuarios.Controllers
             _context.ListaVipCadastros.Add(cadastro);
             await _context.SaveChangesAsync();
 
-            TempData["ListaVipSucesso"] = true;
-            return RedirectToAction("Index");
+            return RedirectToAction("VipSucesso");
         }
 
         // POST: Landing/Cadastro
