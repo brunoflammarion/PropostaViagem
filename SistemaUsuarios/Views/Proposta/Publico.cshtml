@@ -520,7 +520,9 @@ body {
     padding: 10px 16px; background: var(--c-section-alt);
     border-radius: 0 var(--radius-sm) var(--radius-sm) 0; color: #4b5563;
 }
-.resumo-proposta-body strong { color: var(--c-h2); }
+.resumo-proposta-body strong, .resumo-proposta-body b { color: inherit; font-weight: 700; }
+.resumo-proposta-body p { margin-top: 0; margin-bottom: 0.5rem; }
+.resumo-proposta-body p:last-child { margin-bottom: 0; }
 .resumo-proposta-body a { color: var(--c-accent); text-decoration: underline; }
 .resumo-proposta-body img { max-width: 100%; height: auto; border-radius: var(--radius-sm); margin: 8px 0; display: block; }
 /* Tabelas responsivas dentro do rich text */

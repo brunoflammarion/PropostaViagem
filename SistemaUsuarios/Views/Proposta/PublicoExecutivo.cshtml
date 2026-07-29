@@ -200,7 +200,7 @@ body.has-preview-bar { padding-top: 46px; }
 
 /* ── TWO-COLUMN LAYOUT ── */
 .exec-layout {
-    max-width: 1140px; margin: 0 auto; padding: 0;
+    max-width: 1140px; margin: 0; padding: 0;
     display: grid; grid-template-columns: var(--exec-sb-w) 1fr;
     min-height: calc(100vh - 58px);
 }
@@ -440,6 +440,11 @@ body.has-preview-bar { padding-top: 46px; }
 .exec-richtext pre, .exec-richtext code { overflow-x: auto; white-space: pre-wrap; max-width: 100%; }
 /* Links longos: quebram linha */
 .exec-richtext a { overflow-wrap: break-word; word-break: break-all; }
+/* Parágrafos: reduz margem Bootstrap (1rem) para espaçamento compatível com o editor */
+.exec-richtext p { margin-top: 0; margin-bottom: 0.5rem; }
+.exec-richtext p:last-child { margin-bottom: 0; }
+/* Negrito: herda cor do container — não aplica cor da agência automaticamente */
+.exec-richtext strong, .exec-richtext b { color: inherit; }
 
 /* ── SEGURO ── */
 .exec-seguro-row {
