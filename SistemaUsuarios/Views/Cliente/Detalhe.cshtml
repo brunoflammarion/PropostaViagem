@@ -87,22 +87,32 @@
         </div>
 
         <!-- Métricas rápidas -->
-        <div class="cd-stats-mini">
-            <div class="cd-stat-mini">
-                <span class="cd-stat-n">@Model.TotalPropostas</span>
-                <span class="cd-stat-l">Propostas</span>
-            </div>
-            <div class="cd-stat-mini">
-                <span class="cd-stat-n text-success">@Model.PropostasAprovadas</span>
-                <span class="cd-stat-l">Aprovadas</span>
-            </div>
-            <div class="cd-stat-mini">
-                <span class="cd-stat-n text-warning">@Model.PropostasEnviadas</span>
-                <span class="cd-stat-l">Enviadas</span>
-            </div>
-            <div class="cd-stat-mini">
-                <span class="cd-stat-n">@Model.PassageirosRecorrentes.Count</span>
-                <span class="cd-stat-l">Acompanhantes</span>
+        <div class="cd-stats-block">
+            <div class="cd-stats-mini">
+                <div class="cd-stat-mini"
+                     data-bs-toggle="tooltip" data-bs-placement="bottom"
+                     title="Total de propostas criadas para este cliente.">
+                    <span class="cd-stat-n cd-stat-total">@Model.TotalPropostas</span>
+                    <span class="cd-stat-l">Propostas</span>
+                </div>
+                <div class="cd-stat-mini cd-stat-mini--highlight"
+                     data-bs-toggle="tooltip" data-bs-placement="bottom"
+                     title="Propostas convertidas em venda.">
+                    <span class="cd-stat-n cd-stat-aprovada">@Model.PropostasAprovadas</span>
+                    <span class="cd-stat-l">Aprovadas</span>
+                </div>
+                <div class="cd-stat-mini"
+                     data-bs-toggle="tooltip" data-bs-placement="bottom"
+                     title="Rascunhos + Enviadas — propostas que ainda exigem acompanhamento.">
+                    <span class="cd-stat-n cd-stat-emandamento">@Model.PropostasEmAndamento</span>
+                    <span class="cd-stat-l">Em andamento</span>
+                </div>
+                <div class="cd-stat-mini"
+                     data-bs-toggle="tooltip" data-bs-placement="bottom"
+                     title="Rejeitadas + Canceladas — propostas que não resultaram em venda.">
+                    <span class="cd-stat-n cd-stat-perdidas">@Model.PropostasPerdidas</span>
+                    <span class="cd-stat-l">Perdidas</span>
+                </div>
             </div>
         </div>
     </div>
@@ -673,6 +683,11 @@ document.querySelectorAll('#clienteTabs .nav-link').forEach(function(btn) {
         var tab = e.target.getAttribute('data-bs-target').replace('#pane-', '');
         history.replaceState(null, '', '?tab=' + tab);
     });
+});
+
+// Inicializa tooltips dos KPIs do cabeçalho
+document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function(el) {
+    new bootstrap.Tooltip(el, { trigger: 'hover' });
 });
 </script>
 }

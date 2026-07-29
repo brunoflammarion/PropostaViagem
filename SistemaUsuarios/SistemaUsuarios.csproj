@@ -7,6 +7,14 @@
     <UserSecretsId>48a713ca-00e0-4ed9-a780-40da385d93d2</UserSecretsId>
   </PropertyGroup>
 
+  <!-- Inclui os templates de e-mail no output de build e publish -->
+  <ItemGroup>
+    <Content Include="EmailTemplates\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Azure.Storage.Blobs" Version="12.22.2" />
     <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />

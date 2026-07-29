@@ -69,11 +69,18 @@ namespace SistemaUsuarios.Models.ViewModels
         public bool IsDeleted { get; set; }
         public DateTime? DeletedAt { get; set; }
 
-        // Métricas
+        // Métricas por status (raw)
         public int TotalPropostas { get; set; }
         public int PropostasAprovadas { get; set; }
         public int PropostasEnviadas { get; set; }
+        public int PropostasRascunho { get; set; }
+        public int PropostasRejeitadas { get; set; }
+        public int PropostasCanceladas { get; set; }
         public bool EmViagem { get; set; }
+
+        // Métricas compostas para o cabeçalho
+        public int PropostasEmAndamento => PropostasRascunho + PropostasEnviadas;
+        public int PropostasPerdidas    => PropostasRejeitadas + PropostasCanceladas;
 
         // Conteúdo das abas
         public List<PropostaClienteItem> Propostas { get; set; } = new();

@@ -182,6 +182,8 @@ namespace SistemaUsuarios.Services
                 {
                     Id          = u.Id,
                     Nome        = u.Nome,
+                    Email       = u.Email,
+                    Telefone    = u.Telefone,
                     Status      = u.Status,
                     DataCriacao = u.DataCriacao,
                 })
@@ -201,6 +203,13 @@ namespace SistemaUsuarios.Services
                 NomeAgencia        = master.NomeAgencia ?? master.Nome,
                 SlugAgencia        = master.SlugAgencia,
                 NomeMaster         = master.Nome,
+                Email              = master.Email,
+                Telefone           = master.Telefone ?? "",
+                CPF                = master.CPF ?? "",
+                LogoAgenciaPath    = master.LogoAgenciaPath,
+                CorPrimaria        = master.CorPrimaria,
+                CorSecundaria      = master.CorSecundaria,
+                CorDestaque        = master.CorDestaque,
                 Status             = master.Status,
                 DataCriacao        = master.DataCriacao,
                 TotalAssociados    = associados.Count,

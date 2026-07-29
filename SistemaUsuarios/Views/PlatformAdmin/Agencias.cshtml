@@ -34,6 +34,9 @@
     .empty-state { padding: 48px; text-align: center; color: #94a3b8; }
     .empty-state i { font-size: 32px; display: block; margin-bottom: 12px; opacity: .3; }
     .empty-state p { font-size: 14px; margin: 0; }
+    .btn-senha { font-size: 11px; padding: 3px 10px; color: #64748b; border-color: #e2e8f0; }
+    .btn-senha:hover { color: #1e5ba8; border-color: #1e5ba8; }
+    .row-actions { display: flex; gap: 4px; align-items: center; }
 </style>
 }
 
@@ -110,11 +113,19 @@
                             </td>
                             <td style="font-size:12px;color:#94a3b8;">@a.DataCriacao.ToString("dd/MM/yy")</td>
                             <td>
-                                <a href="/PlatformAdmin/Agencia/@a.Id"
-                                   class="btn btn-sm btn-outline-primary"
-                                   style="font-size:11px;padding:3px 10px;">
-                                    Ver
-                                </a>
+                                <div class="row-actions">
+                                    <a href="/PlatformAdmin/Agencia/@a.Id"
+                                       class="btn btn-sm btn-outline-primary"
+                                       style="font-size:11px;padding:3px 10px;">
+                                        Ver
+                                    </a>
+                                    <button type="button"
+                                            class="btn btn-sm btn-outline-secondary btn-senha"
+                                            data-bs-toggle="modal" data-bs-target="#modalAlterarSenha"
+                                            data-id="@a.Id" data-nome="@Html.Encode(a.NomeAgencia)">
+                                        <i class="fas fa-key"></i>
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                     }
@@ -130,3 +141,132 @@
         </div>
     }
 </div>
+
+@* Token CSRF para requisições AJAX *@
+<form id="csrfForm" style="display:none;">@Html.AntiForgeryToken()</form>
+
+<!-- Modal: alterar senha da agência -->
+<div class="modal fade" id="modalAlterarSenha" tabindex="-1" aria-labelledby="modalAlterarSenhaLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:400px;">
+        <div class="modal-content" style="border-radius:14px;border:none;box-shadow:0 8px 40px rgba(0,0,0,.14);">
+            <div class="modal-header" style="border-bottom:1px solid #f1f5f9;padding:20px 24px 16px;">
+                <div>
+                    <h5 class="modal-title" id="modalAlterarSenhaLabel" style="font-size:15px;font-weight:700;color:#0f172a;margin:0;">
+                        Alterar senha
+                    </h5>
+                    <div id="modalAgenciaNome" style="font-size:12px;color:#64748b;margin-top:2px;"></div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="padding:20px 24px;">
+                <div id="modalAlerta" class="alert" style="display:none;font-size:13px;padding:10px 14px;border-radius:8px;margin-bottom:16px;"></div>
+
+                <input type="hidden" id="modalAgenciaId" />
+
+                <div class="mb-3">
+                    <label style="font-size:12px;font-weight:600;color:#334155;margin-bottom:5px;display:block;">Nova senha</label>
+                    <input type="password" id="inputNovaSenha" class="form-control form-control-sm"
+                           placeholder="Mínimo 6 caracteres" autocomplete="new-password"
+                           style="border-radius:8px;font-size:13px;" />
+                </div>
+                <div class="mb-1">
+                    <label style="font-size:12px;font-weight:600;color:#334155;margin-bottom:5px;display:block;">Confirmar senha</label>
+                    <input type="password" id="inputConfirmarSenha" class="form-control form-control-sm"
+                           placeholder="Repita a nova senha" autocomplete="new-password"
+                           style="border-radius:8px;font-size:13px;" />
+                </div>
+            </div>
+            <div class="modal-footer" style="border-top:1px solid #f1f5f9;padding:14px 24px;gap:8px;">
+                <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal"
+                        style="font-size:13px;border-radius:8px;">
+                    Cancelar
+                </button>
+                <button type="button" id="btnSalvarSenha" class="btn btn-sm btn-primary"
+                        style="font-size:13px;border-radius:8px;background:#1e5ba8;border-color:#1e5ba8;">
+                    Salvar senha
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+(function () {
+    const modal    = document.getElementById('modalAlterarSenha');
+    const idInput  = document.getElementById('modalAgenciaId');
+    const nomeLbl  = document.getElementById('modalAgenciaNome');
+    const senha    = document.getElementById('inputNovaSenha');
+    const confirma = document.getElementById('inputConfirmarSenha');
+    const alerta   = document.getElementById('modalAlerta');
+    const btnSalvar= document.getElementById('btnSalvarSenha');
+    const token    = document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
+
+    // Popula o modal com dados da agência clicada
+    modal.addEventListener('show.bs.modal', e => {
+        const btn = e.relatedTarget;
+        idInput.value   = btn.dataset.id;
+        nomeLbl.textContent = btn.dataset.nome;
+        senha.value     = '';
+        confirma.value  = '';
+        alerta.style.display = 'none';
+        btnSalvar.disabled = false;
+        btnSalvar.textContent = 'Salvar senha';
+    });
+
+    function mostrarAlerta(msg, tipo) {
+        alerta.className = `alert alert-${tipo}`;
+        alerta.textContent = msg;
+        alerta.style.display = 'block';
+    }
+
+    btnSalvar.addEventListener('click', async () => {
+        alerta.style.display = 'none';
+
+        if (senha.value.length < 6) {
+            mostrarAlerta('A senha deve ter pelo menos 6 caracteres.', 'warning');
+            senha.focus();
+            return;
+        }
+        if (senha.value !== confirma.value) {
+            mostrarAlerta('As senhas não conferem.', 'warning');
+            confirma.focus();
+            return;
+        }
+
+        btnSalvar.disabled = true;
+        btnSalvar.textContent = 'Salvando…';
+
+        try {
+            const body = new URLSearchParams({
+                id: idInput.value,
+                novaSenha: senha.value,
+                __RequestVerificationToken: token
+            });
+            const res  = await fetch('/PlatformAdmin/AlterarSenhaAgencia', { method: 'POST', body });
+            const data = await res.json();
+
+            if (data.sucesso) {
+                mostrarAlerta('Senha alterada com sucesso.', 'success');
+                btnSalvar.textContent = 'Salvo';
+                senha.value = '';
+                confirma.value = '';
+            } else {
+                mostrarAlerta(data.mensagem ?? 'Erro ao alterar senha.', 'danger');
+                btnSalvar.disabled = false;
+                btnSalvar.textContent = 'Salvar senha';
+            }
+        } catch {
+            mostrarAlerta('Erro de comunicação. Tente novamente.', 'danger');
+            btnSalvar.disabled = false;
+            btnSalvar.textContent = 'Salvar senha';
+        }
+    });
+
+    // Submete com Enter nos campos de senha
+    [senha, confirma].forEach(el => el.addEventListener('keydown', e => {
+        if (e.key === 'Enter') btnSalvar.click();
+    }));
+})();
+</script>
+}

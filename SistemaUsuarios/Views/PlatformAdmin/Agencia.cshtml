@@ -45,6 +45,45 @@
     .action-title { font-size: 13px; font-weight: 700; color: #0f172a; margin-bottom: 4px; }
     .action-desc { font-size: 12px; color: #64748b; margin-bottom: 16px; }
     .empty-state { padding: 24px; text-align: center; color: #94a3b8; font-size: 12px; }
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0;
+    }
+    @@media (max-width: 800px) { .info-grid { grid-template-columns: repeat(2, 1fr); } }
+    @@media (max-width: 500px) { .info-grid { grid-template-columns: 1fr; } }
+    .info-item {
+        padding: 14px 20px;
+        border-bottom: 1px solid #f1f5f9;
+        border-right: 1px solid #f1f5f9;
+    }
+    .info-item:nth-child(3n) { border-right: none; }
+    @@media (max-width: 800px) { .info-item:nth-child(3n) { border-right: 1px solid #f1f5f9; } .info-item:nth-child(2n) { border-right: none; } }
+    .info-label {
+        font-size: 10px;
+        font-weight: 700;
+        color: #94a3b8;
+        letter-spacing: .6px;
+        text-transform: uppercase;
+        margin-bottom: 4px;
+    }
+    .info-value {
+        font-size: 13px;
+        color: #0f172a;
+        font-weight: 500;
+        word-break: break-all;
+    }
+    .info-value a { color: #2563eb; text-decoration: none; }
+    .info-value a:hover { text-decoration: underline; }
+    .info-value.muted { color: #94a3b8; font-weight: 400; }
+    .cor-chip {
+        display: inline-flex; align-items: center; gap: 6px;
+        font-size: 12px; color: #334155;
+    }
+    .cor-swatch {
+        width: 16px; height: 16px; border-radius: 4px;
+        border: 1px solid rgba(0,0,0,.08); flex-shrink: 0;
+    }
 </style>
 }
 
@@ -67,6 +106,127 @@
             </div>
         </div>
         <span class="status-dot status-@Model.StatusCss" style="font-size:13px;">@Model.StatusLabel</span>
+    </div>
+</div>
+
+<!-- Dados cadastrais -->
+<div class="pa-card" style="margin-bottom:20px;">
+    <div class="pa-card-header">
+        <i class="fas fa-id-card" style="color:#2563eb;font-size:13px;"></i>
+        <span class="pa-card-title">Dados cadastrais</span>
+        <span class="pa-card-sub">usuário master</span>
+    </div>
+    <div class="info-grid">
+
+        <div class="info-item">
+            <div class="info-label">Nome completo</div>
+            <div class="info-value">@Model.NomeMaster</div>
+        </div>
+
+        <div class="info-item">
+            <div class="info-label">E-mail</div>
+            <div class="info-value">
+                <a href="mailto:@Model.Email">@Model.Email</a>
+            </div>
+        </div>
+
+        <div class="info-item">
+            <div class="info-label">Telefone</div>
+            <div class="info-value">
+                @if (!string.IsNullOrEmpty(Model.Telefone))
+                {
+                    <a href="https://wa.me/55@Model.Telefone" target="_blank" rel="noopener">
+                        @Model.TelefoneFormatado
+                    </a>
+                }
+                else
+                {
+                    <span class="muted">—</span>
+                }
+            </div>
+        </div>
+
+        <div class="info-item">
+            <div class="info-label">CPF</div>
+            <div class="info-value">
+                @if (!string.IsNullOrEmpty(Model.CPF) && Model.CPF != "00000000000")
+                {
+                    @Model.CPFFormatado
+                }
+                else
+                {
+                    <span class="muted">Não preenchido</span>
+                }
+            </div>
+        </div>
+
+        <div class="info-item">
+            <div class="info-label">Nome da agência</div>
+            <div class="info-value">@Model.NomeAgencia</div>
+        </div>
+
+        <div class="info-item">
+            <div class="info-label">Slug</div>
+            <div class="info-value">
+                @if (!string.IsNullOrEmpty(Model.SlugAgencia))
+                {
+                    <a href="/@Model.SlugAgencia" target="_blank">/@Model.SlugAgencia</a>
+                }
+                else
+                {
+                    <span class="muted">Não configurado</span>
+                }
+            </div>
+        </div>
+
+        <div class="info-item">
+            <div class="info-label">Data de cadastro</div>
+            <div class="info-value">@Model.DataCriacao.ToString("dd/MM/yyyy 'às' HH:mm")</div>
+        </div>
+
+        <div class="info-item">
+            <div class="info-label">ID do usuário</div>
+            <div class="info-value" style="font-size:11px;font-family:monospace;color:#64748b;">
+                @Model.MasterId
+            </div>
+        </div>
+
+        <div class="info-item">
+            <div class="info-label">Identidade visual</div>
+            <div class="info-value">
+                @if (!string.IsNullOrEmpty(Model.CorPrimaria) || !string.IsNullOrEmpty(Model.CorSecundaria) || !string.IsNullOrEmpty(Model.CorDestaque))
+                {
+                    <div style="display:flex;flex-direction:column;gap:4px;">
+                        @if (!string.IsNullOrEmpty(Model.CorPrimaria))
+                        {
+                            <span class="cor-chip">
+                                <span class="cor-swatch" style="background:@Model.CorPrimaria;"></span>
+                                @Model.CorPrimaria <span style="color:#94a3b8;font-size:11px;">primária</span>
+                            </span>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.CorSecundaria))
+                        {
+                            <span class="cor-chip">
+                                <span class="cor-swatch" style="background:@Model.CorSecundaria;"></span>
+                                @Model.CorSecundaria <span style="color:#94a3b8;font-size:11px;">secundária</span>
+                            </span>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.CorDestaque))
+                        {
+                            <span class="cor-chip">
+                                <span class="cor-swatch" style="background:@Model.CorDestaque;"></span>
+                                @Model.CorDestaque <span style="color:#94a3b8;font-size:11px;">destaque</span>
+                            </span>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <span class="muted">Padrão</span>
+                }
+            </div>
+        </div>
+
     </div>
 </div>
 
@@ -133,18 +293,38 @@
                 <!-- Master -->
                 <li class="member-item">
                     <div class="member-avatar" style="background:#dbeafe;color:#1d4ed8;">M</div>
-                    <div class="member-name">@Model.NomeMaster <span style="font-size:10px;color:#94a3b8;font-weight:400;">(Master)</span></div>
+                    <div style="flex:1;min-width:0;">
+                        <div class="member-name">@Model.NomeMaster <span style="font-size:10px;color:#94a3b8;font-weight:400;">(Master)</span></div>
+                        <div class="member-date">
+                            <a href="mailto:@Model.Email" style="color:#2563eb;text-decoration:none;">@Model.Email</a>
+                            @if (!string.IsNullOrEmpty(Model.Telefone))
+                            {
+                                <span style="margin-left:6px;">· @Model.TelefoneFormatado</span>
+                            }
+                        </div>
+                    </div>
                     <span class="status-dot status-@Model.StatusCss" style="font-size:11px;padding:2px 7px;">@Model.StatusLabel</span>
                 </li>
                 @foreach (var a in Model.Associados)
                 {
                     var ini = a.Nome.Split(' ', StringSplitOptions.RemoveEmptyEntries)
                         .Take(2).Select(p => char.ToUpper(p[0]).ToString()).Aggregate("", (x, y) => x + y);
+                    var telFmt = a.Telefone?.Length switch { 11 => $"({a.Telefone[..2]}) {a.Telefone[2..7]}-{a.Telefone[7..]}", 10 => $"({a.Telefone[..2]}) {a.Telefone[2..6]}-{a.Telefone[6..]}", _ => a.Telefone };
                     <li class="member-item">
                         <div class="member-avatar">@ini</div>
-                        <div>
+                        <div style="flex:1;min-width:0;">
                             <div class="member-name">@a.Nome</div>
-                            <div class="member-date">desde @a.DataCriacao.ToString("dd/MM/yyyy")</div>
+                            <div class="member-date">
+                                @if (!string.IsNullOrEmpty(a.Email))
+                                {
+                                    <a href="mailto:@a.Email" style="color:#2563eb;text-decoration:none;">@a.Email</a>
+                                }
+                                @if (!string.IsNullOrEmpty(a.Telefone))
+                                {
+                                    <span style="margin-left:6px;">· @telFmt</span>
+                                }
+                                <span style="margin-left:6px;">· desde @a.DataCriacao.ToString("dd/MM/yyyy")</span>
+                            </div>
                         </div>
                         <span class="status-dot status-@a.StatusCss" style="font-size:11px;padding:2px 7px;">
                             @(a.Status switch {

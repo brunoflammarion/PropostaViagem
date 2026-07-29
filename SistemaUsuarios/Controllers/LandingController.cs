@@ -4,6 +4,7 @@ using SistemaUsuarios.Data;
 using SistemaUsuarios.Models;
 using SistemaUsuarios.Models.ViewModels;
 using SistemaUsuarios.Services;
+using SistemaUsuarios.Services.Email;
 using BCrypt.Net;
 
 namespace SistemaUsuarios.Controllers
@@ -12,11 +13,22 @@ namespace SistemaUsuarios.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly DemonstracaoService  _demonstracao;
+        private readonly IEmailService        _emailService;
+        private readonly EmailTemplateService _templateService;
+        private readonly ILogger<LandingController> _logger;
 
-        public LandingController(ApplicationDbContext context, DemonstracaoService demonstracao)
+        public LandingController(
+            ApplicationDbContext context,
+            DemonstracaoService demonstracao,
+            IEmailService emailService,
+            EmailTemplateService templateService,
+            ILogger<LandingController> logger)
         {
-            _context      = context;
-            _demonstracao = demonstracao;
+            _context         = context;
+            _demonstracao    = demonstracao;
+            _emailService    = emailService;
+            _templateService = templateService;
+            _logger          = logger;
         }
 
         // GET: / — Lista VIP (waitlist)
@@ -88,6 +100,19 @@ namespace SistemaUsuarios.Controllers
 
             _context.ListaVipCadastros.Add(cadastro);
             await _context.SaveChangesAsync();
+
+            // Enviar e-mail de boas-vindas VIP (falha silenciosa para não bloquear o cadastro)
+            try
+            {
+                var html = _templateService.GetVipBemVindoHtml(nome.Trim(), email.Trim().ToLower());
+                await _emailService.SendAsync(
+                    email.Trim(), nome.Trim(),
+                    "Bem-vindo à Lista VIP do Agent Tools 🚀", html);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Falha ao enviar e-mail VIP para {Email}", email);
+            }
 
             return RedirectToAction("VipSucesso");
         }

@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using SistemaUsuarios.Data;
 using SistemaUsuarios.Services;
+using SistemaUsuarios.Services.Email;
 using SistemaUsuarios.Infrastructure;
 using NetTopologySuite;
 
@@ -80,6 +81,16 @@ builder.Services.AddScoped<IPassengerAgeService, PassengerAgeService>();
 // Analytics (GA4 via GTM) — configurável por Azure App Settings
 var analyticsSettings = builder.Configuration.GetSection("Analytics").Get<AnalyticsSettings>() ?? new AnalyticsSettings();
 builder.Services.AddSingleton(analyticsSettings);
+
+// Configurações da aplicação (URL base para links em e-mails, etc.)
+var appSettings = builder.Configuration.GetSection("Application").Get<ApplicationSettings>() ?? new ApplicationSettings();
+builder.Services.AddSingleton(appSettings);
+
+// Infraestrutura de e-mail
+var emailSettings = builder.Configuration.GetSection("Email").Get<EmailSettings>() ?? new EmailSettings();
+builder.Services.AddSingleton(emailSettings);
+builder.Services.AddScoped<IEmailService, SmtpEmailService>();
+builder.Services.AddScoped<EmailTemplateService>();
 
 var app = builder.Build();
 

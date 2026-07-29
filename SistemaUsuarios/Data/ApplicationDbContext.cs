@@ -70,6 +70,9 @@ namespace SistemaUsuarios.Data
         // ── LISTA VIP (WAITLIST LANÇAMENTO) ────────────────────────────────
         public DbSet<ListaVipCadastro> ListaVipCadastros { get; set; }
 
+        // ── RESET DE SENHA ─────────────────────────────────────────────────
+        public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -599,6 +602,20 @@ namespace SistemaUsuarios.Data
             modelBuilder.Entity<AdminPlataforma>()
                 .HasIndex(a => a.Email)
                 .IsUnique();
+
+            // ── RESET DE SENHA ─────────────────────────────────────────────
+            modelBuilder.Entity<PasswordResetToken>()
+                .HasOne(t => t.Usuario)
+                .WithMany()
+                .HasForeignKey(t => t.UsuarioId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<PasswordResetToken>()
+                .HasIndex(t => t.Token)
+                .IsUnique();
+
+            modelBuilder.Entity<PasswordResetToken>()
+                .HasIndex(t => new { t.UsuarioId, t.Usado, t.Expiry });
 
             // ── CONTEÚDOS DE DEMONSTRAÇÃO ─────────────────────────────────────
             modelBuilder.Entity<ConteudoDemonstracao>()

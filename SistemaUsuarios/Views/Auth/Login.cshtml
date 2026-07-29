@@ -202,6 +202,11 @@ body {
     border: 1px solid #FDA4AF;
     color: #9F1239;
 }
+.auth-alert-success {
+    background: #F0FDF4;
+    border: 1px solid #86EFAC;
+    color: #166534;
+}
 .auth-alert i { margin-top: 2px; flex-shrink: 0; }
 .auth-alert ul {
     margin: 0;
@@ -374,6 +379,15 @@ body {
                 <p>Entre na sua conta para continuar</p>
             </div>
 
+            @* Mensagem de sucesso após redefinição de senha *@
+            @if (TempData["LoginSucesso"] != null)
+            {
+                <div class="auth-alert auth-alert-success">
+                    <i class="fas fa-check-circle"></i>
+                    <div>@TempData["LoginSucesso"]</div>
+                </div>
+            }
+
             @* Alerta de erro — só renderiza quando há erros reais *@
             @if (hasErrors)
             {
@@ -412,6 +426,13 @@ body {
                 <button type="submit" class="auth-submit">
                     Entrar na conta
                 </button>
+
+                <div style="text-align:center;margin-top:.9rem;">
+                    <a href="@Url.Action("EsqueceuSenha","Auth")"
+                       style="font-size:.8rem;color:#1E4E8C;font-weight:600;text-decoration:none;">
+                        Esqueceu a senha?
+                    </a>
+                </div>
             </form>
 
             <div class="auth-divider"><span>ou</span></div>

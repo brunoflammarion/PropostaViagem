@@ -91,6 +91,26 @@ namespace SistemaUsuarios.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AlterarSenhaAgencia(Guid id, string novaSenha)
+        {
+            if (!AdminLogado()) return Unauthorized();
+
+            if (string.IsNullOrWhiteSpace(novaSenha) || novaSenha.Length < 6)
+                return Json(new { sucesso = false, mensagem = "A senha deve ter pelo menos 6 caracteres." });
+
+            var master = await _db.Usuarios
+                .FirstOrDefaultAsync(u => u.Id == id && u.TipoUsuario == TipoUsuario.Master);
+
+            if (master == null) return Json(new { sucesso = false, mensagem = "Agência não encontrada." });
+
+            master.Senha = BCrypt.Net.BCrypt.HashPassword(novaSenha);
+            await _db.SaveChangesAsync();
+
+            return Json(new { sucesso = true });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> BloquearAgencia(Guid id)
         {
             if (!AdminLogado()) return RedirectToAction("Login");
