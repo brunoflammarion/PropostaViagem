@@ -131,7 +131,7 @@
                     <span class="hero-chip"><i class="fas fa-file-alt"></i> @PropostasLabel(Model.PropostasPorMes)</span>
                 }
                 <span class="hero-chip" style="background:rgba(22,163,74,.2);color:#86efac">
-                    <i class="fas fa-calendar"></i> @Model.DataCadastro.ToString("dd/MM/yyyy 'às' HH:mm")
+                    <i class="fas fa-calendar"></i> @Model.DataCadastro.ToBrazilTime().ToString("dd/MM/yyyy 'às' HH:mm")
                 </span>
             </div>
         </div>
@@ -286,14 +286,14 @@
             <div class="pa-card-body" style="padding:0 18px;">
                 <div class="dl-row">
                     <span class="dl-label">Cadastro</span>
-                    <span class="dl-value">@Model.DataCadastro.ToString("dd/MM/yyyy HH:mm")</span>
+                    <span class="dl-value">@Model.DataCadastro.ToBrazilTime().ToString("dd/MM/yyyy HH:mm")</span>
                 </div>
                 <div class="dl-row">
                     <span class="dl-label">Visualizado</span>
                     <span class="dl-value">
                         @if (Model.Visualizado && Model.DataVisualizacao.HasValue)
                         {
-                            <span class="status-dot status-success">@Model.DataVisualizacao.Value.ToString("dd/MM HH:mm")</span>
+                            <span class="status-dot status-success">@Model.DataVisualizacao.Value.ToBrazilTime().ToString("dd/MM HH:mm")</span>
                         }
                         else
                         {

@@ -143,7 +143,7 @@ namespace SistemaUsuarios.Controllers
                 BestContactTime        = SanitizeOptional(bestContactTime, 100),
                 Source                 = "Landing Page Pública",
                 Status                 = LeadStatus.Novo,
-                CreatedAt              = DateTime.Now,
+                CreatedAt              = DateTime.UtcNow,
             };
 
             _context.Leads.Add(lead);

@@ -26,7 +26,7 @@ namespace SistemaUsuarios.Models
         [MaxLength(80)]
         public string? MomentoReferencia { get; set; }
 
-        public DateTime DataCriacao { get; set; } = DateTime.Now;
+        public DateTime DataCriacao { get; set; } = DateTime.UtcNow;
         public DateTime? DataAtualizacao { get; set; }
 
         public virtual Usuario Usuario { get; set; } = null!;

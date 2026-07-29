@@ -4,7 +4,7 @@
 @{
     var fDisabled = Model.IsDeleted ? "disabled" : null;
     var generoVal = Model.Genero.HasValue ? ((int)Model.Genero.Value).ToString() : "";
-    var dataEntradaVal = Model.DataEntradaCliente ?? (Model.DataCriacao == default ? DateTime.Today : Model.DataCriacao);
+    var dataEntradaVal = Model.DataEntradaCliente ?? (Model.DataCriacao == default ? DateTime.UtcNow.ToBrazilTime().Date : Model.DataCriacao);
 }
 
 <!-- Card: Dados Pessoais -->

@@ -178,7 +178,7 @@
                         <tr class="@(!c.Visualizado ? "novo-row" : "")">
                             <td style="white-space:nowrap">
                                 <div style="font-size:12px;font-weight:600;color:#334155">@c.DataCadastro.ToString("dd/MM/yyyy")</div>
-                                <div class="sub-text">@c.DataCadastro.ToString("HH:mm")</div>
+                                <div class="sub-text">@c.DataCadastro.ToBrazilTime().ToString("HH:mm")</div>
                                 @if (!c.Visualizado)
                                 {
                                     <span class="novo-badge">Novo</span>

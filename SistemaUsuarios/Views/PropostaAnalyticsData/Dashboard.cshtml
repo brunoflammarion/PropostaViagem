@@ -26,13 +26,13 @@
 
     string FormatarData(DateTime? dt) {
         if (dt == null) return "—";
-        var diff = DateTime.Now - dt.Value;
+        var diff = DateTime.UtcNow - dt.Value;
         if (diff.TotalMinutes < 2)  return "agora mesmo";
         if (diff.TotalMinutes < 60) return $"há {(int)diff.TotalMinutes}min";
         if (diff.TotalHours < 24)   return $"há {(int)diff.TotalHours}h";
         if (diff.TotalDays < 2)     return "ontem";
         if (diff.TotalDays < 7)     return $"há {(int)diff.TotalDays} dias";
-        return dt.Value.ToString("dd/MM");
+        return dt.Value.ToBrazilTime().ToString("dd/MM");
     }
 
     string DispositivoIcon(string? tipo) {
@@ -233,7 +233,7 @@
                                             </span>
                                         </td>
                                         <td>
-                                            <span style="font-size:.8125rem; color:@(p.UltimaVisualizacao >= DateTime.Now.AddDays(-2) ? "#16a34a" : "#6b7280");">
+                                            <span style="font-size:.8125rem; color:@(p.UltimaVisualizacao >= DateTime.UtcNow.AddDays(-2) ? "#16a34a" : "#6b7280");">
                                                 @FormatarData(p.UltimaVisualizacao)
                                             </span>
                                         </td>

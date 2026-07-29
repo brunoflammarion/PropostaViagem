@@ -210,7 +210,7 @@ namespace SistemaUsuarios.Controllers
                 Telefone = telefoneLimpo,
                 CPF = cpfLimpo,
                 Senha = BCrypt.Net.BCrypt.HashPassword(model.Senha),
-                DataCriacao = DateTime.Now,
+                DataCriacao = DateTime.UtcNow,
                 Status = StatusUsuario.Novo
             };
 
@@ -591,7 +591,7 @@ namespace SistemaUsuarios.Controllers
                 TipoUsuario     = TipoUsuario.Associado,
                 UsuarioMasterId = masterId,
                 Status          = StatusUsuario.Ativo,
-                DataCriacao     = DateTime.Now
+                DataCriacao     = DateTime.UtcNow
             };
 
             _context.Usuarios.Add(associado);

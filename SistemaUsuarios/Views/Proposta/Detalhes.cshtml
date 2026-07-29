@@ -91,10 +91,10 @@
             </div>
             <div class="card-body">
                 <p><strong>Criado por:</strong> @(Model.Usuario?.Nome ?? "N/A")</p>
-                <p><strong>Data de Criação:</strong> @Model.DataCriacao.ToString("dd/MM/yyyy HH:mm")</p>
+                <p><strong>Data de Criação:</strong> @Model.DataCriacao.ToBrazilTime().ToString("dd/MM/yyyy HH:mm")</p>
                 @if (Model.DataModificacao.HasValue)
                 {
-                    <p><strong>Última Modificação:</strong> @Model.DataModificacao.Value.ToString("dd/MM/yyyy HH:mm")</p>
+                    <p><strong>Última Modificação:</strong> @Model.DataModificacao.Value.ToBrazilTime().ToString("dd/MM/yyyy HH:mm")</p>
                 }
 
                 @if (Model.Layout != null)
@@ -116,7 +116,7 @@
 
                 @if (Model.DataExpiracaoLink.HasValue)
                 {
-                    <p><strong>Expira em:</strong> @Model.DataExpiracaoLink.Value.ToString("dd/MM/yyyy HH:mm")</p>
+                    <p><strong>Expira em:</strong> @Model.DataExpiracaoLink.Value.ToBrazilTime().ToString("dd/MM/yyyy HH:mm")</p>
                 }
             </div>
         </div>

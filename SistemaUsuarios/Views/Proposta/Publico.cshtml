@@ -3158,7 +3158,7 @@ body.has-preview-bar { padding-top: 46px; }
             <div>
                 <div style="color:#e2e8f0;font-weight:600;">@Model.Titulo</div>
                 <small>
-                    @(_isAtualizada ? "Atualizada em" : "Criada em") @_dataAtualizacao.ToString("dd/MM/yyyy 'às' HH:mm")
+                    @(_isAtualizada ? "Atualizada em" : "Criada em") @_dataAtualizacao.ToBrazilTime().ToString("dd/MM/yyyy 'às' HH:mm")
                     @if (Model.DataExpiracaoLink.HasValue)
                     {
                         <text> · válida até @Model.DataExpiracaoLink.Value.ToString("dd/MM/yyyy")</text>

@@ -639,7 +639,7 @@ private static string ExtrairJsonDeMarkdown(string raw)
                 ,InsightesAgenteLLM = insightesAgenteLLM
 
                 ,Ordem = maxOrdem + 1
-                ,DataCriacao = DateTime.Now
+                ,DataCriacao = DateTime.UtcNow
                 ,Latitude = NormalizarCoordenada(latitude)
                 ,Longitude = NormalizarCoordenada(longitude)
                 ,Localizacao = latitude.HasValue && longitude.HasValue ? new Point(NormalizarCoordenada(longitude.Value), NormalizarCoordenada(latitude.Value)) { SRID = 4326 } : null

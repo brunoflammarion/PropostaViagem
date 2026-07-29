@@ -103,7 +103,7 @@ namespace SistemaUsuarios.Controllers
                 BagagemDespachadaPeso       = bagagemDespachadaPeso,
                 BagagemDespachadaMedidas    = bagagemDespachadaMedidas?.Trim(),
                 Ordem = maxOrdem + 1,
-                DataCriacao = DateTime.Now
+                DataCriacao = DateTime.UtcNow
             };
 
             _context.Voos.Add(voo);
@@ -248,7 +248,7 @@ namespace SistemaUsuarios.Controllers
                 Nome = nome.Trim(),
                 Assento = string.IsNullOrWhiteSpace(assento) ? null : assento.Trim().ToUpperInvariant(),
                 BagagensDespachadas = Math.Max(0, bagagensDespachadas),
-                DataCriacao = DateTime.Now
+                DataCriacao = DateTime.UtcNow
             };
 
             _context.PassageirosVoo.Add(passageiro);
@@ -449,7 +449,7 @@ namespace SistemaUsuarios.Controllers
                 CaminhoArquivo = blobUrl,
                 TipoArquivo = arquivo.ContentType,
                 Tamanho = arquivo.Length,
-                DataCriacao = DateTime.Now
+                DataCriacao = DateTime.UtcNow
             };
 
             _context.VooAnexos.Add(anexo);

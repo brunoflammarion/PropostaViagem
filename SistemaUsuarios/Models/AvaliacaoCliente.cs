@@ -38,7 +38,7 @@ namespace SistemaUsuarios.Models
         /// <summary>true quando o cliente marcou este item como favorito/preferido.</summary>
         public bool Favorito { get; set; } = false;
 
-        public DateTime DataCriacao { get; set; } = DateTime.Now;
+        public DateTime DataCriacao { get; set; } = DateTime.UtcNow;
 
         // Navigation
         public virtual Proposta Proposta { get; set; } = null!;

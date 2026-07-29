@@ -1,3 +1,4 @@
+using SistemaUsuarios.Infrastructure;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -29,7 +30,7 @@ namespace SistemaUsuarios.Controllers
             if (!UsuarioLogado()) return RedirectToAction("Login", "Auth");
 
             var uid  = UsuarioId();
-            var hoje = DateTime.Today;
+            var hoje = DateTime.UtcNow.ToBrazilTime().Date;
 
             var usuario = await _context.Usuarios
                 .AsNoTracking()

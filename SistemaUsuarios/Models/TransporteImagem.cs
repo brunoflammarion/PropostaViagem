@@ -20,7 +20,7 @@ namespace SistemaUsuarios.Models
 
         public bool Principal { get; set; } = false;
 
-        public DateTime DataCriacao { get; set; } = DateTime.Now;
+        public DateTime DataCriacao { get; set; } = DateTime.UtcNow;
 
         // Navigation
         public virtual Transporte Transporte { get; set; } = null!;

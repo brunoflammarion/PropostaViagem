@@ -57,7 +57,7 @@ namespace SistemaUsuarios.Services
                     ConteudoDemonstracaoId = modelo.Id,
                     AgenciaMasterId        = masterId,
                     EntidadeClonadaId      = clonadaId,
-                    DataAplicacao          = DateTime.Now,
+                    DataAplicacao          = DateTime.UtcNow,
                     StatusAplicacao        = status,
                     MensagemErro           = erro,
                 });
@@ -102,7 +102,7 @@ namespace SistemaUsuarios.Services
                 if (aplicado != null)
                 {
                     aplicado.EntidadeClonadaId = clonadaId;
-                    aplicado.DataAplicacao      = DateTime.Now;
+                    aplicado.DataAplicacao      = DateTime.UtcNow;
                     aplicado.StatusAplicacao    = status;
                     aplicado.MensagemErro       = erro;
                 }
@@ -113,7 +113,7 @@ namespace SistemaUsuarios.Services
                         ConteudoDemonstracaoId = modelo.Id,
                         AgenciaMasterId        = masterId,
                         EntidadeClonadaId      = clonadaId,
-                        DataAplicacao          = DateTime.Now,
+                        DataAplicacao          = DateTime.UtcNow,
                         StatusAplicacao        = status,
                         MensagemErro           = erro,
                     });
@@ -146,7 +146,7 @@ namespace SistemaUsuarios.Services
                 UsuarioMasterId              = masterId,
                 UsuarioResponsavelId         = masterId,
                 Titulo                       = o.Titulo,
-                DataCriacao                  = DateTime.Now,
+                DataCriacao                  = DateTime.UtcNow,
                 DataModificacao              = null,
                 DataInicio                   = o.DataInicio,
                 DataFim                      = o.DataFim,
@@ -183,7 +183,7 @@ namespace SistemaUsuarios.Services
                     Ordem                  = d.Ordem,
                     Pais                   = d.Pais,
                     Cidade                 = d.Cidade,
-                    DataCriacao            = DateTime.Now,
+                    DataCriacao            = DateTime.UtcNow,
                     Latitude               = d.Latitude,
                     Longitude              = d.Longitude,
                     Localizacao            = d.Localizacao,
@@ -225,7 +225,7 @@ namespace SistemaUsuarios.Services
                         Reserva     = null, // dado operacional — não copiar
                         Observacoes = h.Observacoes,
                         Ordem       = h.Ordem,
-                        DataCriacao = DateTime.Now,
+                        DataCriacao = DateTime.UtcNow,
                     };
 
                     foreach (var hf in h.Fotos)
@@ -298,7 +298,7 @@ namespace SistemaUsuarios.Services
                         DataInicio  = e.DataInicio,
                         DataFim     = e.DataFim,
                         Ordem       = e.Ordem,
-                        DataCriacao = DateTime.Now,
+                        DataCriacao = DateTime.UtcNow,
                     };
 
                     foreach (var img in e.Imagens)
@@ -324,7 +324,7 @@ namespace SistemaUsuarios.Services
                         Descricao   = t.Descricao,
                         Valor       = t.Valor,
                         Ordem       = t.Ordem,
-                        DataCriacao = DateTime.Now,
+                        DataCriacao = DateTime.UtcNow,
                     };
 
                     foreach (var img in t.Imagens)
@@ -367,7 +367,7 @@ namespace SistemaUsuarios.Services
                     Observacao                   = v.Observacao,
                     ObservacaoImagemPath         = await _blob.CopiarAsync(v.ObservacaoImagemPath, "voos"),
                     Ordem                        = v.Ordem,
-                    DataCriacao                  = DateTime.Now,
+                    DataCriacao                  = DateTime.UtcNow,
                 });
 
             foreach (var s in o.Seguros)
@@ -380,7 +380,7 @@ namespace SistemaUsuarios.Services
                     Descricao   = s.Descricao,
                     Valor       = s.Valor,
                     Ordem       = s.Ordem,
-                    DataCriacao = DateTime.Now,
+                    DataCriacao = DateTime.UtcNow,
                 };
 
                 foreach (var img in s.Imagens)
@@ -452,7 +452,7 @@ namespace SistemaUsuarios.Services
                 SeloPromocional              = o.SeloPromocional,
                 TagPromocional               = o.TagPromocional,
                 TextoInstitucional           = o.TextoInstitucional,
-                DataCriacao                  = DateTime.Now,
+                DataCriacao                  = DateTime.UtcNow,
                 DataModificacao              = null,
                 IsConteudoDemonstracao       = true,
                 ConteudoDemonstracaoOrigemId = modeloId,

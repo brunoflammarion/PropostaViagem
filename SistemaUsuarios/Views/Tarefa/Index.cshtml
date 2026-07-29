@@ -4,7 +4,7 @@
     ViewData["Title"] = "Tarefas";
     Layout = "_Layout";
 
-    var hoje = DateTime.Today;
+    var hoje = DateTime.UtcNow.ToBrazilTime().Date;
     var calToken   = ViewBag.CalendarioToken as string;
     var calFeedUrl = calToken != null
         ? $"{Context.Request.Scheme}://{Context.Request.Host}/calendario/feed/{calToken}"
@@ -14,7 +14,7 @@
 @functions {
     static string FormatarData(DateTime d)
     {
-        var hoje = DateTime.Today;
+        var hoje = DateTime.UtcNow.ToBrazilTime().Date;
         if (d.Date == hoje)             return "Hoje";
         if (d.Date == hoje.AddDays(1))  return "Amanhã";
         if (d.Date == hoje.AddDays(-1)) return "Ontem";
@@ -306,7 +306,7 @@
         <ul class="tf-list">
             @foreach (var t in Model.TarefasTodas)
             {
-                var hoje2 = DateTime.Today;
+                var hoje2 = DateTime.UtcNow.ToBrazilTime().Date;
                 var isAtrasada = t.DataVencimento.Date < hoje2;
                 @await Html.PartialAsync("_TarefaCard", t, new ViewDataDictionary(ViewData) {
                     ["IsAtrasada"] = isAtrasada, ["ShowDate"] = true
@@ -446,7 +446,7 @@
         <input type="text" id="nTitulo" placeholder="Ex: Ligar para o cliente..." maxlength="200" />
 
         <label>Data de vencimento *</label>
-        <input type="date" id="nData" value="@DateTime.Today.ToString("yyyy-MM-dd")" />
+        <input type="date" id="nData" value="@DateTime.UtcNow.ToBrazilTime().Date.ToString("yyyy-MM-dd")" />
 
         <div class="row g-2">
             <div class="col-6">

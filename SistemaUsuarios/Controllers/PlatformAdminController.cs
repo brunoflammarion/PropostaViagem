@@ -1,3 +1,4 @@
+using SistemaUsuarios.Infrastructure;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SistemaUsuarios.Data;
@@ -470,7 +471,7 @@ namespace SistemaUsuarios.Controllers
                 Ativo                 = true,
                 AplicarAutomaticamente= true,
                 Ordem                 = maxOrdem + 1,
-                DataCriacao           = DateTime.Now,
+                DataCriacao           = DateTime.UtcNow,
                 CriadoPorAdminId      = adminId,
             });
             await _db.SaveChangesAsync();
@@ -490,7 +491,7 @@ namespace SistemaUsuarios.Controllers
             if (c == null) return NotFound();
 
             c.Ativo           = !c.Ativo;
-            c.DataAtualizacao = DateTime.Now;
+            c.DataAtualizacao = DateTime.UtcNow;
             c.AtualizadoPorAdminId = Guid.Parse(HttpContext.Session.GetString("PlatformAdminId")!);
             await _db.SaveChangesAsync();
 
@@ -521,7 +522,7 @@ namespace SistemaUsuarios.Controllers
         {
             if (!AdminLogado()) return RedirectToAction("Login");
 
-            var hoje = DateTime.Today;
+            var hoje = DateTime.UtcNow.ToBrazilTime().Date;
 
             var totalGeral = await _db.ListaVipCadastros.CountAsync();
             var totalHoje  = await _db.ListaVipCadastros.CountAsync(c => c.DataCadastro >= hoje);
@@ -620,7 +621,7 @@ namespace SistemaUsuarios.Controllers
             if (!cadastro.Visualizado)
             {
                 cadastro.Visualizado     = true;
-                cadastro.DataVisualizacao = DateTime.Now;
+                cadastro.DataVisualizacao = DateTime.UtcNow;
                 await _db.SaveChangesAsync();
             }
 
@@ -647,7 +648,7 @@ namespace SistemaUsuarios.Controllers
             }
             if (!string.IsNullOrWhiteSpace(periodo))
             {
-                DateTime? cutoff = periodo switch { "hoje" => DateTime.Today, "7d" => DateTime.Today.AddDays(-7), "30d" => DateTime.Today.AddDays(-30), "90d" => DateTime.Today.AddDays(-90), _ => null };
+                DateTime? cutoff = periodo switch { "hoje" => DateTime.UtcNow.ToBrazilTime().Date, "7d" => DateTime.UtcNow.ToBrazilTime().Date.AddDays(-7), "30d" => DateTime.UtcNow.ToBrazilTime().Date.AddDays(-30), "90d" => DateTime.UtcNow.ToBrazilTime().Date.AddDays(-90), _ => null };
                 if (cutoff.HasValue) query = query.Where(c => c.DataCadastro >= cutoff.Value);
             }
             if (!string.IsNullOrWhiteSpace(propostas))
@@ -666,7 +667,7 @@ namespace SistemaUsuarios.Controllers
             var preamble = System.Text.Encoding.UTF8.GetPreamble();
             var content  = System.Text.Encoding.UTF8.GetBytes(sb.ToString());
             var bytes    = preamble.Concat(content).ToArray();
-            return File(bytes, "text/csv", $"lista-vip-{DateTime.Today:yyyy-MM-dd}.csv");
+            return File(bytes, "text/csv", $"lista-vip-{DateTime.UtcNow.ToBrazilTime().Date:yyyy-MM-dd}.csv");
         }
 
         // AJAX: preview de entidade antes de adicionar

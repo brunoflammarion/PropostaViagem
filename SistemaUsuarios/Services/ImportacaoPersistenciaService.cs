@@ -41,7 +41,7 @@ namespace SistemaUsuarios.Services
                     string.IsNullOrWhiteSpace(proposta.ObservacoesGerais))
                     proposta.ObservacoesGerais = preview.Proposta.ObservacoesGerais.Trim();
 
-                proposta.DataModificacao = DateTime.Now;
+                proposta.DataModificacao = DateTime.UtcNow;
             }
 
             // Passageiros
@@ -61,7 +61,7 @@ namespace SistemaUsuarios.Services
                     Relacionamento = ParseEnum<RelacionamentoPassageiro>(dto.Relacionamento),
                     Observacoes = dto.Observacoes?.Trim(),
                     Ordem = maxOrdem + 1,
-                    DataCriacao = DateTime.Now
+                    DataCriacao = DateTime.UtcNow
                 });
                 resultado.Passageiros++;
             }
@@ -89,7 +89,7 @@ namespace SistemaUsuarios.Services
                     BagagemMaoPeso = dto.BagagemMaoPeso,
                     BagagemDespachadaPeso = dto.BagagemDespachadaPeso,
                     Ordem = maxOrdem + 1,
-                    DataCriacao = DateTime.Now
+                    DataCriacao = DateTime.UtcNow
                 });
                 resultado.Voos++;
             }
@@ -115,7 +115,7 @@ namespace SistemaUsuarios.Services
                     Longitude = dtoDestino.Longitude,
                     Localizacao = CriarPoint(dtoDestino.Latitude, dtoDestino.Longitude),
                     Ordem = maxOrdemDestino + 1,
-                    DataCriacao = DateTime.Now
+                    DataCriacao = DateTime.UtcNow
                 };
 
                 _context.Destinos.Add(destino);
@@ -145,7 +145,7 @@ namespace SistemaUsuarios.Services
                         Reserva = dtoHosp.Reserva?.Trim(),
                         Observacoes = dtoHosp.Observacoes?.Trim(),
                         Ordem = maxOrdemHosp + 1,
-                        DataCriacao = DateTime.Now
+                        DataCriacao = DateTime.UtcNow
                     });
                     resultado.Hospedagens++;
                 }
@@ -167,7 +167,7 @@ namespace SistemaUsuarios.Services
                         DataInicio = ParseDateTime(dtoExp.DataInicio),
                         DataFim = ParseDateTime(dtoExp.DataFim),
                         Ordem = maxOrdemExp + 1,
-                        DataCriacao = DateTime.Now
+                        DataCriacao = DateTime.UtcNow
                     });
                     resultado.Experiencias++;
                 }
@@ -187,7 +187,7 @@ namespace SistemaUsuarios.Services
                         Descricao = dtoTransp.Descricao?.Trim(),
                         Valor = dtoTransp.Valor,
                         Ordem = maxOrdemTransp + 1,
-                        DataCriacao = DateTime.Now
+                        DataCriacao = DateTime.UtcNow
                     });
                     resultado.Transportes++;
                 }
@@ -208,7 +208,7 @@ namespace SistemaUsuarios.Services
                     Descricao = dtoSeg.Descricao?.Trim(),
                     Valor = dtoSeg.Valor,
                     Ordem = maxOrdemSeg + 1,
-                    DataCriacao = DateTime.Now
+                    DataCriacao = DateTime.UtcNow
                 });
                 resultado.Seguros++;
             }
@@ -254,7 +254,7 @@ namespace SistemaUsuarios.Services
                             string.IsNullOrWhiteSpace(proposta.ObservacoesGerais))
                             proposta.ObservacoesGerais = req.Proposta.ObservacoesGerais.Trim();
 
-                        proposta.DataModificacao = DateTime.Now;
+                        proposta.DataModificacao = DateTime.UtcNow;
                         await _context.SaveChangesAsync();
                         resultado.Itens = 1;
                         resultado.Mensagem = $"Título atualizado para \"{proposta.Titulo}\"";
@@ -274,7 +274,7 @@ namespace SistemaUsuarios.Services
                             Genero = ParseEnum<Genero>(dto.Genero),
                             Relacionamento = ParseEnum<RelacionamentoPassageiro>(dto.Relacionamento),
                             Observacoes = dto.Observacoes?.Trim(),
-                            Ordem = maxOrdem + 1, DataCriacao = DateTime.Now
+                            Ordem = maxOrdem + 1, DataCriacao = DateTime.UtcNow
                         });
                         resultado.Itens++;
                     }
@@ -299,7 +299,7 @@ namespace SistemaUsuarios.Services
                             HorarioChegada = ParseDateTime(dto.HorarioChegada),
                             BagagemMaoPeso = dto.BagagemMaoPeso,
                             BagagemDespachadaPeso = dto.BagagemDespachadaPeso,
-                            Ordem = maxOrdem + 1, DataCriacao = DateTime.Now
+                            Ordem = maxOrdem + 1, DataCriacao = DateTime.UtcNow
                         });
                         resultado.Itens++;
                     }
@@ -322,7 +322,7 @@ namespace SistemaUsuarios.Services
                             Descricao = dtoD.Descricao?.Trim(),
                             Latitude = dtoD.Latitude, Longitude = dtoD.Longitude,
                             Localizacao = CriarPoint(dtoD.Latitude, dtoD.Longitude),
-                            Ordem = maxOrdemD + 1, DataCriacao = DateTime.Now
+                            Ordem = maxOrdemD + 1, DataCriacao = DateTime.UtcNow
                         };
                         _context.Destinos.Add(destino);
                         await _context.SaveChangesAsync();
@@ -340,7 +340,7 @@ namespace SistemaUsuarios.Services
                                 Categoria = ParseEnum<CategoriaHospedagem>(h.Categoria) ?? CategoriaHospedagem.Hotel,
                                 TipoPensao = ParseEnum<TipoPensao>(h.TipoPensao) ?? TipoPensao.SemPensao,
                                 Reserva = h.Reserva?.Trim(), Observacoes = h.Observacoes?.Trim(),
-                                Ordem = maxH + 1, DataCriacao = DateTime.Now
+                                Ordem = maxH + 1, DataCriacao = DateTime.UtcNow
                             });
                         }
                         foreach (var e in dtoD.Experiencias.Where(e => !string.IsNullOrWhiteSpace(e.TipoPasseio)))
@@ -352,7 +352,7 @@ namespace SistemaUsuarios.Services
                                 TipoPasseio = e.TipoPasseio.Trim(), Descricao = e.Descricao?.Trim(),
                                 Valor = e.Valor, DataInicio = ParseDateTime(e.DataInicio),
                                 DataFim = ParseDateTime(e.DataFim),
-                                Ordem = maxE + 1, DataCriacao = DateTime.Now
+                                Ordem = maxE + 1, DataCriacao = DateTime.UtcNow
                             });
                         }
                         foreach (var t in dtoD.Transportes.Where(t => !string.IsNullOrWhiteSpace(t.Titulo)))
@@ -362,7 +362,7 @@ namespace SistemaUsuarios.Services
                             {
                                 Id = Guid.NewGuid(), DestinoId = destino.Id,
                                 Titulo = t.Titulo.Trim(), Descricao = t.Descricao?.Trim(),
-                                Valor = t.Valor, Ordem = maxT + 1, DataCriacao = DateTime.Now
+                                Valor = t.Valor, Ordem = maxT + 1, DataCriacao = DateTime.UtcNow
                             });
                         }
                         await _context.SaveChangesAsync();
@@ -379,7 +379,7 @@ namespace SistemaUsuarios.Services
                         {
                             Id = Guid.NewGuid(), PropostaId = propostaId,
                             Titulo = dto.Titulo.Trim(), Descricao = dto.Descricao?.Trim(),
-                            Valor = dto.Valor, Ordem = maxOrdem + 1, DataCriacao = DateTime.Now
+                            Valor = dto.Valor, Ordem = maxOrdem + 1, DataCriacao = DateTime.UtcNow
                         });
                         resultado.Itens++;
                     }

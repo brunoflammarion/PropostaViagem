@@ -18,7 +18,7 @@ namespace SistemaUsuarios.Models
         public string?  Referrer      { get; set; }
         public string?  Ip            { get; set; }
         public string?  UserAgent     { get; set; }
-        public DateTime DataCadastro  { get; set; } = DateTime.Now;
+        public DateTime DataCadastro  { get; set; } = DateTime.UtcNow;
         public bool     Visualizado   { get; set; } = false;
         public DateTime? DataVisualizacao { get; set; }
     }

@@ -30,7 +30,7 @@ namespace SistemaUsuarios.Models
         [MaxLength(100)]
         public string? Cidade { get; set; }
 
-        public DateTime DataCriacao { get; set; } = DateTime.Now;
+        public DateTime DataCriacao { get; set; } = DateTime.UtcNow;
 
         // ✅ NAVEGAÇÃO PARA PROPOSTA (N:1)
         public virtual Proposta Proposta { get; set; }

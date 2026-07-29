@@ -8,7 +8,7 @@ namespace SistemaUsuarios.Models
         public string CaminhoArquivo { get; set; }
         public string TipoArquivo { get; set; }
         public long Tamanho { get; set; }
-        public DateTime DataCriacao { get; set; } = DateTime.Now;
+        public DateTime DataCriacao { get; set; } = DateTime.UtcNow;
 
         public virtual Seguro Seguro { get; set; }
     }

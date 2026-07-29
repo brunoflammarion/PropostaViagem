@@ -41,7 +41,7 @@ namespace SistemaUsuarios.Models
         public string? TemplateCodigo { get; set; }
 
         public DateTime? DataConclusao { get; set; }
-        public DateTime DataCriacao { get; set; } = DateTime.Now;
+        public DateTime DataCriacao { get; set; } = DateTime.UtcNow;
         public DateTime? DataAtualizacao { get; set; }
 
         public bool IsDeleted { get; set; } = false;

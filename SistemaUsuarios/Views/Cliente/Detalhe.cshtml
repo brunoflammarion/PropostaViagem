@@ -33,7 +33,7 @@
     <div class="alert alert-warning d-flex align-items-center gap-2 mb-3" role="alert">
         <i class="fas fa-archive fa-lg"></i>
         <span>
-            <strong>Cliente arquivado</strong> em @Model.DeletedAt?.ToString("dd/MM/yyyy 'às' HH:mm").
+            <strong>Cliente arquivado</strong> em @Model.DeletedAt?.ToBrazilTime().ToString("dd/MM/yyyy 'às' HH:mm").
             Os dados estão em modo somente leitura. As propostas vinculadas continuam funcionando normalmente.
         </span>
     </div>
@@ -492,7 +492,7 @@
             <div class="cd-agenda-list">
                 @foreach (var ev in Model.Agenda)
                 {
-                    var hoje = DateTime.Today;
+                    var hoje = DateTime.UtcNow.ToBrazilTime().Date;
                     var diasPara = (ev.Data.Date - hoje).Days;
                     <div class="cd-agenda-item">
                         <div class="cd-evento-icon @ev.CorCss">

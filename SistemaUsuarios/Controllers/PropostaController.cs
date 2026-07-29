@@ -254,7 +254,7 @@ namespace SistemaUsuarios.Controllers
                 StatusProposta = StatusProposta.Rascunho,
                 LinkPublicoAtivo = model.LinkPublicoAtivo,
                 DataExpiracaoLink = model.DataExpiracaoLink,
-                DataCriacao = DateTime.Now
+                DataCriacao = DateTime.UtcNow
             };
 
             _context.Propostas.Add(proposta);
@@ -499,7 +499,7 @@ namespace SistemaUsuarios.Controllers
             proposta.SolicitarAvaliacaoHospedagem  = model.SolicitarAvaliacaoHospedagem;
             proposta.SolicitarAvaliacaoAcomodacao  = model.SolicitarAvaliacaoAcomodacao;
             proposta.SolicitarAvaliacaoExperiencia = model.SolicitarAvaliacaoExperiencia;
-            proposta.DataModificacao = DateTime.Now;
+            proposta.DataModificacao = DateTime.UtcNow;
 
             // Gera código de acesso automaticamente ao ativar o link pela primeira vez
             if (model.LinkPublicoAtivo && string.IsNullOrEmpty(proposta.CodigoAcesso))
@@ -537,7 +537,7 @@ namespace SistemaUsuarios.Controllers
             proposta.SolicitarAvaliacaoHospedagem  = solicitarAvaliacaoHospedagem;
             proposta.SolicitarAvaliacaoAcomodacao  = solicitarAvaliacaoAcomodacao;
             proposta.SolicitarAvaliacaoExperiencia = solicitarAvaliacaoExperiencia;
-            proposta.DataModificacao = DateTime.Now;
+            proposta.DataModificacao = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
 
@@ -573,7 +573,7 @@ namespace SistemaUsuarios.Controllers
                 proposta.CodigoAcesso = GerarCodigoCurto();
 
             proposta.ExigirCodigoAcesso = exigirCodigoAcesso;
-            proposta.DataModificacao    = DateTime.Now;
+            proposta.DataModificacao    = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
 
@@ -596,7 +596,7 @@ namespace SistemaUsuarios.Controllers
                 return Json(new { ok = false, erro = "Proposta não encontrada" });
 
             proposta.ResumoProposta = string.IsNullOrWhiteSpace(conteudo) ? null : conteudo;
-            proposta.DataModificacao = DateTime.Now;
+            proposta.DataModificacao = DateTime.UtcNow;
             await _context.SaveChangesAsync();
 
             return Json(new { ok = true });
@@ -614,7 +614,7 @@ namespace SistemaUsuarios.Controllers
                 return Json(new { ok = false, erro = "Proposta não encontrada" });
 
             proposta.CondicoesPropostaHtml = string.IsNullOrWhiteSpace(conteudo) ? null : conteudo;
-            proposta.DataModificacao = DateTime.Now;
+            proposta.DataModificacao = DateTime.UtcNow;
             await _context.SaveChangesAsync();
 
             return Json(new { ok = true });
@@ -632,7 +632,7 @@ namespace SistemaUsuarios.Controllers
                 return Json(new { ok = false, erro = "Proposta não encontrada" });
 
             proposta.ValoresPropostaHtml = string.IsNullOrWhiteSpace(conteudo) ? null : conteudo;
-            proposta.DataModificacao = DateTime.Now;
+            proposta.DataModificacao = DateTime.UtcNow;
             await _context.SaveChangesAsync();
 
             return Json(new { ok = true });
@@ -652,7 +652,7 @@ namespace SistemaUsuarios.Controllers
 
             var statusAnterior = proposta.StatusProposta;
             proposta.StatusProposta = status;
-            proposta.DataModificacao = DateTime.Now;
+            proposta.DataModificacao = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
 
@@ -705,7 +705,7 @@ namespace SistemaUsuarios.Controllers
                 return View("PropostaIndisponivel");
             }
 
-            if (meta.DataExpiracaoLink.HasValue && meta.DataExpiracaoLink.Value < DateTime.Now)
+            if (meta.DataExpiracaoLink.HasValue && meta.DataExpiracaoLink.Value < DateTime.UtcNow)
             {
                 ViewBag.Mensagem = "Esta proposta expirou e não está mais disponível.";
                 ViewBag.Subtitulo = "Entre em contato com o agente para receber uma nova proposta atualizada.";
@@ -814,7 +814,7 @@ namespace SistemaUsuarios.Controllers
                 return View("PropostaIndisponivel");
             }
 
-            if (meta.DataExpiracaoLink.HasValue && meta.DataExpiracaoLink.Value < DateTime.Now)
+            if (meta.DataExpiracaoLink.HasValue && meta.DataExpiracaoLink.Value < DateTime.UtcNow)
             {
                 ViewBag.Mensagem = "Esta proposta expirou e não está mais disponível.";
                 ViewBag.Subtitulo = "Entre em contato com o agente para receber uma nova proposta atualizada.";
@@ -917,7 +917,7 @@ namespace SistemaUsuarios.Controllers
                 return NotFound();
 
             proposta.CodigoAcesso   = GerarCodigoCurto();
-            proposta.DataModificacao = DateTime.Now;
+            proposta.DataModificacao = DateTime.UtcNow;
             await _context.SaveChangesAsync();
 
             return Json(new { success = true, codigo = proposta.CodigoAcesso });
@@ -941,7 +941,7 @@ namespace SistemaUsuarios.Controllers
                 return NotFound();
 
             proposta.CodigoAcesso   = null;
-            proposta.DataModificacao = DateTime.Now;
+            proposta.DataModificacao = DateTime.UtcNow;
             await _context.SaveChangesAsync();
 
             return Json(new { success = true });
@@ -1052,7 +1052,7 @@ namespace SistemaUsuarios.Controllers
                 return NotFound(new { success = false });
 
             proposta.LayoutId        = request.LayoutId;
-            proposta.DataModificacao = DateTime.Now;
+            proposta.DataModificacao = DateTime.UtcNow;
             await _context.SaveChangesAsync();
 
             return Json(new { success = true });
@@ -1081,12 +1081,12 @@ namespace SistemaUsuarios.Controllers
             }
 
             proposta.LinkPublicoAtivo = ativo;
-            proposta.DataModificacao = DateTime.Now;
+            proposta.DataModificacao = DateTime.UtcNow;
 
             // Se estiver ativando e não tem data de expiração, definir para 30 dias
             if (ativo && !proposta.DataExpiracaoLink.HasValue)
             {
-                proposta.DataExpiracaoLink = DateTime.Now.AddDays(30);
+                proposta.DataExpiracaoLink = DateTime.UtcNow.AddDays(30);
             }
 
             await _context.SaveChangesAsync();
@@ -1236,7 +1236,7 @@ namespace SistemaUsuarios.Controllers
                 return NotFound();
 
             proposta.StatusProposta = request.Status;
-            proposta.DataModificacao = DateTime.Now;
+            proposta.DataModificacao = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
 
@@ -1260,11 +1260,11 @@ namespace SistemaUsuarios.Controllers
                 return NotFound();
 
             proposta.LinkPublicoAtivo = request.Ativo;
-            proposta.DataModificacao = DateTime.Now;
+            proposta.DataModificacao = DateTime.UtcNow;
 
             // Se estiver ativando e não tem data de expiração, definir para 30 dias
             if (request.Ativo && !proposta.DataExpiracaoLink.HasValue)
-                proposta.DataExpiracaoLink = DateTime.Now.AddDays(30);
+                proposta.DataExpiracaoLink = DateTime.UtcNow.AddDays(30);
 
             // Gera código de acesso automaticamente ao ativar o link pela primeira vez
             if (request.Ativo && string.IsNullOrEmpty(proposta.CodigoAcesso))
@@ -1361,7 +1361,7 @@ namespace SistemaUsuarios.Controllers
                 ObservacoesGerais = propostaOriginal.ObservacoesGerais,
                 StatusProposta = StatusProposta.Rascunho,
                 LinkPublicoAtivo = false,
-                DataCriacao = DateTime.Now
+                DataCriacao = DateTime.UtcNow
             };
 
             _context.Propostas.Add(novaProposta);
@@ -1380,7 +1380,7 @@ namespace SistemaUsuarios.Controllers
                     Ordem = destinoOriginal.Ordem,
                     Pais = destinoOriginal.Pais,
                     Cidade = destinoOriginal.Cidade,
-                    DataCriacao = DateTime.Now
+                    DataCriacao = DateTime.UtcNow
                 };
 
                 _context.Destinos.Add(novoDestino);
@@ -1396,7 +1396,7 @@ namespace SistemaUsuarios.Controllers
                         Descricao = fotoOriginal.Descricao,
                         Ordem = fotoOriginal.Ordem,
                         Principal = fotoOriginal.Principal,
-                        DataCriacao = DateTime.Now
+                        DataCriacao = DateTime.UtcNow
                     };
 
                     _context.DestinoFotos.Add(novaFoto);
@@ -1502,7 +1502,7 @@ namespace SistemaUsuarios.Controllers
 
             // Atualizar no banco
             proposta.FotoCapa = null;
-            proposta.DataModificacao = DateTime.Now;
+            proposta.DataModificacao = DateTime.UtcNow;
             await _context.SaveChangesAsync();
 
             return Json(new { success = true, message = "Foto removida com sucesso" });
@@ -1598,7 +1598,7 @@ namespace SistemaUsuarios.Controllers
 
             // Atualiza apenas o responsável — criador (UsuarioId) permanece intacto
             proposta.UsuarioResponsavelId = novoResponsavelId;
-            proposta.DataModificacao = DateTime.Now;
+            proposta.DataModificacao = DateTime.UtcNow;
             await _context.SaveChangesAsync();
 
             TempData["Sucesso"] = $"Proposta transferida para {novoResponsavel.Nome}.";

@@ -85,7 +85,7 @@ namespace SistemaUsuarios.Controllers
                 Descricao = descricao?.Trim(),
                 Valor = valor,
                 Ordem = maxOrdem + 1,
-                DataCriacao = DateTime.Now
+                DataCriacao = DateTime.UtcNow
             };
 
             _context.Seguros.Add(seguro);
@@ -211,7 +211,7 @@ namespace SistemaUsuarios.Controllers
                     CaminhoImagem = caminho,
                     Descricao = descricao?.Trim(),
                     Ordem = maxOrdem + 1,
-                    DataCriacao = DateTime.Now
+                    DataCriacao = DateTime.UtcNow
                 });
                 await _context.SaveChangesAsync();
                 TempData["Sucesso"] = "Imagem adicionada!";
@@ -297,7 +297,7 @@ namespace SistemaUsuarios.Controllers
                 CaminhoArquivo = blobUrl,
                 TipoArquivo = documento.ContentType,
                 Tamanho = documento.Length,
-                DataCriacao = DateTime.Now
+                DataCriacao = DateTime.UtcNow
             });
             await _context.SaveChangesAsync();
 

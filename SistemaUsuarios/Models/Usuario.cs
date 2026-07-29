@@ -27,7 +27,7 @@ namespace SistemaUsuarios.Models
         [StringLength(100, MinimumLength = 6, ErrorMessage = "Senha deve ter no mínimo 6 caracteres")]
         public string Senha { get; set; }
 
-        public DateTime DataCriacao { get; set; } = DateTime.Now;
+        public DateTime DataCriacao { get; set; } = DateTime.UtcNow;
 
         public StatusUsuario Status { get; set; } = StatusUsuario.Novo;
 

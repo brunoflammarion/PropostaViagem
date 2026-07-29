@@ -28,8 +28,8 @@ namespace SistemaUsuarios.Models
         public bool ShowNotes { get; set; } = false;
         public bool ShowBestContactTime { get; set; } = false;
 
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
-        public DateTime UpdatedAt { get; set; } = DateTime.Now;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
         public virtual Usuario Usuario { get; set; } = null!;
     }

@@ -3187,7 +3187,7 @@
                 <!-- Passageiros da viagem -->
                 @foreach (var pax in proposta.PassageirosProposta.OrderBy(p => p.Ordem))
                 {
-                    var refDatePax = proposta.DataInicio ?? DateTime.Today;
+                    var refDatePax = proposta.DataInicio ?? DateTime.UtcNow.ToBrazilTime().Date;
                     var paxRelLabel = pax.Relacionamento.HasValue ? pax.Relacionamento switch {
                         SistemaUsuarios.Models.RelacionamentoPassageiro.Filho => "Filho",
                         SistemaUsuarios.Models.RelacionamentoPassageiro.Filha => "Filha",

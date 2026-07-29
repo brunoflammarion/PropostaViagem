@@ -10,7 +10,7 @@ namespace SistemaUsuarios.Models
         [StringLength(500, ErrorMessage = "Título deve ter no máximo 500 caracteres")]
         public string Titulo { get; set; }
 
-        public DateTime DataCriacao { get; set; } = DateTime.Now;
+        public DateTime DataCriacao { get; set; } = DateTime.UtcNow;
 
         public DateTime? DataModificacao { get; set; }
 

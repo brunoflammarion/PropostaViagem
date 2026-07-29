@@ -103,7 +103,7 @@ namespace SistemaUsuarios.Controllers
                 DataInicio = dataInicio,
                 DataFim = dataFim,
                 Ordem = maxOrdem + 1,
-                DataCriacao = DateTime.Now
+                DataCriacao = DateTime.UtcNow
             };
 
             _context.Experiencias.Add(experiencia);
@@ -126,7 +126,7 @@ namespace SistemaUsuarios.Controllers
                             ExperienciaId = experiencia.Id,
                             CaminhoImagem = caminho,
                             Ordem         = i + 1,
-                            DataCriacao   = DateTime.Now
+                            DataCriacao   = DateTime.UtcNow
                         });
                     }
                     catch (InvalidOperationException ex)
@@ -294,7 +294,7 @@ namespace SistemaUsuarios.Controllers
                             CaminhoImagem = caminho,
                             Descricao = descricao?.Trim(),
                             Ordem = maxOrdem + i + 1,
-                            DataCriacao = DateTime.Now
+                            DataCriacao = DateTime.UtcNow
                         });
                         adicionadas++;
                     }
@@ -434,7 +434,7 @@ namespace SistemaUsuarios.Controllers
                 CaminhoArquivo = blobUrl,
                 TipoArquivo = arquivo.ContentType,
                 Tamanho = arquivo.Length,
-                DataCriacao = DateTime.Now
+                DataCriacao = DateTime.UtcNow
             });
             await _context.SaveChangesAsync();
 

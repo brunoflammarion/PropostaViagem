@@ -106,11 +106,11 @@
                     {
                         <div class="detail-item">
                             <span class="detail-label">Primeira Visualização</span>
-                            <span class="detail-value">@(Model.EstatisticasGerais.PrimeiraVisualizacao?.ToString("dd/MM/yyyy HH:mm") ?? "N/A")</span>
+                            <span class="detail-value">@(Model.EstatisticasGerais.PrimeiraVisualizacao?.ToBrazilTime().ToString("dd/MM/yyyy HH:mm") ?? "N/A")</span>
                         </div>
                         <div class="detail-item">
                             <span class="detail-label">Última Visualização</span>
-                            <span class="detail-value">@(Model.EstatisticasGerais.UltimaVisualizacao?.ToString("dd/MM/yyyy HH:mm") ?? "N/A")</span>
+                            <span class="detail-value">@(Model.EstatisticasGerais.UltimaVisualizacao?.ToBrazilTime().ToString("dd/MM/yyyy HH:mm") ?? "N/A")</span>
                         </div>
                     }
                 </div>
@@ -340,10 +340,10 @@
                                         </span>
                                     </div>
                                     <div class="col-datetime">
-                                        <span class="datetime-value">@sessao.DataHoraInicio.ToString("dd/MM HH:mm")</span>
+                                        <span class="datetime-value">@sessao.DataHoraInicio.ToBrazilTime().ToString("dd/MM HH:mm")</span>
                                         @if (sessao.DataHoraFim.HasValue)
                                         {
-                                            <small class="datetime-end">até @sessao.DataHoraFim.Value.ToString("HH:mm")</small>
+                                            <small class="datetime-end">até @sessao.DataHoraFim.Value.ToBrazilTime().ToString("HH:mm")</small>
                                         }
                                     </div>
                                     <div class="col-duration">
@@ -549,7 +549,7 @@
                                             <div class="avaliacao-comment">"@item.Comentario"</div>
                                         }
                                         <div class="traffic-stats mt-1">
-                                            <span class="traffic-time"><i class="fas fa-clock me-1"></i>@item.DataCriacao.ToString("dd/MM/yyyy HH:mm")</span>
+                                            <span class="traffic-time"><i class="fas fa-clock me-1"></i>@item.DataCriacao.ToBrazilTime().ToString("dd/MM/yyyy HH:mm")</span>
                                         </div>
                                     </div>
                                 </div>

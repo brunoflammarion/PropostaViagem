@@ -94,7 +94,7 @@ namespace SistemaUsuarios.Controllers
                 Referrer       = Request.Headers["Referer"].FirstOrDefault(),
                 Ip             = ip,
                 UserAgent      = Request.Headers["User-Agent"].FirstOrDefault(),
-                DataCadastro   = DateTime.Now,
+                DataCadastro   = DateTime.UtcNow,
                 Visualizado    = false,
             };
 
@@ -158,7 +158,7 @@ namespace SistemaUsuarios.Controllers
                     Telefone = telefoneLimpo,
                     CPF = "00000000000", // CPF temporário - será solicitado depois
                     Senha = BCrypt.Net.BCrypt.HashPassword("123456"), // Senha temporária
-                    DataCriacao = DateTime.Now,
+                    DataCriacao = DateTime.UtcNow,
                     Status = StatusUsuario.Novo
                 };
 
@@ -315,7 +315,7 @@ namespace SistemaUsuarios.Controllers
 
                 var logEntry = new
                 {
-                    Data = DateTime.Now,
+                    Data = DateTime.UtcNow,
                     Email = model.Email,
                     TipoAgente = model.TipoAgente,
                     UserAgent = Request.Headers["User-Agent"].ToString(),

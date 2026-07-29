@@ -875,7 +875,7 @@ html, body { max-width: 100%; overflow-x: hidden; }
                 <span class="exec-brief-val">@_execStatus.Item1</span>
                 <span class="exec-brief-sub">
                     @(_execAtualizada ? "Atualizada em" : "Criada em")
-                    @_execDataAtual.ToString("dd/MM/yyyy 'às' HH:mm")
+                    @_execDataAtual.ToBrazilTime().ToString("dd/MM/yyyy 'às' HH:mm")
                 </span>
             </div>
         </div>
@@ -1005,7 +1005,7 @@ html, body { max-width: 100%; overflow-x: hidden; }
                     <span class="exec-pax-sub">
                         @if (pax.DataNascimento.HasValue)
                         {
-                            var _age2 = (DateTime.Today - pax.DataNascimento.Value).Days / 365;
+                            var _age2 = (DateTime.UtcNow.ToBrazilTime().Date - pax.DataNascimento.Value).Days / 365;
                             <text>@_age2 anos</text>
                         }
                     </span>
@@ -1438,7 +1438,7 @@ html, body { max-width: 100%; overflow-x: hidden; }
 <footer>
     <span>
         Proposta <strong>@Model.Titulo</strong> · @_execStatus.Item1
-        · <i class="fas fa-clock" style="opacity:.6;margin-right:3px;"></i>@(_execAtualizada ? "Atualizada em" : "Criada em") @_execDataAtual.ToString("dd/MM/yyyy 'às' HH:mm")
+        · <i class="fas fa-clock" style="opacity:.6;margin-right:3px;"></i>@(_execAtualizada ? "Atualizada em" : "Criada em") @_execDataAtual.ToBrazilTime().ToString("dd/MM/yyyy 'às' HH:mm")
         @if (Model.DataExpiracaoLink.HasValue) { <text>· válida até @Model.DataExpiracaoLink.Value.ToString("dd/MM/yyyy")</text> }
         &nbsp;·&nbsp;<span id="viewCount"></span>
     </span>

@@ -86,7 +86,7 @@ namespace SistemaUsuarios.Controllers
                 FaixaIsAproximada = faixaIsAproximada && !dataNascimento.HasValue,
                 ModoBebe = modoBebe,
                 Ordem = maxOrdem + 1,
-                DataCriacao = DateTime.Now
+                DataCriacao = DateTime.UtcNow
             };
 
             _context.PassageirosProposta.Add(passageiro);
@@ -198,7 +198,7 @@ namespace SistemaUsuarios.Controllers
                 DataNascimento = proposta.Cliente.DataNascimento,
                 Genero = proposta.Cliente.Genero,
                 Ordem = maxOrdem + 1,
-                DataCriacao = DateTime.Now
+                DataCriacao = DateTime.UtcNow
             };
 
             _context.PassageirosProposta.Add(passageiro);

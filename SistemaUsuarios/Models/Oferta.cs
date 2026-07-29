@@ -193,7 +193,7 @@ namespace SistemaUsuarios.Models
         public string? TextoInstitucional { get; set; }
 
         // ── Datas ─────────────────────────────────────────────────────────────────
-        public DateTime DataCriacao { get; set; } = DateTime.Now;
+        public DateTime DataCriacao { get; set; } = DateTime.UtcNow;
         public DateTime? DataModificacao { get; set; }
 
         // ── Demonstração ──────────────────────────────────────────────────────

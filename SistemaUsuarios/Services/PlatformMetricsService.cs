@@ -16,8 +16,8 @@ namespace SistemaUsuarios.Services
 
         public async Task<PlatformDashboardViewModel> GetDashboardMetrics()
         {
-            var cutoff30d  = DateTime.Now.AddDays(-30);
-            var cutoff12m  = DateTime.Now.AddMonths(-12);
+            var cutoff30d  = DateTime.UtcNow.AddDays(-30);
+            var cutoff12m  = DateTime.UtcNow.AddMonths(-12);
 
             var vm = new PlatformDashboardViewModel
             {
@@ -173,7 +173,7 @@ namespace SistemaUsuarios.Services
 
             if (master == null) return null;
 
-            var cutoff90d = DateTime.Now.AddDays(-90);
+            var cutoff90d = DateTime.UtcNow.AddDays(-90);
 
             var associados = await _db.Usuarios
                 .Where(u => u.UsuarioMasterId == masterId)

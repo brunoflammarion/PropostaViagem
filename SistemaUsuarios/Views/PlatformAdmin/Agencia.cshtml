@@ -181,7 +181,7 @@
 
         <div class="info-item">
             <div class="info-label">Data de cadastro</div>
-            <div class="info-value">@Model.DataCriacao.ToString("dd/MM/yyyy 'às' HH:mm")</div>
+            <div class="info-value">@Model.DataCriacao.ToBrazilTime().ToString("dd/MM/yyyy 'às' HH:mm")</div>
         </div>
 
         <div class="info-item">

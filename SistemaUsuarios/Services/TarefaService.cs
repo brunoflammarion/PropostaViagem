@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using SistemaUsuarios.Data;
+using SistemaUsuarios.Infrastructure;
 using SistemaUsuarios.Models;
 
 namespace SistemaUsuarios.Services
@@ -92,11 +93,13 @@ namespace SistemaUsuarios.Services
 
         private readonly ApplicationDbContext _context;
         private readonly ILogger<TarefaService> _logger;
+        private readonly IAppClock _clock;
 
-        public TarefaService(ApplicationDbContext context, ILogger<TarefaService> logger)
+        public TarefaService(ApplicationDbContext context, ILogger<TarefaService> logger, IAppClock clock)
         {
             _context = context;
             _logger  = logger;
+            _clock   = clock;
         }
 
         // ── CRUD manual ──────────────────────────────────────────────────────────
@@ -133,7 +136,7 @@ namespace SistemaUsuarios.Services
             tarefa.DataVencimento  = dto.DataVencimento.Date;
             if (dto.Tipo      != null) tarefa.Tipo      = dto.Tipo;
             if (dto.Prioridade != null) tarefa.Prioridade = dto.Prioridade;
-            tarefa.DataAtualizacao = DateTime.Now;
+            tarefa.DataAtualizacao = DateTime.UtcNow;
             await _context.SaveChangesAsync();
         }
 
@@ -148,8 +151,8 @@ namespace SistemaUsuarios.Services
             }
 
             tarefa.Status          = TarefaStatus.Concluida;
-            tarefa.DataConclusao   = DateTime.Now;
-            tarefa.DataAtualizacao = DateTime.Now;
+            tarefa.DataConclusao   = DateTime.UtcNow;
+            tarefa.DataAtualizacao = DateTime.UtcNow;
             var linhas = await _context.SaveChangesAsync();
             _logger.LogInformation("ConcluirTarefa: tarefa {TarefaId} concluída. Linhas afetadas: {Linhas}", tarefaId, linhas);
             return linhas > 0;
@@ -170,7 +173,7 @@ namespace SistemaUsuarios.Services
 
             tarefa.Status          = TarefaStatus.Pendente;
             tarefa.DataConclusao   = null;
-            tarefa.DataAtualizacao = DateTime.Now;
+            tarefa.DataAtualizacao = DateTime.UtcNow;
             var linhas = await _context.SaveChangesAsync();
             _logger.LogInformation("ReabrirTarefa: tarefa {TarefaId} restaurada. Linhas afetadas: {Linhas}", tarefaId, linhas);
             return linhas > 0;
@@ -183,7 +186,7 @@ namespace SistemaUsuarios.Services
             if (tarefa == null) return;
 
             tarefa.Status          = TarefaStatus.Cancelada;
-            tarefa.DataAtualizacao = DateTime.Now;
+            tarefa.DataAtualizacao = DateTime.UtcNow;
             await _context.SaveChangesAsync();
         }
 
@@ -256,7 +259,7 @@ namespace SistemaUsuarios.Services
                     && !t.IsDeleted);
 
                 if (!jaTemPendente)
-                    await CriarAutomaticaAsync(usuarioId, proposta.ClienteId, propostaId, FOLLOWUP_VISUALIZACAO, DateTime.Today, cfg.Tipo);
+                    await CriarAutomaticaAsync(usuarioId, proposta.ClienteId, propostaId, FOLLOWUP_VISUALIZACAO, _clock.Today, cfg.Tipo);
             }
             catch (Exception ex)
             {
@@ -282,7 +285,7 @@ namespace SistemaUsuarios.Services
                     LeadId                = lead.Id,
                     Titulo                = $"Novo lead: {lead.FullName}",
                     Descricao             = DescricaoTemplate(NOVO_LEAD),
-                    DataVencimento        = DateTime.Today,
+                    DataVencimento        = _clock.Today,
                     Tipo                  = TarefaTipo.Followup,
                     Prioridade            = TarefaPrioridade.Alta,
                     Status                = TarefaStatus.Pendente,
@@ -328,7 +331,7 @@ namespace SistemaUsuarios.Services
                     PropostaId            = propostaId,
                     Titulo                = $"Avaliação recebida: {proposta.Titulo}",
                     Descricao             = DescricaoTemplate(RETORNO_AVALIACAO),
-                    DataVencimento        = DateTime.Today,
+                    DataVencimento        = _clock.Today,
                     Tipo                  = TarefaTipo.Followup,
                     Prioridade            = temNotaBaixa ? TarefaPrioridade.Alta : TarefaPrioridade.Media,
                     Status                = TarefaStatus.Pendente,
@@ -350,7 +353,7 @@ namespace SistemaUsuarios.Services
             if (!configs.TryGetValue(ANIVERSARIO_CLIENTE, out var cfg) || !cfg.Habilitado)
                 return;
 
-            var hoje    = DateTime.Today;
+            var hoje    = _clock.Today;
             var ate     = hoje.AddDays(30);
 
             var clientes = await _context.Clientes
@@ -408,7 +411,7 @@ namespace SistemaUsuarios.Services
                 var propostaIds = await _context.Propostas
                     .Where(p => (p.UsuarioResponsavelId == usuarioId || p.UsuarioMasterId == usuarioId)
                         && p.StatusProposta == StatusProposta.Aprovada
-                        && p.DataFim.HasValue && p.DataFim.Value >= DateTime.Today.AddDays(-30))
+                        && p.DataFim.HasValue && p.DataFim.Value >= _clock.Today.AddDays(-30))
                     .Select(p => p.Id)
                     .ToListAsync();
 
@@ -430,7 +433,7 @@ namespace SistemaUsuarios.Services
         /// </summary>
         public async Task ProcessarLembretesDoDiaAsync()
         {
-            _logger.LogInformation("Processamento de lembretes do dia iniciado: {Data}", DateTime.Today);
+            _logger.LogInformation("Processamento de lembretes do dia iniciado: {Data}", _clock.Today);
             try
             {
                 var usuariosIds = await _context.Usuarios
@@ -470,7 +473,7 @@ namespace SistemaUsuarios.Services
 
         public async Task<List<Tarefa>> ListarHojeAsync(Guid usuarioId)
         {
-            var hoje = DateTime.Today;
+            var hoje = _clock.Today;
             return await _context.Tarefas
                 .Include(t => t.Cliente)
                 .Include(t => t.Proposta)
@@ -484,7 +487,7 @@ namespace SistemaUsuarios.Services
 
         public async Task<List<Tarefa>> ListarAtrasadasAsync(Guid usuarioId)
         {
-            var hoje = DateTime.Today;
+            var hoje = _clock.Today;
             return await _context.Tarefas
                 .Include(t => t.Cliente)
                 .Include(t => t.Proposta)
@@ -498,7 +501,7 @@ namespace SistemaUsuarios.Services
 
         public async Task<List<Tarefa>> ListarTodasPendentesAsync(Guid usuarioId)
         {
-            var hoje = DateTime.Today;
+            var hoje = _clock.Today;
             var semanaFim = hoje.AddDays(7);
             var lista = await _context.Tarefas
                 .Include(t => t.Cliente)
@@ -542,7 +545,7 @@ namespace SistemaUsuarios.Services
                 if (cfg is not null)
                 {
                     cfg.Habilitado      = habilitado;
-                    cfg.DataAtualizacao = DateTime.Now;
+                    cfg.DataAtualizacao = DateTime.UtcNow;
                 }
             }
             await _context.SaveChangesAsync();
@@ -554,7 +557,7 @@ namespace SistemaUsuarios.Services
             if (!configs.TryGetValue(PROXIMA_VIAGEM, out var cfg) || !cfg.Habilitado)
                 return;
 
-            var hoje = DateTime.Today;
+            var hoje = _clock.Today;
             var ate  = hoje.AddDays(30);
 
             var clientes = await _context.Clientes
@@ -622,7 +625,7 @@ namespace SistemaUsuarios.Services
 
             var dataVenc = dataReferencia.AddDays(cfg.OffsetDias ?? 0);
             // Não criar tarefas com data muito no passado (exceto feedback/indicação)
-            if (dataVenc.Date < DateTime.Today.AddDays(-3)) dataVenc = DateTime.Today;
+            if (dataVenc.Date < _clock.Today.AddDays(-3)) dataVenc = _clock.Today;
 
             if (!await JaExisteAsync(usuarioId, templateCodigo, propostaId, dataVenc))
                 await CriarAutomaticaAsync(usuarioId, clienteId, propostaId, templateCodigo, dataVenc, cfg.Tipo);

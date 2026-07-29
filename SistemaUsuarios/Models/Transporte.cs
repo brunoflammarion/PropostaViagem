@@ -25,7 +25,7 @@ namespace SistemaUsuarios.Models
 
         public int Ordem { get; set; } = 1;
 
-        public DateTime DataCriacao { get; set; } = DateTime.Now;
+        public DateTime DataCriacao { get; set; } = DateTime.UtcNow;
 
         // Navigation
         public virtual Destino Destino { get; set; } = null!;

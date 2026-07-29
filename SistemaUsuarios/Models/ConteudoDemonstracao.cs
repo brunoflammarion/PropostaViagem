@@ -36,7 +36,7 @@ namespace SistemaUsuarios.Models
 
         public int Ordem { get; set; } = 0;
 
-        public DateTime DataCriacao { get; set; } = DateTime.Now;
+        public DateTime DataCriacao { get; set; } = DateTime.UtcNow;
         public DateTime? DataAtualizacao { get; set; }
 
         public Guid CriadoPorAdminId { get; set; }
@@ -65,7 +65,7 @@ namespace SistemaUsuarios.Models
         /// <summary>Id do registro clonado (Proposta.Id ou Oferta.Id). Null se falhou antes de criar.</summary>
         public Guid? EntidadeClonadaId { get; set; }
 
-        public DateTime DataAplicacao { get; set; } = DateTime.Now;
+        public DateTime DataAplicacao { get; set; } = DateTime.UtcNow;
 
         public StatusAplicacaoDemonstracao StatusAplicacao { get; set; } = StatusAplicacaoDemonstracao.Sucesso;
 

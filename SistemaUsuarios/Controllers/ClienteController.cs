@@ -1,3 +1,4 @@
+using SistemaUsuarios.Infrastructure;
 using SistemaUsuarios.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -43,7 +44,7 @@ namespace SistemaUsuarios.Controllers
                 return RedirectToAction("Login", "Auth");
 
             var usuarioId = ObterUsuarioLogadoId();
-            var hoje = DateTime.Today;
+            var hoje = DateTime.UtcNow.ToBrazilTime().Date;
 
             // Carrega todos os clientes com suas propostas e destinos
             var clientesQuery = _context.Clientes
@@ -154,7 +155,7 @@ namespace SistemaUsuarios.Controllers
                 return RedirectToAction("Login", "Auth");
 
             var usuarioId = ObterUsuarioLogadoId();
-            var hoje = DateTime.Today;
+            var hoje = DateTime.UtcNow.ToBrazilTime().Date;
 
             var cliente = await _context.Clientes
                 .Include(c => c.Propostas)
@@ -310,8 +311,8 @@ namespace SistemaUsuarios.Controllers
 
             var vm = new ClienteDetalheViewModel
             {
-                DataCriacao = DateTime.Now,
-                DataEntradaCliente = DateTime.Today
+                DataCriacao = DateTime.UtcNow,
+                DataEntradaCliente = DateTime.UtcNow.ToBrazilTime().Date
             };
             return View(vm);
         }
@@ -344,8 +345,8 @@ namespace SistemaUsuarios.Controllers
                 TempData["Erro"] = "Nome do cliente é obrigatório.";
                 return View(new ClienteDetalheViewModel
                 {
-                    DataCriacao = DateTime.Now,
-                    DataEntradaCliente = dataEntradaCliente ?? DateTime.Today,
+                    DataCriacao = DateTime.UtcNow,
+                    DataEntradaCliente = dataEntradaCliente ?? DateTime.UtcNow.ToBrazilTime().Date,
                     Nome = nome ?? "",
                     Email = email,
                     Telefone = telefone,
@@ -367,7 +368,7 @@ namespace SistemaUsuarios.Controllers
                 if (!indicadorExiste)
                 {
                     TempData["Erro"] = "Cliente indicador não encontrado.";
-                    return View(new ClienteDetalheViewModel { DataCriacao = DateTime.Now, DataEntradaCliente = DateTime.Today });
+                    return View(new ClienteDetalheViewModel { DataCriacao = DateTime.UtcNow, DataEntradaCliente = DateTime.UtcNow.ToBrazilTime().Date });
                 }
             }
 
@@ -378,7 +379,7 @@ namespace SistemaUsuarios.Controllers
                 catch (InvalidOperationException ex)
                 {
                     TempData["Erro"] = ex.Message;
-                    return View(new ClienteDetalheViewModel { DataCriacao = DateTime.Now, DataEntradaCliente = DateTime.Today });
+                    return View(new ClienteDetalheViewModel { DataCriacao = DateTime.UtcNow, DataEntradaCliente = DateTime.UtcNow.ToBrazilTime().Date });
                 }
             }
 
@@ -393,8 +394,8 @@ namespace SistemaUsuarios.Controllers
                 Genero = genero,
                 Cpf = string.IsNullOrWhiteSpace(cpf) ? null : cpf.Trim(),
                 FotoPath = fotoPath,
-                DataCriacao = DateTime.Now,
-                DataEntradaCliente = dataEntradaCliente ?? DateTime.Today,
+                DataCriacao = DateTime.UtcNow,
+                DataEntradaCliente = dataEntradaCliente ?? DateTime.UtcNow.ToBrazilTime().Date,
                 Cep = string.IsNullOrWhiteSpace(cep) ? null : cep.Trim(),
                 Logradouro = string.IsNullOrWhiteSpace(logradouro) ? null : logradouro.Trim(),
                 Cidade = string.IsNullOrWhiteSpace(cidade) ? null : cidade.Trim(),
@@ -513,7 +514,7 @@ namespace SistemaUsuarios.Controllers
             if (cliente == null) return NotFound();
 
             cliente.IsDeleted = true;
-            cliente.DeletedAt = DateTime.Now;
+            cliente.DeletedAt = DateTime.UtcNow;
             cliente.DeletedByUserId = usuarioId;
 
             await _context.SaveChangesAsync();
@@ -554,7 +555,7 @@ namespace SistemaUsuarios.Controllers
                     c.Telefone,
                     c.FotoPath,
                     IdadeCalculada = c.DataNascimento.HasValue
-                        ? (int?)((DateTime.Today - c.DataNascimento.Value).Days / 365)
+                        ? (int?)((DateTime.UtcNow.ToBrazilTime().Date - c.DataNascimento.Value).Days / 365)
                         : null
                 })
                 .ToListAsync();
@@ -652,8 +653,8 @@ namespace SistemaUsuarios.Controllers
                 Genero = genero,
                 Cpf = string.IsNullOrWhiteSpace(cpf) ? null : cpf.Trim(),
                 FotoPath = fotoPath,
-                DataCriacao = DateTime.Now,
-                DataEntradaCliente = DateTime.Now
+                DataCriacao = DateTime.UtcNow,
+                DataEntradaCliente = DateTime.UtcNow
             };
 
             _context.Clientes.Add(cliente);

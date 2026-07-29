@@ -167,7 +167,7 @@ namespace SistemaUsuarios.Controllers
             lead.Notes                   = vm.Notes;
             lead.BestContactTime         = vm.BestContactTime;
             lead.Status                  = vm.Status;
-            lead.UpdatedAt               = DateTime.Now;
+            lead.UpdatedAt               = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
 
@@ -190,9 +190,9 @@ namespace SistemaUsuarios.Controllers
             if (lead == null) return NotFound();
 
             lead.IsDeleted             = true;
-            lead.ExcluidoEm            = DateTime.Now;
+            lead.ExcluidoEm            = DateTime.UtcNow;
             lead.ExcluidoPorUsuarioId  = usuarioId;
-            lead.UpdatedAt             = DateTime.Now;
+            lead.UpdatedAt             = DateTime.UtcNow;
 
             _context.LeadHistoricos.Add(new LeadHistorico
             {
@@ -317,7 +317,7 @@ namespace SistemaUsuarios.Controllers
                 ObservacoesGerais    = obs.Length > 0 ? obs.ToString().TrimEnd() : null,
                 StatusProposta       = StatusProposta.Rascunho,
                 LinkPublicoAtivo     = true,
-                DataCriacao          = DateTime.Now,
+                DataCriacao          = DateTime.UtcNow,
             };
             _context.Propostas.Add(proposta);
 
@@ -325,7 +325,7 @@ namespace SistemaUsuarios.Controllers
             lead.ClienteId  = cliente.Id;
             lead.PropostaId = proposta.Id;
             lead.Status     = LeadStatus.Convertido;
-            lead.UpdatedAt  = DateTime.Now;
+            lead.UpdatedAt  = DateTime.UtcNow;
 
             _context.LeadHistoricos.Add(new LeadHistorico
             {
@@ -467,7 +467,7 @@ namespace SistemaUsuarios.Controllers
             settings.ShowAccommodationPreference = vm.ShowAccommodationPreference;
             settings.ShowNotes                  = vm.ShowNotes;
             settings.ShowBestContactTime        = vm.ShowBestContactTime;
-            settings.UpdatedAt                  = DateTime.Now;
+            settings.UpdatedAt                  = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
 
@@ -502,7 +502,7 @@ namespace SistemaUsuarios.Controllers
             }
 
             lead.Status    = status;
-            lead.UpdatedAt = DateTime.Now;
+            lead.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
 
             return RedirectToAction("Index");

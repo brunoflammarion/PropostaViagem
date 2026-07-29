@@ -7,7 +7,7 @@ namespace SistemaUsuarios.Models
         public string CaminhoImagem { get; set; }
         public string? Descricao { get; set; }
         public int Ordem { get; set; } = 1;
-        public DateTime DataCriacao { get; set; } = DateTime.Now;
+        public DateTime DataCriacao { get; set; } = DateTime.UtcNow;
 
         public virtual Seguro Seguro { get; set; }
     }

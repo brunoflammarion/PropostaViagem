@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SistemaUsuarios.Data;
+using SistemaUsuarios.Infrastructure;
 using SistemaUsuarios.Models;
 using SistemaUsuarios.Models.ViewModels;
 using SistemaUsuarios.Services;
@@ -11,11 +12,13 @@ namespace SistemaUsuarios.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly ITarefaService _tarefaService;
+        private readonly IAppClock _clock;
 
-        public HomeController(ApplicationDbContext context, ITarefaService tarefaService)
+        public HomeController(ApplicationDbContext context, ITarefaService tarefaService, IAppClock clock)
         {
-            _context      = context;
+            _context       = context;
             _tarefaService = tarefaService;
+            _clock         = clock;
         }
 
         public async Task<IActionResult> Index()
@@ -29,8 +32,8 @@ namespace SistemaUsuarios.Controllers
             var masterId  = isMaster ? usuarioId
                 : Guid.TryParse(HttpContext.Session.GetString("UsuarioMasterId"), out var mid) ? mid : usuarioId;
 
-            var hoje = DateTime.Today;
-            var agora = DateTime.Now;
+            var hoje = _clock.Today;
+            var agora = _clock.UtcNow;
 
             // Propostas do escopo do usuário
             var propostas = await _context.Propostas

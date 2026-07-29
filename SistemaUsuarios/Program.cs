@@ -38,6 +38,9 @@ builder.Services.AddHttpContextAccessor();
 // Cache em memória para rate limiting de tentativas de acesso
 builder.Services.AddMemoryCache();
 
+// Fuso horário centralizado (UTC para escrita, BRT para exibição)
+builder.Services.AddSingleton<IAppClock, AppClock>();
+
 // AeroDataBox flight lookup (via API.Market)
 builder.Services.AddHttpClient<IFlightLookupService, AeroDataBoxService>();
 
@@ -167,7 +170,7 @@ using (var scope = app.Services.CreateScope())
                 Email = "bruno.tromp@gmail.com",
                 Senha = BCrypt.Net.BCrypt.HashPassword("Admin@2025!"),
                 Ativo = true,
-                DataCriacao = DateTime.Now,
+                DataCriacao = DateTime.UtcNow,
             });
             context.SaveChanges();
         }
@@ -181,21 +184,21 @@ using (var scope = app.Services.CreateScope())
                     Nome = "Layout Padr�o",
                     Descricao = "Layout padr�o do sistema",
                     Ativo = true,
-                    DataCriacao = DateTime.Now
+                    DataCriacao = DateTime.UtcNow
                 },
                 new SistemaUsuarios.Models.Layout
                 {
                     Nome = "Layout Executivo",
                     Descricao = "Layout para viagens executivas",
                     Ativo = true,
-                    DataCriacao = DateTime.Now
+                    DataCriacao = DateTime.UtcNow
                 },
                 new SistemaUsuarios.Models.Layout
                 {
                     Nome = "Layout Familiar",
                     Descricao = "Layout para viagens em fam�lia",
                     Ativo = true,
-                    DataCriacao = DateTime.Now
+                    DataCriacao = DateTime.UtcNow
                 }
             );
             context.SaveChanges();

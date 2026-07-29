@@ -22,7 +22,7 @@ namespace SistemaUsuarios.Models
         [Display(Name = "Bagagens Despachadas")]
         public int BagagensDespachadas { get; set; } = 0;
 
-        public DateTime DataCriacao { get; set; } = DateTime.Now;
+        public DateTime DataCriacao { get; set; } = DateTime.UtcNow;
 
         // Navigation Properties
         public virtual Voo Voo { get; set; } = null!;

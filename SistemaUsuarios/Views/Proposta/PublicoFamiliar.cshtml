@@ -1273,7 +1273,7 @@ body.has-preview-bar { padding-top: 46px; }
                         <div class="fam-pax-sub">
                             @if (pax.DataNascimento.HasValue)
                             {
-                                var _age = (DateTime.Today - pax.DataNascimento.Value).Days / 365;
+                                var _age = (DateTime.UtcNow.ToBrazilTime().Date - pax.DataNascimento.Value).Days / 365;
                                 <text>@_age anos</text>
                             }
                         </div>
@@ -1633,7 +1633,7 @@ body.has-preview-bar { padding-top: 46px; }
     <div style="font-size:.78rem;color:rgba(255,255,255,.55);margin-top:6px;display:flex;align-items:center;justify-content:center;gap:5px;">
         <i class="fas fa-clock" style="font-size:.72rem;"></i>
         @(_fAtualizada ? "Esta proposta foi atualizada em" : "Proposta criada em")
-        @_fDataAtual.ToString("dd/MM/yyyy 'às' HH:mm")
+        @_fDataAtual.ToBrazilTime().ToString("dd/MM/yyyy 'às' HH:mm")
         @if (Model.DataExpiracaoLink.HasValue)
         {
             <text> · válida até @Model.DataExpiracaoLink.Value.ToString("dd/MM/yyyy")</text>

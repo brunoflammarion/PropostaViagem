@@ -107,7 +107,7 @@ namespace SistemaUsuarios.Controllers
                             Descricao = descricao?.Trim(),
                             Principal = isPrincipal,
                             Ordem = maxOrdem + i + 1,
-                            DataCriacao = DateTime.Now
+                            DataCriacao = DateTime.UtcNow
                         });
                         adicionadas++;
                     }

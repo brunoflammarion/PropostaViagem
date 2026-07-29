@@ -15,6 +15,6 @@ namespace SistemaUsuarios.Models
 
         public bool Ativo { get; set; } = true;
 
-        public DateTime DataCriacao { get; set; } = DateTime.Now;
+        public DateTime DataCriacao { get; set; } = DateTime.UtcNow;
     }
 }

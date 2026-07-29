@@ -73,7 +73,7 @@ namespace SistemaUsuarios.Models
 
         public int Ordem { get; set; } = 1;
 
-        public DateTime DataCriacao { get; set; } = DateTime.Now;
+        public DateTime DataCriacao { get; set; } = DateTime.UtcNow;
 
         // Navegação para Destino (N:1)
         public virtual Destino Destino { get; set; }

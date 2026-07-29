@@ -26,7 +26,7 @@ namespace SistemaUsuarios.Controllers.Api
         [HttpGet("test")]
         public IActionResult Test()
         {
-            return Ok(new { message = "API Analytics funcionando!", timestamp = DateTime.Now });
+            return Ok(new { message = "API Analytics funcionando!", timestamp = DateTime.UtcNow });
         }
 
         [HttpPost("start")]
@@ -54,7 +54,7 @@ namespace SistemaUsuarios.Controllers.Api
                     Latitude = request.Latitude,
                     Longitude = request.Longitude,
                     EnderecoIP = GetClientIP(),
-                    DataCriacao = DateTime.Now
+                    DataCriacao = DateTime.UtcNow
                 };
 
                 // Tentar obter localização via IP (opcional)

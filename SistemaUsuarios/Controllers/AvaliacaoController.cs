@@ -54,7 +54,7 @@ namespace SistemaUsuarios.Controllers
                     existing.Nota        = item.Nota;
                     existing.Comentario  = item.Comentario;
                     existing.Favorito    = item.Favorito;
-                    existing.DataCriacao = DateTime.Now;
+                    existing.DataCriacao = DateTime.UtcNow;
                 }
                 else
                 {
@@ -67,7 +67,7 @@ namespace SistemaUsuarios.Controllers
                         Nota        = item.Nota,
                         Comentario  = item.Comentario,
                         Favorito    = item.Favorito,
-                        DataCriacao = DateTime.Now,
+                        DataCriacao = DateTime.UtcNow,
                     });
                 }
             }

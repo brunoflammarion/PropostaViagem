@@ -1,3 +1,4 @@
+using SistemaUsuarios.Infrastructure;
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SistemaUsuarios.Data;
@@ -55,7 +56,7 @@ namespace SistemaUsuarios.Controllers
                     (isMaster ? p.UsuarioMasterId == usuarioId : p.UsuarioResponsavelId == usuarioId)
                     && p.PropostaVisualizacoes.Any());
 
-            var seteAtras = DateTime.Now.AddDays(-7);
+            var seteAtras = DateTime.UtcNow.AddDays(-7);
             var clientesQuentes = await _context.Propostas
                 .CountAsync(p =>
                     (isMaster ? p.UsuarioMasterId == usuarioId : p.UsuarioResponsavelId == usuarioId)
@@ -132,7 +133,7 @@ namespace SistemaUsuarios.Controllers
             if (!UsuarioLogado()) return Unauthorized();
 
             var usuarioId = ObterUsuarioLogadoId();
-            var dataInicio = DateTime.Now.AddDays(-dias);
+            var dataInicio = DateTime.UtcNow.AddDays(-dias);
 
             var isMaster = SessaoIsMaster();
             var dados = await _context.PropostaVisualizacoes
@@ -159,7 +160,7 @@ namespace SistemaUsuarios.Controllers
 
             var usuarioId = ObterUsuarioLogadoId();
             var isMaster = SessaoIsMaster();
-            var hoje = DateTime.Today;
+            var hoje = DateTime.UtcNow.ToBrazilTime().Date;
 
             var stats = new
             {
@@ -238,7 +239,7 @@ namespace SistemaUsuarios.Controllers
         // Métodos auxiliares privados - CORRIGIDOS
         private async Task<List<VisualizacaoDiariaViewModel>> ObterVisualizacoesUltimos30Dias(Guid usuarioId, bool isMaster)
         {
-            var dataInicio = DateTime.Now.AddDays(-30);
+            var dataInicio = DateTime.UtcNow.AddDays(-30);
 
             return await _context.PropostaVisualizacoes
                 .Include(v => v.Proposta)
@@ -654,8 +655,8 @@ namespace SistemaUsuarios.Controllers
 
         private async Task<List<OportunidadeFollowUpViewModel>> ObterOportunidadesFollowUp(Guid usuarioId, bool isMaster)
         {
-            var seteAtras = DateTime.Now.AddDays(-7);
-            var trintaAtras = DateTime.Now.AddDays(-30);
+            var seteAtras = DateTime.UtcNow.AddDays(-7);
+            var trintaAtras = DateTime.UtcNow.AddDays(-30);
 
             var dados = await _context.Propostas
                 .Where(p =>
@@ -683,7 +684,7 @@ namespace SistemaUsuarios.Controllers
                 string motivo;
                 if (d.VisualizacoesRecentes > 1)
                     motivo = $"Visualizou {d.VisualizacoesRecentes}× nos últimos 7 dias. Ótimo momento para contato.";
-                else if (d.UltimaVisualizacao >= DateTime.Now.AddDays(-1))
+                else if (d.UltimaVisualizacao >= DateTime.UtcNow.AddDays(-1))
                     motivo = "Proposta visualizada hoje. Bom momento para fazer follow-up.";
                 else if (d.UltimaVisualizacao >= seteAtras)
                     motivo = $"Proposta visualizada {FormatarTempoRelativo(d.UltimaVisualizacao!.Value)}. Cliente demonstrou interesse recente.";
@@ -706,7 +707,7 @@ namespace SistemaUsuarios.Controllers
 
         private static string FormatarTempoRelativo(DateTime dataHora)
         {
-            var diff = DateTime.Now - dataHora;
+            var diff = DateTime.UtcNow - dataHora;
             if (diff.TotalMinutes < 60) return $"há {(int)diff.TotalMinutes}min";
             if (diff.TotalHours < 24) return $"há {(int)diff.TotalHours}h";
             if (diff.TotalDays < 2) return "ontem";

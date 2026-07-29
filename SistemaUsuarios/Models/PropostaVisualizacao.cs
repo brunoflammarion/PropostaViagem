@@ -80,6 +80,6 @@ namespace SistemaUsuarios.Models
         public string? DadosAdicionais { get; set; }
 
         // Metadados (OBRIGATÓRIO)
-        public DateTime DataCriacao { get; set; } = DateTime.Now;
+        public DateTime DataCriacao { get; set; } = DateTime.UtcNow;
     }
 }

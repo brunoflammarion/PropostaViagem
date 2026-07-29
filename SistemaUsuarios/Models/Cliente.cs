@@ -35,7 +35,7 @@ namespace SistemaUsuarios.Models
         [MaxLength(20)]
         public string? Cpf { get; set; }
 
-        public DateTime DataCriacao { get; set; } = DateTime.Now;
+        public DateTime DataCriacao { get; set; } = DateTime.UtcNow;
 
         public DateTime? DataEntradaCliente { get; set; }
 

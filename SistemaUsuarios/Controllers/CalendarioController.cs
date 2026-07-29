@@ -1,3 +1,4 @@
+using SistemaUsuarios.Infrastructure;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SistemaUsuarios.Data;
@@ -21,7 +22,7 @@ namespace SistemaUsuarios.Controllers
             if (usuario == null) return NotFound();
 
             var uid    = usuario.Id;
-            var limite = DateTime.Today.AddDays(-60);
+            var limite = DateTime.UtcNow.ToBrazilTime().Date.AddDays(-60);
 
             var tarefas = await _context.Tarefas
                 .Where(t => t.UsuarioId == uid && !t.IsDeleted

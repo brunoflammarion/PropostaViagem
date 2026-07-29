@@ -28,7 +28,7 @@ namespace SistemaUsuarios.Models
         [StringLength(500)]
         public string? Observacao { get; set; }
 
-        public DateTime DataHora { get; set; } = DateTime.Now;
+        public DateTime DataHora { get; set; } = DateTime.UtcNow;
 
         public virtual Lead Lead { get; set; } = null!;
     }

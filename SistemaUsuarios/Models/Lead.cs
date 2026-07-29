@@ -53,7 +53,7 @@ namespace SistemaUsuarios.Models
 
         public LeadStatus Status { get; set; } = LeadStatus.Novo;
 
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         public DateTime? UpdatedAt { get; set; }
 

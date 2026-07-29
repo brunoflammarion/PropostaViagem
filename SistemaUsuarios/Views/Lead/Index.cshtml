@@ -104,7 +104,7 @@ else
                                 }
                             </td>
                             <td class="text-muted" style="font-size:.8rem;white-space:nowrap;">
-                                @lead.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+                                @lead.CreatedAt.ToBrazilTime().ToString("dd/MM/yyyy HH:mm")
                             </td>
                             <td>
                                 <span class="lead-badge @statusCss">@statusLabel</span>

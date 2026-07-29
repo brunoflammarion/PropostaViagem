@@ -22,7 +22,7 @@ namespace SistemaUsuarios.Models
 
         public long Tamanho { get; set; }
 
-        public DateTime DataCriacao { get; set; } = DateTime.Now;
+        public DateTime DataCriacao { get; set; } = DateTime.UtcNow;
 
         // Navigation
         public virtual Transporte Transporte { get; set; } = null!;

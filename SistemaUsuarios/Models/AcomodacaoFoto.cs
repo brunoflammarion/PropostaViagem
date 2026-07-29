@@ -20,7 +20,7 @@ namespace SistemaUsuarios.Models
 
         public bool Principal { get; set; } = false;
 
-        public DateTime DataCriacao { get; set; } = DateTime.Now;
+        public DateTime DataCriacao { get; set; } = DateTime.UtcNow;
 
         // Navegação para Acomodacao (N:1)
         public virtual Acomodacao Acomodacao { get; set; }

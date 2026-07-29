@@ -130,7 +130,7 @@ namespace SistemaUsuarios.Controllers
                 }
 
                 MapearDeViewModel(model, oferta);
-                oferta.DataModificacao = DateTime.Now;
+                oferta.DataModificacao = DateTime.UtcNow;
                 await _context.SaveChangesAsync();
 
                 TempData["Sucesso"] = "Oferta atualizada com sucesso!";
@@ -143,7 +143,7 @@ namespace SistemaUsuarios.Controllers
                     Id = Guid.NewGuid(),
                     UsuarioId = usuarioId,
                     UsuarioMasterId = ObterMasterIdParaSalvar(),
-                    DataCriacao = DateTime.Now
+                    DataCriacao = DateTime.UtcNow
                 };
 
                 MapearDeViewModel(model, oferta);
@@ -218,7 +218,7 @@ namespace SistemaUsuarios.Controllers
                 Id                  = Guid.NewGuid(),
                 UsuarioId           = usuarioId,
                 UsuarioMasterId     = ObterMasterIdParaSalvar(),
-                DataCriacao         = DateTime.Now,
+                DataCriacao         = DateTime.UtcNow,
                 DataModificacao     = null,
 
                 // Metadados

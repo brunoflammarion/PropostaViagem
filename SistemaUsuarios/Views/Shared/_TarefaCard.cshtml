@@ -40,7 +40,7 @@
 
     static string CardFormatarData(DateTime d)
     {
-        var hoje = DateTime.Today;
+        var hoje = DateTime.UtcNow.ToBrazilTime().Date;
         if (d.Date == hoje)             return "Hoje";
         if (d.Date == hoje.AddDays(1))  return "Amanhã";
         if (d.Date == hoje.AddDays(-1)) return "Ontem";
