@@ -371,7 +371,7 @@
 
                                 <div class="mb-3">
                                     <label asp-for="ObservacoesGerais" class="form-label fw-bold">
-                                        <i class="fas fa-sticky-note me-1"></i>Observações Gerais
+                                        <i class="fas fa-sticky-note me-1"></i>Informações iniciais
                                     </label>
                                     <textarea asp-for="ObservacoesGerais" class="form-control" rows="4"
                                               placeholder="Descreva detalhes importantes sobre a viagem..."></textarea>
@@ -427,7 +427,7 @@
                                     var codigoAtual = proposta?.CodigoAcesso;
                                     <!-- Link + código (quando código é exigido) -->
                                     <div class="rounded-3 border p-3 mb-3" style="background:#f8f9ff;">
-                                        <div class="row g-3 align-items-start">
+                                        <div class="row g-2 align-items-end">
                                             <!-- Link público -->
                                             <div class="@(Model.ExigirCodigoAcesso ? "col-md-7" : "col-12")">
                                                 <label class="form-label small fw-semibold text-muted mb-1">
@@ -437,8 +437,7 @@
                                                     <input type="text" class="form-control form-control-sm"
                                                            id="linkPublico"
                                                            value="@(Context.Request.Scheme)://@(Context.Request.Host)/Proposta/Publico/@Model.Id"
-                                                           readonly
-                                                           style="text-overflow:ellipsis;" />
+                                                           readonly />
                                                     <button class="btn btn-sm btn-outline-primary" type="button"
                                                             onclick="copiarLinkPublico()" title="Copiar link" id="btnCopiarLink">
                                                         <i class="fas fa-copy"></i>
@@ -452,18 +451,18 @@
                                                     <label class="form-label small fw-semibold text-muted mb-1">
                                                         <i class="fas fa-key me-1"></i>Código de acesso
                                                     </label>
-                                                    <div class="d-flex gap-1 align-items-stretch">
-                                                        <input type="text" class="form-control form-control-sm fw-bold text-center flex-grow-1"
+                                                    <div class="input-group">
+                                                        <input type="text" class="form-control form-control-sm fw-bold text-center"
                                                                id="codigoAcesso"
                                                                value="@(codigoAtual ?? "—")"
                                                                readonly
-                                                               style="letter-spacing:.18em;font-size:.95rem;min-width:0;" />
-                                                        <button class="btn btn-sm btn-outline-success flex-shrink-0" type="button"
+                                                               style="letter-spacing:.18em;font-size:.95rem;" />
+                                                        <button class="btn btn-sm btn-outline-success" type="button"
                                                                 onclick="copiarCodigo()" title="Copiar código" id="btnCopiarCodigo"
                                                                 @(codigoAtual == null ? "disabled" : "")>
                                                             <i class="fas fa-copy"></i>
                                                         </button>
-                                                        <button class="btn btn-sm btn-outline-secondary flex-shrink-0" type="button"
+                                                        <button class="btn btn-sm btn-outline-secondary" type="button"
                                                                 onclick="gerarNovoCodigo('@Model.Id')" title="Gerar novo código" id="btnGerarCodigo">
                                                             <i class="fas fa-sync-alt"></i>
                                                         </button>
@@ -475,7 +474,7 @@
                                             }
                                             else
                                             {
-                                                <div class="col-12">
+                                                <div class="col-12 mt-2">
                                                     <div class="d-flex align-items-start gap-2 p-2 rounded-2" style="background:#fff8e1;border:1px solid #ffe082;">
                                                         <i class="fas fa-unlock-alt mt-1" style="color:#f59e0b;flex-shrink:0;"></i>
                                                         <div>
@@ -489,55 +488,53 @@
                                     </div>
                                     <!-- ── Proteção da proposta ──────────────────────────────── -->
                                     @*
-                                        O <form id="formProtecaoProposta"> está fora do formEditarProposta
-                                        (após o </form> principal) para evitar aninhamento HTML inválido.
-                                        Os inputs abaixo usam form="formProtecaoProposta" para se associarem
-                                        a ele independentemente de posição no DOM.
+                                        IMPORTANTE: não pode haver <form> aninhado dentro de formEditarProposta.
+                                        Os radio inputs e o botão referenciam o form real definido FORA do form
+                                        principal (logo após o </form> de formEditarProposta) via form="formProtecaoProposta".
                                     *@
-                                    <input type="hidden" name="id" value="@Model.Id"
-                                           form="formProtecaoProposta" />
-                                    <div class="mb-2">
-                                        <label class="form-label small fw-semibold text-muted mb-2 d-block">
-                                            <i class="fas fa-shield-alt me-1"></i>Proteção da proposta
-                                        </label>
-                                        <div class="d-flex gap-2 flex-wrap">
-                                            <label class="radio-card flex-grow-1 @(Model.ExigirCodigoAcesso ? "radio-card--selected" : "")">
-                                                <input type="radio" name="exigirCodigoAcesso" value="true"
-                                                       class="radio-card__input"
-                                                       form="formProtecaoProposta"
-                                                       @(Model.ExigirCodigoAcesso ? "checked" : "") />
-                                                <div class="radio-card__body">
-                                                    <div class="d-flex align-items-center gap-2 mb-1">
-                                                        <i class="fas fa-lock" style="color:#0d6efd;font-size:.85rem;"></i>
-                                                        <span class="fw-semibold" style="font-size:.8rem;">Exigir código de acesso</span>
-                                                        <span class="badge bg-primary ms-auto" style="font-size:.6rem;padding:.2em .45em;">Recomendado</span>
-                                                    </div>
-                                                    <div class="text-muted" style="font-size:.72rem;line-height:1.4;">
-                                                        O cliente deverá informar um código para visualizar esta proposta.
-                                                    </div>
-                                                </div>
+                                    <div>
+                                        <div class="mb-2">
+                                            <label class="form-label small fw-semibold text-muted mb-2 d-block">
+                                                <i class="fas fa-shield-alt me-1"></i>Proteção da proposta
                                             </label>
-                                            <label class="radio-card flex-grow-1 @(!Model.ExigirCodigoAcesso ? "radio-card--selected" : "")">
-                                                <input type="radio" name="exigirCodigoAcesso" value="false"
-                                                       class="radio-card__input"
-                                                       form="formProtecaoProposta"
-                                                       @(!Model.ExigirCodigoAcesso ? "checked" : "") />
-                                                <div class="radio-card__body">
-                                                    <div class="d-flex align-items-center gap-2 mb-1">
-                                                        <i class="fas fa-link" style="color:#6c757d;font-size:.85rem;"></i>
-                                                        <span class="fw-semibold" style="font-size:.8rem;">Permitir acesso direto pelo link</span>
+                                            <div class="d-flex gap-2 flex-wrap">
+                                                <label class="radio-card flex-grow-1 @(Model.ExigirCodigoAcesso ? "radio-card--selected" : "")">
+                                                    <input type="radio" name="exigirCodigoAcesso" value="true"
+                                                           class="radio-card__input"
+                                                           form="formProtecaoProposta"
+                                                           @(Model.ExigirCodigoAcesso ? "checked" : "") />
+                                                    <div class="radio-card__body">
+                                                        <div class="d-flex align-items-center gap-2 mb-1">
+                                                            <i class="fas fa-lock" style="color:#0d6efd;font-size:.85rem;"></i>
+                                                            <span class="fw-semibold" style="font-size:.8rem;">Exigir código de acesso</span>
+                                                            <span class="badge bg-primary ms-auto" style="font-size:.6rem;padding:.2em .45em;">Recomendado</span>
+                                                        </div>
+                                                        <div class="text-muted" style="font-size:.72rem;line-height:1.4;">
+                                                            O cliente deverá informar um código para visualizar esta proposta.
+                                                        </div>
                                                     </div>
-                                                    <div class="text-muted" style="font-size:.72rem;line-height:1.4;">
-                                                        Qualquer pessoa que possuir este link poderá visualizar a proposta sem informar um código.
+                                                </label>
+                                                <label class="radio-card flex-grow-1 @(!Model.ExigirCodigoAcesso ? "radio-card--selected" : "")">
+                                                    <input type="radio" name="exigirCodigoAcesso" value="false"
+                                                           class="radio-card__input"
+                                                           form="formProtecaoProposta"
+                                                           @(!Model.ExigirCodigoAcesso ? "checked" : "") />
+                                                    <div class="radio-card__body">
+                                                        <div class="d-flex align-items-center gap-2 mb-1">
+                                                            <i class="fas fa-link" style="color:#6c757d;font-size:.85rem;"></i>
+                                                            <span class="fw-semibold" style="font-size:.8rem;">Permitir acesso direto pelo link</span>
+                                                        </div>
+                                                        <div class="text-muted" style="font-size:.72rem;line-height:1.4;">
+                                                            Qualquer pessoa que possuir este link poderá visualizar a proposta sem informar um código.
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            </label>
+                                                </label>
+                                            </div>
                                         </div>
+                                        <button type="submit" form="formProtecaoProposta" class="btn btn-sm btn-primary px-3">
+                                            <i class="fas fa-save me-1"></i>Salvar proteção
+                                        </button>
                                     </div>
-                                    <button type="submit" class="btn btn-sm btn-primary px-3"
-                                            form="formProtecaoProposta">
-                                        <i class="fas fa-save me-1"></i>Salvar proteção
-                                    </button>
                                 }
                             </div>
                         </div>
@@ -661,11 +658,15 @@
             @*
                 Form de proteção da proposta.
                 Deve ficar FORA do formEditarProposta para evitar aninhamento HTML inválido.
-                Os inputs e o botão acima referenciam este form via form="formProtecaoProposta".
+                Os radio inputs e o botão acima referenciam este form via form="formProtecaoProposta".
             *@
-            <form asp-action="SalvarProtecaoProposta" asp-controller="Proposta" method="post"
-                  id="formProtecaoProposta">
+            <form id="formProtecaoProposta"
+                  asp-action="SalvarProtecaoProposta"
+                  asp-controller="Proposta"
+                  method="post"
+                  style="display:none">
                 @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Id" />
             </form>
 
             @*
@@ -764,39 +765,49 @@
                                                     <div class="col-md-4">
                                                         @if (!string.IsNullOrEmpty(destino.Descricao))
                                                         {
-                                                            <small class="text-muted">
-                                                                @(destino.Descricao.Length > 80 ? destino.Descricao.Substring(0, 80) + "..." : destino.Descricao)
-                                                            </small>
+                                                            var _dSum = System.Text.RegularExpressions.Regex.Replace(destino.Descricao, "<[^>]+>", " ");
+                                                            _dSum = System.Net.WebUtility.HtmlDecode(System.Text.RegularExpressions.Regex.Replace(_dSum, @"\s+", " ").Trim());
+                                                            <small class="text-muted">@(_dSum.Length > 80 ? _dSum.Substring(0, 80) + "..." : _dSum)</small>
                                                         }
                                                     </div>
                                                 </div>
                                             </div>
                                             <div class="col-auto">
-                                                <div class="btn-group btn-group-sm">
-                                                    <button type="button" class="btn btn-outline-primary"
-                                                            data-bs-toggle="collapse" data-bs-target="#detalhes-@destino.Id">
-                                                        <i class="fas fa-chevron-down"></i>
-                                                    </button>
-                                                    <button type="button" class="btn btn-outline-success"
-                                                            onclick="abrirModalFoto('@destino.Id', '@destino.Nome')">
-                                                        <i class="fas fa-plus"></i> Foto
+                                                <div class="dest-acoes d-flex align-items-center gap-2">
+                                                    <button type="button"
+                                                            class="btn btn-sm btn-outline-primary dest-btn-expand"
+                                                            data-bs-toggle="collapse"
+                                                            data-bs-target="#detalhes-@destino.Id"
+                                                            aria-expanded="false"
+                                                            aria-controls="detalhes-@destino.Id">
+                                                        <i class="fas fa-chevron-down dest-expand-icon me-1"></i><span class="dest-expand-text">Gerenciar destino</span>
                                                     </button>
                                                     <form asp-controller="Destino" asp-action="ExcluirDestino" method="post"
                                                           style="display:inline;"
                                                           onsubmit="return confirm('Excluir este destino e todas suas fotos?');">
                                                         <input type="hidden" name="id" value="@destino.Id" />
-                                                        <button type="submit" class="btn btn-outline-danger"><i class="fas fa-trash"></i></button>
+                                                        <button type="submit"
+                                                                class="btn btn-sm btn-outline-danger"
+                                                                aria-label="Excluir destino @destino.Nome"
+                                                                title="Excluir destino">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
                                                     </form>
                                                 </div>
                                             </div>
                                         </div>
 
                                         <!-- Detalhes expandidos -->
-                                        <div class="collapse mt-3" id="detalhes-@destino.Id">
-                                            <div class="border-top pt-3">
-                                                <div class="row">
+                                        <div class="collapse mt-2" id="detalhes-@destino.Id">
+                                            <div class="dest-bloco border-top pt-3">
+
+                                                <!-- Seção: Dados + Fotos -->
+                                                <div class="dest-section-header mb-3">
+                                                    <span class="dest-section-label"><i class="fas fa-map-marker-alt me-1"></i>Dados e fotos do destino</span>
+                                                </div>
+                                                <div class="row g-3">
                                                     <div class="col-md-6">
-                                                        <h6><i class="fas fa-edit me-1"></i>Editar Destino</h6>
+                                                        <h6 class="dest-campo-titulo"><i class="fas fa-edit me-1"></i>Informações</h6>
                                                         <form asp-controller="Destino" asp-action="EditarDestino" method="post">
                                                             <input type="hidden" name="id" value="@destino.Id" />
                                                             <div class="mb-2">
@@ -821,7 +832,11 @@
                                                                 </div>
                                                             </div>
                                                             <div class="mb-2">
-                                                                <textarea name="descricao" id="desc-dest-@destino.Id" class="form-control form-control-sm" rows="3">@destino.Descricao</textarea>
+                                                                <div id="desc-dest-@destino.Id"
+                                                                     class="ql-desc-container"
+                                                                     data-content="@(destino.Descricao ?? "")"></div>
+                                                                <input type="hidden" name="descricao"
+                                                                       data-quill-target="desc-dest-@destino.Id" />
                                                             </div>
                                                             <div id="desc-alert-@destino.Id" class="d-none mb-1"></div>
                                                             <div class="d-flex gap-1 mb-0">
@@ -843,10 +858,17 @@
                                                         </form>
                                                     </div>
                                                     <div class="col-md-6">
-                                                        <h6><i class="fas fa-images me-1"></i>Fotos (@destino.Fotos.Count)</h6>
+                                                        <div class="d-flex align-items-center justify-content-between mb-2">
+                                                            <h6 class="mb-0"><i class="fas fa-images me-1"></i>Fotos <span class="text-muted fw-normal">(@destino.Fotos.Count)</span></h6>
+                                                            <button type="button"
+                                                                    class="btn btn-sm btn-outline-primary"
+                                                                    onclick="abrirModalFoto('@destino.Id', '@destino.Nome')">
+                                                                <i class="fas fa-camera me-1"></i>Adicionar fotos
+                                                            </button>
+                                                        </div>
                                                         @if (destino.Fotos.Any())
                                                         {
-                                                            <div class="img-upload-grid" id="fotos-@destino.Id">
+                                                            <div class="img-upload-grid img-upload-grid--lg" id="fotos-@destino.Id">
                                                                 @foreach (var foto in destino.Fotos.OrderBy(f => f.Ordem))
                                                                 {
                                                                     <div class="img-thumb" data-foto-id="@foto.Id">
@@ -855,45 +877,42 @@
                                                                         </div>
                                                                         @if (foto.Principal)
                                                                         {
-                                                                            <span class="position-absolute top-0 start-0 badge bg-success"
-                                                                                  style="font-size:0.5rem;padding:2px;">
+                                                                            <span class="itp-badge-principal" title="Foto principal">
                                                                                 <i class="fas fa-star"></i>
                                                                             </span>
                                                                         }
-                                                                        <div class="position-absolute top-0 end-0">
-                                                                            <div class="btn-group btn-group-sm">
-                                                                                @if (!foto.Principal)
-                                                                                {
-                                                                                    <form asp-controller="DestinoFoto" asp-action="DefinirPrincipal"
-                                                                                          method="post" style="display:inline;">
-                                                                                        <input type="hidden" name="id" value="@foto.Id" />
-                                                                                        <button type="submit" class="btn btn-outline-warning btn-sm p-0"
-                                                                                                style="width:18px;height:18px;font-size:.55rem;" title="Principal">
-                                                                                            <i class="fas fa-star"></i>
-                                                                                        </button>
-                                                                                    </form>
-                                                                                }
-                                                                                <form asp-controller="DestinoFoto" asp-action="ExcluirFoto"
-                                                                                      method="post" style="display:inline;"
-                                                                                      onsubmit="return confirm('Excluir esta foto?');">
-                                                                                    <input type="hidden" name="id" value="@foto.Id" />
-                                                                                    <button type="submit" class="btn btn-outline-danger btn-sm p-0"
-                                                                                            style="width:18px;height:18px;font-size:.55rem;">
-                                                                                        <i class="fas fa-times"></i>
-                                                                                    </button>
-                                                                                </form>
-                                                                            </div>
-                                                                        </div>
+                                                                        else
+                                                                        {
+                                                                            <form asp-controller="DestinoFoto" asp-action="DefinirPrincipal"
+                                                                                  method="post" class="itp-ctrl itp-ctrl--tl">
+                                                                                <input type="hidden" name="id" value="@foto.Id" />
+                                                                                <button type="submit" class="itp-btn itp-btn--star"
+                                                                                        title="Definir como foto principal"
+                                                                                        aria-label="Definir como foto principal">
+                                                                                    <i class="fas fa-star"></i>
+                                                                                </button>
+                                                                            </form>
+                                                                        }
+                                                                        <form asp-controller="DestinoFoto" asp-action="ExcluirFoto"
+                                                                              method="post" class="itp-ctrl itp-ctrl--tr"
+                                                                              onsubmit="return confirm('Excluir esta foto?');">
+                                                                            <input type="hidden" name="id" value="@foto.Id" />
+                                                                            <button type="submit" class="itp-btn itp-btn--del"
+                                                                                    aria-label="Excluir foto"
+                                                                                    title="Excluir foto">
+                                                                                <i class="fas fa-times"></i>
+                                                                            </button>
+                                                                        </form>
                                                                     </div>
                                                                 }
                                                             </div>
                                                         }
                                                         else
                                                         {
-                                                            <div class="text-center text-muted py-3">
-                                                                <i class="fas fa-images fa-2x mb-2"></i>
-                                                                <p class="mb-0">Nenhuma foto</p>
-                                                                <small>Use "+ Foto" acima</small>
+                                                            <div class="text-center text-muted py-3 border rounded-2" style="background:#fafbff;">
+                                                                <i class="fas fa-images fa-2x mb-2 text-secondary"></i>
+                                                                <p class="mb-1 small">Nenhuma foto cadastrada.</p>
+                                                                <small>Adicione fotos para enriquecer a apresentação deste destino.</small>
                                                             </div>
                                                         }
                                                     </div>
@@ -978,26 +997,18 @@
                                                             <div class="mb-2">
                                                                 <div class="d-flex justify-content-between align-items-center mb-1">
                                                                     <label class="form-label form-label-sm mb-0">Descrição</label>
-                                                                    <div class="d-flex gap-1 align-items-center">
-                                                                        <button type="button"
-                                                                                class="btn btn-outline-secondary btn-xs hosp-bold-btn"
-                                                                                data-editor="new-hosp-desc-@destino.Id.ToString("N")"
-                                                                                title="Negrito">
-                                                                            <b>B</b>
-                                                                        </button>
-                                                                        <button type="button"
-                                                                                class="btn btn-outline-primary btn-xs btn-gerar-desc-hosp"
-                                                                                disabled>
-                                                                            <i class="fas fa-magic me-1"></i>IA
-                                                                        </button>
-                                                                    </div>
+                                                                    <button type="button"
+                                                                            class="btn btn-outline-primary btn-xs btn-gerar-desc-hosp"
+                                                                            disabled>
+                                                                        <i class="fas fa-magic me-1"></i>IA
+                                                                    </button>
                                                                 </div>
                                                                 <div id="new-hosp-desc-@destino.Id.ToString("N")"
-                                                                     class="form-control form-control-sm hosp-rich-desc"
-                                                                     contenteditable="true"
-                                                                     style="min-height:44px;max-height:120px;overflow-y:auto;"
-                                                                     data-placeholder="Selecione sugestão ou use Gerar com IA..."></div>
-                                                                <input type="hidden" name="descricao" class="hosp-rich-desc-val" />
+                                                                     class="ql-desc-container"
+                                                                     data-placeholder="Selecione sugestão ou use Gerar com IA..."
+                                                                     data-content=""></div>
+                                                                <input type="hidden" name="descricao"
+                                                                       data-quill-target="new-hosp-desc-@destino.Id.ToString("N")" />
                                                                 <div class="hosp-ia-loader text-center py-1 d-none">
                                                                     <div class="spinner-border spinner-border-sm text-primary me-1"></div>
                                                                     <small class="text-muted">Consultando IA...</small>
@@ -1200,33 +1211,17 @@
                                                                     <div class="mb-2">
                                                                         <div class="d-flex justify-content-between align-items-center mb-1">
                                                                             <label class="form-label form-label-sm mb-0">Descrição</label>
-                                                                            <div class="d-flex gap-1 align-items-center">
-                                                                                <button type="button"
-                                                                                        class="btn btn-outline-secondary btn-xs hosp-bold-btn"
-                                                                                        data-editor="hosp-desc-@hospedagem.Id.ToString("N")"
-                                                                                        title="Negrito (Ctrl+B)">
-                                                                                    <b>B</b>
-                                                                                </button>
-                                                                                <button type="button"
-                                                                                        class="btn btn-outline-primary btn-xs btn-gerar-desc-hosp">
-                                                                                    <i class="fas fa-magic me-1"></i>IA
-                                                                                </button>
-                                                                            </div>
+                                                                            <button type="button"
+                                                                                    class="btn btn-outline-primary btn-xs btn-gerar-desc-hosp">
+                                                                                <i class="fas fa-magic me-1"></i>IA
+                                                                            </button>
                                                                         </div>
-                                                                        @{
-                                                                            var _descHtml = string.IsNullOrEmpty(hospedagem.Descricao) ? "" :
-                                                                                System.Text.RegularExpressions.Regex.Replace(
-                                                                                    System.Net.WebUtility.HtmlEncode(hospedagem.Descricao),
-                                                                                    @"&lt;(/?b|br\s*/?)&gt;",
-                                                                                    m => "<" + m.Groups[1].Value + ">"
-                                                                                ).Replace("\r", "").Replace("\n", "<br>");
-                                                                        }
                                                                         <div id="hosp-desc-@hospedagem.Id.ToString("N")"
-                                                                             class="form-control form-control-sm hosp-rich-desc"
-                                                                             contenteditable="true"
-                                                                             style="min-height:56px;max-height:160px;overflow-y:auto;"
-                                                                             data-placeholder="Descreva o hotel...">@Html.Raw(_descHtml)</div>
-                                                                        <input type="hidden" name="descricao" class="hosp-rich-desc-val" />
+                                                                             class="ql-desc-container"
+                                                                             data-placeholder="Descreva o hotel..."
+                                                                             data-content="@(hospedagem.Descricao ?? "")"></div>
+                                                                        <input type="hidden" name="descricao"
+                                                                               data-quill-target="hosp-desc-@hospedagem.Id.ToString("N")" />
                                                                         <div class="hosp-ia-loader text-center py-1 d-none">
                                                                             <div class="spinner-border spinner-border-sm text-primary me-1"></div>
                                                                             <small class="text-muted">Consultando IA...</small>
@@ -1325,7 +1320,7 @@
 
                                                                     @if (hospedagem.Fotos.Any())
                                                                     {
-                                                                        <div class="img-upload-grid"
+                                                                        <div class="img-upload-grid img-upload-grid--lg"
                                                                              id="fotos-hotel-@hospedagem.Id"
                                                                              data-hospedagem-id="@hospedagem.Id">
                                                                             @foreach (var fotoH in hospedagem.Fotos.OrderBy(f => f.Ordem))
@@ -1337,20 +1332,17 @@
                                                                                     </div>
                                                                                     @if (fotoH.Principal)
                                                                                     {
-                                                                                        <span class="position-absolute top-0 start-0 badge bg-success"
-                                                                                              style="font-size:0.5rem;padding:2px;">
+                                                                                        <span class="itp-badge-principal" title="Foto principal">
                                                                                             <i class="fas fa-star"></i>
                                                                                         </span>
                                                                                     }
-                                                                                    <span class="position-absolute bottom-0 start-0 badge bg-dark bg-opacity-75"
-                                                                                          style="font-size:0.5rem;padding:1px 3px;">@fotoH.Ordem</span>
                                                                                     <form asp-controller="Hospedagem" asp-action="ExcluirFotoHospedagem"
-                                                                                          method="post" style="display:inline;"
+                                                                                          method="post" class="itp-ctrl itp-ctrl--tr"
                                                                                           onsubmit="return confirm('Excluir foto do hotel?');">
                                                                                         <input type="hidden" name="id" value="@fotoH.Id" />
-                                                                                        <button type="submit"
-                                                                                                class="btn btn-danger btn-sm position-absolute top-0 end-0 p-0"
-                                                                                                style="width:16px;height:16px;font-size:0.55rem;line-height:1;">
+                                                                                        <button type="submit" class="itp-btn itp-btn--del"
+                                                                                                aria-label="Excluir foto"
+                                                                                                title="Excluir foto">
                                                                                             <i class="fas fa-times"></i>
                                                                                         </button>
                                                                                     </form>
@@ -1420,27 +1412,26 @@
                                                                             </div>
                                                                             @if (acomodacao.Fotos.Any())
                                                                             {
-                                                                                <div class="d-flex flex-wrap gap-1 mt-2">
+                                                                                <div class="img-upload-grid img-upload-grid--lg mt-2">
                                                                                     @foreach (var fotoAcmd in acomodacao.Fotos.OrderBy(f => f.Ordem))
                                                                                     {
-                                                                                        <div class="position-relative" style="width:64px;height:48px;">
-                                                                                            <img src="@fotoAcmd.CaminhoFoto" alt="@fotoAcmd.Descricao"
-                                                                                                 class="rounded"
-                                                                                                 style="width:64px;height:48px;object-fit:cover;" />
+                                                                                        <div class="img-thumb" data-foto-acmd-id="@fotoAcmd.Id">
+                                                                                            <div class="img-thumb-frame">
+                                                                                                <img src="@fotoAcmd.CaminhoFoto" alt="@fotoAcmd.Descricao" />
+                                                                                            </div>
                                                                                             @if (fotoAcmd.Principal)
                                                                                             {
-                                                                                                <span class="position-absolute top-0 start-0 badge bg-success"
-                                                                                                      style="font-size:0.5rem;padding:2px;">
+                                                                                                <span class="itp-badge-principal" title="Foto principal">
                                                                                                     <i class="fas fa-star"></i>
                                                                                                 </span>
                                                                                             }
                                                                                             <form asp-controller="Hospedagem" asp-action="ExcluirFotoAcomodacao"
-                                                                                                  method="post" style="display:inline;"
+                                                                                                  method="post" class="itp-ctrl itp-ctrl--tr"
                                                                                                   onsubmit="return confirm('Excluir foto?');">
                                                                                                 <input type="hidden" name="id" value="@fotoAcmd.Id" />
-                                                                                                <button type="submit"
-                                                                                                        class="btn btn-danger btn-sm position-absolute top-0 end-0 p-0"
-                                                                                                        style="width:16px;height:16px;font-size:0.55rem;line-height:1;">
+                                                                                                <button type="submit" class="itp-btn itp-btn--del"
+                                                                                                        aria-label="Excluir foto"
+                                                                                                        title="Excluir foto">
                                                                                                     <i class="fas fa-times"></i>
                                                                                                 </button>
                                                                                             </form>
@@ -1542,6 +1533,12 @@
                                                         </div>
                                                     </div>
                                                 }
+                                                @if (!destino.Hospedagens.Any())
+                                                {
+                                                    <p class="small text-muted mb-0">
+                                                        <i class="fas fa-info-circle me-1"></i>Nenhuma hospedagem cadastrada.
+                                                    </p>
+                                                }
                                             </div>
 
                                         <!-- ══ EXPERIÊNCIAS ══════════════════════════════ -->
@@ -1600,10 +1597,12 @@
                                                             </div>
                                                             <div class="col-12">
                                                                 <label class="form-label form-label-sm mb-0">Descrição</label>
-                                                                <textarea name="descricao"
-                                                                          class="form-control form-control-sm"
-                                                                          rows="2" maxlength="4000"
-                                                                          placeholder="Descreva a experiência para o cliente..."></textarea>
+                                                                <div id="add-exp-desc-@destino.Id.ToString("N")"
+                                                                     class="ql-desc-container"
+                                                                     data-content=""
+                                                                     data-placeholder="Descreva a experiência para o cliente..."></div>
+                                                                <input type="hidden" name="descricao"
+                                                                       data-quill-target="add-exp-desc-@destino.Id.ToString("N")" />
                                                             </div>
                                                         </div>
                                                         <!-- Fotos da experiência no cadastro inicial -->
@@ -1754,9 +1753,11 @@
                                                                         </div>
                                                                         <div class="col-12">
                                                                             <label class="form-label form-label-sm mb-0">Descrição</label>
-                                                                            <textarea name="descricao"
-                                                                                      class="form-control form-control-sm"
-                                                                                      rows="3" maxlength="4000">@exp.Descricao</textarea>
+                                                                            <div id="edit-exp-desc-@exp.Id.ToString("N")"
+                                                                                 class="ql-desc-container"
+                                                                                 data-content="@(exp.Descricao ?? "")"></div>
+                                                                            <input type="hidden" name="descricao"
+                                                                                   data-quill-target="edit-exp-desc-@exp.Id.ToString("N")" />
                                                                         </div>
                                                                     </div>
                                                                     @if (!string.IsNullOrEmpty(exp.VideoUrl))
@@ -1782,7 +1783,7 @@
                                                                 </h6>
                                                                 @if (exp.Imagens.Any())
                                                                 {
-                                                                    <div class="img-upload-grid"
+                                                                    <div class="img-upload-grid img-upload-grid--lg"
                                                                          id="fotos-exp-@exp.Id"
                                                                          data-experiencia-id="@exp.Id">
                                                                         @foreach (var img in exp.Imagens.OrderBy(i => i.Ordem))
@@ -1792,17 +1793,15 @@
                                                                                 <div class="img-thumb-frame">
                                                                                     <img src="@img.CaminhoImagem" alt="@img.Descricao" />
                                                                                 </div>
-                                                                                <span class="position-absolute bottom-0 start-0 badge bg-dark bg-opacity-75"
-                                                                                      style="font-size:0.5rem;padding:1px 3px;">@img.Ordem</span>
                                                                                 <form asp-controller="Experiencia"
                                                                                       asp-action="ExcluirImagem"
-                                                                                      method="post" style="display:inline;"
+                                                                                      method="post" class="itp-ctrl itp-ctrl--tr"
                                                                                       onsubmit="return confirm('Excluir imagem?');">
                                                                                     @Html.AntiForgeryToken()
                                                                                     <input type="hidden" name="id" value="@img.Id" />
-                                                                                    <button type="submit"
-                                                                                            class="btn btn-danger btn-sm position-absolute top-0 end-0 p-0"
-                                                                                            style="width:16px;height:16px;font-size:0.55rem;line-height:1;">
+                                                                                    <button type="submit" class="itp-btn itp-btn--del"
+                                                                                            aria-label="Excluir imagem"
+                                                                                            title="Excluir imagem">
                                                                                         <i class="fas fa-times"></i>
                                                                                     </button>
                                                                                 </form>
@@ -1902,7 +1901,7 @@
                                                     <span class="badge bg-secondary ms-1">@destino.Transportes.Count</span>
                                                 </h6>
                                                 <button type="button"
-                                                        class="btn btn-sm btn-outline-secondary"
+                                                        class="btn btn-sm btn-outline-primary"
                                                         data-bs-toggle="collapse"
                                                         data-bs-target="#add-transp-@destino.Id">
                                                     <i class="fas fa-plus me-1"></i>Adicionar Transporte
@@ -1933,10 +1932,12 @@
                                                             </div>
                                                             <div class="col-12">
                                                                 <label class="form-label form-label-sm mb-0">Descrição</label>
-                                                                <textarea name="descricao"
-                                                                          class="form-control form-control-sm"
-                                                                          rows="2" maxlength="4000"
-                                                                          placeholder="Descreva o transporte para o cliente..."></textarea>
+                                                                <div id="add-transp-desc-@destino.Id.ToString("N")"
+                                                                     class="ql-desc-container"
+                                                                     data-content=""
+                                                                     data-placeholder="Descreva o transporte para o cliente..."></div>
+                                                                <input type="hidden" name="descricao"
+                                                                       data-quill-target="add-transp-desc-@destino.Id.ToString("N")" />
                                                             </div>
                                                         </div>
                                                         <!-- Fotos do transporte no cadastro inicial -->
@@ -2050,9 +2051,11 @@
                                                                         </div>
                                                                         <div class="col-12">
                                                                             <label class="form-label form-label-sm mb-0">Descrição</label>
-                                                                            <textarea name="descricao"
-                                                                                      class="form-control form-control-sm"
-                                                                                      rows="3" maxlength="4000">@transp.Descricao</textarea>
+                                                                            <div id="edit-transp-desc-@transp.Id.ToString("N")"
+                                                                                 class="ql-desc-container"
+                                                                                 data-content="@(transp.Descricao ?? "")"></div>
+                                                                            <input type="hidden" name="descricao"
+                                                                                   data-quill-target="edit-transp-desc-@transp.Id.ToString("N")" />
                                                                         </div>
                                                                     </div>
                                                                     <div class="mt-2">
@@ -2071,7 +2074,7 @@
                                                                 </h6>
                                                                 @if (transp.Imagens.Any())
                                                                 {
-                                                                    <div class="img-upload-grid"
+                                                                    <div class="img-upload-grid img-upload-grid--lg"
                                                                          id="fotos-transp-@transp.Id"
                                                                          data-transporte-id="@transp.Id">
                                                                         @foreach (var img in transp.Imagens.OrderBy(i => i.Ordem))
@@ -2083,22 +2086,19 @@
                                                                                 </div>
                                                                                 @if (img.Principal)
                                                                                 {
-                                                                                    <span class="position-absolute top-0 start-0 badge bg-primary"
-                                                                                          style="font-size:0.5rem;padding:2px;">
+                                                                                    <span class="itp-badge-principal" title="Imagem principal">
                                                                                         <i class="fas fa-star"></i>
                                                                                     </span>
                                                                                 }
-                                                                                <span class="position-absolute bottom-0 start-0 badge bg-dark bg-opacity-75"
-                                                                                      style="font-size:0.5rem;padding:1px 3px;">@img.Ordem</span>
                                                                                 <form asp-controller="Transporte"
                                                                                       asp-action="ExcluirImagem"
-                                                                                      method="post" style="display:inline;"
+                                                                                      method="post" class="itp-ctrl itp-ctrl--tr"
                                                                                       onsubmit="return confirm('Excluir imagem?');">
                                                                                     @Html.AntiForgeryToken()
                                                                                     <input type="hidden" name="id" value="@img.Id" />
-                                                                                    <button type="submit"
-                                                                                            class="btn btn-danger btn-sm position-absolute top-0 end-0 p-0"
-                                                                                            style="width:16px;height:16px;font-size:0.55rem;line-height:1;">
+                                                                                    <button type="submit" class="itp-btn itp-btn--del"
+                                                                                            aria-label="Excluir imagem"
+                                                                                            title="Excluir imagem">
                                                                                         <i class="fas fa-times"></i>
                                                                                     </button>
                                                                                 </form>
@@ -2190,26 +2190,6 @@
 
                                         </div><!-- /transportes section -->
 
-                                        @{
-                                            var _dAccId = "acc-dei-" + destino.Id.ToString("N");
-                                            var _dHasIns = !string.IsNullOrEmpty(destino.CuidadosLLM)
-                                                || !string.IsNullOrEmpty(destino.GastronomiaLLM)
-                                                || !string.IsNullOrEmpty(destino.PratosTipicosLLM)
-                                                || !string.IsNullOrEmpty(destino.AtracoesLLM)
-                                                || !string.IsNullOrEmpty(destino.InformacoesPraticasLLM)
-                                                || !string.IsNullOrEmpty(destino.MalaViagemLLM);
-                                        }
-                                        @if (_dHasIns)
-                                        {
-                                            <div class="border-top pt-3 mt-3">
-                                                <div class="dest-insights-panel">
-                                                    <div class="panel-title">
-                                                        <i class="fas fa-brain me-1"></i>Insights para o Agente
-                                                    </div>
-                                                    @Html.Raw(RenderTemasAccordion(destino, _dAccId))
-                                                </div>
-                                            </div>
-                                        }
                                         </div><!-- /detalhes-collapse -->
                                     </div><!-- /border-top destino -->
                                 }
@@ -2277,15 +2257,11 @@
                             </button>
                             <div id="editor-llm" class="mt-2 d-none">
                                 <label class="form-label">Descrição</label>
-                                <textarea id="Descricao" name="descricao" rows="4" class="form-control mb-2"></textarea>
-
-                                <!-- Insights gerados pela IA — aparecem após geração -->
-                                <div id="novo-dest-insights" class="mt-3 mb-3 d-none">
-                                    <div class="dest-insights-panel">
-                                        <div class="panel-title"><i class="fas fa-brain me-1"></i>Insights para o Agente</div>
-                                        <div id="novo-dest-insights-body" class="accordion"></div>
-                                    </div>
-                                </div>
+                                <div id="add-dest-novo"
+                                     class="ql-desc-container mb-2"
+                                     data-content=""></div>
+                                <input type="hidden" id="Descricao" name="descricao"
+                                       data-quill-target="add-dest-novo" />
 
                                 <input type="hidden" id="AtracoesLLM" name="AtracoesLLM" />
                                 <input type="hidden" id="GastronomiaLLM" name="GastronomiaLLM" />
@@ -2488,12 +2464,16 @@
                                                 </div>
                                                 <div class="col-sm-3">
                                                     <label class="form-label small fw-semibold mb-1">Companhia <span class="text-danger">*</span></label>
-                                                    <input type="text" name="companhia" id="companhia-@vooSafeId"
-                                                           class="form-control form-control-sm"
-                                                           list="airlines-datalist"
-                                                           value="@voo.Companhia" required maxlength="100"
-                                                           placeholder="Selecione ou informe o código ICAO..." />
-                                                    <div class="form-text text-muted" style="font-size:0.7rem">Para busca automática, selecione ou informe o ICAO (ex: AZU, GLO, TAM)</div>
+                                                    <div class="position-relative">
+                                                        <input type="text" name="companhia" id="companhia-@vooSafeId"
+                                                               class="form-control form-control-sm airline-ac"
+                                                               data-iata="" data-icao=""
+                                                               value="@voo.Companhia" required maxlength="100"
+                                                               autocomplete="off"
+                                                               placeholder="Buscar por nome, IATA ou ICAO..." />
+                                                        <ul class="airline-ac-dropdown list-unstyled m-0 d-none" role="listbox"></ul>
+                                                    </div>
+                                                    <div class="form-text text-muted" style="font-size:0.7rem">Nome, IATA (ex: AD, G3, LA) ou ICAO (AZU, GLO, TAM)</div>
                                                 </div>
                                                 <div class="col-sm-7">
                                                     <label class="form-label small fw-semibold mb-1">Nº do Voo <span class="text-danger">*</span></label>
@@ -3187,7 +3167,7 @@
                 <!-- Passageiros da viagem -->
                 @foreach (var pax in proposta.PassageirosProposta.OrderBy(p => p.Ordem))
                 {
-                    var refDatePax = proposta.DataInicio ?? DateTime.UtcNow.ToBrazilTime().Date;
+                    var refDatePax = proposta.DataInicio ?? DateTime.Today;
                     var paxRelLabel = pax.Relacionamento.HasValue ? pax.Relacionamento switch {
                         SistemaUsuarios.Models.RelacionamentoPassageiro.Filho => "Filho",
                         SistemaUsuarios.Models.RelacionamentoPassageiro.Filha => "Filha",
@@ -3233,6 +3213,10 @@
                             </div>
                             <div class="flex-grow-1">
                                 <span class="fw-semibold">@pax.Nome</span>
+                                @if (pax.IsTitular)
+                                {
+                                    <span class="badge bg-warning text-dark ms-2"><i class="fas fa-star me-1" style="font-size:.65em;"></i>Titular</span>
+                                }
                                 @if (paxRelLabel != null)
                                 {
                                     <span class="badge bg-info text-dark ms-2">@paxRelLabel</span>
@@ -3874,7 +3858,8 @@
                                         }
                                         <span class="rev-stat-chip">
                                             <i class="fas fa-users text-info"></i>
-                                            @proposta.NumeroPassageiros adulto(s)@(proposta.NumeroCriancas > 0 ? $" + {proposta.NumeroCriancas} criança(s)" : "")
+                                            @{ var _revPax = proposta.PassageirosProposta.Count; }
+                                            @_revPax @(_revPax == 1 ? "passageiro" : "passageiros")
                                         </span>
                                         <span class="rev-stat-chip">
                                             <i class="fas fa-map-pin text-danger"></i>
@@ -4229,55 +4214,7 @@
     </div><!-- /tab-content -->
 </div><!-- /container-fluid -->
 
-<!-- datalist de companhias aéreas — compartilhado por todos os campos companhia -->
-<datalist id="airlines-datalist">
-    <!-- Brasil -->
-    <option value="Azul — AD / AZU"></option>
-    <option value="GOL — G3 / GLO"></option>
-    <option value="LATAM Brasil — JJ / TAM"></option>
-    <option value="Voepass — 2Z / VPA"></option>
-    <!-- América Latina -->
-    <option value="LATAM Airlines — LA / LAN"></option>
-    <option value="Avianca — AV / AVA"></option>
-    <option value="Copa Airlines — CM / CMP"></option>
-    <option value="Aerolíneas Argentinas — AR / ARG"></option>
-    <option value="Aeromexico — AM / AMX"></option>
-    <option value="JetSMART — JA / JAT"></option>
-    <option value="Sky Airline — H2 / SKU"></option>
-    <option value="Wingo — P5 / WNG"></option>
-    <!-- América do Norte -->
-    <option value="American Airlines — AA / AAL"></option>
-    <option value="Delta Air Lines — DL / DAL"></option>
-    <option value="United Airlines — UA / UAL"></option>
-    <option value="Air Canada — AC / ACA"></option>
-    <option value="Southwest — WN / SWA"></option>
-    <option value="JetBlue — B6 / JBU"></option>
-    <option value="Spirit Airlines — NK / NKS"></option>
-    <!-- Europa -->
-    <option value="Air France — AF / AFR"></option>
-    <option value="Lufthansa — LH / DLH"></option>
-    <option value="British Airways — BA / BAW"></option>
-    <option value="KLM — KL / KLM"></option>
-    <option value="Iberia — IB / IBE"></option>
-    <option value="ITA Airways — AZ / ITY"></option>
-    <option value="Swiss — LX / SWR"></option>
-    <option value="TAP Air Portugal — TP / TAP"></option>
-    <option value="Turkish Airlines — TK / THY"></option>
-    <option value="Ryanair — FR / RYR"></option>
-    <option value="easyJet — U2 / EZY"></option>
-    <option value="Aeroflot — SU / AFL"></option>
-    <option value="Finnair — AY / FIN"></option>
-    <option value="SAS — SK / SAS"></option>
-    <!-- Oriente Médio / Ásia / África -->
-    <option value="Emirates — EK / UAE"></option>
-    <option value="Qatar Airways — QR / QTR"></option>
-    <option value="Etihad Airways — EY / ETD"></option>
-    <option value="Air Arabia — G9 / ABY"></option>
-    <option value="flydubai — FZ / FDB"></option>
-    <option value="Singapore Airlines — SQ / SIA"></option>
-    <option value="Ethiopian Airlines — ET / ETH"></option>
-    <option value="El Al — LY / ELY"></option>
-</datalist>
+<!-- Autocomplete de companhias aéreas — via /data/companhias-aereas.json -->
 
 <!-- ============================================================ -->
 <!-- MODALS                                                        -->
@@ -4308,10 +4245,15 @@
                         </div>
                         <div class="col-sm-3">
                             <label class="form-label fw-semibold">Companhia <span class="text-danger">*</span></label>
-                            <input type="text" name="companhia" id="novo-companhia" class="form-control"
-                                   list="airlines-datalist"
-                                   required maxlength="100" placeholder="Selecione ou informe o código ICAO..." />
-                            <div class="form-text text-muted" style="font-size:0.7rem">Para busca automática, selecione ou informe o ICAO (ex: AZU, GLO, TAM)</div>
+                            <div class="position-relative">
+                                <input type="text" name="companhia" id="novo-companhia" class="form-control airline-ac"
+                                       data-iata="" data-icao=""
+                                       required maxlength="100"
+                                       autocomplete="off"
+                                       placeholder="Buscar por nome, IATA ou ICAO..." />
+                                <ul class="airline-ac-dropdown list-unstyled m-0 d-none" role="listbox"></ul>
+                            </div>
+                            <div class="form-text text-muted" style="font-size:0.7rem">Nome, IATA (ex: AD, G3, LA) ou ICAO (AZU, GLO, TAM)</div>
                         </div>
                         <div class="col-sm-6">
                             <label class="form-label fw-semibold">Nº do Voo <span class="text-danger">*</span></label>
@@ -4558,77 +4500,145 @@
             });
         }());
 
-        // ─── Companhia → ICAO ─────────────────────────────────────────────────────
+        // ─── Airline Autocomplete ─────────────────────────────────────────────────
 
-        const AIRLINES_MAP = {
-            // Brasil
-            'Azul — AD / AZU'                  : { iata: 'AD', icao: 'AZU' },
-            'GOL — G3 / GLO'                   : { iata: 'G3', icao: 'GLO' },
-            'LATAM Brasil — JJ / TAM'          : { iata: 'JJ', icao: 'TAM' },
-            'Voepass — 2Z / VPA'               : { iata: '2Z', icao: 'VPA' },
-            // América Latina
-            'LATAM Airlines — LA / LAN'        : { iata: 'LA', icao: 'LAN' },
-            'Avianca — AV / AVA'               : { iata: 'AV', icao: 'AVA' },
-            'Copa Airlines — CM / CMP'         : { iata: 'CM', icao: 'CMP' },
-            'Aerolíneas Argentinas — AR / ARG' : { iata: 'AR', icao: 'ARG' },
-            'Aeromexico — AM / AMX'            : { iata: 'AM', icao: 'AMX' },
-            'JetSMART — JA / JAT'              : { iata: 'JA', icao: 'JAT' },
-            'Sky Airline — H2 / SKU'           : { iata: 'H2', icao: 'SKU' },
-            'Wingo — P5 / WNG'                 : { iata: 'P5', icao: 'WNG' },
-            // América do Norte
-            'American Airlines — AA / AAL'     : { iata: 'AA', icao: 'AAL' },
-            'Delta Air Lines — DL / DAL'       : { iata: 'DL', icao: 'DAL' },
-            'United Airlines — UA / UAL'       : { iata: 'UA', icao: 'UAL' },
-            'Air Canada — AC / ACA'            : { iata: 'AC', icao: 'ACA' },
-            'Southwest — WN / SWA'             : { iata: 'WN', icao: 'SWA' },
-            'JetBlue — B6 / JBU'               : { iata: 'B6', icao: 'JBU' },
-            'Spirit Airlines — NK / NKS'       : { iata: 'NK', icao: 'NKS' },
-            // Europa
-            'Air France — AF / AFR'            : { iata: 'AF', icao: 'AFR' },
-            'Lufthansa — LH / DLH'             : { iata: 'LH', icao: 'DLH' },
-            'British Airways — BA / BAW'       : { iata: 'BA', icao: 'BAW' },
-            'KLM — KL / KLM'                   : { iata: 'KL', icao: 'KLM' },
-            'Iberia — IB / IBE'                : { iata: 'IB', icao: 'IBE' },
-            'ITA Airways — AZ / ITY'           : { iata: 'AZ', icao: 'ITY' },
-            'Swiss — LX / SWR'                 : { iata: 'LX', icao: 'SWR' },
-            'TAP Air Portugal — TP / TAP'      : { iata: 'TP', icao: 'TAP' },
-            'Turkish Airlines — TK / THY'      : { iata: 'TK', icao: 'THY' },
-            'Ryanair — FR / RYR'               : { iata: 'FR', icao: 'RYR' },
-            'easyJet — U2 / EZY'               : { iata: 'U2', icao: 'EZY' },
-            'Aeroflot — SU / AFL'              : { iata: 'SU', icao: 'AFL' },
-            'Finnair — AY / FIN'               : { iata: 'AY', icao: 'FIN' },
-            'SAS — SK / SAS'                   : { iata: 'SK', icao: 'SAS' },
-            // Oriente Médio / Ásia / África
-            'Emirates — EK / UAE'              : { iata: 'EK', icao: 'UAE' },
-            'Qatar Airways — QR / QTR'         : { iata: 'QR', icao: 'QTR' },
-            'Etihad Airways — EY / ETD'        : { iata: 'EY', icao: 'ETD' },
-            'Air Arabia — G9 / ABY'            : { iata: 'G9', icao: 'ABY' },
-            'flydubai — FZ / FDB'              : { iata: 'FZ', icao: 'FDB' },
-            'Singapore Airlines — SQ / SIA'    : { iata: 'SQ', icao: 'SIA' },
-            'Ethiopian Airlines — ET / ETH'    : { iata: 'ET', icao: 'ETH' },
-            'El Al — LY / ELY'                 : { iata: 'LY', icao: 'ELY' },
-        };
+        let _airlineData = null;
 
-        function resolverIcao(valor) {
-            if (!valor) return '';
-            const v = valor.trim();
-            if (AIRLINES_MAP[v]) return AIRLINES_MAP[v].icao;
-            // Extrai "/ XYZ" do final da string (ex: "Azul — AD / AZU" → "AZU")
-            const m = v.match(/\/\s*([A-Z]{2,3})\s*$/);
-            if (m) return m[1];
-            // 2–3 letras maiúsculas isoladas → ICAO/IATA digitado diretamente
-            if (/^[A-Z]{2,3}$/.test(v)) return v;
-            return v;
+        async function _getAirlines() {
+            if (_airlineData) return _airlineData;
+            try {
+                const r = await fetch('/data/companhias-aereas.json');
+                _airlineData = await r.json();
+            } catch { _airlineData = []; }
+            return _airlineData;
         }
 
-        function buildCodigoVoo(companhia, numeroVoo) {
+        function _filterAirlines(airlines, q) {
+            if (!q || !q.trim()) return [];
+            const u = q.trim().toUpperCase();
+            const out = [];
+            for (const a of airlines) {
+                const n = a.nome.toUpperCase();
+                let score = 0;
+                if (a.iata === u || a.icao === u)                      score = 40;
+                else if (a.iata.startsWith(u) || a.icao.startsWith(u)) score = 30;
+                else if (n.startsWith(u))                               score = 20;
+                else if (n.includes(u) || a.iata.includes(u) || a.icao.includes(u)) score = 10;
+                if (score) out.push({ a, score });
+            }
+            out.sort((x, y) => y.score - x.score || x.a.nome.localeCompare(y.a.nome));
+            return out.map(x => x.a);
+        }
+
+        function _acDropdown(input) {
+            return input.parentElement?.querySelector('.airline-ac-dropdown');
+        }
+
+        function _acShowDropdown(input, items) {
+            const dd = _acDropdown(input);
+            if (!dd) return;
+            dd.innerHTML = '';
+            if (!items.length) { dd.classList.add('d-none'); return; }
+            items.slice(0, 12).forEach((a, i) => {
+                const li = document.createElement('li');
+                li.setAttribute('role', 'option');
+                li.innerHTML =
+                    `<span class="ac-nome">${_acEsc(a.nome)}</span>` +
+                    `<span class="ac-codigos">${_acEsc(a.iata)} / ${_acEsc(a.icao)}</span>`;
+                li.addEventListener('mousedown', e => {
+                    e.preventDefault();
+                    _acSelect(input, a);
+                });
+                if (i === 0) li.classList.add('ac-active');
+                dd.appendChild(li);
+            });
+            dd.classList.remove('d-none');
+        }
+
+        function _acHideDropdown(input) {
+            const dd = _acDropdown(input);
+            if (dd) dd.classList.add('d-none');
+        }
+
+        function _acSelect(input, airline) {
+            input.value       = airline.nome;
+            input.dataset.iata = airline.iata;
+            input.dataset.icao = airline.icao;
+            _acHideDropdown(input);
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+
+        function _acEsc(s) {
+            return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        async function initAirlineAc(input) {
+            const airlines = await _getAirlines();
+
+            // Tentar resolver IATA do valor atual (dados salvos antes da mudança)
+            if (input.value && !input.dataset.iata) {
+                const v   = input.value.trim();
+                const vUp = v.toUpperCase();
+                // Formato antigo "Nome — IATA / ICAO"
+                const mOld = v.match(/—\s*([A-Z0-9]{1,3})\s*\/\s*([A-Z]{2,3})/);
+                if (mOld) {
+                    input.dataset.iata = mOld[1];
+                    input.dataset.icao = mOld[2];
+                } else {
+                    const found = airlines.find(a =>
+                        a.nome.toUpperCase() === vUp || a.iata === vUp || a.icao === vUp
+                    );
+                    if (found) {
+                        input.dataset.iata = found.iata;
+                        input.dataset.icao = found.icao;
+                    }
+                }
+            }
+
+            input.addEventListener('input', async function () {
+                _acShowDropdown(this, _filterAirlines(await _getAirlines(), this.value));
+            });
+
+            input.addEventListener('blur', function () {
+                setTimeout(() => _acHideDropdown(this), 160);
+            });
+
+            input.addEventListener('keydown', function (e) {
+                const dd = _acDropdown(this);
+                if (!dd || dd.classList.contains('d-none')) return;
+                const items  = dd.querySelectorAll('li');
+                const active = dd.querySelector('li.ac-active');
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    (active?.nextElementSibling || items[0])?.classList.add('ac-active');
+                    active?.classList.remove('ac-active');
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    (active?.previousElementSibling || items[items.length - 1])?.classList.add('ac-active');
+                    active?.classList.remove('ac-active');
+                } else if ((e.key === 'Enter' || e.key === 'Tab') && active) {
+                    e.preventDefault();
+                    active.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+                } else if (e.key === 'Escape') {
+                    _acHideDropdown(this);
+                }
+            });
+        }
+
+        // Monta o código de voo usando IATA selecionado no autocomplete
+        function buildCodigoVoo(companhiaEl, numeroVoo) {
             const num = (numeroVoo || '').trim().toUpperCase();
             if (!num) return '';
-            // Número já inclui prefixo de letras (AFL1482 ou LA1234) → usar direto
-            if (/^[A-Z]{2,3}\d/.test(num)) return num;
-            // Apenas dígitos → prefixar com ICAO resolvido
-            const icao = resolverIcao(companhia);
-            if (icao && /^[A-Z]{2,3}$/.test(icao)) return icao + num;
+            // Número já tem prefixo alfanumérico (LA1234, AD3060) → usar direto
+            if (/^[A-Z][A-Z0-9]{0,2}\d/.test(num)) return num;
+            // Ler IATA do data-attribute do elemento do autocomplete
+            const iata = (companhiaEl?.dataset?.iata || '').trim().toUpperCase();
+            if (iata && /^[A-Z0-9]{1,3}$/.test(iata)) return iata + num;
+            // Fallback: formato antigo "Nome — IATA / ICAO" ou código digitado direto
+            const val = (companhiaEl?.value || '').trim();
+            const mOld = val.match(/—\s*([A-Z0-9]{1,3})\s*\//);
+            if (mOld) return mOld[1] + num;
+            if (/^[A-Z0-9]{2,3}$/.test(val.toUpperCase())) return val.toUpperCase() + num;
             return num;
         }
 
@@ -4678,7 +4688,8 @@
 
         // Busca no card de edição de voo existente
         function consultarVooCard(safeId) {
-            const companhia = document.getElementById('companhia-'  + safeId)?.value?.trim();
+            const compEl  = document.getElementById('companhia-'  + safeId);
+            const companhia = compEl?.value?.trim();
             const numero    = document.getElementById('numero-voo-' + safeId)?.value?.trim();
             const dataVoo   = document.getElementById('data-voo-'   + safeId)?.value?.trim();
             const btn       = document.getElementById('btn-buscar-' + safeId);
@@ -4689,10 +4700,11 @@
                 return;
             }
 
-            const codigo = buildCodigoVoo(companhia, numero);
+            // buildCodigoVoo usa data-iata do elemento (IATA selecionado no autocomplete)
+            const codigo = buildCodigoVoo(compEl, numero);
 
             _consultarVoo(codigo, dataVoo, function (d, dataOriginal) {
-                preencherCampoVoo('companhia-' + safeId, d.companhia);
+                // Companhia e número preservados — não sobrescrever com dados da API
                 preencherCampoVoo('origem-'    + safeId, d.origem);
                 preencherCampoVoo('destino-'   + safeId, d.destino);
                 preencherCampoVoo('duracao-'   + safeId, d.duracao);
@@ -4706,7 +4718,8 @@
 
         // Busca no modal "Adicionar Voo"
         function consultarVooModal() {
-            const companhia = document.getElementById('novo-companhia')?.value?.trim();
+            const compEl  = document.getElementById('novo-companhia');
+            const companhia = compEl?.value?.trim();
             const numero    = document.getElementById('novoVooNumero')?.value?.trim();
             const dataVoo   = document.getElementById('novo-data-voo')?.value?.trim();
             const btn       = document.getElementById('btnBuscarModal');
@@ -4717,10 +4730,10 @@
                 return;
             }
 
-            const codigo = buildCodigoVoo(companhia, numero);
+            const codigo = buildCodigoVoo(compEl, numero);
 
             _consultarVoo(codigo, dataVoo, function (d, dataOriginal) {
-                preencherCampoVoo('novo-companhia', d.companhia);
+                // Companhia e número preservados — não sobrescrever com dados da API
                 preencherCampoVoo('novo-origem',    d.origem);
                 preencherCampoVoo('novo-destino',   d.destino);
                 preencherCampoVoo('novo-duracao',   d.duracao);
@@ -4800,6 +4813,9 @@
             configurarValidacaoFormularios();
             configurarHospRichEditors();
             configurarAutoUpload();
+
+            // Inicializar autocomplete de companhias aéreas
+            document.querySelectorAll('.airline-ac').forEach(initAirlineAc);
             configurarPreviewFotosNovaHospedagem();
             configurarPreviewFotosNovaExp();
             configurarPreviewFotosNovaTransp();
@@ -5111,8 +5127,15 @@
             $.post('/Hospedagem/GerarDescricaoHospedagem', { nome, cidade }, function (data) {
                 if (typeof data === 'string') data = JSON.parse(data);
                 if (data.descricao) {
-                    const $editor = $container.find('.hosp-rich-desc');
-                    if ($editor.length) $editor.text(data.descricao);
+                    const _hEditorEl = $container.find('.ql-desc-container')[0];
+                    if (_hEditorEl) {
+                        const _hQl = _qlDesc[_hEditorEl.id];
+                        if (_hQl) {
+                            _hQl.setText(data.descricao);
+                            const _hHi = $container.find('[data-quill-target="' + _hEditorEl.id + '"]')[0];
+                            if (_hHi) _hHi.value = _hQl.root.innerHTML;
+                        }
+                    }
                 }
                 if (data.comodidades && Array.isArray(data.comodidades) && data.comodidades.length > 0) {
                     const comodidades = $container.data('comodidades') || [];
@@ -5221,7 +5244,13 @@
                 const text = await resp.text();
                 if (!resp.ok) throw new Error(text);
                 const data = JSON.parse(text);
-                document.getElementById('Descricao').value = data.descricao ?? '';
+                // Inserir no editor Quill do formulário "Adicionar Destino"
+                const _qNovoD = _qlDesc['add-dest-novo'];
+                if (_qNovoD) {
+                    _qNovoD.setText(data.descricao ?? '');
+                    const _hiNovoD = document.getElementById('Descricao');
+                    if (_hiNovoD) _hiNovoD.value = _qNovoD.root.innerHTML;
+                }
                 if (data.atracoes) document.getElementById('AtracoesLLM').value = JSON.stringify(data.atracoes, null, 2);
                 if (data.gastronomia) document.getElementById('GastronomiaLLM').value = JSON.stringify(data.gastronomia, null, 2);
                 if (data.informacoesPraticas) document.getElementById('InformacoesPraticasLLM').value = JSON.stringify(data.informacoesPraticas, null, 2);
@@ -5231,7 +5260,8 @@
                 const insEl = document.getElementById('insightesAgenteLLM');
                 if (insEl && data.insightsAgente) insEl.value = JSON.stringify(data.insightsAgente, null, 2);
                 document.getElementById('editor-llm').classList.remove('d-none');
-                renderInsightsPreviewNovoDest(data);
+                // Inicializar o editor Quill do destino novo (estava d-none, Quill precisa do DOM visível)
+                if (!_qlDesc['add-dest-novo']) inicializarEditoresDescricao();
             } catch (err) {
                 showErrorAlert('Erro ao gerar descrição: ' + err.message);
             } finally {
@@ -5243,7 +5273,7 @@
         // IA — Gerar descrição para destino existente (cards editáveis)
         async function gerarDescricaoDestino(destinoId) {
             const nomeEl  = document.getElementById('nome-dest-'   + destinoId);
-            const descEl  = document.getElementById('desc-dest-'   + destinoId);
+            const _qlDescEl = document.getElementById('desc-dest-' + destinoId); // container Quill
             const alertEl = document.getElementById('desc-alert-'  + destinoId);
             const btn     = document.getElementById('btn-gerar-desc-dest-' + destinoId);
             const nome    = nomeEl?.value?.trim();
@@ -5276,7 +5306,13 @@
                 if (!resp.ok) throw new Error(text);
                 const data = JSON.parse(text);
 
-                if (descEl) descEl.value = data.descricao ?? '';
+                // Inserir texto gerado pela IA no editor Quill do destino
+                const _qDest = _qlDesc['desc-dest-' + destinoId];
+                if (_qDest) {
+                    _qDest.setText(data.descricao ?? '');
+                    const _hiDest = document.querySelector('[data-quill-target="desc-dest-' + destinoId + '"]');
+                    if (_hiDest) _hiDest.value = _qDest.root.innerHTML;
+                }
                 const set = (id, val) => { const el = document.getElementById(id + destinoId); if (el && val) el.value = JSON.stringify(val, null, 2); };
                 set('atracoes-dest-',  data.atracoes);
                 set('gastro-dest-',    data.gastronomia);
@@ -5751,6 +5787,7 @@
                         if (fc@(safeId)) {
                             Sortable.create(fc@(safeId), {
                                 animation: 150,
+                                handle: '.img-thumb-frame',
                                 onEnd: function () {
                                     const fotosIds = Array.from(fc@(safeId).children).map(item => item.getAttribute('data-foto-id'));
                                     fetch('/DestinoFoto/ReordenarFotos', {
@@ -5779,6 +5816,7 @@
                             if (fhc@(safeHospId)) {
                                 Sortable.create(fhc@(safeHospId), {
                                     animation: 150,
+                                    handle: '.img-thumb-frame',
                                     onEnd: function () {
                                         const fotosIds = Array.from(fhc@(safeHospId).children).map(item => item.getAttribute('data-foto-hosp-id'));
                                         fetch('/Hospedagem/ReordenarFotosHospedagem', {
@@ -5808,6 +5846,7 @@
                             if (fec@(safeExpSortId)) {
                                 Sortable.create(fec@(safeExpSortId), {
                                     animation: 150,
+                                    handle: '.img-thumb-frame',
                                     onEnd: function () {
                                         const imagensIds = Array.from(fec@(safeExpSortId).children).map(item => item.getAttribute('data-img-exp-id'));
                                         fetch('/Experiencia/ReordenarImagens', {
@@ -5837,6 +5876,7 @@
                             if (ftc@(safeTranspSortId)) {
                                 Sortable.create(ftc@(safeTranspSortId), {
                                     animation: 150,
+                                    handle: '.img-thumb-frame',
                                     onEnd: function () {
                                         const imagensIds = Array.from(ftc@(safeTranspSortId).children).map(item => item.getAttribute('data-img-transp-id'));
                                         fetch('/Transporte/ReordenarImagens', {
@@ -5862,36 +5902,7 @@
         // MINI RICH EDITOR — DESCRIÇÃO DE HOSPEDAGEM
         // ============================================================
         function configurarHospRichEditors() {
-            // Bold buttons
-            document.querySelectorAll('.hosp-bold-btn').forEach(function(btn) {
-                btn.addEventListener('click', function() {
-                    const editorId = this.dataset.editor;
-                    const editor = document.getElementById(editorId);
-                    if (!editor) return;
-                    editor.focus();
-                    document.execCommand('bold', false, null);
-                });
-            });
-
-            // Paste: strip to plain text
-            document.querySelectorAll('.hosp-rich-desc').forEach(function(editor) {
-                editor.addEventListener('paste', function(e) {
-                    e.preventDefault();
-                    const text = (e.clipboardData || window.clipboardData).getData('text/plain');
-                    document.execCommand('insertText', false, text);
-                });
-            });
-
-            // On form submit: sync innerHTML → hidden input (both add and edit forms)
-            document.querySelectorAll('form[action*="Hospedagem/Editar"], form[action*="Hospedagem/Adicionar"]').forEach(function(form) {
-                form.addEventListener('submit', function() {
-                    const editor = this.querySelector('.hosp-rich-desc');
-                    const hidden = this.querySelector('.hosp-rich-desc-val');
-                    if (editor && hidden) {
-                        hidden.value = editor.innerHTML.trim();
-                    }
-                });
-            });
+            // Substituído por Quill via inicializarEditoresDescricao() — mantido para não quebrar chamada existente.
         }
 
         // VALIDAÇÃO FORMULÁRIOS
@@ -6022,6 +6033,57 @@
                 }
             });
         })();
+
+        // ── Quill — registry e fábrica para editores de descrição (destino/hospedagem/exp/transp) ──
+        const _qlDesc = {};
+
+        function criarEditorDescricao(containerId, conteudoInicial) {
+            const container = document.getElementById(containerId);
+            if (!container || _qlDesc[containerId] || typeof Quill === 'undefined') return null;
+
+            const placeholder = container.dataset.placeholder || 'Descreva para o cliente...';
+            const quill = new Quill('#' + containerId, {
+                theme: 'snow',
+                placeholder: placeholder,
+                modules: {
+                    toolbar: [
+                        ['bold', 'italic', 'underline'],
+                        [{ list: 'ordered' }, { list: 'bullet' }],
+                        ['clean']
+                    ]
+                }
+            });
+
+            if (conteudoInicial && conteudoInicial.trim()) {
+                quill.clipboard.dangerouslyPasteHTML(0, conteudoInicial);
+            }
+
+            // Sync para hidden input no submit do form
+            const form = container.closest('form');
+            if (form) {
+                form.addEventListener('submit', function () {
+                    const hi = form.querySelector('[data-quill-target="' + containerId + '"]');
+                    if (hi) {
+                        const html = quill.root.innerHTML;
+                        hi.value = (html === '<p><br></p>') ? '' : html;
+                    }
+                }, { once: false });
+            }
+
+            _qlDesc[containerId] = quill;
+            return quill;
+        }
+
+        function inicializarEditoresDescricao() {
+            if (typeof Quill === 'undefined') return;
+            document.querySelectorAll('.ql-desc-container').forEach(function (container) {
+                if (!container.id || _qlDesc[container.id]) return;
+                const raw = container.dataset.content || '';
+                criarEditorDescricao(container.id, raw);
+            });
+        }
+
+        inicializarEditoresDescricao();
 
         // ── Quill — fábrica reutilizável para editores da aba Condições ──────
         function criarEditorCondicoes(editorId, btnId, statusId, actionUrl, placeholder, conteudoInicial) {
@@ -6168,6 +6230,27 @@
         })();
             </text>
         }
+
+        // Sincroniza texto/ícone dos botões "Gerenciar destino" com o estado real do collapse
+        (function () {
+            function syncExpandBtn(btn, isOpen) {
+                var icon = btn.querySelector('.dest-expand-icon');
+                var text = btn.querySelector('.dest-expand-text');
+                if (icon) { icon.classList.toggle('fa-chevron-down', !isOpen); icon.classList.toggle('fa-chevron-up', isOpen); }
+                if (text) text.textContent = isOpen ? 'Fechar destino' : 'Gerenciar destino';
+                btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+                btn.classList.toggle('expanded', isOpen);
+            }
+
+            document.querySelectorAll('.dest-btn-expand').forEach(function (btn) {
+                var targetId = btn.getAttribute('data-bs-target').replace('#', '');
+                var panel = document.getElementById(targetId);
+                if (!panel) return;
+                syncExpandBtn(btn, panel.classList.contains('show'));
+                panel.addEventListener('show.bs.collapse',  function () { syncExpandBtn(btn, true);  });
+                panel.addEventListener('hide.bs.collapse',  function () { syncExpandBtn(btn, false); });
+            });
+        })();
     </script>
 }
 
@@ -6198,6 +6281,38 @@
 
     .drag-handle { cursor: move; }
 
+    /* ── Ações da linha do destino ────────────────────────────── */
+    .dest-acoes { flex-wrap: wrap; row-gap: 6px; }
+    .dest-btn-expand {
+        min-width: 148px;
+        font-size: .8125rem;
+        transition: background .15s, border-color .15s, color .15s;
+    }
+    .dest-btn-expand.expanded {
+        background-color: #0d6efd;
+        border-color: #0d6efd;
+        color: #fff;
+    }
+
+    /* ── Bloco interno do destino ─────────────────────────────── */
+    .dest-bloco { background: #f8f9ff; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; }
+    .dest-section-header { display: flex; align-items: center; gap: 8px; margin-bottom: .5rem; }
+    .dest-section-label {
+        font-size: .7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .06em;
+        color: #0d6efd;
+        background: #e7f1ff;
+        padding: 3px 10px;
+        border-radius: 20px;
+    }
+    .dest-campo-titulo { font-size: .875rem; font-weight: 600; color: #374151; margin-bottom: .5rem; }
+
+    @@media (max-width: 575px) {
+        .dest-btn-expand { min-width: 0; font-size: .8125rem; }
+    }
+
     .list-group-item:hover { background-color: #f8f9fa; }
 
     .sortable-ghost { opacity: 0.4; }
@@ -6218,20 +6333,16 @@
     .hosp-star.hover   { color: #D4A84B; transform: scale(1.15); }
     .hosp-star:hover ~ .hosp-star { color: #d1d5db !important; transform: none !important; }
 
-    /* Mini rich editor — Descrição da Hospedagem */
-    .hosp-rich-desc {
-        font-size: .8125rem;
-        line-height: 1.5;
-        cursor: text;
-        white-space: pre-wrap;
-        word-break: break-word;
-    }
-    .hosp-rich-desc:empty::before {
-        content: attr(data-placeholder);
-        color: #9ca3af;
-        pointer-events: none;
-    }
-    .hosp-rich-desc:focus { outline: none; box-shadow: 0 0 0 .2rem rgba(13,110,253,.15); border-color: #86b7fe; }
+    /* Editor Quill para campos de descrição (destino, hospedagem, exp., transporte) */
+    .ql-desc-container { border: 1px solid #dee2e6; border-radius: .375rem; overflow: hidden; background: #fff; }
+    .ql-desc-container .ql-toolbar.ql-snow { border-radius: 0; border: none; border-bottom: 1px solid #dee2e6; background: #f8f9fa; padding: 4px 8px; }
+    .ql-desc-container .ql-container.ql-snow { border: none; font-size: .8125rem; }
+    .ql-desc-container .ql-editor { min-height: 80px; padding: 8px 12px; line-height: 1.55; color: #374151; }
+    .ql-desc-container .ql-editor.ql-blank::before { color: #9ca3af; font-style: normal; font-size: .8125rem; }
+    .ql-desc-container:focus-within { border-color: #86b7fe; box-shadow: 0 0 0 .2rem rgba(13,110,253,.12); }
+    /* Neutralizar cor de agência no conteúdo rico das descrições */
+    .ql-desc-container .ql-editor strong,
+    .ql-desc-container .ql-editor b { color: inherit; font-weight: 700; }
 
     .img-thumbnail {
         border: 1px solid #dee2e6;

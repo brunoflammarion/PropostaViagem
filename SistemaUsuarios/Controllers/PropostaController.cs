@@ -137,7 +137,10 @@ namespace SistemaUsuarios.Controllers
             }
 
             // Buscar propostas
-            var propostas = await query.OrderByDescending(p => p.DataCriacao).ToListAsync();
+            var propostas = await query
+                .Include(p => p.PassageirosProposta)
+                .OrderByDescending(p => p.DataCriacao)
+                .ToListAsync();
 
             // Converter para ViewModel
             filtro.Propostas = propostas.Select(p => new PropostaListViewModel
@@ -149,6 +152,7 @@ namespace SistemaUsuarios.Controllers
                 DataFim = p.DataFim,
                 NumeroPassageiros = p.NumeroPassageiros,
                 NumeroCriancas = p.NumeroCriancas,
+                TotalPassageiros = p.PassageirosProposta.Count,
                 StatusProposta = p.StatusProposta,
                 NomeUsuario = p.Usuario?.Nome ?? "N/A",
                 NomeResponsavel = p.UsuarioResponsavel?.Nome ?? p.Usuario?.Nome ?? "N/A",

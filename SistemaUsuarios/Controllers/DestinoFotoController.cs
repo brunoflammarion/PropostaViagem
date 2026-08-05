@@ -10,11 +10,13 @@ namespace SistemaUsuarios.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly BlobStorageService _blob;
+        private readonly ILogger<DestinoFotoController> _logger;
 
-        public DestinoFotoController(ApplicationDbContext context, BlobStorageService blob)
+        public DestinoFotoController(ApplicationDbContext context, BlobStorageService blob, ILogger<DestinoFotoController> logger)
         {
             _blob = blob;
             _context = context;
+            _logger = logger;
         }
 
         private bool UsuarioLogado()
@@ -249,46 +251,61 @@ namespace SistemaUsuarios.Controllers
             if (request.FotosIds.Distinct().Count() != request.FotosIds.Count)
                 return BadRequest("Lista contém IDs duplicados.");
 
-            // Carregar todas as fotos do destino de uma vez
-            var fotos = await _context.DestinoFotos
-                .Where(f => f.DestinoId == request.DestinoId)
-                .ToListAsync();
-
-            // Validar que todos os IDs enviados pertencem a este destino
-            var fotosIds = fotos.Select(f => f.Id).ToHashSet();
-            if (request.FotosIds.Any(id => !fotosIds.Contains(id)))
-                return BadRequest("Um ou mais IDs não pertencem a este destino.");
-
-            // Duas fases para evitar violação do índice único {DestinoId, Ordem}
-            await using var transaction = await _context.Database.BeginTransactionAsync();
+            // Duas fases para evitar violação do índice único {DestinoId, Ordem}.
+            // Encapsulado em CreateExecutionStrategy para compatibilidade com SqlServerRetryingExecutionStrategy.
+            var strategy = _context.Database.CreateExecutionStrategy();
             try
             {
-                // Fase 1: ordens temporárias negativas (sem conflito)
-                for (int i = 0; i < fotos.Count; i++)
-                    fotos[i].Ordem = -1000 - i;
-
-                await _context.SaveChangesAsync();
-
-                // Fase 2: ordem final conforme a lista enviada
-                for (int i = 0; i < request.FotosIds.Count; i++)
+                await strategy.ExecuteAsync(async () =>
                 {
-                    var foto = fotos.First(f => f.Id == request.FotosIds[i]);
-                    foto.Ordem = i + 1;
-                }
+                    _context.ChangeTracker.Clear(); // garante estado limpo em caso de retry
 
-                // Fotos não incluídas na lista recebem ordens após as listadas
-                var naoListadas = fotos.Where(f => !request.FotosIds.Contains(f.Id)).ToList();
-                for (int i = 0; i < naoListadas.Count; i++)
-                    naoListadas[i].Ordem = request.FotosIds.Count + i + 1;
+                    var fotos = await _context.DestinoFotos
+                        .Where(f => f.DestinoId == request.DestinoId)
+                        .ToListAsync();
 
-                await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
+                    var fotosIdsNoDestino = fotos.Select(f => f.Id).ToHashSet();
+                    if (request.FotosIds.Any(id => !fotosIdsNoDestino.Contains(id)))
+                        throw new ArgumentException("Um ou mais IDs não pertencem a este destino.");
+
+                    await using var transaction = await _context.Database.BeginTransactionAsync();
+                    try
+                    {
+                        // Fase 1: ordens temporárias negativas (evita conflito no índice único)
+                        for (int i = 0; i < fotos.Count; i++)
+                            fotos[i].Ordem = -1000 - i;
+
+                        await _context.SaveChangesAsync();
+
+                        // Fase 2: ordens finais conforme a lista recebida
+                        var fotosPorId = fotos.ToDictionary(f => f.Id);
+                        for (int i = 0; i < request.FotosIds.Count; i++)
+                            fotosPorId[request.FotosIds[i]].Ordem = i + 1;
+
+                        // Fotos não incluídas na lista recebem ordens após as listadas
+                        var naoListadas = fotos.Where(f => !request.FotosIds.Contains(f.Id)).ToList();
+                        for (int i = 0; i < naoListadas.Count; i++)
+                            naoListadas[i].Ordem = request.FotosIds.Count + i + 1;
+
+                        await _context.SaveChangesAsync();
+                        await transaction.CommitAsync();
+                    }
+                    catch
+                    {
+                        await transaction.RollbackAsync();
+                        throw;
+                    }
+                });
 
                 return Ok(new { success = true, message = "Fotos reordenadas com sucesso!" });
             }
-            catch
+            catch (ArgumentException ex)
             {
-                await transaction.RollbackAsync();
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao reordenar fotos do destino {DestinoId}", request.DestinoId);
                 return StatusCode(500, new { success = false, message = "Erro ao reordenar fotos." });
             }
         }

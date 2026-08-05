@@ -101,6 +101,7 @@ namespace SistemaUsuarios.Controllers
             var proposta = await _context.Propostas
                 .Include(p => p.Usuario)
                 .Include(p => p.Layout)
+                .Include(p => p.PassageirosProposta)
                 .FirstOrDefaultAsync(p => p.Id == propostaId &&
                     (isMaster ? p.UsuarioMasterId == usuarioId : p.UsuarioResponsavelId == usuarioId));
 

@@ -408,6 +408,48 @@ body {
     width:100%; height:220px; object-fit:cover;
 }
 .theme-familiar .hotel-img { height:260px; }
+
+/* ── Hotel card — padronização da área de imagem (tema Padrão) ──────────────
+   A coluna de imagem usa position:relative + overflow:hidden.
+   A imagem/carrossel fica position:absolute, preenchendo 100% da coluna.
+   Assim, a altura do card é determinada apenas pela coluna de texto
+   (+ min-height de piso), e imagens portrait não inflam o card. */
+.theme-padrao .hotel-card .col-md-4 {
+    position: relative;
+    overflow: hidden;
+}
+/* Imagem única: absolute fill */
+.theme-padrao .hotel-card .hotel-img {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    object-position: center;
+    display: block;
+}
+/* Carrossel: absolute fill + altura herdada */
+.theme-padrao .hotel-card .carousel.slide {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+}
+.theme-padrao .hotel-card .carousel-inner,
+.theme-padrao .hotel-card .carousel-item {
+    height: 100%;
+}
+.theme-padrao .hotel-card .carousel-item img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    object-position: center;
+    display: block;
+}
+/* Mobile: coluna empilhada — altura explícita para o container da imagem */
+@@media (max-width: 767px) {
+    .theme-padrao .hotel-card .col-md-4 {
+        height: 240px;
+        min-height: 0;
+    }
+}
 .comod-chip {
     display:inline-flex; align-items:center; gap:5px;
     background: var(--c-section-alt); border:1px solid #e2e8f0;
@@ -539,6 +581,18 @@ body {
     background: var(--c-section-alt); font-weight: 700; color: var(--c-h2);
 }
 .resumo-proposta-body table tr:nth-child(even) td { background: #fafafa; }
+
+/* ── Condições, Valores e Sobre Esta Viagem — alinhamento à esquerda no tema Padrão ── */
+/* As três seções usam row.justify-content-center + col-lg-8, que centraliza e
+   estreita o conteúdo. No tema Padrão queremos alinhamento à esquerda, ocupando
+   toda a largura do container (mesmo eixo de Seguro de Viagem e Passageiros). */
+.theme-padrao #sec-condicoes .col-lg-8,
+.theme-padrao #sec-valores .col-lg-8,
+.theme-padrao #sec-sobre .col-lg-8 {
+    flex: 0 0 100%;
+    width: 100%;
+    max-width: 100%;
+}
 
 /* ── CTA ── */
 .cta-section {
@@ -1714,7 +1768,7 @@ body.has-preview-bar { padding-top: 46px; }
 ═══════════════════════════════════════════ -->
 @if (!string.IsNullOrEmpty(Model.ObservacoesGerais) && !isExecutivo)
 {
-    <section class="prop-section bg-alt">
+    <section class="prop-section bg-alt" id="sec-sobre">
         <div class="container">
             <div class="row justify-content-center">
                 <div class="col-lg-8">
@@ -2748,9 +2802,6 @@ body.has-preview-bar { padding-top: 46px; }
                     <div class="col-md-6 col-lg-4">
                         <div class="seguro-card h-100 d-flex flex-column">
                             <div class="d-flex align-items-center gap-3 mb-3">
-                                <div class="seguro-icon">
-                                    <i class="fas fa-shield-alt"></i>
-                                </div>
                                 <div>
                                     <div class="fw-700">@seg.Titulo</div>
                                     @if (seg.Valor.HasValue)
@@ -2799,28 +2850,6 @@ body.has-preview-bar { padding-top: 46px; }
 </section>
 }
 
-@if (temCondicoes)
-{
-<!-- ═══════════════════════════════════════════
-     CONDIÇÕES DA PROPOSTA
-═══════════════════════════════════════════ -->
-<section class="prop-section" id="sec-condicoes">
-    <div class="container">
-        <div class="section-head">
-            <h2><i class="fas fa-file-contract me-2" style="color:var(--c-accent);"></i>Condições da Proposta</h2>
-            <div class="section-divider"></div>
-        </div>
-        <div class="row justify-content-center">
-            <div class="col-lg-8">
-                <div class="resumo-proposta-body">
-                    @Html.Raw(Model.CondicoesPropostaHtml)
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-}
-
 @if (temValores)
 {
 <!-- ═══════════════════════════════════════════
@@ -2836,6 +2865,28 @@ body.has-preview-bar { padding-top: 46px; }
             <div class="col-lg-8">
                 <div class="resumo-proposta-body">
                     @Html.Raw(Model.ValoresPropostaHtml)
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+}
+
+@if (temCondicoes)
+{
+<!-- ═══════════════════════════════════════════
+     CONDIÇÕES DA PROPOSTA
+═══════════════════════════════════════════ -->
+<section class="prop-section" id="sec-condicoes">
+    <div class="container">
+        <div class="section-head">
+            <h2><i class="fas fa-file-contract me-2" style="color:var(--c-accent);"></i>Condições da Proposta</h2>
+            <div class="section-divider"></div>
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="resumo-proposta-body">
+                    @Html.Raw(Model.CondicoesPropostaHtml)
                 </div>
             </div>
         </div>

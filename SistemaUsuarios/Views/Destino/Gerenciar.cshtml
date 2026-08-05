@@ -329,13 +329,9 @@
                             <div class="col-md-2">
                                 <small class="text-muted">Passageiros</small>
                                 @{
-                                    var _gerPaxNom = Model.PassageirosProposta?.Count ?? 0;
-                                    var _gerTemCli = Model.Cliente != null;
-                                    var _gerTotal = (_gerPaxNom > 0 || _gerTemCli)
-                                        ? (_gerTemCli ? 1 : 0) + _gerPaxNom
-                                        : Model.NumeroPassageiros + Model.NumeroCriancas;
+                                    var _gerTotal = Model.PassageirosProposta?.Count ?? 0;
                                 }
-                                <p class="mb-0">@_gerTotal pessoa(s)</p>
+                                <p class="mb-0">@_gerTotal @(_gerTotal == 1 ? "passageiro" : "passageiros")</p>
                             </div>
                             <div class="col-md-2">
                                 <small class="text-muted">Status</small>
@@ -458,16 +454,9 @@
                                             <div class="col-md-4">
                                                 @if (!string.IsNullOrEmpty(destino.Descricao))
                                                 {
-                                                    <small class="text-muted">
-                                                        @if (destino.Descricao.Length > 80)
-                                                        {
-                                                            @(destino.Descricao.Substring(0, 80) + "...")
-                                                        }
-                                                        else
-                                                        {
-                                                            @destino.Descricao
-                                                        }
-                                                    </small>
+                                                    var _dGerSum = System.Text.RegularExpressions.Regex.Replace(destino.Descricao, "<[^>]+>", " ");
+                                                    _dGerSum = System.Net.WebUtility.HtmlDecode(System.Text.RegularExpressions.Regex.Replace(_dGerSum, @"\s+", " ").Trim());
+                                                    <small class="text-muted">@(_dGerSum.Length > 80 ? _dGerSum.Substring(0, 80) + "..." : _dGerSum)</small>
                                                 }
                                             </div>
                                         </div>

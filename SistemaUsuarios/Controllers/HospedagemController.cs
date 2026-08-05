@@ -536,13 +536,13 @@ Sobre o campo numeroEstrelas: informe a classificação oficial do hotel em estr
             return RedirectToEditar(propostaId, destinoId, $"hosp-card-{HospSafeId(hospId)}");
         }
 
-        // POST: Hospedagem/Editar
-        [HttpPost]
-        [ValidateAntiForgeryToken]
         private static string? SanitizeDescricao(string? value)
         {
             if (string.IsNullOrWhiteSpace(value)) return null;
-            return Regex.Replace(value.Trim(), @"<(?!\/?b\b|br\s*\/?\s*)[^>]*>", "", RegexOptions.IgnoreCase);
+            // Permite tags geradas pelo Quill: p, strong, em, u, ol, ul, li, br, b
+            return Regex.Replace(value.Trim(),
+                @"<(?!\/?(p|strong|em|u|ol|ul|li|br|b)\b)[^>]*>",
+                "", RegexOptions.IgnoreCase);
         }
 
         /// <summary>
@@ -561,6 +561,8 @@ Sobre o campo numeroEstrelas: informe a classificação oficial do hotel em estr
             return (val >= min && val <= max) ? val : null;
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Editar(
             Guid id,
             string nome,

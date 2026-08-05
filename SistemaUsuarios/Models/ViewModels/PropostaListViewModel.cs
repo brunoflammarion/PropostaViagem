@@ -24,6 +24,9 @@ namespace SistemaUsuarios.Models.ViewModels
         [Display(Name = "Número de Crianças")]
         public int NumeroCriancas { get; set; }
 
+        /// <summary>Contagem real de passageiros na coleção PassageirosProposta — fonte de verdade.</summary>
+        public int TotalPassageiros { get; set; }
+
         [Display(Name = "Status")]
         public StatusProposta StatusProposta { get; set; }
 
@@ -50,9 +53,9 @@ namespace SistemaUsuarios.Models.ViewModels
         // === PROPRIEDADES CALCULADAS ===
 
         /// <summary>
-        /// Total de pessoas (adultos + crianças)
+        /// Total de passageiros — usa a coleção real como fonte de verdade.
         /// </summary>
-        public int TotalPessoas => NumeroPassageiros + NumeroCriancas;
+        public int TotalPessoas => TotalPassageiros;
 
         /// <summary>
         /// Duração da viagem em dias
@@ -144,15 +147,8 @@ namespace SistemaUsuarios.Models.ViewModels
         {
             get
             {
-                var total = TotalPessoas;
-                var texto = $"{total} pessoa{(total != 1 ? "s" : "")}";
-
-                if (NumeroCriancas > 0)
-                {
-                    texto += $" ({NumeroPassageiros} adulto{(NumeroPassageiros != 1 ? "s" : "")} + {NumeroCriancas} criança{(NumeroCriancas != 1 ? "s" : "")})";
-                }
-
-                return texto;
+                var total = TotalPassageiros;
+                return $"{total} passageiro{(total != 1 ? "s" : "")}";
             }
         }
 

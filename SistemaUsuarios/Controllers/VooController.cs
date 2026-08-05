@@ -522,9 +522,10 @@ namespace SistemaUsuarios.Controllers
 
         // ─── AERODATABOX ──────────────────────────────────────────────────────────
 
-        // GET: Voo/ConsultarVoo?codigoVoo=AFL1482  (AJAX)
+        // GET: Voo/ConsultarVoo?codigoVoo=LA3001&dataVoo=2026-08-05  (AJAX)
+        // candidatoIndice: omitir para auto-seleção; informar quando houver desambiguação
         [HttpGet]
-        public async Task<IActionResult> ConsultarVoo(string codigoVoo, string dataVoo)
+        public async Task<IActionResult> ConsultarVoo(string codigoVoo, string dataVoo, int candidatoIndice = -1)
         {
             if (!UsuarioLogado())
                 return Unauthorized();
@@ -541,50 +542,74 @@ namespace SistemaUsuarios.Controllers
                     out var data))
                 return BadRequest(new { erro = "Formato de data inválido. Use yyyy-MM-dd." });
 
-            var r = await _flightLookup.ConsultarVooAsync(codigoVoo, data);
+            var r = await _flightLookup.ConsultarVooAsync(codigoVoo, data, candidatoIndice);
 
             if (!string.IsNullOrEmpty(r.Erro))
                 return BadRequest(new { erro = r.Erro });
 
+            // Múltiplos candidatos — retorna lista para o usuário escolher
+            if (r.MultiplosCandidatos != null && r.MultiplosCandidatos.Count > 1)
+                return Ok(new
+                {
+                    found          = false,
+                    desambiguacao  = true,
+                    candidatos     = r.MultiplosCandidatos,
+                });
+
             return Ok(new
             {
                 found          = true,
-                // Companhia
-                companhia      = r.Companhia,
-                companhiaIata  = r.CompanhiaIata,
-                companhiaIcao  = r.CompanhiaIcao,
                 // Voo
                 codigoVoo      = r.CodigoVoo,
                 identIata      = r.IdentIata,
                 status         = r.Status,
                 codeshare      = r.Codeshare,
-                modeloAeronave = r.ModeloAeronave,
+                isCargo        = r.IsCargo,
+                // Companhia
+                companhia      = r.Companhia,
+                companhiaIata  = r.CompanhiaIata,
+                companhiaIcao  = r.CompanhiaIcao,
+                // Aeronave
+                modeloAeronave          = r.ModeloAeronave,
+                imagemAeronaveUrl       = r.ImagemAeronaveUrl,
+                imagemAeronaveAutor     = r.ImagemAeronaveAutor,
+                imagemAeronaveTitulo    = r.ImagemAeronaveTitulo,
+                // Distância
+                distanciaKm             = r.DistanciaKm,
                 // Origem
                 origem               = r.Origem,
+                origemNome           = r.OrigemNome,
                 origemIata           = r.OrigemIata,
                 origemIcao           = r.OrigemIcao,
                 origemCidade         = r.OrigemCidade,
                 origemPais           = r.OrigemPais,
                 origemFuso           = r.OrigemFuso,
+                origemLatitude       = r.OrigemLatitude,
+                origemLongitude      = r.OrigemLongitude,
                 origemTerminal       = r.OrigemTerminal,
                 origemPortao         = r.OrigemPortao,
                 origemCheckIn        = r.OrigemCheckIn,
                 saidaLocalProgramada = r.SaidaLocalProgramada?.ToString("yyyy-MM-ddTHH:mm"),
+                saidaLocalPrevista   = r.SaidaLocalPrevista?.ToString("yyyy-MM-ddTHH:mm"),
                 saidaLocalRevisada   = r.SaidaLocalRevisada?.ToString("yyyy-MM-ddTHH:mm"),
                 // Destino
-                destino                  = r.Destino,
-                destinoIata              = r.DestinoIata,
-                destinoIcao              = r.DestinoIcao,
-                destinoCidade            = r.DestinoCidade,
-                destinoPais              = r.DestinoPais,
-                destinoFuso              = r.DestinoFuso,
-                chegadaLocalProgramada   = r.ChegadaLocalProgramada?.ToString("yyyy-MM-ddTHH:mm"),
-                chegadaLocalRevisada     = r.ChegadaLocalRevisada?.ToString("yyyy-MM-ddTHH:mm"),
-                chegadaLocalPrevista     = r.ChegadaLocalPrevista?.ToString("yyyy-MM-ddTHH:mm"),
-                // Horários principais
-                horarioSaida   = r.HorarioSaida?.ToString("yyyy-MM-ddTHH:mm"),
-                horarioChegada = r.HorarioChegada?.ToString("yyyy-MM-ddTHH:mm"),
-                duracao        = r.Duracao,
+                destino                = r.Destino,
+                destinoNome            = r.DestinoNome,
+                destinoIata            = r.DestinoIata,
+                destinoIcao            = r.DestinoIcao,
+                destinoCidade          = r.DestinoCidade,
+                destinoPais            = r.DestinoPais,
+                destinoFuso            = r.DestinoFuso,
+                destinoLatitude        = r.DestinoLatitude,
+                destinoLongitude       = r.DestinoLongitude,
+                chegadaLocalProgramada = r.ChegadaLocalProgramada?.ToString("yyyy-MM-ddTHH:mm"),
+                chegadaLocalPrevista   = r.ChegadaLocalPrevista?.ToString("yyyy-MM-ddTHH:mm"),
+                chegadaLocalRevisada   = r.ChegadaLocalRevisada?.ToString("yyyy-MM-ddTHH:mm"),
+                // Horários principais (melhor disponível)
+                horarioSaida        = r.HorarioSaida?.ToString("yyyy-MM-ddTHH:mm"),
+                horarioChegada      = r.HorarioChegada?.ToString("yyyy-MM-ddTHH:mm"),
+                duracao             = r.Duracao,
+                diasSeguintesChegada= r.DiasSeguintesChegada,
             });
         }
 

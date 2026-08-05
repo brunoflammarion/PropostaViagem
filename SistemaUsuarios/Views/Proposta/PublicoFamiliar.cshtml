@@ -752,6 +752,15 @@ body.has-preview-bar { padding-top: 46px; }
     .fam-hero-date-badge { padding: 6px 16px; font-size: .9rem; }
     .fam-acmd-grid { grid-template-columns: 1fr; }
 }
+/* Conteúdo rico das descrições */
+.proposal-rich-content p { margin: 0 0 .45rem; line-height: 1.55; }
+.proposal-rich-content p:last-child { margin-bottom: 0; }
+.proposal-rich-content strong, .proposal-rich-content b { font-weight: 700; color: inherit; }
+.proposal-rich-content em, .proposal-rich-content i { font-style: italic; }
+.proposal-rich-content u { text-decoration: underline; }
+.proposal-rich-content ul, .proposal-rich-content ol { padding-left: 1.4rem; margin: .4rem 0; }
+.proposal-rich-content li { margin-bottom: .2rem; line-height: 1.5; }
+.proposal-rich-content a { color: inherit; }
 </style>
 }
 
@@ -827,7 +836,7 @@ body.has-preview-bar { padding-top: 46px; }
     <div class="fam-hero-content">
         <div class="fam-hero-pill">
             <i class="fas fa-map-marked-alt"></i>
-            <span>Proposta Familiar</span>
+            <span>Proposta</span>
             &nbsp;·&nbsp;<span>@Model.Usuario.Nome</span>
         </div>
         <h1>@Model.Titulo</h1>
@@ -973,7 +982,8 @@ body.has-preview-bar { padding-top: 46px; }
                                             <span class="fam-dp-item-name">@_e.TipoPasseio</span>
                                             @if (!string.IsNullOrEmpty(_e.Descricao))
                                             {
-                                                <span class="fam-dp-item-sub">@(_e.Descricao!.Length > 60 ? _e.Descricao.Substring(0,60) + "…" : _e.Descricao)</span>
+                                                var _eFamStrip = System.Text.RegularExpressions.Regex.Replace(_e.Descricao!, "<[^>]+>", "");
+                                                <span class="fam-dp-item-sub">@(_eFamStrip.Length > 60 ? _eFamStrip.Substring(0,60) + "…" : _eFamStrip)</span>
                                             }
                                         </div>
                                     </div>
@@ -1131,7 +1141,7 @@ body.has-preview-bar { padding-top: 46px; }
                         }
                         @if (!string.IsNullOrEmpty(hosp.Descricao))
                         {
-                            <div class="fam-hotel-desc">@hosp.Descricao</div>
+                            <div class="fam-hotel-desc proposal-rich-content">@Html.Raw(hosp.Descricao)</div>
                         }
                         @if (hosp.Acomodacoes.Any())
                         {
@@ -1209,7 +1219,7 @@ body.has-preview-bar { padding-top: 46px; }
                             <div class="fam-exp-card-title">@exp.TipoPasseio</div>
                             @if (!string.IsNullOrEmpty(exp.Descricao))
                             {
-                                <div class="fam-exp-card-desc">@exp.Descricao</div>
+                                <div class="fam-exp-card-desc proposal-rich-content">@Html.Raw(exp.Descricao)</div>
                             }
                             <div class="fam-exp-card-meta">
                                 @if (exp.DataInicio.HasValue)
@@ -1269,7 +1279,13 @@ body.has-preview-bar { padding-top: 46px; }
                 <div class="fam-pax-card">
                     <div class="fam-pax-avatar">@_ini2</div>
                     <div>
-                        <div class="fam-pax-name">@pax.Nome</div>
+                        <div class="fam-pax-name">
+                            @pax.Nome
+                            @if (pax.IsTitular)
+                            {
+                                <span style="font-size:.65em;font-weight:600;color:var(--c-accent);margin-left:.3em;">Titular</span>
+                            }
+                        </div>
                         <div class="fam-pax-sub">
                             @if (pax.DataNascimento.HasValue)
                             {
@@ -1295,7 +1311,7 @@ body.has-preview-bar { padding-top: 46px; }
     };
 <section class="fam-section" id="sec-voos">
     <div class="fam-container">
-        <h2 class="fam-section-h2"><i class="fas fa-plane-departure" style="color:var(--c-accent);"></i>Os voos da família</h2>
+        <h2 class="fam-section-h2"><i class="fas fa-plane-departure" style="color:var(--c-accent);"></i>Os voos</h2>
         <div class="fam-section-divider"></div>
         @foreach (var _gv in gruposVooFam)
         {
@@ -1389,7 +1405,7 @@ body.has-preview-bar { padding-top: 46px; }
                             <div class="fam-transp-name">@tr.Titulo</div>
                             @if (!string.IsNullOrEmpty(tr.Descricao))
                             {
-                                <div class="fam-transp-desc">@tr.Descricao</div>
+                                <div class="fam-transp-desc proposal-rich-content">@Html.Raw(tr.Descricao)</div>
                             }
                         </div>
                     </div>
@@ -1406,7 +1422,7 @@ body.has-preview-bar { padding-top: 46px; }
 <section class="fam-section" id="sec-seguro">
     <div class="fam-container">
         <h2 class="fam-section-h2"><i class="fas fa-shield-alt" style="color:var(--c-accent);"></i>Seguro de viagem</h2>
-        <p class="fam-section-sub">A família viaja com toda a proteção necessária.</p>
+        <p class="fam-section-sub">Viaje com toda a proteção necessária.</p>
         <div class="fam-section-divider"></div>
         @foreach (var seg in Model.Seguros.OrderBy(s => s.Ordem))
         {
@@ -1463,7 +1479,7 @@ body.has-preview-bar { padding-top: 46px; }
 {
 <section class="fam-section aval-section" id="sec-avaliacao">
     <div class="fam-container">
-        <h2 class="fam-section-h2"><i class="fas fa-star" style="color:var(--c-warm);"></i>O que a família achou?</h2>
+        <h2 class="fam-section-h2"><i class="fas fa-star" style="color:var(--c-warm);"></i>O que achou?</h2>
         <p class="fam-section-sub">Sua avaliação nos ajuda a personalizar ainda mais a viagem.</p>
         <div class="fam-section-divider"></div>
 
@@ -1562,7 +1578,7 @@ body.has-preview-bar { padding-top: 46px; }
 
         <div class="aval-submit-wrap">
             <div class="aval-submitted-msg" id="avalSubmittedMsg">
-                <i class="fas fa-check-circle me-2"></i>Avaliação enviada! Obrigado pelo feedback da família.
+                <i class="fas fa-check-circle me-2"></i>Avaliação enviada! Obrigado pelo feedback.
             </div>
             <button class="btn-aval-submit" id="btnEnviarAvaliacao" onclick="enviarAvaliacao('@Model.Id')">
                 <i class="fas fa-paper-plane"></i>Enviar Avaliação

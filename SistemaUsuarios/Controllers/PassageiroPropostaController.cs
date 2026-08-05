@@ -197,7 +197,8 @@ namespace SistemaUsuarios.Controllers
                 Nome = proposta.Cliente.Nome,
                 DataNascimento = proposta.Cliente.DataNascimento,
                 Genero = proposta.Cliente.Genero,
-                Ordem = maxOrdem + 1,
+                IsTitular = true,
+                Ordem = 0,
                 DataCriacao = DateTime.UtcNow
             };
 

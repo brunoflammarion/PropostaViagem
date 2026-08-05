@@ -1,10 +1,12 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace SistemaUsuarios.Services
 {
     public interface IFlightLookupService
     {
-        Task<FlightInfoResult> ConsultarVooAsync(string codigoVoo, DateOnly dataVoo);
+        // candidatoIndice: -1 = auto-selecionar; >= 0 = escolha explícita do usuário
+        Task<FlightInfoResult> ConsultarVooAsync(string codigoVoo, DateOnly dataVoo, int candidatoIndice = -1);
     }
 
     public class AeroDataBoxService : IFlightLookupService
@@ -14,6 +16,11 @@ namespace SistemaUsuarios.Services
         private readonly string _apiKey;
         private readonly string _baseUrl;
 
+        private static readonly JsonSerializerOptions _jsonOptions = new()
+        {
+            PropertyNameCaseInsensitive = true
+        };
+
         public AeroDataBoxService(HttpClient httpClient, IConfiguration config, ILogger<AeroDataBoxService> logger)
         {
             _httpClient = httpClient;
@@ -22,22 +29,20 @@ namespace SistemaUsuarios.Services
             _baseUrl = (config["AeroDataBox:BaseUrl"] ?? "https://prod.api.market/api/v1/aedbx/aerodatabox").TrimEnd('/');
         }
 
-        public async Task<FlightInfoResult> ConsultarVooAsync(string codigoVoo, DateOnly dataVoo)
+        public async Task<FlightInfoResult> ConsultarVooAsync(string codigoVoo, DateOnly dataVoo, int candidatoIndice = -1)
         {
             if (string.IsNullOrWhiteSpace(codigoVoo))
-                return new FlightInfoResult { Erro = "Código do voo não informado." };
+                return Erro("Código do voo não informado.");
 
             if (string.IsNullOrEmpty(_apiKey) || _apiKey == "CONFIGURE_VIA_USER_SECRETS")
-                return new FlightInfoResult { Erro = "Chave AeroDataBox não configurada." };
+                return Erro("Chave AeroDataBox não configurada.");
 
-            var ident     = codigoVoo.Trim().ToUpperInvariant().Replace(" ", "");
-            var dataStr   = dataVoo.ToString("yyyy-MM-dd");
-            // AeroDataBox suporta filtro por data: /flights/Number/{ident}/{dateLocal}
-            var url = $"{_baseUrl}/flights/Number/{Uri.EscapeDataString(ident)}/{dataStr}?withAircraftImage=false&withLocation=false&withFlightPlan=false";
+            var ident   = codigoVoo.Trim().ToUpperInvariant().Replace(" ", "");
+            var dataStr = dataVoo.ToString("yyyy-MM-dd");
+            var url = $"{_baseUrl}/flights/Number/{Uri.EscapeDataString(ident)}/{dataStr}" +
+                      "?dateLocalRole=Both&withAircraftImage=true&withLocation=true&withFlightPlan=false";
 
-            _logger.LogInformation(
-                "AeroDataBox ConsultarVoo | ident={Ident} data={Data} url={Url}",
-                ident, dataStr, url);
+            _logger.LogInformation("AeroDataBox ConsultarVoo | ident={Ident} data={Data}", ident, dataStr);
 
             try
             {
@@ -54,13 +59,13 @@ namespace SistemaUsuarios.Services
                     return response.StatusCode switch
                     {
                         System.Net.HttpStatusCode.NotFound =>
-                            new FlightInfoResult { Erro = $"Voo {ident} não encontrado. Verifique o código." },
+                            Erro($"Voo {ident} não encontrado. Verifique o código."),
                         System.Net.HttpStatusCode.Unauthorized =>
-                            new FlightInfoResult { Erro = "Chave de API inválida. Verifique AeroDataBox:ApiKey." },
+                            Erro("Chave de API inválida. Verifique AeroDataBox:ApiKey."),
                         System.Net.HttpStatusCode.TooManyRequests =>
-                            new FlightInfoResult { Erro = "Limite de consultas atingido. Tente novamente em instantes." },
+                            Erro("Limite de consultas atingido. Tente novamente em instantes."),
                         _ =>
-                            new FlightInfoResult { Erro = $"Erro ao consultar AeroDataBox ({(int)response.StatusCode})." }
+                            Erro($"Erro ao consultar AeroDataBox ({(int)response.StatusCode}).")
                     };
                 }
 
@@ -69,194 +74,257 @@ namespace SistemaUsuarios.Services
                 if (string.IsNullOrWhiteSpace(json))
                 {
                     _logger.LogWarning("AeroDataBox retornou corpo vazio para {Ident}", ident);
-                    return new FlightInfoResult { Erro = $"Voo {ident} não encontrado ou sem dados disponíveis." };
+                    return Erro($"Voo {ident} não encontrado ou sem dados disponíveis.");
                 }
 
                 _logger.LogDebug("AeroDataBox: {Bytes} bytes para {Ident}", json.Length, ident);
-                return ParseResposta(json, ident, dataVoo, _logger);
+                return ParseResposta(json, ident, dataVoo, candidatoIndice, _logger);
             }
             catch (HttpRequestException ex)
             {
                 _logger.LogError(ex, "Erro de rede AeroDataBox para {Ident}", ident);
-                return new FlightInfoResult { Erro = "Erro de conexão com AeroDataBox. Preencha os campos manualmente." };
+                return Erro("Erro de conexão com AeroDataBox. Preencha os campos manualmente.");
             }
             catch (JsonException ex)
             {
                 _logger.LogError(ex, "Erro ao parsear resposta AeroDataBox para {Ident}", ident);
-                return new FlightInfoResult { Erro = "Erro ao processar resposta da API. Preencha os campos manualmente." };
+                return Erro("Erro ao processar resposta da API. Preencha os campos manualmente.");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro inesperado AeroDataBox para {Ident}", ident);
-                return new FlightInfoResult { Erro = "Erro inesperado. Preencha os campos manualmente." };
+                return Erro("Erro inesperado. Preencha os campos manualmente.");
             }
         }
 
-        // ── Parser ───────────────────────────────────────────────────────────────
+        // ── Parser principal ─────────────────────────────────────────────────────
 
-        private static FlightInfoResult ParseResposta(string json, string ident, DateOnly dataVoo, ILogger logger)
+        private static FlightInfoResult ParseResposta(
+            string json, string ident, DateOnly dataVoo, int candidatoIndice, ILogger logger)
         {
             var doc  = JsonDocument.Parse(json);
             var root = doc.RootElement;
 
-            // Coletar todos os candidatos do array/objeto retornado
-            var candidatos = new List<JsonElement>();
+            // Coletar todos os candidatos preservando índice original
+            var candidatos = new List<(int Indice, AdbFlightDto Dto)>();
 
             if (root.ValueKind == JsonValueKind.Array)
             {
-                foreach (var el in root.EnumerateArray()) candidatos.Add(el);
+                int i = 0;
+                foreach (var el in root.EnumerateArray())
+                {
+                    var dto = JsonSerializer.Deserialize<AdbFlightDto>(el.GetRawText(), _jsonOptions);
+                    if (dto != null) candidatos.Add((i++, dto));
+                }
             }
             else if (root.ValueKind == JsonValueKind.Object)
             {
+                int i = 0;
                 if (root.TryGetProperty("departures", out var deps))
-                    foreach (var el in deps.EnumerateArray()) candidatos.Add(el);
+                    foreach (var el in deps.EnumerateArray())
+                    {
+                        var dto = JsonSerializer.Deserialize<AdbFlightDto>(el.GetRawText(), _jsonOptions);
+                        if (dto != null) candidatos.Add((i++, dto));
+                    }
                 if (root.TryGetProperty("arrivals", out var arrs))
-                    foreach (var el in arrs.EnumerateArray()) candidatos.Add(el);
+                    foreach (var el in arrs.EnumerateArray())
+                    {
+                        var dto = JsonSerializer.Deserialize<AdbFlightDto>(el.GetRawText(), _jsonOptions);
+                        if (dto != null) candidatos.Add((i++, dto));
+                    }
             }
 
             if (candidatos.Count == 0)
-                return new FlightInfoResult { Erro = $"Nenhum voo encontrado para {ident}." };
+                return Erro($"Nenhum voo encontrado para {ident}.");
 
-            // Logar todas as datas locais de partida encontradas
-            var dataStr = dataVoo.ToString("yyyy-MM-dd");
-            foreach (var c in candidatos)
+            // Se candidatoIndice especificado, busca direto pelo índice original
+            if (candidatoIndice >= 0)
             {
-                var depLocal = ExtrairDataLocalPartida(c);
-                logger.LogInformation(
-                    "AeroDataBox candidato | ident={Ident} dataPartidaLocal={Data} buscada={Buscada}",
-                    ident, depLocal?.ToString("yyyy-MM-dd") ?? "null", dataStr);
+                var escolhido = candidatos.FirstOrDefault(c => c.Indice == candidatoIndice);
+                if (escolhido.Dto == null)
+                    return Erro("Candidato selecionado não encontrado. Tente a busca novamente.");
+                return MapearVoo(escolhido.Dto, ident);
             }
 
-            // Filtrar pelo dia local de partida === data pesquisada
-            JsonElement? vooSelecionado = null;
-            foreach (var c in candidatos)
+            // Filtrar pelo dia local de partida
+            var correspondentes = candidatos
+                .Where(c => DataLocalPartida(c.Dto) is DateTimeOffset dto &&
+                            DateOnly.FromDateTime(dto.DateTime) == dataVoo)
+                .ToList();
+
+            logger.LogInformation(
+                "AeroDataBox | ident={Ident} data={Data} total={Total} correspondentes={Corr}",
+                ident, dataVoo, candidatos.Count, correspondentes.Count);
+
+            if (correspondentes.Count == 0)
+                return Erro(
+                    $"Encontramos informações para o voo {ident}, mas não para {dataVoo:dd/MM/yyyy}. " +
+                    "Verifique a data, a companhia e o número informados.");
+
+            if (correspondentes.Count == 1)
+                return MapearVoo(correspondentes[0].Dto, ident);
+
+            // Múltiplos correspondentes — retorna lista para desambiguação pelo usuário
+            logger.LogWarning(
+                "AeroDataBox múltiplos correspondentes | ident={Ident} data={Data} count={N}",
+                ident, dataVoo, correspondentes.Count);
+
+            var result = new FlightInfoResult { CodigoBusca = ident };
+            result.MultiplosCandidatos = correspondentes.Select(c => new VooCandidatoSimples
             {
-                var depLocal = ExtrairDataLocalPartida(c);
-                if (depLocal.HasValue && DateOnly.FromDateTime(depLocal.Value) == dataVoo)
-                {
-                    vooSelecionado = c;
-                    logger.LogInformation(
-                        "AeroDataBox selecionado | ident={Ident} data={Data}",
-                        ident, dataStr);
-                    break;
-                }
-            }
+                Indice         = c.Indice,
+                CodigoVoo      = c.Dto.Number,
+                Companhia      = c.Dto.Airline?.Name ?? c.Dto.Airline?.Iata ?? c.Dto.Airline?.Icao,
+                Origem         = FormatarAeroporto(c.Dto.Departure?.Airport),
+                OrigemIata     = c.Dto.Departure?.Airport?.Iata,
+                Destino        = FormatarAeroporto(c.Dto.Arrival?.Airport),
+                DestinoIata    = c.Dto.Arrival?.Airport?.Iata,
+                HorarioSaida   = ParseLocalOffset(c.Dto.Departure?.ScheduledTime?.Local)?.ToString("yyyy-MM-ddTHH:mm"),
+                HorarioChegada = ParseLocalOffset(c.Dto.Arrival?.ScheduledTime?.Local)?.ToString("yyyy-MM-ddTHH:mm"),
+                Status         = c.Dto.Status,
+            }).ToList();
+            return result;
+        }
 
-            if (vooSelecionado == null)
-            {
-                logger.LogWarning(
-                    "AeroDataBox nenhum candidato corresponde à data | ident={Ident} data={Data} total={Total}",
-                    ident, dataStr, candidatos.Count);
-                return new FlightInfoResult
-                {
-                    Erro = $"Encontramos informações para o voo {ident}, mas não para {dataVoo.ToString("dd/MM/yyyy")}. " +
-                           "Verifique a data, a companhia e o número informados."
-                };
-            }
+        // ── Mapeamento de um candidato selecionado ───────────────────────────────
 
-            var voo = vooSelecionado.Value;
-            if (!voo.ValueKind.Equals(JsonValueKind.Object))
-                return new FlightInfoResult { Erro = $"Nenhum voo encontrado para {ident}." };
-
+        private static FlightInfoResult MapearVoo(AdbFlightDto voo, string ident)
+        {
             var r = new FlightInfoResult { CodigoBusca = ident };
 
-            // ── Número do voo ────────────────────────────────────────────────────
-            r.CodigoVoo = StrProp(voo, "number") ?? ident;
+            r.CodigoVoo = voo.Number ?? ident;
             r.IdentIata = r.CodigoVoo;
+            r.IsCargo   = voo.IsCargo;
+            r.Status    = voo.Status;
+            r.Codeshare = voo.CodeshareStatus;
 
-            // ── Companhia ────────────────────────────────────────────────────────
-            if (voo.TryGetProperty("airline", out var airline))
+            if (!string.IsNullOrEmpty(voo.LastUpdatedUtc) &&
+                DateTimeOffset.TryParse(voo.LastUpdatedUtc, null,
+                    System.Globalization.DateTimeStyles.RoundtripKind, out var lu))
+                r.UltimaAtualizacao = lu.UtcDateTime;
+
+            // Companhia
+            if (voo.Airline != null)
             {
-                var nome = StrProp(airline, "name");
-                var iata = StrProp(airline, "iata");
-                var icao = StrProp(airline, "icao");
-                r.CompanhiaIata = iata;
-                r.CompanhiaIcao = icao;
-                r.Companhia     = !string.IsNullOrEmpty(nome) ? nome
-                                : !string.IsNullOrEmpty(iata) ? iata
-                                : icao;
+                r.CompanhiaIata = voo.Airline.Iata;
+                r.CompanhiaIcao = voo.Airline.Icao;
+                r.Companhia     = voo.Airline.Name ?? voo.Airline.Iata ?? voo.Airline.Icao;
             }
 
-            // ── Status / Aeronave ────────────────────────────────────────────────
-            r.Status    = StrProp(voo, "status");
-            r.Codeshare = StrProp(voo, "codeshareStatus");
-
-            if (voo.TryGetProperty("aircraft", out var aircraft))
-                r.ModeloAeronave = StrProp(aircraft, "model") ?? StrProp(aircraft, "reg");
-
-            if (voo.TryGetProperty("lastUpdatedUtc", out var lastUpd) && lastUpd.ValueKind == JsonValueKind.String)
-                if (DateTime.TryParse(lastUpd.GetString(), null,
-                    System.Globalization.DateTimeStyles.RoundtripKind, out var lu))
-                    r.UltimaAtualizacao = lu.ToLocalTime();
-
-            // ── Origem ───────────────────────────────────────────────────────────
-            if (voo.TryGetProperty("departure", out var dep))
+            // Aeronave
+            if (voo.Aircraft != null)
             {
-                if (dep.TryGetProperty("airport", out var ap))
+                r.ModeloAeronave = voo.Aircraft.Model ?? voo.Aircraft.Reg;
+                if (voo.Aircraft.Image != null)
                 {
-                    r.OrigemIata      = StrProp(ap, "iata");
-                    r.OrigemIcao      = StrProp(ap, "icao");
-                    r.OrigemNomeCurto = StrProp(ap, "shortName");
-                    r.OrigemCidade    = StrProp(ap, "municipalityName");
-                    r.OrigemPais      = StrProp(ap, "countryCode");
-                    r.OrigemFuso      = StrProp(ap, "timeZone");
+                    r.ImagemAeronaveUrl             = voo.Aircraft.Image.Url ?? voo.Aircraft.Image.WebUrl;
+                    r.ImagemAeronaveAutor           = voo.Aircraft.Image.Author;
+                    r.ImagemAeronaveTitulo          = voo.Aircraft.Image.Title;
+                    r.ImagemAeronautaHtmlAtribuicoes = voo.Aircraft.Image.HtmlAttributions;
+                }
+            }
+
+            // Distância
+            if (voo.GreatCircleDistance != null)
+            {
+                r.DistanciaKm             = voo.GreatCircleDistance.Km;
+                r.DistanciaMilhas         = voo.GreatCircleDistance.Mile;
+                r.DistanciaMetros         = voo.GreatCircleDistance.Meter;
+                r.DistanciaMilhasNauticas = voo.GreatCircleDistance.Nm;
+                r.DistanciaPes            = voo.GreatCircleDistance.Feet;
+            }
+
+            // Origem
+            if (voo.Departure != null)
+            {
+                var dep = voo.Departure;
+                if (dep.Airport != null)
+                {
+                    var ap = dep.Airport;
+                    r.OrigemIata      = ap.Iata;
+                    r.OrigemIcao      = ap.Icao;
+                    r.OrigemNome      = ap.Name;
+                    r.OrigemNomeCurto = ap.ShortName;
+                    r.OrigemCidade    = ap.MunicipalityName;
+                    r.OrigemPais      = ap.CountryCode;
+                    r.OrigemFuso      = ap.TimeZone;
+                    r.OrigemLatitude  = ap.Location?.Lat;
+                    r.OrigemLongitude = ap.Location?.Lon;
                     r.Origem          = FormatarAeroporto(ap);
                 }
+                r.OrigemTerminal = dep.Terminal;
+                r.OrigemPortao   = dep.Gate;
+                r.OrigemCheckIn  = dep.CheckInDesk;
 
-                ExtrairHorariosSegmento(dep, "scheduledTime", "revisedTime", null,
-                    out var saidaLocProg, out var saidaUtcProg,
-                    out var saidaLocRev,  out var saidaUtcRev,
-                    out _,               out _);
+                var sProg = ParseLocalOffset(dep.ScheduledTime?.Local);
+                r.SaidaLocalProgramada = sProg?.DateTime;
+                r.SaidaUtcProgramada   = ParseUtcString(dep.ScheduledTime?.Utc);
 
-                r.SaidaLocalProgramada = saidaLocProg;
-                r.SaidaUtcProgramada   = saidaUtcProg;
-                r.SaidaLocalRevisada   = saidaLocRev;
-                r.SaidaUtcRevisada     = saidaUtcRev;
+                var sPrev = ParseLocalOffset(dep.PredictedTime?.Local ?? dep.EstimatedTime?.Local);
+                r.SaidaLocalPrevista = sPrev?.DateTime;
+                r.SaidaUtcPrevista   = ParseUtcString(dep.PredictedTime?.Utc ?? dep.EstimatedTime?.Utc);
 
-                // Prioridade: revisedTime.local → scheduledTime.local
-                r.HorarioSaida = saidaLocRev ?? saidaLocProg;
-
-                r.OrigemTerminal = StrProp(dep, "terminal");
-                r.OrigemPortao   = StrProp(dep, "gate");
-                r.OrigemCheckIn  = StrProp(dep, "checkInDesk");
+                var sRev = ParseLocalOffset(dep.RevisedTime?.Local);
+                r.SaidaLocalRevisada = sRev?.DateTime;
+                r.SaidaUtcRevisada   = ParseUtcString(dep.RevisedTime?.Utc);
             }
 
-            // ── Destino ──────────────────────────────────────────────────────────
-            if (voo.TryGetProperty("arrival", out var arr))
+            // Destino
+            if (voo.Arrival != null)
             {
-                if (arr.TryGetProperty("airport", out var ap))
+                var arr = voo.Arrival;
+                if (arr.Airport != null)
                 {
-                    r.DestinoIata      = StrProp(ap, "iata");
-                    r.DestinoIcao      = StrProp(ap, "icao");
-                    r.DestinoNomeCurto = StrProp(ap, "shortName");
-                    r.DestinoCidade    = StrProp(ap, "municipalityName");
-                    r.DestinoPais      = StrProp(ap, "countryCode");
-                    r.DestinoFuso      = StrProp(ap, "timeZone");
+                    var ap = arr.Airport;
+                    r.DestinoIata      = ap.Iata;
+                    r.DestinoIcao      = ap.Icao;
+                    r.DestinoNome      = ap.Name;
+                    r.DestinoNomeCurto = ap.ShortName;
+                    r.DestinoCidade    = ap.MunicipalityName;
+                    r.DestinoPais      = ap.CountryCode;
+                    r.DestinoFuso      = ap.TimeZone;
+                    r.DestinoLatitude  = ap.Location?.Lat;
+                    r.DestinoLongitude = ap.Location?.Lon;
                     r.Destino          = FormatarAeroporto(ap);
                 }
 
-                ExtrairHorariosSegmento(arr, "scheduledTime", "revisedTime", "predictedTime",
-                    out var chegLocProg, out var chegUtcProg,
-                    out var chegLocRev,  out var chegUtcRev,
-                    out var chegLocPrev, out var chegUtcPrev);
+                var cProg = ParseLocalOffset(arr.ScheduledTime?.Local);
+                r.ChegadaLocalProgramada = cProg?.DateTime;
+                r.ChegadaUtcProgramada   = ParseUtcString(arr.ScheduledTime?.Utc);
 
-                r.ChegadaLocalProgramada = chegLocProg;
-                r.ChegadaUtcProgramada   = chegUtcProg;
-                r.ChegadaLocalRevisada   = chegLocRev;
-                r.ChegadaUtcRevisada     = chegUtcRev;
-                r.ChegadaLocalPrevista   = chegLocPrev;
-                r.ChegadaUtcPrevista     = chegUtcPrev;
+                var cPrev = ParseLocalOffset(arr.PredictedTime?.Local ?? arr.EstimatedTime?.Local);
+                r.ChegadaLocalPrevista = cPrev?.DateTime;
+                r.ChegadaUtcPrevista   = ParseUtcString(arr.PredictedTime?.Utc ?? arr.EstimatedTime?.Utc);
 
-                // Prioridade: predictedTime.local → revisedTime.local → scheduledTime.local
-                r.HorarioChegada = chegLocPrev ?? chegLocRev ?? chegLocProg;
+                var cRev = ParseLocalOffset(arr.RevisedTime?.Local);
+                r.ChegadaLocalRevisada = cRev?.DateTime;
+                r.ChegadaUtcRevisada   = ParseUtcString(arr.RevisedTime?.Utc);
             }
 
-            // ── Duração ──────────────────────────────────────────────────────────
-            if (r.HorarioSaida.HasValue && r.HorarioChegada.HasValue)
+            // Horário principal: exclusivamente scheduledTime.local — sem substituição por
+            // revisedTime/predictedTime/estimatedTime, mesmo que presentes na resposta.
+            var saidaOff   = ParseLocalOffset(voo.Departure?.ScheduledTime?.Local);
+            var chegadaOff = ParseLocalOffset(voo.Arrival?.ScheduledTime?.Local);
+
+            r.HorarioSaida   = saidaOff?.DateTime;
+            r.HorarioChegada = chegadaOff?.DateTime;
+
+            if (saidaOff.HasValue && chegadaOff.HasValue)
             {
-                var diff = r.HorarioChegada.Value - r.HorarioSaida.Value;
+                var diff = chegadaOff.Value - saidaOff.Value;
                 if (diff.TotalMinutes > 0)
-                    r.Duracao = $"{(int)diff.TotalHours}h{diff.Minutes:D2}";
+                {
+                    var totalMin = (int)diff.TotalMinutes;
+                    var horas    = totalMin / 60;
+                    var minutos  = totalMin % 60;
+                    r.Duracao = horas >= 24
+                        ? $"{horas / 24}d {horas % 24}h{minutos:D2}"
+                        : $"{horas}h{minutos:D2}";
+                }
+
+                // Chegada em dia posterior (comparando datas locais de cada aeroporto)
+                var diasDif = (chegadaOff.Value.DateTime.Date - saidaOff.Value.DateTime.Date).Days;
+                if (diasDif > 0) r.DiasSeguintesChegada = diasDif;
             }
 
             return r;
@@ -264,92 +332,137 @@ namespace SistemaUsuarios.Services
 
         // ── Helpers ──────────────────────────────────────────────────────────────
 
-        private static string? FormatarAeroporto(JsonElement ap)
+        private static DateTimeOffset? DataLocalPartida(AdbFlightDto voo)
         {
-            var city = StrProp(ap, "municipalityName") ?? StrProp(ap, "shortName");
-            var iata = StrProp(ap, "iata");
-            if (!string.IsNullOrEmpty(city) && !string.IsNullOrEmpty(iata)) return $"{city} ({iata})";
-            if (!string.IsNullOrEmpty(city)) return city;
-            if (!string.IsNullOrEmpty(iata)) return iata;
-            return StrProp(ap, "name");
+            var dep = voo.Departure;
+            if (dep == null) return null;
+            return ParseLocalOffset(dep.RevisedTime?.Local)
+                ?? ParseLocalOffset(dep.ScheduledTime?.Local);
         }
 
-        // Extrai par local/UTC dos campos scheduledTime, revisedTime, predictedTime
-        private static void ExtrairHorariosSegmento(
-            JsonElement segmento,
-            string keyScheduled, string keyRevised, string? keyPredicted,
-            out DateTime? locProg,  out DateTime? utcProg,
-            out DateTime? locRev,   out DateTime? utcRev,
-            out DateTime? locPrev,  out DateTime? utcPrev)
-        {
-            locProg = utcProg = locRev = utcRev = locPrev = utcPrev = null;
-
-            if (segmento.TryGetProperty(keyScheduled, out var sched))
-            {
-                locProg = ParseLocalTime(StrProp(sched, "local"));
-                utcProg = ParseUtcTime(StrProp(sched, "utc"));
-            }
-
-            if (segmento.TryGetProperty(keyRevised, out var rev))
-            {
-                locRev = ParseLocalTime(StrProp(rev, "local"));
-                utcRev = ParseUtcTime(StrProp(rev, "utc"));
-            }
-
-            if (keyPredicted != null && segmento.TryGetProperty(keyPredicted, out var pred))
-            {
-                locPrev = ParseLocalTime(StrProp(pred, "local"));
-                utcPrev = ParseUtcTime(StrProp(pred, "utc"));
-            }
-        }
-
-        // Brasil é permanentemente UTC-3 desde 2019 (sem horário de verão)
-        private static readonly TimeSpan BrtOffset = TimeSpan.FromHours(-3);
-
-        private static DateTime? ParseLocalTime(string? valor)
+        // Interpreta horário local com offset (ex: "2026-08-05 11:00-03:00")
+        // Preserva o offset do aeroporto sem conversão adicional
+        private static DateTimeOffset? ParseLocalOffset(string? valor)
         {
             if (string.IsNullOrEmpty(valor)) return null;
-            if (DateTime.TryParse(valor, null,
-                System.Globalization.DateTimeStyles.RoundtripKind, out var dt))
-            {
-                // Se a API retornou UTC no campo "local", converter para BRT
-                if (dt.Kind == DateTimeKind.Utc)
-                    return DateTime.SpecifyKind(dt + BrtOffset, DateTimeKind.Unspecified);
-                // Sem offset → assumir que já é horário local do aeroporto
-                return DateTime.SpecifyKind(dt, DateTimeKind.Unspecified);
-            }
+            if (DateTimeOffset.TryParse(valor,
+                System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.None, out var dto))
+                return dto;
+            if (DateTime.TryParse(valor,
+                System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.None, out var dt))
+                return new DateTimeOffset(dt, TimeSpan.Zero);
             return null;
         }
 
-        private static DateTime? ParseUtcTime(string? valor)
+        private static DateTime? ParseUtcString(string? valor)
         {
             if (string.IsNullOrEmpty(valor)) return null;
-            if (DateTime.TryParse(valor, null,
-                System.Globalization.DateTimeStyles.RoundtripKind, out var dt))
-                return dt.ToUniversalTime();
+            if (DateTimeOffset.TryParse(valor, null,
+                System.Globalization.DateTimeStyles.RoundtripKind, out var dto))
+                return dto.UtcDateTime;
             return null;
         }
 
-        // Extrai a data local de partida de um elemento de voo (scheduledTime.local prioritário, revisedTime.local como fallback)
-        private static DateTime? ExtrairDataLocalPartida(JsonElement voo)
+        private static string? FormatarAeroporto(AdbAirportDto? ap)
         {
-            if (!voo.TryGetProperty("departure", out var dep)) return null;
-
-            if (dep.TryGetProperty("revisedTime", out var rev))
-            {
-                var loc = ParseLocalTime(StrProp(rev, "local"));
-                if (loc.HasValue) return loc;
-            }
-            if (dep.TryGetProperty("scheduledTime", out var sched))
-            {
-                var loc = ParseLocalTime(StrProp(sched, "local"));
-                if (loc.HasValue) return loc;
-            }
-            return null;
+            if (ap == null) return null;
+            var cidade = ap.MunicipalityName ?? ap.ShortName;
+            var iata   = ap.Iata;
+            if (!string.IsNullOrEmpty(cidade) && !string.IsNullOrEmpty(iata)) return $"{cidade} ({iata})";
+            if (!string.IsNullOrEmpty(cidade)) return cidade;
+            if (!string.IsNullOrEmpty(iata))   return iata;
+            return ap.Name;
         }
 
-        private static string? StrProp(JsonElement el, string prop) =>
-            el.TryGetProperty(prop, out var v) && v.ValueKind == JsonValueKind.String
-                ? v.GetString() : null;
+        private static FlightInfoResult Erro(string msg) => new() { Erro = msg };
+    }
+
+    // ── DTOs internos — mapeiam o JSON bruto da AeroDataBox ─────────────────────
+
+    internal class AdbFlightDto
+    {
+        [JsonPropertyName("number")]              public string?         Number              { get; set; }
+        [JsonPropertyName("status")]              public string?         Status              { get; set; }
+        [JsonPropertyName("codeshareStatus")]     public string?         CodeshareStatus     { get; set; }
+        [JsonPropertyName("isCargo")]             public bool            IsCargo             { get; set; }
+        [JsonPropertyName("lastUpdatedUtc")]      public string?         LastUpdatedUtc      { get; set; }
+        [JsonPropertyName("airline")]             public AdbAirlineDto?  Airline             { get; set; }
+        [JsonPropertyName("aircraft")]            public AdbAircraftDto? Aircraft            { get; set; }
+        [JsonPropertyName("departure")]           public AdbMovementDto? Departure           { get; set; }
+        [JsonPropertyName("arrival")]             public AdbMovementDto? Arrival             { get; set; }
+        [JsonPropertyName("greatCircleDistance")] public AdbDistanceDto? GreatCircleDistance { get; set; }
+    }
+
+    internal class AdbAirlineDto
+    {
+        [JsonPropertyName("name")] public string? Name { get; set; }
+        [JsonPropertyName("iata")] public string? Iata { get; set; }
+        [JsonPropertyName("icao")] public string? Icao { get; set; }
+    }
+
+    internal class AdbAircraftDto
+    {
+        [JsonPropertyName("model")] public string?              Model { get; set; }
+        [JsonPropertyName("reg")]   public string?              Reg   { get; set; }
+        [JsonPropertyName("image")] public AdbAircraftImageDto? Image { get; set; }
+    }
+
+    internal class AdbAircraftImageDto
+    {
+        [JsonPropertyName("url")]              public string?       Url              { get; set; }
+        [JsonPropertyName("webUrl")]           public string?       WebUrl           { get; set; }
+        [JsonPropertyName("author")]           public string?       Author           { get; set; }
+        [JsonPropertyName("title")]            public string?       Title            { get; set; }
+        [JsonPropertyName("description")]      public string?       Description      { get; set; }
+        [JsonPropertyName("license")]          public string?       License          { get; set; }
+        [JsonPropertyName("htmlAttributions")] public List<string>? HtmlAttributions { get; set; }
+    }
+
+    internal class AdbMovementDto
+    {
+        [JsonPropertyName("airport")]       public AdbAirportDto? Airport       { get; set; }
+        [JsonPropertyName("scheduledTime")] public AdbTimeDto?    ScheduledTime { get; set; }
+        [JsonPropertyName("predictedTime")] public AdbTimeDto?    PredictedTime { get; set; }
+        [JsonPropertyName("estimatedTime")] public AdbTimeDto?    EstimatedTime { get; set; }
+        [JsonPropertyName("revisedTime")]   public AdbTimeDto?    RevisedTime   { get; set; }
+        [JsonPropertyName("terminal")]      public string?        Terminal      { get; set; }
+        [JsonPropertyName("gate")]          public string?        Gate          { get; set; }
+        [JsonPropertyName("checkInDesk")]   public string?        CheckInDesk   { get; set; }
+        [JsonPropertyName("quality")]       public List<string>?  Quality       { get; set; }
+    }
+
+    internal class AdbTimeDto
+    {
+        [JsonPropertyName("utc")]   public string? Utc   { get; set; }
+        [JsonPropertyName("local")] public string? Local { get; set; }
+    }
+
+    internal class AdbAirportDto
+    {
+        [JsonPropertyName("icao")]             public string?         Icao             { get; set; }
+        [JsonPropertyName("iata")]             public string?         Iata             { get; set; }
+        [JsonPropertyName("name")]             public string?         Name             { get; set; }
+        [JsonPropertyName("shortName")]        public string?         ShortName        { get; set; }
+        [JsonPropertyName("municipalityName")] public string?         MunicipalityName { get; set; }
+        [JsonPropertyName("countryCode")]      public string?         CountryCode      { get; set; }
+        [JsonPropertyName("timeZone")]         public string?         TimeZone         { get; set; }
+        [JsonPropertyName("location")]         public AdbLocationDto? Location         { get; set; }
+    }
+
+    internal class AdbLocationDto
+    {
+        [JsonPropertyName("lat")] public double? Lat { get; set; }
+        [JsonPropertyName("lon")] public double? Lon { get; set; }
+    }
+
+    internal class AdbDistanceDto
+    {
+        [JsonPropertyName("meter")] public decimal? Meter { get; set; }
+        [JsonPropertyName("km")]    public decimal? Km    { get; set; }
+        [JsonPropertyName("mile")]  public decimal? Mile  { get; set; }
+        [JsonPropertyName("nm")]    public decimal? Nm    { get; set; }
+        [JsonPropertyName("feet")]  public decimal? Feet  { get; set; }
     }
 }

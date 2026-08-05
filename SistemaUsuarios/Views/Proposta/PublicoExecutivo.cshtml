@@ -362,6 +362,30 @@ body.has-preview-bar { padding-top: 46px; }
     background: var(--c-bg-alt); border-radius: 50px; padding: 2px 8px; margin-bottom: 4px;
 }
 
+.exec-hotel-thumb img { cursor: zoom-in; }
+.exec-hotel-photo-strip {
+    display: flex; gap: 6px; flex-wrap: wrap;
+    margin: 6px 0 4px 94px;
+}
+.exec-hotel-photo-strip img {
+    width: 52px; height: 40px;
+    object-fit: cover; border-radius: 6px;
+    cursor: zoom-in;
+    border: 2px solid transparent;
+    opacity: .82;
+    transition: border-color .15s, opacity .15s;
+}
+.exec-hotel-photo-strip img:hover { border-color: var(--c-accent2); opacity: 1; }
+.exec-hotel-photo-more {
+    width: 52px; height: 40px;
+    border-radius: 6px; background: var(--c-bg-alt);
+    display: flex; align-items: center; justify-content: center;
+    font-size: .72rem; font-weight: 700; color: var(--c-accent2);
+    border: 2px dashed var(--c-line);
+    cursor: zoom-in;
+    user-select: none;
+}
+
 /* ── COMPACT EXP ── */
 .exec-exp-row {
     display: grid; grid-template-columns: 72px 1fr; gap: 12px;
@@ -624,6 +648,15 @@ footer {
 }
 /* Proteção global após correção das causas estruturais */
 html, body { max-width: 100%; overflow-x: hidden; }
+/* Conteúdo rico das descrições */
+.proposal-rich-content p { margin: 0 0 .4rem; line-height: 1.5; }
+.proposal-rich-content p:last-child { margin-bottom: 0; }
+.proposal-rich-content strong, .proposal-rich-content b { font-weight: 700; color: inherit; }
+.proposal-rich-content em, .proposal-rich-content i { font-style: italic; }
+.proposal-rich-content u { text-decoration: underline; }
+.proposal-rich-content ul, .proposal-rich-content ol { padding-left: 1.3rem; margin: .3rem 0; }
+.proposal-rich-content li { margin-bottom: .15rem; line-height: 1.45; }
+.proposal-rich-content a { color: inherit; }
 </style>
 }
 
@@ -678,8 +711,6 @@ html, body { max-width: 100%; overflow-x: hidden; }
         <i class="fas fa-bars"></i><span>Seções</span>
     </button>
     <span class="exec-header-brand">@Model.Titulo</span>
-    <span class="exec-header-badge">Executivo</span>
-    <span class="exec-header-status@(_execStatus.Item2)">@_execStatus.Item1</span>
     <div class="exec-header-meta">
         @if (Model.DataInicio.HasValue && Model.DataFim.HasValue)
         {
@@ -687,11 +718,7 @@ html, body { max-width: 100%; overflow-x: hidden; }
             <span><i class="fas fa-calendar-alt"></i>@Model.DataInicio.Value.ToString("dd/MM") – @Model.DataFim.Value.ToString("dd/MM/yy") · @_dias2 @(_dias2 == 1 ? "dia" : "dias")</span>
         }
         @{
-            var _paxNom2 = Model.PassageirosProposta?.Count ?? 0;
-            var _temCli2 = Model.Cliente != null;
-            var _totalPax2 = (_paxNom2 > 0 || _temCli2)
-                ? (_temCli2 ? 1 : 0) + _paxNom2
-                : Model.NumeroPassageiros + Model.NumeroCriancas;
+            var _totalPax2 = Model.PassageirosProposta?.Count ?? 0;
         }
         <span><i class="fas fa-users"></i>@_totalPax2 pax</span>
     </div>
@@ -829,20 +856,11 @@ html, body { max-width: 100%; overflow-x: hidden; }
                 </div>
             }
             @{
-                var _paxNomEx = Model.PassageirosProposta?.Count ?? 0;
-                var _temCliEx = Model.Cliente != null;
-                var _paxEx = (_paxNomEx > 0 || _temCliEx)
-                    ? (_temCliEx ? 1 : 0) + _paxNomEx
-                    : Model.NumeroPassageiros + Model.NumeroCriancas;
-                var _crEx = (_paxNomEx > 0 || _temCliEx) ? 0 : Model.NumeroCriancas;
+                var _paxEx = Model.PassageirosProposta?.Count ?? 0;
             }
             <div class="exec-brief-item">
                 <span class="exec-brief-label">Passageiros</span>
                 <span class="exec-brief-val">@_paxEx pax</span>
-                @if (_crEx > 0)
-                {
-                    <span class="exec-brief-sub">@_crEx crianças</span>
-                }
             </div>
             @if (execDestOrd.Any())
             {
@@ -1001,7 +1019,13 @@ html, body { max-width: 100%; overflow-x: hidden; }
                 var _ini4 = pax.Nome.Length > 0 ? pax.Nome.Substring(0,1).ToUpper() : "?";
                 <div class="exec-pax-row">
                     <div class="exec-pax-init">@_ini4</div>
-                    <span class="exec-pax-name">@pax.Nome</span>
+                    <span class="exec-pax-name">
+                        @pax.Nome
+                        @if (pax.IsTitular)
+                        {
+                            <span style="font-size:.7em;font-weight:600;opacity:.75;margin-left:.4em;">TITULAR</span>
+                        }
+                    </span>
                     <span class="exec-pax-sub">
                         @if (pax.DataNascimento.HasValue)
                         {
@@ -1094,7 +1118,9 @@ html, body { max-width: 100%; overflow-x: hidden; }
             if (!dest.Hospedagens.Any()) { continue; }
             @foreach (var hosp in dest.Hospedagens.OrderBy(h => h.CheckIn ?? DateTime.MaxValue))
             {
-                var _hFoto = hosp.Fotos.OrderBy(f => f.Ordem).FirstOrDefault();
+                var hospFotosExec  = hosp.Fotos.OrderBy(f => f.Ordem).ToList();
+                var _hFoto         = hospFotosExec.FirstOrDefault();
+                var hospGallIdExec = "exec-hosp-" + hosp.Id.ToString("N");
                 var _hNoites = (hosp.CheckIn.HasValue && hosp.CheckOut.HasValue)
                     ? (int)(hosp.CheckOut.Value.Date - hosp.CheckIn.Value.Date).TotalDays : 0;
                 <div class="exec-hotel-row">
@@ -1102,7 +1128,9 @@ html, body { max-width: 100%; overflow-x: hidden; }
                         @if (_hFoto != null)
                         {
                             <img src="@_hFoto.CaminhoFoto" alt="@hosp.Nome"
-                                 onclick="openLightbox('@_hFoto.CaminhoFoto','@hosp.Nome')" style="cursor:zoom-in;" />
+                                 data-gallery-group="@hospGallIdExec"
+                                 data-gallery-src="@_hFoto.CaminhoFoto"
+                                 data-gallery-caption="@hosp.Nome" />
                         }
                         else
                         {
@@ -1127,6 +1155,35 @@ html, body { max-width: 100%; overflow-x: hidden; }
                         </div>
                     </div>
                 </div>
+                @if (hospFotosExec.Count > 1)
+                {
+                    var _stripCount = Math.Min(hospFotosExec.Count - 1, 3);
+                    var _extraCount = hospFotosExec.Count - 1 - _stripCount;
+                    <div class="exec-hotel-photo-strip">
+                        @for (int _fi = 1; _fi <= _stripCount; _fi++)
+                        {
+                            <img src="@hospFotosExec[_fi].CaminhoFoto" alt="@hosp.Nome"
+                                 data-gallery-group="@hospGallIdExec"
+                                 data-gallery-src="@hospFotosExec[_fi].CaminhoFoto"
+                                 data-gallery-caption="@hosp.Nome"
+                                 loading="lazy" />
+                        }
+                        @if (_extraCount > 0)
+                        {
+                            <div class="exec-hotel-photo-more"
+                                 data-gallery-group="@hospGallIdExec"
+                                 data-gallery-src="@hospFotosExec[_stripCount + 1].CaminhoFoto"
+                                 data-gallery-caption="@hosp.Nome">+@_extraCount</div>
+                            @for (int _xf = _stripCount + 1; _xf < hospFotosExec.Count; _xf++)
+                            {
+                                <span style="display:none"
+                                      data-gallery-group="@hospGallIdExec"
+                                      data-gallery-src="@hospFotosExec[_xf].CaminhoFoto"
+                                      data-gallery-caption="@hosp.Nome"></span>
+                            }
+                        }
+                    </div>
+                }
                 @if (hosp.Acomodacoes.Any())
                 {
                     <div style="margin-left:94px;margin-bottom:8px;">
@@ -1181,7 +1238,7 @@ html, body { max-width: 100%; overflow-x: hidden; }
                         <div class="exec-exp-name">@exp.TipoPasseio</div>
                         <div class="exec-exp-sub">
                             @if (exp.DataInicio.HasValue) { <text>@exp.DataInicio.Value.ToString("dd/MM/yyyy", execPtBR)@(exp.DataInicio.Value.Hour != 0 ? " " + exp.DataInicio.Value.ToString("HH:mm") : "") · </text> }
-                            @if (!string.IsNullOrEmpty(exp.Descricao)) { @(exp.Descricao.Length > 80 ? exp.Descricao.Substring(0,80) + "…" : exp.Descricao) }
+                            @if (!string.IsNullOrEmpty(exp.Descricao)) { var _expDescStrip = System.Text.RegularExpressions.Regex.Replace(exp.Descricao, "<[^>]+>", ""); @(_expDescStrip.Length > 80 ? _expDescStrip.Substring(0,80) + "…" : _expDescStrip) }
                         </div>
                         @await Html.PartialAsync("_VouchersExperiencia", exp.Arquivos.AsEnumerable())
                     </div>
@@ -1210,7 +1267,7 @@ html, body { max-width: 100%; overflow-x: hidden; }
                     <div class="exec-transp-icon"><i class="fas fa-car"></i></div>
                     <div>
                         <div class="exec-transp-name">@tr.Titulo</div>
-                        @if (!string.IsNullOrEmpty(tr.Descricao)) { <div class="exec-transp-sub">@tr.Descricao</div> }
+                        @if (!string.IsNullOrEmpty(tr.Descricao)) { <div class="exec-transp-sub proposal-rich-content">@Html.Raw(tr.Descricao)</div> }
                     </div>
                 </div>
             }

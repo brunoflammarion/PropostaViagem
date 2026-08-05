@@ -115,7 +115,11 @@ Importante: Responda em formato JSON estruturado com as chaves correspondentes a
             });
 
             if (!gatewayResult.Sucesso)
+            {
+                if (gatewayResult.CodigoErro is "RateLimited" or "QuotaExceeded")
+                    return StatusCode(503, gatewayResult.MensagemErro);
                 return StatusCode(500, $"Erro ao gerar descrição: {gatewayResult.MensagemErro}");
+            }
 
             var jsonTexto = gatewayResult.Conteudo ?? "";
             if (string.IsNullOrWhiteSpace(jsonTexto))
@@ -185,7 +189,11 @@ Importante: Responda em formato JSON estruturado com as chaves correspondentes a
             });
 
             if (!gatewayResult.Sucesso)
+            {
+                if (gatewayResult.CodigoErro is "RateLimited" or "QuotaExceeded")
+                    return StatusCode(503, gatewayResult.MensagemErro);
                 return StatusCode(500, $"Erro ao gerar descrição: {gatewayResult.MensagemErro}");
+            }
 
             var jsonTexto = gatewayResult.Conteudo ?? "";
             if (string.IsNullOrWhiteSpace(jsonTexto))
@@ -266,7 +274,7 @@ Importante: Responda em formato JSON estruturado com as chaves correspondentes a
             if (thisDestino != null)
             {
                 if (thisDestino.Hospedagens?.Any() == true)
-                    sb.AppendLine($"Hospedagens já cadastradas: {string.Join(", ", thisDestino.Hospedagens.Select(h => $"{h.Nome} ({h.Categoria})"))}");
+                    sb.AppendLine($"Hospedagens já cadasztradas: {string.Join(", ", thisDestino.Hospedagens.Select(h => $"{h.Nome} ({h.Categoria})"))}");
                 if (thisDestino.Experiencias?.Any() == true)
                     sb.AppendLine($"Experiências já cadastradas: {string.Join(", ", thisDestino.Experiencias.Select(e => e.TipoPasseio ?? e.Descricao ?? "Experiência"))}");
                 if (thisDestino.Transportes?.Any() == true)

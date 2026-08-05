@@ -96,7 +96,7 @@ namespace SistemaUsuarios.Services
                 }
             }
 
-            // 2. Chamar OpenAI
+            // 2. Chamar OpenAI (com retry controlado para HTTP 429)
             var pricing = await ObterPrecificacao(request.Modelo, ct);
             var sw = Stopwatch.StartNew();
             string? conteudo = null;
@@ -106,6 +106,7 @@ namespace SistemaUsuarios.Services
             string? tipoErro = null;
             string? erroSanitizado = null;
             string? providerRequestId = null;
+            const int MaxRetries = 2;
 
             try
             {
@@ -116,37 +117,84 @@ namespace SistemaUsuarios.Services
                 client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
 
                 var json = JsonSerializer.Serialize(request.Payload);
-                var content = new StringContent(json, Encoding.UTF8, "application/json");
-                var response = await client.PostAsync("https://api.openai.com/v1/chat/completions", content, ct);
 
-                httpStatus = (int)response.StatusCode;
-                var body = await response.Content.ReadAsStringAsync(ct);
-
-                if (response.IsSuccessStatusCode)
+                for (int attempt = 0; attempt <= MaxRetries; attempt++)
                 {
-                    using var doc = JsonDocument.Parse(body);
-                    var root = doc.RootElement;
+                    var content = new StringContent(json, Encoding.UTF8, "application/json");
+                    var response = await client.PostAsync("https://api.openai.com/v1/chat/completions", content, ct);
 
-                    providerRequestId = root.TryGetProperty("id", out var idEl) ? idEl.GetString() : null;
+                    httpStatus = (int)response.StatusCode;
+                    var body = await response.Content.ReadAsStringAsync(ct);
 
-                    if (root.TryGetProperty("choices", out var choices) && choices.GetArrayLength() > 0)
-                        conteudo = choices[0].GetProperty("message").GetProperty("content").GetString();
-
-                    if (root.TryGetProperty("usage", out var usage))
+                    if (response.IsSuccessStatusCode)
                     {
-                        inputTokens = usage.TryGetProperty("prompt_tokens", out var pt) ? pt.GetInt32() : 0;
-                        outputTokens = usage.TryGetProperty("completion_tokens", out var ct2) ? ct2.GetInt32() : 0;
-                        if (usage.TryGetProperty("prompt_tokens_details", out var ptd)
-                            && ptd.TryGetProperty("cached_tokens", out var cached))
-                            cachedTokens = cached.GetInt32();
+                        using var doc = JsonDocument.Parse(body);
+                        var root = doc.RootElement;
+
+                        providerRequestId = root.TryGetProperty("id", out var idEl) ? idEl.GetString() : null;
+
+                        if (root.TryGetProperty("choices", out var choices) && choices.GetArrayLength() > 0)
+                            conteudo = choices[0].GetProperty("message").GetProperty("content").GetString();
+
+                        if (root.TryGetProperty("usage", out var usage))
+                        {
+                            inputTokens = usage.TryGetProperty("prompt_tokens", out var pt) ? pt.GetInt32() : 0;
+                            outputTokens = usage.TryGetProperty("completion_tokens", out var ct2) ? ct2.GetInt32() : 0;
+                            if (usage.TryGetProperty("prompt_tokens_details", out var ptd)
+                                && ptd.TryGetProperty("cached_tokens", out var cached))
+                                cachedTokens = cached.GetInt32();
+                        }
+
+                        sucesso = true;
+                        break;
                     }
 
-                    sucesso = true;
-                }
-                else
-                {
+                    if (httpStatus == 429)
+                    {
+                        var (errType, errCode, _) = ParseOpenAiError(body);
+
+                        // Quota esgotada — não é transitório, não adianta retry
+                        if (errCode == "insufficient_quota" || errType == "insufficient_quota")
+                        {
+                            _logger.LogError(
+                                "OpenAI quota esgotada [corr={CorrelationId}] fn={Funcionalidade} type={ErrType} code={ErrCode}",
+                                correlationId, request.Funcionalidade, errType, errCode);
+                            tipoErro = "QuotaExceeded";
+                            erroSanitizado = "Não foi possível gerar o conteúdo com IA. Verifique a configuração e o plano do serviço.";
+                            break;
+                        }
+
+                        if (attempt < MaxRetries)
+                        {
+                            int waitSeconds;
+                            if (response.Headers.RetryAfter?.Delta is TimeSpan delta)
+                                waitSeconds = Math.Clamp((int)delta.TotalSeconds + 1, 1, 20);
+                            else
+                                waitSeconds = attempt == 0 ? 5 : 15;
+
+                            _logger.LogWarning(
+                                "OpenAI 429 [corr={CorrelationId}] fn={Funcionalidade} type={ErrType} tentativa={Attempt}/{MaxRetries}, aguardando {WaitSeconds}s",
+                                correlationId, request.Funcionalidade, errType, attempt + 1, MaxRetries, waitSeconds);
+
+                            var jitter = Random.Shared.Next(-500, 500);
+                            await Task.Delay(TimeSpan.FromSeconds(waitSeconds) + TimeSpan.FromMilliseconds(jitter), ct);
+                            continue;
+                        }
+
+                        _logger.LogError(
+                            "OpenAI 429 persistente [corr={CorrelationId}] fn={Funcionalidade} type={ErrType} após {MaxRetries} tentativas",
+                            correlationId, request.Funcionalidade, errType, MaxRetries);
+                        tipoErro = "RateLimited";
+                        erroSanitizado = "O serviço de IA está temporariamente ocupado. Aguarde alguns instantes e tente novamente.";
+                        break;
+                    }
+
+                    _logger.LogError(
+                        "OpenAI erro HTTP {Status} [corr={CorrelationId}] fn={Funcionalidade}",
+                        httpStatus, correlationId, request.Funcionalidade);
                     tipoErro = "ApiError";
                     erroSanitizado = $"HTTP {httpStatus}";
+                    break;
                 }
             }
             catch (TaskCanceledException)
@@ -237,6 +285,23 @@ namespace SistemaUsuarios.Services
                 CustoTotal = custoTotal,
                 CorrelationId = correlationId
             };
+        }
+
+        private static (string type, string code, string message) ParseOpenAiError(string body)
+        {
+            try
+            {
+                using var doc = JsonDocument.Parse(body);
+                if (doc.RootElement.TryGetProperty("error", out var err))
+                {
+                    var type = err.TryGetProperty("type", out var t) ? t.GetString() ?? "" : "";
+                    var code = err.TryGetProperty("code", out var c) ? c.GetString() ?? "" : "";
+                    var msg  = err.TryGetProperty("message", out var m) ? m.GetString() ?? "" : "";
+                    return (type, code, msg.Length > 200 ? msg[..200] : msg);
+                }
+            }
+            catch { /* corpo não é JSON válido */ }
+            return ("", "", "");
         }
 
         private async Task RegistrarBloqueio(AiGatewayRequest request, string correlationId,

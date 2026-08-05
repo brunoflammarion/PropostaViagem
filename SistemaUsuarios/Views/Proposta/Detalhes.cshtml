@@ -61,13 +61,9 @@
                 }
 
                 @{
-                    var _detPaxNom = Model.PassageirosProposta?.Count ?? 0;
-                    var _detTemCli = Model.Cliente != null;
-                    var _detTotal = (_detPaxNom > 0 || _detTemCli)
-                        ? (_detTemCli ? 1 : 0) + _detPaxNom
-                        : Model.NumeroPassageiros + Model.NumeroCriancas;
+                    var _detTotal = Model.PassageirosProposta?.Count ?? 0;
                 }
-                <p><strong>Total de Passageiros:</strong> @_detTotal pessoa(s)</p>
+                <p><strong>Total de Passageiros:</strong> @_detTotal @(_detTotal == 1 ? "passageiro" : "passageiros")</p>
             </div>
         </div>
 

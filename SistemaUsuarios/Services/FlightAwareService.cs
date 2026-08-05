@@ -59,6 +59,56 @@ namespace SistemaUsuarios.Services
         public DateTime? ChegadaUtcRevisada     { get; set; }
         public DateTime? ChegadaLocalPrevista   { get; set; }
         public DateTime? ChegadaUtcPrevista     { get; set; }
+
+        // Partida — previstos (previstos de chegada já existiam, partida faltava)
+        public DateTime? SaidaLocalPrevista { get; set; }
+        public DateTime? SaidaUtcPrevista   { get; set; }
+
+        // Voo — cargo
+        public bool IsCargo { get; set; }
+
+        // Aeroporto — nome completo (NomeCurto já existe)
+        public string? OrigemNome  { get; set; }
+        public string? DestinoNome { get; set; }
+
+        // Aeroporto — coordenadas geográficas
+        public double? OrigemLatitude   { get; set; }
+        public double? OrigemLongitude  { get; set; }
+        public double? DestinoLatitude  { get; set; }
+        public double? DestinoLongitude { get; set; }
+
+        // Aeronave — imagem
+        public string?       ImagemAeronaveUrl               { get; set; }
+        public string?       ImagemAeronaveAutor             { get; set; }
+        public string?       ImagemAeronaveTitulo            { get; set; }
+        public List<string>? ImagemAeronautaHtmlAtribuicoes  { get; set; }
+
+        // Distância do voo
+        public decimal? DistanciaKm             { get; set; }
+        public decimal? DistanciaMilhas         { get; set; }
+        public decimal? DistanciaMetros         { get; set; }
+        public decimal? DistanciaMilhasNauticas { get; set; }
+        public decimal? DistanciaPes            { get; set; }
+
+        // Indicador de chegada em dia posterior (dias inteiros; null = mesmo dia / desconhecido)
+        public int? DiasSeguintesChegada { get; set; }
+
+        // Múltiplos candidatos — preenchido quando há ambiguidade (UI escolhe)
+        public List<VooCandidatoSimples>? MultiplosCandidatos { get; set; }
+    }
+
+    public class VooCandidatoSimples
+    {
+        public int     Indice        { get; set; }
+        public string? CodigoVoo    { get; set; }
+        public string? Companhia    { get; set; }
+        public string? Origem       { get; set; }
+        public string? OrigemIata   { get; set; }
+        public string? Destino      { get; set; }
+        public string? DestinoIata  { get; set; }
+        public string? HorarioSaida   { get; set; }
+        public string? HorarioChegada { get; set; }
+        public string? Status       { get; set; }
     }
 
     public interface IFlightAwareService

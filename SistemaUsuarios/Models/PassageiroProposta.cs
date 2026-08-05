@@ -72,6 +72,9 @@ namespace SistemaUsuarios.Models
         // Bebê: modo de viagem
         public ModoBebe? ModoBebe { get; set; }
 
+        // Passageiro titular (responsável pelo contrato / cliente vinculado à proposta)
+        public bool IsTitular { get; set; } = false;
+
         // Responsável durante a viagem (para menores desacompanhados)
         public Guid? ResponsavelId { get; set; }
         public virtual PassageiroProposta? Responsavel { get; set; }
