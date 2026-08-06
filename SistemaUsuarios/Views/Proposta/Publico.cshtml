@@ -456,6 +456,16 @@ body {
     border-radius:50px; padding:3px 10px; font-size:.75rem; color:#475569;
     margin:3px;
 }
+/* ── Rich-text output (Quill HTML renderizado na proposta pública) ── */
+.proposal-rich-content p { margin: 0 0 .4rem; line-height: 1.55; }
+.proposal-rich-content p:last-child { margin-bottom: 0; }
+.proposal-rich-content strong, .proposal-rich-content b { font-weight: 700; color: inherit; }
+.proposal-rich-content em, .proposal-rich-content i { font-style: italic; }
+.proposal-rich-content u { text-decoration: underline; }
+.proposal-rich-content ul, .proposal-rich-content ol { padding-left: 1.3rem; margin: .3rem 0; }
+.proposal-rich-content li { margin-bottom: .15rem; line-height: 1.45; }
+.proposal-rich-content a { color: inherit; }
+
 .acomoda-row {
     display:grid; grid-template-columns:repeat(auto-fill, minmax(220px,1fr)); gap:14px;
     margin-top:14px;
@@ -2172,8 +2182,10 @@ body.has-preview-bar { padding-top: 46px; }
                             <div class="fam-destino-caption">
                                 @if (!string.IsNullOrEmpty(destino.Descricao))
                                 {
+                                    var _famCap = Regex.Replace(destino.Descricao, "<[^>]+>", " ");
+                                    _famCap     = Regex.Replace(_famCap, @"\s{2,}", " ").Trim();
                                     <p style="font-size:.95rem;opacity:.9;margin-bottom:6px;line-height:1.5;">
-                                        @(destino.Descricao.Length > 180 ? destino.Descricao.Substring(0, 180) + "…" : destino.Descricao)
+                                        @(_famCap.Length > 180 ? _famCap.Substring(0, 180) + "…" : _famCap)
                                     </p>
                                 }
                             </div>
@@ -2353,12 +2365,7 @@ body.has-preview-bar { padding-top: 46px; }
 
                                                 @if (!string.IsNullOrEmpty(hosp.Descricao))
                                                 {
-                                                    var _hospDescPub = System.Text.RegularExpressions.Regex.Replace(
-                                                        System.Net.WebUtility.HtmlEncode(hosp.Descricao),
-                                                        @"&lt;(/?b|br\s*/?)&gt;",
-                                                        m => "<" + m.Groups[1].Value + ">"
-                                                    ).Replace("\r", "").Replace("\n", "<br>");
-                                                    <p class="text-muted small mb-3">@Html.Raw(_hospDescPub)</p>
+                                                    <div class="proposal-rich-content text-muted small mb-3">@Html.Raw(hosp.Descricao)</div>
                                                 }
 
                                                 @if (hosp.Comodidades.Any())
@@ -2559,7 +2566,7 @@ body.has-preview-bar { padding-top: 46px; }
                                                                 </div>
                                                                 @if (!string.IsNullOrEmpty(exp.Descricao))
                                                                 {
-                                                                    <p class="text-muted small mb-0 flex-grow-1">@exp.Descricao</p>
+                                                                    <div class="proposal-rich-content text-muted small mb-0 flex-grow-1">@Html.Raw(exp.Descricao)</div>
                                                                 }
                                                                 @await Html.PartialAsync("_VouchersExperiencia", exp.Arquivos.AsEnumerable())
                                                             </div>
@@ -2711,7 +2718,7 @@ body.has-preview-bar { padding-top: 46px; }
                                         <div class="fw-600" style="font-size:.9rem;">@t.Titulo</div>
                                         @if (!string.IsNullOrEmpty(t.Descricao))
                                         {
-                                            <div style="font-size:.78rem;color:#64748b;margin-top:2px;">@t.Descricao</div>
+                                            <div class="proposal-rich-content" style="font-size:.78rem;color:#64748b;margin-top:2px;">@Html.Raw(t.Descricao)</div>
                                         }
                                     </div>
                                     @if (t.Valor.HasValue)
@@ -2767,7 +2774,7 @@ body.has-preview-bar { padding-top: 46px; }
                                     }
                                     @if (!string.IsNullOrEmpty(t.Descricao))
                                     {
-                                        <p class="text-muted small mb-0">@t.Descricao</p>
+                                        <div class="proposal-rich-content text-muted small mb-0">@Html.Raw(t.Descricao)</div>
                                     }
                                     @if (t.Valor.HasValue)
                                     {
