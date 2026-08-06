@@ -2654,7 +2654,7 @@ body.has-preview-bar { padding-top: 46px; }
                                                     </div>
                                                     @if (!string.IsNullOrEmpty(exp.Descricao))
                                                     {
-                                                        <p class="text-muted small mb-0 flex-grow-1">@exp.Descricao</p>
+                                                        <div class="proposal-rich-content text-muted small mb-0 flex-grow-1">@Html.Raw(exp.Descricao)</div>
                                                     }
                                                     @await Html.PartialAsync("_VouchersExperiencia", exp.Arquivos.AsEnumerable())
                                                 </div>
@@ -3067,7 +3067,9 @@ body.has-preview-bar { padding-top: 46px; }
                                 <div class="aval-exec-name">@exp.TipoPasseio</div>
                                 @if (!string.IsNullOrEmpty(exp.Descricao))
                                 {
-                                    <div class="aval-exec-sub">@exp.Descricao.Substring(0, Math.Min(80, exp.Descricao.Length))@(exp.Descricao.Length > 80 ? "…" : "")</div>
+                                    var _evalExpTxt = Regex.Replace(exp.Descricao, "<[^>]+>", " ").Trim();
+                                    _evalExpTxt = Regex.Replace(_evalExpTxt, @"\s{2,}", " ").Trim();
+                                    <div class="aval-exec-sub">@(_evalExpTxt.Length > 80 ? _evalExpTxt.Substring(0, 80) + "…" : _evalExpTxt)</div>
                                 }
                             </div>
                             <div class="star-rating" data-tipo="Experiencia" data-id="@expId">
@@ -3102,7 +3104,9 @@ body.has-preview-bar { padding-top: 46px; }
                                 <div class="aval-card-name">@exp.TipoPasseio</div>
                                 @if (!string.IsNullOrEmpty(exp.Descricao))
                                 {
-                                    <div class="aval-card-sub">@exp.Descricao.Substring(0, Math.Min(80, exp.Descricao.Length))@(exp.Descricao.Length > 80 ? "…" : "")</div>
+                                    var _avalCardTxt = Regex.Replace(exp.Descricao, "<[^>]+>", " ").Trim();
+                                    _avalCardTxt = Regex.Replace(_avalCardTxt, @"\s{2,}", " ").Trim();
+                                    <div class="aval-card-sub">@(_avalCardTxt.Length > 80 ? _avalCardTxt.Substring(0, 80) + "…" : _avalCardTxt)</div>
                                 }
                                 <div class="star-rating" data-tipo="Experiencia" data-id="@expId">
                                     @for (int s = 5; s >= 1; s--)
