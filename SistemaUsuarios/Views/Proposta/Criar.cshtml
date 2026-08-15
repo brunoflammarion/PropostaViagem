@@ -146,15 +146,9 @@
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
                                         <label asp-for="LayoutId" class="form-label fw-bold">Layout</label>
-                                        <select asp-for="LayoutId" class="form-control">
-                                            <option value="">Layout Padrão</option>
-                                            @if (ViewBag.Layouts != null)
-                                            {
-                                                @foreach (var layout in (List<SistemaUsuarios.Models.Layout>)ViewBag.Layouts)
-                                                {
-                                                    <option value="@layout.Id">@layout.Nome</option>
-                                                }
-                                            }
+                                        <select asp-for="LayoutId"
+                                                asp-items="@(ViewBag.LayoutItems as Microsoft.AspNetCore.Mvc.Rendering.SelectList)"
+                                                class="form-control">
                                         </select>
                                     </div>
                                     <div class="col-md-6 mb-3">

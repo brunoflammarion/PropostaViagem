@@ -516,6 +516,15 @@ body.has-preview-bar { padding-top: 46px; }
 }
 .exec-transp-name { font-weight: 700; font-size: .86rem; }
 .exec-transp-sub  { font-size: .77rem; color: var(--c-text-mid); }
+.exec-transp-valor { font-weight:600; font-size:.82rem; color:var(--c-accent2); white-space:nowrap; flex-shrink:0; margin-left:auto; padding-left:12px; }
+.exec-transp-docs { margin-top:5px; display:flex; flex-direction:column; gap:2px; }
+.exec-transp-doc-link {
+    display:inline-flex; align-items:center; gap:4px;
+    font-size:.73rem; color:var(--c-accent2); text-decoration:none;
+    word-break:break-word;
+}
+.exec-transp-doc-link:hover { text-decoration:underline; }
+.exec-transp-doc-link i { flex-shrink:0; }
 
 /* ── CTA ── */
 .exec-cta-section { padding: 32px 0; }
@@ -888,14 +897,6 @@ html, body { max-width: 100%; overflow-x: hidden; }
                 var _execDataAtual  = Model.DataModificacao ?? Model.DataCriacao;
                 var _execAtualizada = Model.DataModificacao.HasValue;
             }
-            <div class="exec-brief-item">
-                <span class="exec-brief-label">Status</span>
-                <span class="exec-brief-val">@_execStatus.Item1</span>
-                <span class="exec-brief-sub">
-                    @(_execAtualizada ? "Atualizada em" : "Criada em")
-                    @_execDataAtual.ToBrazilTime().ToString("dd/MM/yyyy 'às' HH:mm")
-                </span>
-            </div>
         </div>
         @if (!string.IsNullOrEmpty(Model.ObservacoesGerais))
         {
@@ -1265,10 +1266,29 @@ html, body { max-width: 100%; overflow-x: hidden; }
             {
                 <div class="exec-transp-row">
                     <div class="exec-transp-icon"><i class="fas fa-car"></i></div>
-                    <div>
+                    <div style="flex:1;min-width:0;">
                         <div class="exec-transp-name">@tr.Titulo</div>
                         @if (!string.IsNullOrEmpty(tr.Descricao)) { <div class="exec-transp-sub proposal-rich-content">@Html.Raw(tr.Descricao)</div> }
+                        @if (tr.Documentos.Any())
+                        {
+                            <div class="exec-transp-docs">
+                                @foreach (var doc in tr.Documentos.OrderBy(d => d.DataCriacao))
+                                {
+                                    var _isPdf = (doc.TipoArquivo ?? "").Equals("application/pdf", StringComparison.OrdinalIgnoreCase);
+                                    var _isImg = (doc.TipoArquivo ?? "").StartsWith("image/", StringComparison.OrdinalIgnoreCase);
+                                    var _icon  = _isPdf ? "fa-file-pdf" : _isImg ? "fa-file-image" : "fa-file-alt";
+                                    <a href="@doc.CaminhoArquivo" target="_blank" rel="noopener noreferrer"
+                                       class="exec-transp-doc-link" title="@doc.NomeOriginal">
+                                        <i class="fas @_icon"></i><span>@doc.NomeOriginal</span>
+                                    </a>
+                                }
+                            </div>
+                        }
                     </div>
+                    @if (tr.Valor.HasValue)
+                    {
+                        <div class="exec-transp-valor">@tr.Valor.Value.ToString("N2")</div>
+                    }
                 </div>
             }
         }

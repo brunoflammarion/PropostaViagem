@@ -341,4 +341,10 @@ namespace SistemaUsuarios.Models.Dto
         public int Transportes { get; set; }
         public int Seguros { get; set; }
     }
+
+    public class ConcluirSessaoRequest
+    {
+        [JsonPropertyName("sessaoId")]
+        public Guid SessaoId { get; set; }
+    }
 }

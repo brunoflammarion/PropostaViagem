@@ -186,6 +186,35 @@ namespace SistemaUsuarios.Controllers
             return Json(new { draft = merged, delta, temDelta, mensagem });
         }
 
+        // POST /Importacao/ConcluirSessao
+        // Marca a sessão de importação como Concluida, impedindo reprocessamento após reload.
+        [HttpPost]
+        public async Task<IActionResult> ConcluirSessao([FromBody] ConcluirSessaoRequest request)
+        {
+            if (!UsuarioLogado())
+                return Unauthorized(new { erro = "Não autenticado." });
+
+            var uid      = ObterUsuarioId();
+            var isMaster = SessaoIsMaster();
+            var masterId = ObterMasterUsuarioId();
+
+            var sessao = await _context.ImportacaoSessoes
+                .FirstOrDefaultAsync(s => s.Id == request.SessaoId
+                    && (isMaster ? s.UsuarioMasterId == masterId : s.UsuarioId == uid));
+
+            if (sessao == null)
+                return NotFound(new { erro = "Sessão não encontrada." });
+
+            if (sessao.Status == ImportacaoSessaoStatus.AguardandoConfirmacao)
+            {
+                sessao.Status      = ImportacaoSessaoStatus.Concluida;
+                sessao.AtualizadoEm = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+            }
+
+            return Json(new { ok = true });
+        }
+
         // ── Endpoints legados mantidos ────────────────────────────────────────────
 
         // POST: /Importacao/CriarRascunho  (mantido para compatibilidade)

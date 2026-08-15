@@ -16,13 +16,16 @@ namespace SistemaUsuarios.Controllers
         private readonly ITarefaService _tarefaService;
         private readonly BlobStorageService _blob;
 
-        public PropostaController(ApplicationDbContext context, IMemoryCache cache, IConfiguration configuration, ITarefaService tarefaService, BlobStorageService blob)
+        private readonly ILogger<PropostaController> _logger;
+
+        public PropostaController(ApplicationDbContext context, IMemoryCache cache, IConfiguration configuration, ITarefaService tarefaService, BlobStorageService blob, ILogger<PropostaController> logger)
         {
             _context      = context;
             _blob         = blob;
             _cache        = cache;
             _configuration = configuration;
             _tarefaService = tarefaService;
+            _logger        = logger;
         }
 
         // ─── Código de acesso ─────────────────────────────────────────────────────
@@ -180,7 +183,13 @@ namespace SistemaUsuarios.Controllers
                 return RedirectToAction("Login", "Auth");
 
             await CarregarDadosParaView();
-            return View();
+            var layouts = ViewBag.Layouts as List<SistemaUsuarios.Models.Layout>;
+            var layoutPadrao = layouts?.FirstOrDefault(l => l.Nome.Contains("Padrão") || l.Nome.Contains("Padrao"));
+            var model = new PropostaViewModel
+            {
+                LayoutId = layoutPadrao?.Id ?? layouts?.FirstOrDefault()?.Id
+            };
+            return View(model);
         }
 
         [HttpPost]
@@ -408,12 +417,35 @@ namespace SistemaUsuarios.Controllers
                 return RedirectToAction("Index");
             }
 
+            // Leitura explícita do formulário: garante que os valores digitados cheguem
+            // ao modelo com InvariantCulture, eliminando qualquer ambiguidade de conversão
+            // de tipo que o model binder padrão possa ter com cultura pt-BR ou route values.
+            var _f = Request.Form;
+            model.DataInicio = DateTime.TryParse(_f["DataInicio"],
+                System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.None, out var _di) ? _di : (DateTime?)null;
+            model.DataFim = DateTime.TryParse(_f["DataFim"],
+                System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.None, out var _df) ? _df : (DateTime?)null;
+            model.DataExpiracaoLink = DateTime.TryParse(_f["DataExpiracaoLink"],
+                System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.None, out var _del) ? _del : (DateTime?)null;
+            model.ObservacoesGerais = string.IsNullOrWhiteSpace(_f["ObservacoesGerais"].ToString())
+                ? null : _f["ObservacoesGerais"].ToString();
+            if (Enum.TryParse<StatusProposta>(_f["StatusProposta"].ToString(), out var _sp))
+                model.StatusProposta = _sp;
+            model.LayoutId = int.TryParse(_f["LayoutId"].ToString(), out var _lid)
+                ? _lid : (int?)null;
+            var _exigirStr = _f["ExigirCodigoAcesso"].ToString();
+            if (!string.IsNullOrEmpty(_exigirStr))
+                model.ExigirCodigoAcesso = _exigirStr == "true";
+
             // AÇÕES DE NAVEGAÇÃO RÁPIDA ENTRE ABAS (salvam e redirecionam)
             if (acao == "gerenciar_passageiros" || acao == "gerenciar_destinos")
             {
                 try
                 {
-                    await SalvarAlteracoesProposta(model);
+                    await SalvarAlteracoesProposta(model, proposta);
                     TempData["ActiveTab"] = acao == "gerenciar_passageiros" ? "passageiros" : "destinos";
                     return RedirectToAction("Editar", new { id = model.Id });
                 }
@@ -429,6 +461,17 @@ namespace SistemaUsuarios.Controllers
             ModelState.Remove("UsuarioId");
             ModelState.Remove("FotoCapa");
             ModelState.Remove("FotoCapaUpload");
+            ModelState.Remove("DataCriacao");
+            ModelState.Remove("DataModificacao");
+            // Removidos para evitar erros de binding que seriam conflitantes com a
+            // leitura explícita do formulário acima
+            ModelState.Remove("DataInicio");
+            ModelState.Remove("DataFim");
+            ModelState.Remove("DataExpiracaoLink");
+            ModelState.Remove("ObservacoesGerais");
+            ModelState.Remove("StatusProposta");
+            ModelState.Remove("LayoutId");
+            ModelState.Remove("ExigirCodigoAcesso");
 
             try
             {
@@ -441,11 +484,13 @@ namespace SistemaUsuarios.Controllers
                     // Salvar nova foto
                     model.FotoCapa = await SalvarFotoAsync(model.FotoCapaUpload);
                 }
-                else if (string.IsNullOrEmpty(model.FotoCapa))
+                else if (string.IsNullOrEmpty(model.FotoCapa) && !string.IsNullOrEmpty(proposta.FotoCapa))
                 {
-                    // Se não há upload e o campo está vazio, manter a foto atual
-                    model.FotoCapa = proposta.FotoCapa;
+                    // Remoção explícita: hidden input foi limpo por removerFotoAtual()
+                    _ = _blob.DeletarAsync(proposta.FotoCapa);
+                    model.FotoCapa = null;
                 }
+                // else: model.FotoCapa já tem a URL existente vinda do hidden input — sem alteração
             }
             catch (InvalidOperationException ex)
             {
@@ -462,7 +507,7 @@ namespace SistemaUsuarios.Controllers
 
             try
             {
-                await SalvarAlteracoesProposta(model);
+                await SalvarAlteracoesProposta(model, proposta);
                 TempData["Sucesso"] = "Proposta atualizada com sucesso!";
                 TempData["ActiveTab"] = "dados";
                 return RedirectToAction("Editar", new { id = model.Id });
@@ -475,39 +520,34 @@ namespace SistemaUsuarios.Controllers
             }
         }
 
-        // Método auxiliar corrigido
-        private async Task SalvarAlteracoesProposta(PropostaViewModel model)
+        // Salva todos os campos da aba Dados, incluindo a configuração de proteção (ExigirCodigoAcesso).
+        // Campos gerenciados por outros endpoints (ResumoProposta, SolicitarAvaliacao*, CondicoesPropostaHtml,
+        // ValoresPropostaHtml) NÃO são modificados aqui.
+        private async Task SalvarAlteracoesProposta(PropostaViewModel model, Proposta proposta)
         {
-            var proposta = await _context.Propostas.FindAsync(model.Id);
-            if (proposta == null)
-                throw new InvalidOperationException("Proposta não encontrada");
-
-            // Validação customizada de datas
             if (model.DataInicio.HasValue && model.DataFim.HasValue && model.DataInicio > model.DataFim)
-            {
                 throw new InvalidOperationException("Data de fim deve ser posterior à data de início");
-            }
 
-            proposta.Titulo = model.Titulo;
-            proposta.DataInicio = model.DataInicio;
-            proposta.DataFim = model.DataFim;
-            proposta.NumeroPassageiros = model.NumeroPassageiros;
-            proposta.NumeroCriancas = model.NumeroCriancas;
-            proposta.FotoCapa = model.FotoCapa;
-            proposta.LayoutId = model.LayoutId;
-            proposta.ObservacoesGerais = string.IsNullOrWhiteSpace(model.ObservacoesGerais) ? null : model.ObservacoesGerais.Trim();
-            proposta.ResumoProposta = string.IsNullOrWhiteSpace(model.ResumoProposta) ? null : model.ResumoProposta;
-            proposta.StatusProposta = model.StatusProposta;
-            proposta.LinkPublicoAtivo = model.LinkPublicoAtivo;
-            proposta.DataExpiracaoLink = model.DataExpiracaoLink;
-            proposta.SolicitarAvaliacaoHospedagem  = model.SolicitarAvaliacaoHospedagem;
-            proposta.SolicitarAvaliacaoAcomodacao  = model.SolicitarAvaliacaoAcomodacao;
-            proposta.SolicitarAvaliacaoExperiencia = model.SolicitarAvaliacaoExperiencia;
-            proposta.DataModificacao = DateTime.UtcNow;
+            proposta.Titulo                 = model.Titulo;
+            proposta.DataInicio             = model.DataInicio;
+            proposta.DataFim                = model.DataFim;
+            proposta.NumeroPassageiros      = model.NumeroPassageiros;
+            proposta.NumeroCriancas         = model.NumeroCriancas;
+            proposta.FotoCapa               = string.IsNullOrEmpty(model.FotoCapa) ? null : model.FotoCapa;
+            proposta.LayoutId               = model.LayoutId;
+            proposta.ObservacoesGerais      = string.IsNullOrWhiteSpace(model.ObservacoesGerais) ? null : model.ObservacoesGerais.Trim();
+            proposta.StatusProposta         = model.StatusProposta;
+            proposta.LinkPublicoAtivo       = model.LinkPublicoAtivo;
+            proposta.DataExpiracaoLink      = model.DataExpiracaoLink;
+            proposta.DataModificacao        = DateTime.UtcNow;
 
-            // Gera código de acesso automaticamente ao ativar o link pela primeira vez
             if (model.LinkPublicoAtivo && string.IsNullOrEmpty(proposta.CodigoAcesso))
                 proposta.CodigoAcesso = GerarCodigoCurto();
+
+            // ExigirCodigoAcesso só é submetido quando o link está ativo (seção visível no form).
+            // Quando o link está inativo, o valor existente é preservado.
+            if (model.LinkPublicoAtivo)
+                proposta.ExigirCodigoAcesso = model.ExigirCodigoAcesso;
 
             await _context.SaveChangesAsync();
         }
@@ -1070,6 +1110,7 @@ namespace SistemaUsuarios.Controllers
                 .ToListAsync();
 
             ViewBag.Layouts = layouts;
+            ViewBag.LayoutItems = new Microsoft.AspNetCore.Mvc.Rendering.SelectList(layouts, "Id", "Nome");
         }
 
         [HttpPost]

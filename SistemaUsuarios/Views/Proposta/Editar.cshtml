@@ -305,8 +305,6 @@
             <form asp-action="Editar" method="post" enctype="multipart/form-data" id="formEditarProposta">
                 <input asp-for="Id" type="hidden" />
                 <input asp-for="UsuarioId" type="hidden" />
-                <input asp-for="DataCriacao" type="hidden" />
-                <input asp-for="DataModificacao" type="hidden" />
 
                 <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
@@ -388,23 +386,18 @@
                                     <div class="col-md-6 mb-3">
                                         <label asp-for="StatusProposta" class="form-label fw-bold">Status</label>
                                         <select asp-for="StatusProposta" class="form-control">
-                                            <option value="1">Rascunho</option>
-                                            <option value="2">Enviada</option>
-                                            <option value="3">Aprovada</option>
-                                            <option value="4">Rejeitada</option>
-                                            <option value="5">Cancelada</option>
+                                            <option value="Rascunho">Rascunho</option>
+                                            <option value="Enviada">Enviada</option>
+                                            <option value="Aprovada">Aprovada</option>
+                                            <option value="Rejeitada">Rejeitada</option>
+                                            <option value="Cancelada">Cancelada</option>
                                         </select>
                                     </div>
                                     <div class="col-md-6 mb-3">
                                         <label asp-for="LayoutId" class="form-label fw-bold">Layout</label>
-                                        <select asp-for="LayoutId" class="form-control">
-                                            @if (ViewBag.Layouts != null)
-                                            {
-                                                @foreach (var layout in (List<SistemaUsuarios.Models.Layout>)ViewBag.Layouts)
-                                                {
-                                                    <option value="@layout.Id">@layout.Nome</option>
-                                                }
-                                            }
+                                        <select asp-for="LayoutId"
+                                                asp-items="@(ViewBag.LayoutItems as Microsoft.AspNetCore.Mvc.Rendering.SelectList)"
+                                                class="form-control">
                                         </select>
                                     </div>
                                 </div>
@@ -499,9 +492,8 @@
                                             </label>
                                             <div class="d-flex gap-2 flex-wrap">
                                                 <label class="radio-card flex-grow-1 @(Model.ExigirCodigoAcesso ? "radio-card--selected" : "")">
-                                                    <input type="radio" name="exigirCodigoAcesso" value="true"
+                                                    <input type="radio" name="ExigirCodigoAcesso" value="true"
                                                            class="radio-card__input"
-                                                           form="formProtecaoProposta"
                                                            @(Model.ExigirCodigoAcesso ? "checked" : "") />
                                                     <div class="radio-card__body">
                                                         <div class="d-flex align-items-center gap-2 mb-1">
@@ -515,9 +507,8 @@
                                                     </div>
                                                 </label>
                                                 <label class="radio-card flex-grow-1 @(!Model.ExigirCodigoAcesso ? "radio-card--selected" : "")">
-                                                    <input type="radio" name="exigirCodigoAcesso" value="false"
+                                                    <input type="radio" name="ExigirCodigoAcesso" value="false"
                                                            class="radio-card__input"
-                                                           form="formProtecaoProposta"
                                                            @(!Model.ExigirCodigoAcesso ? "checked" : "") />
                                                     <div class="radio-card__body">
                                                         <div class="d-flex align-items-center gap-2 mb-1">
@@ -531,9 +522,6 @@
                                                 </label>
                                             </div>
                                         </div>
-                                        <button type="submit" form="formProtecaoProposta" class="btn btn-sm btn-primary px-3">
-                                            <i class="fas fa-save me-1"></i>Salvar proteção
-                                        </button>
                                     </div>
                                 }
                             </div>
@@ -548,13 +536,13 @@
                             <div class="card-body">
                                 <div class="mb-2">
                                     <small class="text-muted">Criada em</small>
-                                    <p class="mb-0">@(Model.DataCriacao?.ToString("dd/MM/yyyy HH:mm") ?? "N/A")</p>
+                                    <p class="mb-0">@(Model.DataCriacao?.ToBrazilTime().ToString("dd/MM/yyyy HH:mm") ?? "N/A")</p>
                                 </div>
                                 @if (Model.DataModificacao.HasValue)
                                 {
                                     <div class="mb-2">
                                         <small class="text-muted">Última modificação</small>
-                                        <p class="mb-0">@Model.DataModificacao.Value.ToString("dd/MM/yyyy HH:mm")</p>
+                                        <p class="mb-0">@Model.DataModificacao.Value.ToBrazilTime().ToString("dd/MM/yyyy HH:mm")</p>
                                     </div>
                                 }
                                 <div class="mb-2">
@@ -587,16 +575,6 @@
                                 }
                             </div>
                         </div>
-                        <div class="card mb-3">
-                            <div class="card-body">
-                                <div class="d-grid gap-2">
-                                    <button type="submit" class="btn btn-primary btn-lg" id="btnSalvar">
-                                        <i class="fas fa-save me-2"></i>Salvar Alterações
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
                         @* ── Painel de Transferência (apenas Master) ── *@
                         @if (ViewBag.IsMaster == true && ViewBag.MembrosEquipe != null)
                         {
@@ -653,21 +631,16 @@
                         }
                     </div>
                 </div>
+
+                <div class="mt-4 pt-2 border-top">
+                    <div class="d-grid d-md-block">
+                        <button type="submit" class="btn btn-primary btn-lg px-5" id="btnSalvar">
+                            <i class="fas fa-save me-2"></i>Salvar Alterações
+                        </button>
+                    </div>
+                </div>
             </form>
 
-            @*
-                Form de proteção da proposta.
-                Deve ficar FORA do formEditarProposta para evitar aninhamento HTML inválido.
-                Os radio inputs e o botão acima referenciam este form via form="formProtecaoProposta".
-            *@
-            <form id="formProtecaoProposta"
-                  asp-action="SalvarProtecaoProposta"
-                  asp-controller="Proposta"
-                  method="post"
-                  style="display:none">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="id" value="@Model.Id" />
-            </form>
 
             @*
                 Form de transferência de responsável.
@@ -1372,12 +1345,6 @@
                                                                     </form>
                                                                 </div>
 
-                                                                <div class="d-flex justify-content-end border-top pt-3 mt-1 mb-3">
-                                                                    <button type="submit" form="form-editar-hosp-@hospSafeId" class="btn btn-sm btn-primary px-4">
-                                                                        <i class="fas fa-save me-1"></i>Salvar
-                                                                    </button>
-                                                                </div>
-
                                                                 <hr class="my-2" />
 
                                                                 <!-- Acomodações -->
@@ -1527,6 +1494,14 @@
                                                                             </button>
                                                                         </form>
                                                                     </div>
+                                                                </div>
+
+                                                                <div class="mt-3 pt-2 border-top d-grid d-md-flex justify-content-md-end">
+                                                                    <button type="submit"
+                                                                            form="form-editar-hosp-@hospSafeId"
+                                                                            class="btn btn-sm btn-primary px-4">
+                                                                        <i class="fas fa-save me-1"></i>Salvar
+                                                                    </button>
                                                                 </div>
 
                                                             </div>
@@ -2029,7 +2004,8 @@
 
                                                                 <!-- Editar dados do transporte -->
                                                                 <form asp-controller="Transporte" asp-action="Editar"
-                                                                      method="post" class="mb-3">
+                                                                      method="post" class="mb-3"
+                                                                      id="form-transp-@transp.Id.ToString("N")">
                                                                     @Html.AntiForgeryToken()
                                                                     <input type="hidden" name="id" value="@transp.Id" />
                                                                     <h6 class="small text-muted text-uppercase mb-2">
@@ -2057,11 +2033,6 @@
                                                                             <input type="hidden" name="descricao"
                                                                                    data-quill-target="edit-transp-desc-@transp.Id.ToString("N")" />
                                                                         </div>
-                                                                    </div>
-                                                                    <div class="mt-2">
-                                                                        <button type="submit" class="btn btn-sm btn-primary">
-                                                                            <i class="fas fa-save me-1"></i>Salvar
-                                                                        </button>
                                                                     </div>
                                                                 </form>
 
@@ -2181,6 +2152,14 @@
                                                                         </button>
                                                                     </div>
                                                                 </form>
+
+                                                                <div class="mt-3 pt-2 border-top d-grid d-md-flex justify-content-md-end">
+                                                                    <button type="submit"
+                                                                            form="form-transp-@transp.Id.ToString("N")"
+                                                                            class="btn btn-sm btn-primary px-4">
+                                                                        <i class="fas fa-save me-1"></i>Salvar
+                                                                    </button>
+                                                                </div>
 
                                                             </div><!-- /card-body transp -->
                                                         </div><!-- /collapse transp -->
@@ -4848,14 +4827,22 @@
             const dataInicio = document.getElementById('DataInicio');
             const dataFim    = document.getElementById('DataFim');
             if (dataInicio && dataFim) {
+                function datasInvalidas() {
+                    return dataInicio.value && dataFim.value &&
+                           new Date(dataInicio.value) > new Date(dataFim.value);
+                }
                 function validarDatas() {
-                    if (dataInicio.value && dataFim.value && new Date(dataInicio.value) > new Date(dataFim.value)) {
+                    if (datasInvalidas()) {
                         showErrorAlert('Data de fim deve ser posterior à data de início');
-                        dataFim.value = '';
+                        dataFim.classList.add('is-invalid');
+                    } else {
+                        dataFim.classList.remove('is-invalid');
                     }
                 }
                 dataInicio.addEventListener('blur', validarDatas);
                 dataFim.addEventListener('blur', validarDatas);
+                dataInicio.addEventListener('change', validarDatas);
+                dataFim.addEventListener('change', validarDatas);
             }
 
             // Preview foto de capa (Tab 1)
@@ -4882,10 +4869,17 @@
                 });
             }
 
-            // Botão salvar — animação
+            // Botão salvar — validação de datas + animação
             const formEditar = document.getElementById('formEditarProposta');
             if (formEditar) {
                 formEditar.addEventListener('submit', function (e) {
+                    if (dataInicio && dataFim && dataInicio.value && dataFim.value &&
+                        new Date(dataInicio.value) > new Date(dataFim.value)) {
+                        e.preventDefault();
+                        showErrorAlert('Data de fim deve ser posterior à data de início');
+                        if (dataFim) { dataFim.classList.add('is-invalid'); dataFim.focus(); }
+                        return;
+                    }
                     const btn = document.activeElement;
                     if (btn && (btn.id === 'btnSalvar' || btn.id === 'btnIrDestinos')) {
                         btn.disabled = true;

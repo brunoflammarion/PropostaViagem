@@ -560,6 +560,14 @@ body { font-family: var(--ff-body); background: var(--c-bg); color: var(--c-text
 }
 .fam-transp-name { font-weight: 700; font-size: .95rem; color: var(--c-text); }
 .fam-transp-desc { font-size: .83rem; color: var(--c-text-mid); margin-top: 4px; }
+.fam-transp-docs { margin-top:8px; display:flex; flex-direction:column; gap:3px; }
+.fam-transp-doc-link {
+    display:inline-flex; align-items:center; gap:5px;
+    font-size:.8rem; color:var(--c-accent); text-decoration:none;
+    word-break:break-word;
+}
+.fam-transp-doc-link:hover { text-decoration:underline; }
+.fam-transp-doc-link i { flex-shrink:0; }
 
 /* ── SEGURO ── */
 .fam-seguro-card {
@@ -1228,7 +1236,7 @@ body.has-preview-bar { padding-top: 46px; }
                                 }
                                 @if (exp.Valor.HasValue && exp.Valor.Value > 0)
                                 {
-                                    <span class="fam-exp-chip"><i class="fas fa-tag"></i>R$ @exp.Valor.Value.ToString("N2")</span>
+                                    <span class="fam-exp-chip"><i class="fas fa-tag"></i>@exp.Valor.Value.ToString("N2")</span>
                                 }
                             </div>
                             @if (_expImgs.Count > 1)
@@ -1401,11 +1409,30 @@ body.has-preview-bar { padding-top: 46px; }
                 {
                     <div class="fam-transp-card">
                         <div class="fam-transp-icon"><i class="fas fa-car"></i></div>
-                        <div>
+                        <div style="flex:1;min-width:0;">
                             <div class="fam-transp-name">@tr.Titulo</div>
                             @if (!string.IsNullOrEmpty(tr.Descricao))
                             {
                                 <div class="fam-transp-desc proposal-rich-content">@Html.Raw(tr.Descricao)</div>
+                            }
+                            @if (tr.Valor.HasValue && tr.Valor.Value > 0)
+                            {
+                                <span class="fam-exp-chip mt-2"><i class="fas fa-tag"></i>@tr.Valor.Value.ToString("N2")</span>
+                            }
+                            @if (tr.Documentos.Any())
+                            {
+                                <div class="fam-transp-docs">
+                                    @foreach (var doc in tr.Documentos.OrderBy(d => d.DataCriacao))
+                                    {
+                                        var _isPdf = (doc.TipoArquivo ?? "").Equals("application/pdf", StringComparison.OrdinalIgnoreCase);
+                                        var _isImg = (doc.TipoArquivo ?? "").StartsWith("image/", StringComparison.OrdinalIgnoreCase);
+                                        var _icon  = _isPdf ? "fa-file-pdf" : _isImg ? "fa-file-image" : "fa-file-alt";
+                                        <a href="@doc.CaminhoArquivo" target="_blank" rel="noopener noreferrer"
+                                           class="fam-transp-doc-link" title="@doc.NomeOriginal">
+                                            <i class="fas @_icon"></i><span>@doc.NomeOriginal</span>
+                                        </a>
+                                    }
+                                </div>
                             }
                         </div>
                     </div>
@@ -1592,7 +1619,7 @@ body.has-preview-bar { padding-top: 46px; }
 <section class="fam-cta" id="sec-cta">
     <div class="fam-cta-emoji">✈️🌍</div>
     <h2>Adorou? Vamos confirmar!</h2>
-    <p>Fale com a gente agora e transforme essa proposta na viagem mais incrível da família!</p>
+    <p>Fale com a gente agora e transforme essa proposta na viagem mais incrível!</p>
     <div class="fam-cta-btns">
         @if (waUrl != null)
         {

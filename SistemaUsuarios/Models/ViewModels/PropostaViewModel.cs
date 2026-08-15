@@ -16,10 +16,12 @@ namespace SistemaUsuarios.Models.ViewModels
 
         [Display(Name = "Data de Início")]
         [DataType(DataType.Date)]
+        [DisplayFormat(DataFormatString = "{0:yyyy-MM-dd}", ApplyFormatInEditMode = true)]
         public DateTime? DataInicio { get; set; }
 
         [Display(Name = "Data de Fim")]
         [DataType(DataType.Date)]
+        [DisplayFormat(DataFormatString = "{0:yyyy-MM-dd}", ApplyFormatInEditMode = true)]
         public DateTime? DataFim { get; set; }
 
         [Range(0, 50, ErrorMessage = "Número de passageiros deve estar entre 0 e 50")]
@@ -65,6 +67,7 @@ namespace SistemaUsuarios.Models.ViewModels
 
         [Display(Name = "Data de Expiração do Link")]
         [DataType(DataType.DateTime)]
+        [DisplayFormat(DataFormatString = "{0:yyyy-MM-ddTHH:mm}", ApplyFormatInEditMode = true)]
         public DateTime? DataExpiracaoLink { get; set; }
 
         public bool ExigirCodigoAcesso { get; set; } = true;

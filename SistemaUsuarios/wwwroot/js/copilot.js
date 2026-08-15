@@ -73,15 +73,19 @@
                                 if (data.draft && (data.draft.mensagemInicial || data.draft.passageiros?.length || data.draft.voos?.length || data.draft.destinos?.length)) {
                                     iniciarRevisaoDraft(data.draft);
                                 } else {
-                                    appendMsgAI('Recebi o arquivo mas não encontrei itens estruturados para importar. Você pode tentar novamente ou digitar as informações da proposta aqui.');
+                                    // Sessão sem itens pendentes — exibir Copiloto normalmente
+                                    const hadHistory = loadState();
+                                    if (!hadHistory) showWelcome();
                                 }
                             } else {
-                                const err = await res.json().catch(() => ({}));
-                                appendMsgAI(`Não consegui carregar o rascunho da importação (${err.erro || res.status}). Você pode continuar editando a proposta normalmente.`);
+                                // 404: sessão concluída, expirada ou não encontrada — exibir Copiloto normalmente
+                                const hadHistory = loadState();
+                                if (!hadHistory) showWelcome();
                             }
                         } catch (e) {
                             loadEl.remove();
-                            appendMsgAI('Não consegui carregar o rascunho da importação. Você pode continuar editando a proposta normalmente.');
+                            const hadHistory = loadState();
+                            if (!hadHistory) showWelcome();
                         }
                     }, 300);
                 } else {
@@ -423,27 +427,79 @@
             const pulados     = blocosPulados.size;
 
             let msg = confirmados > 0
-                ? `✅ Pronto! Importei ${confirmados} seção${confirmados !== 1 ? 'ões' : ''} para a sua proposta.`
+                ? `✅ Importação concluída! Adicionei ${confirmados} seção${confirmados !== 1 ? 'ões' : ''} à sua proposta.`
                 : '📋 Nenhum bloco foi importado nesta sessão.';
 
-            if (pulados > 0) msg += `\n\n${pulados} bloco${pulados !== 1 ? 's foram pulados' : ' foi pulado'}. Se quiser importá-los depois, é só anexar o documento novamente.`;
-
-            if (confirmados > 0) msg += '\n\n**Recarregue a página para ver todas as alterações aplicadas.**';
+            if (pulados > 0) msg += `\n\n${pulados} bloco${pulados !== 1 ? 's foram pulados' : ' foi pulado'}. Você pode importar novamente se precisar.`;
 
             const el = document.createElement('div');
             el.className = 'msg-ai';
             el.innerHTML = `<div class="msg-bubble">
                 <p style="white-space:pre-wrap;margin:0 0 10px">${esc(msg)}</p>
-                ${confirmados > 0 ? `<button class="btn btn-sm btn-primary" onclick="location.reload()">
-                    <i class="fas fa-sync-alt me-1"></i>Recarregar página
+                ${confirmados > 0 ? `<button class="btn btn-sm btn-primary cp-btn-ver-proposta">
+                    <i class="fas fa-check-circle me-1"></i>Ver proposta atualizada
                 </button>` : ''}
             </div>`;
             messages.appendChild(el);
             scrollBottom();
 
-            // Limpar estado do draft
-            currentDraft = null;
-            draftBlocos  = [];
+            // Navegar para URL limpa ao clicar — sem ?sessaoImport, sem reprocessamento
+            el.querySelector('.cp-btn-ver-proposta')?.addEventListener('click', () => {
+                window.location.href = '/Proposta/Editar/' + propostaId;
+            });
+
+            // Capturar sessaoId antes de limpar estado local
+            const sessaoParaConcluir = currentSessaoId;
+
+            // Limpar estado do draft e da sessão
+            currentDraft    = null;
+            draftBlocos     = [];
+            currentSessaoId = null;
+
+            // Marcar sessão como Concluida no banco (fire-and-forget — não bloqueia a UI)
+            if (sessaoParaConcluir && confirmados > 0) {
+                fetch('/Importacao/ConcluirSessao', {
+                    method:  'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body:    JSON.stringify({ sessaoId: sessaoParaConcluir })
+                }).catch(() => {});
+            }
+
+            // Transição para Copiloto da Proposta após breve pausa
+            if (confirmados > 0) {
+                setTimeout(mostrarCopilotoDaProposta, 1800);
+            }
+        }
+
+        function mostrarCopilotoDaProposta() {
+            appendMsgAI('Agora estou pronto para ajudar com esta proposta. O que deseja fazer?');
+            renderAcoesPosImportacao();
+        }
+
+        function renderAcoesPosImportacao() {
+            const acoes = [
+                { label: '🔎 Revisar proposta',     msg: 'O que está faltando ou mais fraco nessa proposta? O que eu deveria revisar antes de enviar ao cliente?' },
+                { label: '📋 Completar informações', msg: 'Identifique campos relevantes que estão vazios ou incompletos nesta proposta e sugira o que completar.' },
+                { label: '✨ Melhorar descrições',   msg: 'Analise os destinos, hospedagens e experiências desta proposta e sugira melhorias nas descrições para torná-la mais atrativa.' },
+            ];
+
+            const actEl = document.createElement('div');
+            actEl.className = 'msg-ai';
+            actEl.innerHTML = `<div class="msg-bubble" style="padding:10px 12px;">
+                <div style="display:flex;flex-direction:column;gap:6px;">
+                    ${acoes.map((a, i) => `<button class="btn btn-sm btn-outline-secondary text-start" data-acao="${i}">${a.label}</button>`).join('')}
+                    <button class="btn btn-sm btn-outline-secondary text-start cp-btn-nova-importacao">📎 Importar novos arquivos</button>
+                </div>
+            </div>`;
+            messages.appendChild(actEl);
+            scrollBottom();
+
+            actEl.querySelectorAll('[data-acao]').forEach(btn =>
+                btn.addEventListener('click', () => sendMessage(acoes[parseInt(btn.dataset.acao, 10)].msg)));
+            actEl.querySelector('.cp-btn-nova-importacao')?.addEventListener('click', () => {
+                const fi = document.getElementById('cpFileInput');
+                if (fi) fi.click();
+            });
         }
 
         // ════════════════════════════════════════════════════════════════════

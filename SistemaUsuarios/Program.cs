@@ -17,9 +17,10 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
         sqlOptions => sqlOptions
             .UseNetTopologySuite()
             .CommandTimeout(120)
+            // Serverless autopause pode demorar até 60s para acordar — retry estendido cobre esse cold start
             .EnableRetryOnFailure(
-                maxRetryCount: 3,
-                maxRetryDelay: TimeSpan.FromSeconds(10),
+                maxRetryCount: 6,
+                maxRetryDelay: TimeSpan.FromSeconds(30),
                 errorNumbersToAdd: null)
     )
 );
