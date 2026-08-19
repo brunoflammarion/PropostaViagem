@@ -1063,7 +1063,7 @@
                                                     </div>
                                                 </div>
 
-                                                @foreach (var hospedagem in destino.Hospedagens.OrderBy(h => h.Ordem))
+                                                @foreach (var hospedagem in destino.Hospedagens.OrderBy(h => h.CheckIn ?? DateTime.MaxValue).ThenBy(h => h.Ordem))
                                                 {
                                                     var hospSafeId = hospedagem.Id.ToString("N");
                                                     <div class="card mb-3 border-info" id="hosp-card-@hospSafeId" style="overflow:visible;">
@@ -1627,7 +1627,7 @@
                                             }
                                             else
                                             {
-                                                @foreach (var exp in destino.Experiencias.OrderBy(e => e.Ordem))
+                                                @foreach (var exp in destino.Experiencias.OrderBy(e => e.DataInicio ?? DateTime.MaxValue).ThenBy(e => e.Ordem))
                                                 {
                                                     var expSafeId = exp.Id.ToString().Replace("-", "");
                                                     <div class="card mb-2 border-warning" id="exp-card-@expSafeId">
@@ -2359,7 +2359,7 @@
                 {
                     <!-- Lista de voos como accordion -->
                     <div class="accordion" id="accordionVoos">
-                        @foreach (var voo in proposta.Voos)
+                        @foreach (var voo in proposta.Voos.OrderBy(v => v.HorarioSaida ?? DateTime.MaxValue))
                         {
                             var vooSafeId = voo.Id.ToString().Replace("-", "");
                             <div class="card mb-2 border" id="voo-card-@vooSafeId">
@@ -3791,10 +3791,40 @@
             .ql-snow .ql-picker { color: #495057; }
             .ql-snow .ql-stroke { stroke: #495057; }
             .ql-snow .ql-fill { fill: #495057; }
+            /* ── Rich text inline na Revisão ─── */
+            .rev-rich { font-size:.83rem; line-height:1.55; color:#495057; }
+            .rev-rich p { margin:0 0 .3rem; }
+            .rev-rich p:last-child { margin-bottom:0; }
+            .rev-rich strong, .rev-rich b { font-weight:700; color:inherit; }
+            .rev-rich em, .rev-rich i { font-style:italic; }
+            .rev-rich u { text-decoration:underline; }
+            .rev-rich ul, .rev-rich ol { padding-left:1.2rem; margin:.2rem 0; }
+            .rev-rich li { margin-bottom:.1rem; line-height:1.45; }
+            .rev-rich br { display:block; margin:.1rem 0; }
             </style>
 
             @if (proposta != null)
             {
+                // ── Estatísticas rápidas ───────────────────────────────────────────
+                var revTotalHosp = proposta.Destinos.Sum(d => d.Hospedagens.Count);
+                var revTotalExp  = proposta.Destinos.Sum(d => d.Experiencias.Count);
+                var revTotalTrp  = proposta.Destinos.Sum(d => d.Transportes.Count);
+
+                // ── Alertas de validação ──────────────────────────────────────────
+                var revAlertas = new System.Collections.Generic.List<string>();
+                if (!proposta.DataInicio.HasValue)                           revAlertas.Add("Data de início não preenchida");
+                if (!proposta.DataFim.HasValue)                              revAlertas.Add("Data de fim não preenchida");
+                if (string.IsNullOrEmpty(proposta.FotoCapa))                 revAlertas.Add("Foto de capa não definida");
+                if (string.IsNullOrEmpty(proposta.ValoresPropostaHtml))      revAlertas.Add("Valores da proposta não preenchidos");
+                if (string.IsNullOrEmpty(proposta.CondicoesPropostaHtml))    revAlertas.Add("Condições da proposta não preenchidas");
+                foreach (var _rad in proposta.Destinos)
+                {
+                    foreach (var _rah in _rad.Hospedagens)
+                        if (!_rah.CheckOut.HasValue) revAlertas.Add($"Hospedagem sem check-out: {_rah.Nome}");
+                    foreach (var _rae in _rad.Experiencias)
+                        if (string.IsNullOrEmpty(_rae.Descricao)) revAlertas.Add($"Experiência sem descrição: {_rae.TipoPasseio}");
+                }
+
                 bool temInsights = proposta.Destinos.Any(d =>
                     !string.IsNullOrEmpty(d.CuidadosLLM) ||
                     !string.IsNullOrEmpty(d.GastronomiaLLM) ||
@@ -3803,295 +3833,735 @@
                     !string.IsNullOrEmpty(d.MalaViagemLLM) ||
                     !string.IsNullOrEmpty(d.PratosTipicosLLM));
 
+                // ── Painel de alertas ─────────────────────────────────────────────
+                if (revAlertas.Any())
+                {
+                    <div class="alert border-start border-4 border-warning bg-warning bg-opacity-10 px-3 py-2 mb-3" role="alert">
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <i class="fas fa-triangle-exclamation text-warning"></i>
+                            <strong class="small">@revAlertas.Count alerta(s) de revisão</strong>
+                        </div>
+                        <ul class="mb-0 ps-3" style="font-size:.82rem;">
+                            @foreach (var _al in revAlertas) { <li>@_al</li> }
+                        </ul>
+                    </div>
+                }
+
                 <div class="row g-4">
 
                     <!-- ════════════════════════════════════════════════════ -->
                     <!--   COLUNA ESQUERDA — RESUMO DA VIAGEM                -->
                     <!-- ════════════════════════════════════════════════════ -->
-                    <div class="@(temInsights ? "col-lg-6" : "col-lg-8 offset-lg-2")">
+                    <div class="@(temInsights ? "col-lg-6" : "col-lg-9")">
 
-                        <div class="card border-0 shadow-sm mb-3">
-                            <div class="card-header border-0 py-3"
-                                 style="background:linear-gradient(135deg,#1a1a2e 0%,#0f3460 100%);">
-                                <h5 class="mb-0 text-white">
-                                    <i class="fas fa-route me-2"></i>Resumo da Viagem
-                                </h5>
-                            </div>
-                            <div class="card-body p-4">
+                        <div class="accordion" id="rev-acc">
 
-                                <!-- Dados básicos da proposta -->
-                                <div class="mb-4">
-                                    <div class="rev-section-label">
-                                        <i class="fas fa-suitcase-rolling me-1"></i>Proposta
-                                    </div>
-                                    <h4 class="fw-bold mb-3">@proposta.Titulo</h4>
-                                    <div class="d-flex flex-wrap gap-2">
-                                        @if (proposta.DataInicio.HasValue && proposta.DataFim.HasValue)
+                            <!-- ── 1. DADOS GERAIS ──────────────────────────────── -->
+                            <div class="accordion-item border-0 shadow-sm mb-2 rounded-3 overflow-hidden">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button py-3 px-4" type="button"
+                                            data-bs-toggle="collapse" data-bs-target="#rev-dados">
+                                        <i class="fas fa-suitcase-rolling me-2 text-primary"></i>
+                                        <span class="flex-grow-1 fw-semibold">Dados Gerais</span>
+                                        @if (proposta.DataInicio.HasValue && proposta.DataFim.HasValue && !string.IsNullOrEmpty(proposta.FotoCapa))
                                         {
-                                            var totalDias = (proposta.DataFim.Value - proposta.DataInicio.Value).Days + 1;
-                                            <span class="rev-stat-chip">
-                                                <i class="fas fa-calendar-alt text-primary"></i>
-                                                @proposta.DataInicio.Value.ToString("dd/MM/yyyy") → @proposta.DataFim.Value.ToString("dd/MM/yyyy")
-                                                <span class="badge bg-primary ms-1">@totalDias dias</span>
-                                            </span>
+                                            <span class="badge bg-success ms-2">✓</span>
                                         }
-                                        <span class="rev-stat-chip">
-                                            <i class="fas fa-users text-info"></i>
-                                            @{ var _revPax = proposta.PassageirosProposta.Count; }
-                                            @_revPax @(_revPax == 1 ? "passageiro" : "passageiros")
-                                        </span>
-                                        <span class="rev-stat-chip">
-                                            <i class="fas fa-map-pin text-danger"></i>
-                                            @proposta.Destinos.Count destino(s)
-                                        </span>
-                                        @if (proposta.Voos.Any())
+                                        else
                                         {
-                                            <span class="rev-stat-chip">
-                                                <i class="fas fa-plane text-primary"></i>
-                                                @proposta.Voos.Count voo(s)
-                                            </span>
+                                            <span class="badge bg-warning text-dark ms-2">incompleto</span>
                                         }
-                                        @if (proposta.Seguros.Any())
-                                        {
-                                            <span class="rev-stat-chip">
-                                                <i class="fas fa-shield-alt text-success"></i>
-                                                @proposta.Seguros.Count seguro(s)
-                                            </span>
-                                        }
-                                    </div>
-                                    @if (!string.IsNullOrEmpty(proposta.ObservacoesGerais))
-                                    {
-                                        <div class="alert alert-light border-start border-3 border-secondary py-2 px-3 mb-0 mt-3 small">
-                                            <i class="fas fa-comment-dots me-1 text-muted"></i>
-                                            @proposta.ObservacoesGerais
-                                        </div>
-                                    }
-                                </div>
+                                    </button>
+                                </h2>
+                                <div id="rev-dados" class="accordion-collapse collapse show">
+                                    <div class="accordion-body p-3">
+                                        @{ var _rStat = proposta.StatusProposta switch {
+                                            StatusProposta.Enviada   => "warning",
+                                            StatusProposta.Aprovada  => "success",
+                                            StatusProposta.Rejeitada => "danger",
+                                            StatusProposta.Cancelada => "dark",
+                                            _ => "secondary"
+                                        }; }
+                                        <div class="d-flex gap-3 align-items-start">
+                                            <!-- Foto de capa -->
+                                            @if (!string.IsNullOrEmpty(proposta.FotoCapa))
+                                            {
+                                                <img src="@proposta.FotoCapa" class="rounded-2 flex-shrink-0"
+                                                     style="width:88px;height:68px;object-fit:cover;" />
+                                            }
+                                            else
+                                            {
+                                                <div class="rounded-2 flex-shrink-0 d-flex align-items-center justify-content-center"
+                                                     style="width:88px;height:68px;background:#f1f3f5;color:#adb5bd;font-size:.85rem;">
+                                                    <i class="fas fa-image"></i>
+                                                </div>
+                                            }
+                                            <!-- Informações principais -->
+                                            <div class="flex-grow-1" style="min-width:0;">
+                                                <h5 class="fw-bold mb-2 lh-sm" style="font-size:1.05rem;word-break:break-word;">@proposta.Titulo</h5>
 
-                                <!-- Cliente -->
-                                @if (proposta.Cliente != null)
-                                {
-                                    <div class="mb-4">
-                                        <div class="rev-section-label">
-                                            <i class="fas fa-user me-1"></i>Cliente
-                                        </div>
-                                        <div class="d-flex align-items-center gap-3">
-                                            <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold flex-shrink-0"
-                                                 style="width:40px;height:40px;font-size:.95rem;background:linear-gradient(135deg,#667eea,#764ba2);">
-                                                @(string.Join("", proposta.Cliente.Nome.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(p => char.ToUpper(p[0]))))
-                                            </div>
-                                            <div>
-                                                <div class="fw-semibold">@proposta.Cliente.Nome</div>
-                                                <div class="small text-muted">
-                                                    @if (!string.IsNullOrEmpty(proposta.Cliente.Email))
+                                                <!-- Status + Layout -->
+                                                <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                                                    <span class="badge bg-@_rStat" style="font-size:.75rem;">@proposta.StatusProposta</span>
+                                                    @if (proposta.Layout != null)
                                                     {
-                                                        <span class="me-3"><i class="fas fa-envelope me-1"></i>@proposta.Cliente.Email</span>
+                                                        <span class="badge bg-light text-secondary border" style="font-size:.73rem;font-weight:500;">
+                                                            <i class="fas fa-palette me-1" style="font-size:.65rem;"></i>@proposta.Layout.Nome
+                                                        </span>
                                                     }
-                                                    @if (!string.IsNullOrEmpty(proposta.Cliente.Telefone))
+                                                    @if (!proposta.LinkPublicoAtivo)
                                                     {
-                                                        <span><i class="fas fa-phone me-1"></i>@proposta.Cliente.Telefone</span>
+                                                        <span class="badge bg-danger" style="font-size:.72rem;">Link inativo</span>
                                                     }
                                                 </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                }
 
-                                <!-- Passageiros -->
-                                @if (proposta.PassageirosProposta.Any())
-                                {
-                                    <div class="mb-4">
-                                        <div class="rev-section-label">
-                                            <i class="fas fa-users me-1"></i>Passageiros
-                                            <span class="badge bg-secondary ms-1">@proposta.PassageirosProposta.Count</span>
-                                        </div>
-                                        <div class="d-flex flex-wrap gap-2">
-                                            @foreach (var pax in proposta.PassageirosProposta.OrderBy(p => p.Ordem))
-                                            {
-                                                <span class="rev-stat-chip">
-                                                    <i class="fas fa-user-circle text-muted"></i>
-                                                    @pax.Nome
-                                                    @if (pax.IdadeCalculada.HasValue)
-                                                    {
-                                                        <span class="text-muted" style="font-size:.74rem;">(@pax.IdadeCalculada a)</span>
-                                                    }
-                                                    @if (pax.Relacionamento.HasValue)
-                                                    {
-                                                        <span class="badge bg-light text-dark border" style="font-size:.68rem;">@pax.Relacionamento</span>
-                                                    }
-                                                </span>
-                                            }
-                                        </div>
-                                    </div>
-                                }
-
-                                <!-- Itinerário por destino -->
-                                @if (proposta.Destinos.Any())
-                                {
-                                    <div class="mb-4">
-                                        <div class="rev-section-label">
-                                            <i class="fas fa-map-marked-alt me-1"></i>Itinerário
-                                        </div>
-                                        @foreach (var d in proposta.Destinos.OrderBy(d => d.Ordem))
-                                        {
-                                            <div class="rev-dest-card d-flex gap-3 align-items-start">
-                                                @if (d.Fotos.Any())
+                                                <!-- Datas + Duração -->
+                                                @if (proposta.DataInicio.HasValue || proposta.DataFim.HasValue)
                                                 {
-                                                    var fp2 = d.Fotos.FirstOrDefault(f => f.Principal) ?? d.Fotos.OrderBy(f => f.Ordem).First();
-                                                    <img src="@fp2.CaminhoFoto" class="rounded flex-shrink-0"
-                                                         style="width:54px;height:42px;object-fit:cover;" />
+                                                    <div class="d-flex align-items-center flex-wrap gap-2 mb-2" style="font-size:.87rem;">
+                                                        <span>
+                                                            <i class="fas fa-calendar-alt text-primary me-1" style="font-size:.8rem;"></i>
+                                                            @(proposta.DataInicio?.ToString("dd/MM/yyyy") ?? "—")
+                                                            <span class="text-muted mx-1">→</span>
+                                                            @(proposta.DataFim?.ToString("dd/MM/yyyy") ?? "—")
+                                                        </span>
+                                                        @if (proposta.DataInicio.HasValue && proposta.DataFim.HasValue)
+                                                        {
+                                                            var _rDias = (proposta.DataFim.Value - proposta.DataInicio.Value).Days + 1;
+                                                            <span class="badge bg-primary">@_rDias dias</span>
+                                                        }
+                                                    </div>
                                                 }
                                                 else
                                                 {
-                                                    <div class="rounded d-flex align-items-center justify-content-center text-muted flex-shrink-0"
-                                                         style="width:54px;height:42px;background:#e9ecef;">
-                                                        <i class="fas fa-map-pin" style="font-size:.9rem;"></i>
+                                                    <div class="small mb-2" style="color:#dc3545;">
+                                                        <i class="fas fa-calendar-xmark me-1"></i>Datas não definidas
                                                     </div>
                                                 }
-                                                <div class="flex-grow-1">
-                                                    <div class="fw-semibold">@d.Nome</div>
-                                                    @if (!string.IsNullOrEmpty(d.Cidade) || !string.IsNullOrEmpty(d.Pais))
-                                                    {
-                                                        <div class="small text-muted">
-                                                            @d.Cidade@(!string.IsNullOrEmpty(d.Cidade) && !string.IsNullOrEmpty(d.Pais) ? ", " : "")@d.Pais
-                                                        </div>
-                                                    }
-                                                    @if (d.DataChegada.HasValue || d.DataSaida.HasValue)
-                                                    {
-                                                        <div class="small text-muted">
-                                                            <i class="fas fa-calendar-check me-1"></i>
-                                                            @(d.DataChegada?.ToString("dd/MM") ?? "—") → @(d.DataSaida?.ToString("dd/MM") ?? "—")
-                                                        </div>
-                                                    }
-                                                    <div class="d-flex flex-wrap gap-1 mt-1">
-                                                        @if (d.Hospedagens.Any())
-                                                        {
-                                                            <span class="rev-stat-chip" style="font-size:.73rem;padding:2px 8px;">
-                                                                <i class="fas fa-hotel text-info"></i>@d.Hospedagens.Count hosp.
-                                                            </span>
-                                                        }
-                                                        @if (d.Experiencias.Any())
-                                                        {
-                                                            <span class="rev-stat-chip" style="font-size:.73rem;padding:2px 8px;">
-                                                                <i class="fas fa-star text-warning"></i>@d.Experiencias.Count exp.
-                                                            </span>
-                                                        }
-                                                        @if (d.Transportes.Any())
-                                                        {
-                                                            <span class="rev-stat-chip" style="font-size:.73rem;padding:2px 8px;">
-                                                                <i class="fas fa-car text-primary"></i>@d.Transportes.Count transp.
-                                                            </span>
-                                                        }
+
+                                                <!-- Informações iniciais (ObservacoesGerais) -->
+                                                @if (!string.IsNullOrEmpty(proposta.ObservacoesGerais))
+                                                {
+                                                    <div class="border-top pt-2 mt-1">
+                                                        <div class="rev-section-label mb-1" style="font-size:.6rem;">Informações iniciais</div>
+                                                        <div class="small text-muted" style="white-space:pre-wrap;line-height:1.5;">@proposta.ObservacoesGerais</div>
+                                                    </div>
+                                                }
+
+                                                <!-- Aviso foto de capa ausente -->
+                                                @if (string.IsNullOrEmpty(proposta.FotoCapa))
+                                                {
+                                                    <div class="small mt-2" style="color:#856404;">
+                                                        <i class="fas fa-image me-1"></i>Foto de capa não definida
+                                                    </div>
+                                                }
+                                            </div>
+                                        </div>
+
+                                        <!-- Cliente -->
+                                        @if (proposta.Cliente != null)
+                                        {
+                                            <div class="border-top mt-3 pt-2 d-flex align-items-center gap-2">
+                                                <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold flex-shrink-0"
+                                                     style="width:32px;height:32px;font-size:.78rem;background:linear-gradient(135deg,#667eea,#764ba2);">
+                                                    @(string.Join("", proposta.Cliente.Nome.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(p => char.ToUpper(p[0]))))
+                                                </div>
+                                                <div>
+                                                    <div class="small fw-semibold">@proposta.Cliente.Nome</div>
+                                                    <div class="small text-muted">
+                                                        @if (!string.IsNullOrEmpty(proposta.Cliente.Email)) { <span class="me-2"><i class="fas fa-envelope me-1"></i>@proposta.Cliente.Email</span> }
+                                                        @if (!string.IsNullOrEmpty(proposta.Cliente.Telefone)) { <span><i class="fas fa-phone me-1"></i>@proposta.Cliente.Telefone</span> }
                                                     </div>
                                                 </div>
                                             </div>
                                         }
                                     </div>
-                                }
+                                </div>
+                            </div>
 
-                                <!-- Voos -->
-                                @if (proposta.Voos.Any())
-                                {
-                                    <div class="mb-4">
-                                        <div class="rev-section-label">
-                                            <i class="fas fa-plane me-1"></i>Aéreo
-                                            <span class="badge bg-secondary ms-1">@proposta.Voos.Count</span>
-                                        </div>
-                                        @foreach (var voo in proposta.Voos.OrderBy(v => v.Ordem))
-                                        {
-                                            <div class="rev-voo-card">
-                                                <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
-                                                    @if (voo.TipoVoo == SistemaUsuarios.Models.TipoVoo.Ida)
+                            <!-- ── 2. PASSAGEIROS ───────────────────────────────── -->
+                            @if (proposta.PassageirosProposta.Any())
+                            {
+                                <div class="accordion-item border-0 shadow-sm mb-2 rounded-3 overflow-hidden">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed py-3 px-4" type="button"
+                                                data-bs-toggle="collapse" data-bs-target="#rev-pax">
+                                            <i class="fas fa-users me-2 text-info"></i>
+                                            <span class="flex-grow-1 fw-semibold">Passageiros</span>
+                                            <span class="badge bg-secondary ms-2">@proposta.PassageirosProposta.Count</span>
+                                        </button>
+                                    </h2>
+                                    <div id="rev-pax" class="accordion-collapse collapse">
+                                        <div class="accordion-body p-0">
+                                            <table class="table table-sm table-hover mb-0" style="font-size:.83rem;">
+                                                <thead class="table-light">
+                                                    <tr>
+                                                        <th class="ps-3">Nome</th>
+                                                        <th>Faixa / Idade</th>
+                                                        <th>Relacionamento</th>
+                                                        <th class="pe-3">Titular</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach (var pax in proposta.PassageirosProposta.OrderBy(p => p.Ordem))
                                                     {
-                                                        <span class="badge bg-primary">Ida</span>
+                                                        string _paxFx = "";
+                                                        if (pax.FaixaEtaria.HasValue)
+                                                        {
+                                                            _paxFx = pax.FaixaEtaria.Value switch {
+                                                                FaixaEtariaPassageiro.Bebe        => "Bebê",
+                                                                FaixaEtariaPassageiro.Crianca     => "Criança",
+                                                                FaixaEtariaPassageiro.Adolescente => "Adolescente",
+                                                                _ => "Adulto"
+                                                            };
+                                                        }
+                                                        <tr>
+                                                            <td class="ps-3 fw-semibold">@pax.Nome</td>
+                                                            <td>
+                                                                @if (pax.IdadeCalculada.HasValue)
+                                                                {
+                                                                    <span>@pax.IdadeCalculada a</span>
+                                                                    if (!string.IsNullOrEmpty(_paxFx))
+                                                                    {
+                                                                        <span class="badge bg-light text-dark border ms-1" style="font-size:.68rem;">@_paxFx</span>
+                                                                    }
+                                                                }
+                                                                else if (!string.IsNullOrEmpty(_paxFx))
+                                                                {
+                                                                    <span class="badge bg-light text-dark border" style="font-size:.68rem;">@_paxFx @(pax.FaixaIsAproximada ? "(aprox.)" : "")</span>
+                                                                }
+                                                                else { <span class="text-muted">—</span> }
+                                                            </td>
+                                                            <td>
+                                                                @if (pax.Relacionamento.HasValue) { <span>@pax.Relacionamento</span> }
+                                                                else { <span class="text-muted">—</span> }
+                                                            </td>
+                                                            <td class="pe-3">
+                                                                @if (pax.IsTitular) { <span class="badge bg-primary" style="font-size:.68rem;">Titular</span> }
+                                                            </td>
+                                                        </tr>
                                                     }
-                                                    else if (voo.TipoVoo == SistemaUsuarios.Models.TipoVoo.Interno)
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+
+                            <!-- ── 3. AÉREO ─────────────────────────────────────── -->
+                            @if (proposta.Voos.Any())
+                            {
+                                <div class="accordion-item border-0 shadow-sm mb-2 rounded-3 overflow-hidden">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed py-3 px-4" type="button"
+                                                data-bs-toggle="collapse" data-bs-target="#rev-voos">
+                                            <i class="fas fa-plane me-2 text-primary"></i>
+                                            <span class="flex-grow-1 fw-semibold">Aéreo</span>
+                                            <span class="badge bg-secondary ms-2">@proposta.Voos.Count</span>
+                                        </button>
+                                    </h2>
+                                    <div id="rev-voos" class="accordion-collapse collapse">
+                                        <div class="accordion-body p-3">
+                                            @foreach (var voo in proposta.Voos.OrderBy(v => v.Ordem))
+                                            {
+                                                string _vCor = voo.TipoVoo == TipoVoo.Ida ? "primary" : (voo.TipoVoo == TipoVoo.Interno ? "warning" : "success");
+                                                string _vLbl = voo.TipoVoo == TipoVoo.Ida ? "Ida"  : (voo.TipoVoo == TipoVoo.Interno ? "Interno" : "Volta");
+                                                bool _vTemBag = voo.BagagemMaoPeso.HasValue || voo.BagagemDespachadaPeso.HasValue || !string.IsNullOrEmpty(voo.BagagemItemPessoalDescricao);
+                                                <div class="rev-voo-card mb-2">
+                                                    <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                                                        <span class="badge bg-@_vCor @(_vCor == "warning" ? "text-dark" : "")">@_vLbl</span>
+                                                        <strong class="small">@voo.Companhia · @voo.NumeroVoo</strong>
+                                                        @if (!string.IsNullOrEmpty(voo.Classe)) { <span class="badge bg-light text-dark border" style="font-size:.73rem;">@voo.Classe</span> }
+                                                    </div>
+                                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                                        <span class="fw-semibold small">@voo.Origem</span>
+                                                        <i class="fas fa-long-arrow-alt-right text-muted"></i>
+                                                        <span class="fw-semibold small">@voo.Destino</span>
+                                                    </div>
+                                                    @if (voo.HorarioSaida.HasValue)
                                                     {
-                                                        <span class="badge bg-warning text-dark">Interno</span>
+                                                        <div class="small text-muted mb-1">
+                                                            <i class="fas fa-clock me-1"></i>@voo.HorarioSaida.Value.ToString("dd/MM HH:mm")
+                                                            @if (voo.HorarioChegada.HasValue) { <text> → @voo.HorarioChegada.Value.ToString("dd/MM HH:mm")</text> }
+                                                            @if (!string.IsNullOrEmpty(voo.Duracao)) { <text> (@voo.Duracao)</text> }
+                                                        </div>
+                                                    }
+                                                    @if (_vTemBag)
+                                                    {
+                                                        <div class="d-flex flex-wrap gap-1">
+                                                            @if (!string.IsNullOrEmpty(voo.BagagemItemPessoalDescricao)) { <span class="rev-stat-chip" style="font-size:.7rem;padding:2px 7px;"><i class="fas fa-shopping-bag"></i> @voo.BagagemItemPessoalDescricao</span> }
+                                                            @if (voo.BagagemMaoPeso.HasValue)           { <span class="rev-stat-chip" style="font-size:.7rem;padding:2px 7px;"><i class="fas fa-briefcase"></i> Mão: @voo.BagagemMaoPeso kg</span> }
+                                                            @if (voo.BagagemDespachadaPeso.HasValue)    { <span class="rev-stat-chip" style="font-size:.7rem;padding:2px 7px;"><i class="fas fa-suitcase-rolling"></i> Despacho: @voo.BagagemDespachadaPeso kg</span> }
+                                                        </div>
+                                                    }
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+
+                            <!-- ── 4. DESTINOS ──────────────────────────────────── -->
+                            @if (proposta.Destinos.Any())
+                            {
+                                <div class="accordion-item border-0 shadow-sm mb-2 rounded-3 overflow-hidden">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed py-3 px-4" type="button"
+                                                data-bs-toggle="collapse" data-bs-target="#rev-destinos">
+                                            <i class="fas fa-map-marked-alt me-2 text-danger"></i>
+                                            <span class="flex-grow-1 fw-semibold">Destinos</span>
+                                            <span class="badge bg-secondary ms-2">@proposta.Destinos.Count</span>
+                                        </button>
+                                    </h2>
+                                    <div id="rev-destinos" class="accordion-collapse collapse">
+                                        <div class="accordion-body p-3">
+                                            @foreach (var dest in proposta.Destinos.OrderBy(d => d.Ordem))
+                                            {
+                                                <div class="rev-dest-card d-flex gap-3 align-items-start mb-2">
+                                                    @if (dest.Fotos.Any())
+                                                    {
+                                                        var _dfp = dest.Fotos.FirstOrDefault(f => f.Principal) ?? dest.Fotos.OrderBy(f => f.Ordem).First();
+                                                        <img src="@_dfp.CaminhoFoto" class="rounded flex-shrink-0" style="width:60px;height:48px;object-fit:cover;" />
                                                     }
                                                     else
                                                     {
-                                                        <span class="badge bg-success">Volta</span>
+                                                        <div class="rounded d-flex align-items-center justify-content-center text-muted flex-shrink-0"
+                                                             style="width:60px;height:48px;background:#e9ecef;">
+                                                            <i class="fas fa-map-pin" style="font-size:.9rem;"></i>
+                                                        </div>
                                                     }
-                                                    <strong class="small">@voo.Companhia · @voo.NumeroVoo</strong>
-                                                    @if (!string.IsNullOrEmpty(voo.Classe))
-                                                    {
-                                                        <span class="badge bg-light text-dark border" style="font-size:.73rem;">@voo.Classe</span>
-                                                    }
-                                                </div>
-                                                <div class="d-flex align-items-center gap-2">
-                                                    <span class="fw-semibold small">@voo.Origem</span>
-                                                    <i class="fas fa-long-arrow-alt-right text-muted"></i>
-                                                    <span class="fw-semibold small">@voo.Destino</span>
-                                                </div>
-                                                @if (voo.HorarioSaida.HasValue)
-                                                {
-                                                    <div class="small text-muted mt-1">
-                                                        <i class="fas fa-clock me-1"></i>
-                                                        @voo.HorarioSaida.Value.ToString("dd/MM HH:mm")
-                                                        @if (voo.HorarioChegada.HasValue)
+                                                    <div class="flex-grow-1">
+                                                        <div class="fw-semibold">@dest.Nome</div>
+                                                        @if (!string.IsNullOrEmpty(dest.Cidade) || !string.IsNullOrEmpty(dest.Pais))
                                                         {
-                                                            <text> → @voo.HorarioChegada.Value.ToString("dd/MM HH:mm")</text>
+                                                            <div class="small text-muted">@dest.Cidade@(!string.IsNullOrEmpty(dest.Cidade) && !string.IsNullOrEmpty(dest.Pais) ? ", " : "")@dest.Pais</div>
                                                         }
-                                                        @if (!string.IsNullOrEmpty(voo.Duracao))
+                                                        @if (dest.DataChegada.HasValue || dest.DataSaida.HasValue)
                                                         {
-                                                            <text> (@voo.Duracao)</text>
+                                                            <div class="small text-muted">
+                                                                <i class="fas fa-calendar-check me-1"></i>
+                                                                @(dest.DataChegada?.ToString("dd/MM") ?? "—") → @(dest.DataSaida?.ToString("dd/MM") ?? "—")
+                                                            </div>
+                                                        }
+                                                        @if (!string.IsNullOrEmpty(dest.Descricao))
+                                                        {
+                                                            <div class="rev-rich border-start border-2 ps-2 mt-1" style="max-height:72px;overflow:hidden;">@Html.Raw(dest.Descricao)</div>
+                                                        }
+                                                        @if (dest.Fotos.Count > 1)
+                                                        {
+                                                            <div class="d-flex gap-1 mt-2 flex-wrap">
+                                                                @foreach (var _df2 in dest.Fotos.OrderBy(f => f.Ordem).Take(6))
+                                                                {
+                                                                    <img src="@_df2.CaminhoFoto" class="rounded" style="width:34px;height:26px;object-fit:cover;" />
+                                                                }
+                                                                @if (dest.Fotos.Count > 6) { <span class="small text-muted align-self-center">+@(dest.Fotos.Count - 6)</span> }
+                                                            </div>
+                                                        }
+                                                        <div class="d-flex flex-wrap gap-1 mt-1">
+                                                            @if (dest.Hospedagens.Any()) { <span class="rev-stat-chip" style="font-size:.72rem;padding:2px 7px;"><i class="fas fa-hotel text-info"></i> @dest.Hospedagens.Count hosp.</span> }
+                                                            @if (dest.Experiencias.Any()) { <span class="rev-stat-chip" style="font-size:.72rem;padding:2px 7px;"><i class="fas fa-star text-warning"></i> @dest.Experiencias.Count exp.</span> }
+                                                            @if (dest.Transportes.Any()) { <span class="rev-stat-chip" style="font-size:.72rem;padding:2px 7px;"><i class="fas fa-car text-primary"></i> @dest.Transportes.Count transp.</span> }
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+
+                            <!-- ── 5. HOSPEDAGENS ───────────────────────────────── -->
+                            @if (revTotalHosp > 0)
+                            {
+                                <div class="accordion-item border-0 shadow-sm mb-2 rounded-3 overflow-hidden">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed py-3 px-4" type="button"
+                                                data-bs-toggle="collapse" data-bs-target="#rev-hosp">
+                                            <i class="fas fa-hotel me-2 text-info"></i>
+                                            <span class="flex-grow-1 fw-semibold">Hospedagens</span>
+                                            <span class="badge bg-secondary ms-2">@revTotalHosp</span>
+                                        </button>
+                                    </h2>
+                                    <div id="rev-hosp" class="accordion-collapse collapse">
+                                        <div class="accordion-body p-3">
+                                            @foreach (var _dh in proposta.Destinos.OrderBy(d => d.Ordem).Where(d => d.Hospedagens.Any()))
+                                            {
+                                                if (proposta.Destinos.Count > 1)
+                                                {
+                                                    <div class="rev-section-label mb-2"><i class="fas fa-map-pin me-1"></i>@_dh.Nome</div>
+                                                }
+                                                @foreach (var hosp in _dh.Hospedagens.OrderBy(h => h.Ordem))
+                                                {
+                                                    string _hCat = hosp.Categoria switch {
+                                                        CategoriaHospedagem.HotelFazenda => "Hotel fazenda",
+                                                        CategoriaHospedagem.AluguelCasa  => "Aluguel de casa",
+                                                        _ => hosp.Categoria.ToString()
+                                                    };
+                                                    string _hPens = hosp.TipoPensao switch {
+                                                        TipoPensao.SemPensao       => "Sem refeições",
+                                                        TipoPensao.CafeDaManha     => "Café da manhã",
+                                                        TipoPensao.MeiaPensao      => "Meia pensão",
+                                                        TipoPensao.PensaoCompleta  => "Pensão completa",
+                                                        TipoPensao.AllInclusive    => "All-inclusive",
+                                                        _ => "Outros"
+                                                    };
+                                                    <div class="rev-arr-item mb-3">
+                                                        <div class="d-flex gap-3 align-items-start mb-2">
+                                                            @if (hosp.Fotos.Any())
+                                                            {
+                                                                var _hfp = hosp.Fotos.FirstOrDefault(f => f.Principal) ?? hosp.Fotos.OrderBy(f => f.Ordem).First();
+                                                                <img src="@_hfp.CaminhoFoto" class="rounded flex-shrink-0" style="width:60px;height:48px;object-fit:cover;" />
+                                                            }
+                                                            <div class="flex-grow-1">
+                                                                <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+                                                                    <span class="fw-bold">@hosp.Nome</span>
+                                                                    <span class="badge bg-light text-dark border" style="font-size:.7rem;">@_hCat</span>
+                                                                    @if (hosp.NumeroEstrelas.HasValue)
+                                                                    {
+                                                                        <span class="text-warning" style="font-size:.82rem;" title="@hosp.NumeroEstrelas estrelas">@(string.Concat(Enumerable.Repeat("★", hosp.NumeroEstrelas.Value)))</span>
+                                                                    }
+                                                                </div>
+                                                                <div class="d-flex flex-wrap gap-2 mb-1" style="font-size:.8rem;color:#6c757d;">
+                                                                    @if (hosp.CheckIn.HasValue)  { <span><i class="fas fa-sign-in-alt me-1"></i>In: @hosp.CheckIn.Value.ToString("dd/MM HH:mm")</span> }
+                                                                    @if (hosp.CheckOut.HasValue) { <span><i class="fas fa-sign-out-alt me-1"></i>Out: @hosp.CheckOut.Value.ToString("dd/MM HH:mm")</span> }
+                                                                    else { <span style="color:#dc3545;"><i class="fas fa-exclamation-triangle me-1"></i>Sem check-out</span> }
+                                                                    <span><i class="fas fa-utensils me-1"></i>@_hPens</span>
+                                                                </div>
+                                                                @if (!string.IsNullOrEmpty(hosp.Reserva))   { <div class="small text-muted mb-1"><i class="fas fa-ticket-alt me-1"></i>Reserva: <strong>@hosp.Reserva</strong></div> }
+                                                                @if (!string.IsNullOrEmpty(hosp.Endereco))  { <div class="small text-muted mb-1"><i class="fas fa-map-marker-alt me-1"></i>@hosp.Endereco</div> }
+                                                            </div>
+                                                        </div>
+                                                        @if (!string.IsNullOrEmpty(hosp.Descricao))
+                                                        {
+                                                            <div class="rev-rich border-start border-2 ps-2 mb-2">@Html.Raw(hosp.Descricao)</div>
+                                                        }
+                                                        @if (hosp.Comodidades.Any())
+                                                        {
+                                                            <div class="d-flex flex-wrap gap-1 mb-2">
+                                                                @foreach (var _hc in hosp.Comodidades.OrderBy(c => c.Ordem))
+                                                                {
+                                                                    <span class="badge bg-light text-dark border" style="font-size:.68rem;">@_hc.Nome</span>
+                                                                }
+                                                            </div>
+                                                        }
+                                                        @if (hosp.Fotos.Count > 1)
+                                                        {
+                                                            <div class="d-flex gap-1 mb-2 flex-wrap">
+                                                                @foreach (var _hf2 in hosp.Fotos.OrderBy(f => f.Ordem).Skip(1).Take(8))
+                                                                {
+                                                                    <img src="@_hf2.CaminhoFoto" class="rounded" style="width:38px;height:30px;object-fit:cover;" />
+                                                                }
+                                                                @if (hosp.Fotos.Count > 9) { <span class="small text-muted align-self-center">+@(hosp.Fotos.Count - 9)</span> }
+                                                            </div>
+                                                        }
+                                                        @if (hosp.Acomodacoes.Any())
+                                                        {
+                                                            <div class="border-top pt-2 mt-1">
+                                                                <div class="rev-section-label mb-2" style="font-size:.6rem;">Acomodações (@hosp.Acomodacoes.Count)</div>
+                                                                @foreach (var acm in hosp.Acomodacoes.OrderBy(a => a.Ordem))
+                                                                {
+                                                                    <div class="d-flex gap-2 align-items-start mb-2 ps-1">
+                                                                        @if (acm.Fotos.Any())
+                                                                        {
+                                                                            <img src="@acm.Fotos.OrderBy(f => f.Ordem).First().CaminhoFoto" class="rounded flex-shrink-0" style="width:38px;height:30px;object-fit:cover;" />
+                                                                        }
+                                                                        <div class="flex-grow-1">
+                                                                            <div class="small fw-semibold">@acm.Nome</div>
+                                                                            @if (!string.IsNullOrEmpty(acm.Descricao)) { <div class="small text-muted">@acm.Descricao</div> }
+                                                                            @if (acm.Comodidades.Any())
+                                                                            {
+                                                                                <div class="d-flex flex-wrap gap-1 mt-1">
+                                                                                    @foreach (var _ac in acm.Comodidades.OrderBy(c => c.Ordem))
+                                                                                    {
+                                                                                        <span class="badge bg-light text-dark border" style="font-size:.64rem;">@_ac.Nome</span>
+                                                                                    }
+                                                                                </div>
+                                                                            }
+                                                                        </div>
+                                                                    </div>
+                                                                }
+                                                            </div>
                                                         }
                                                     </div>
                                                 }
-                                            </div>
-                                        }
-                                    </div>
-                                }
-
-                                <!-- Seguros -->
-                                @if (proposta.Seguros.Any())
-                                {
-                                    <div class="mb-2">
-                                        <div class="rev-section-label">
-                                            <i class="fas fa-shield-alt me-1"></i>Seguros
-                                            <span class="badge bg-secondary ms-1">@proposta.Seguros.Count</span>
+                                            }
                                         </div>
-                                        @foreach (var seg in proposta.Seguros.OrderBy(s => s.Ordem))
-                                        {
-                                            <div class="rev-seguro-card">
-                                                <div class="d-flex justify-content-between align-items-start gap-2">
-                                                    <span class="fw-semibold small">@seg.Titulo</span>
-                                                    @if (seg.Valor.HasValue)
+                                    </div>
+                                </div>
+                            }
+
+                            <!-- ── 6. EXPERIÊNCIAS ──────────────────────────────── -->
+                            @if (revTotalExp > 0)
+                            {
+                                <div class="accordion-item border-0 shadow-sm mb-2 rounded-3 overflow-hidden">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed py-3 px-4" type="button"
+                                                data-bs-toggle="collapse" data-bs-target="#rev-exp">
+                                            <i class="fas fa-star me-2 text-warning"></i>
+                                            <span class="flex-grow-1 fw-semibold">Experiências</span>
+                                            <span class="badge bg-secondary ms-2">@revTotalExp</span>
+                                        </button>
+                                    </h2>
+                                    <div id="rev-exp" class="accordion-collapse collapse">
+                                        <div class="accordion-body p-3">
+                                            @foreach (var _de in proposta.Destinos.OrderBy(d => d.Ordem).Where(d => d.Experiencias.Any()))
+                                            {
+                                                if (proposta.Destinos.Count > 1)
+                                                {
+                                                    <div class="rev-section-label mb-2"><i class="fas fa-map-pin me-1"></i>@_de.Nome</div>
+                                                }
+                                                @foreach (var exp in _de.Experiencias.OrderBy(e => e.Ordem))
+                                                {
+                                                    <div class="rev-arr-item mb-2">
+                                                        <div class="d-flex justify-content-between align-items-start gap-2 mb-1">
+                                                            <span class="fw-semibold small">@exp.TipoPasseio</span>
+                                                            @if (exp.Valor.HasValue) { <span class="badge bg-success flex-shrink-0">R$ @exp.Valor.Value.ToString("N2")</span> }
+                                                        </div>
+                                                        @if (exp.DataInicio.HasValue)
+                                                        {
+                                                            <div class="small text-muted mb-1">
+                                                                <i class="fas fa-clock me-1"></i>@exp.DataInicio.Value.ToString("dd/MM HH:mm")
+                                                                @if (exp.DataFim.HasValue) { <text> → @exp.DataFim.Value.ToString("dd/MM HH:mm")</text> }
+                                                            </div>
+                                                        }
+                                                        @if (!string.IsNullOrEmpty(exp.Descricao))
+                                                        {
+                                                            <div class="rev-rich border-start border-2 ps-2 mb-1">@Html.Raw(exp.Descricao)</div>
+                                                        }
+                                                        else
+                                                        {
+                                                            <div class="small mb-1" style="color:#856404;"><i class="fas fa-exclamation-triangle me-1"></i>Sem descrição</div>
+                                                        }
+                                                        @if (exp.Imagens.Any())
+                                                        {
+                                                            <div class="d-flex gap-1 mt-1 flex-wrap">
+                                                                @foreach (var _ei in exp.Imagens.OrderBy(i => i.Ordem).Take(8))
+                                                                {
+                                                                    <img src="@_ei.CaminhoImagem" class="rounded" style="width:34px;height:26px;object-fit:cover;" />
+                                                                }
+                                                            </div>
+                                                        }
+                                                        @if (exp.Arquivos.Any())
+                                                        {
+                                                            <div class="d-flex flex-wrap gap-1 mt-1">
+                                                                @foreach (var _ea in exp.Arquivos)
+                                                                {
+                                                                    <span class="badge bg-light text-dark border" style="font-size:.68rem;"><i class="fas fa-file me-1"></i>@_ea.NomeOriginal</span>
+                                                                }
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                }
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+
+                            <!-- ── 7. TRANSPORTES ───────────────────────────────── -->
+                            @if (revTotalTrp > 0)
+                            {
+                                <div class="accordion-item border-0 shadow-sm mb-2 rounded-3 overflow-hidden">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed py-3 px-4" type="button"
+                                                data-bs-toggle="collapse" data-bs-target="#rev-trp">
+                                            <i class="fas fa-car me-2 text-primary"></i>
+                                            <span class="flex-grow-1 fw-semibold">Transportes</span>
+                                            <span class="badge bg-secondary ms-2">@revTotalTrp</span>
+                                        </button>
+                                    </h2>
+                                    <div id="rev-trp" class="accordion-collapse collapse">
+                                        <div class="accordion-body p-3">
+                                            @foreach (var _dt in proposta.Destinos.OrderBy(d => d.Ordem).Where(d => d.Transportes.Any()))
+                                            {
+                                                if (proposta.Destinos.Count > 1)
+                                                {
+                                                    <div class="rev-section-label mb-2"><i class="fas fa-map-pin me-1"></i>@_dt.Nome</div>
+                                                }
+                                                @foreach (var trp in _dt.Transportes.OrderBy(t => t.Ordem))
+                                                {
+                                                    <div class="rev-arr-item mb-2">
+                                                        <div class="d-flex justify-content-between align-items-start gap-2 mb-1">
+                                                            <span class="fw-semibold small">@trp.Titulo</span>
+                                                            @if (trp.Valor.HasValue) { <span class="badge bg-info text-dark flex-shrink-0">R$ @trp.Valor.Value.ToString("N2")</span> }
+                                                        </div>
+                                                        @if (!string.IsNullOrEmpty(trp.Descricao))
+                                                        {
+                                                            <div class="rev-rich border-start border-2 ps-2 mb-1">@Html.Raw(trp.Descricao)</div>
+                                                        }
+                                                        @if (trp.Imagens.Any())
+                                                        {
+                                                            <div class="d-flex gap-1 mt-1 flex-wrap">
+                                                                @foreach (var _ti in trp.Imagens.OrderBy(i => i.Ordem).Take(8))
+                                                                {
+                                                                    <img src="@_ti.CaminhoImagem" class="rounded" style="width:34px;height:26px;object-fit:cover;" />
+                                                                }
+                                                            </div>
+                                                        }
+                                                        @if (trp.Documentos.Any())
+                                                        {
+                                                            <div class="d-flex flex-wrap gap-1 mt-1">
+                                                                @foreach (var _td in trp.Documentos)
+                                                                {
+                                                                    <span class="badge bg-light text-dark border" style="font-size:.68rem;"><i class="fas fa-file me-1"></i>@_td.NomeOriginal</span>
+                                                                }
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                }
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+
+                            <!-- ── 8. SEGURO ─────────────────────────────────────── -->
+                            @if (proposta.Seguros.Any())
+                            {
+                                <div class="accordion-item border-0 shadow-sm mb-2 rounded-3 overflow-hidden">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed py-3 px-4" type="button"
+                                                data-bs-toggle="collapse" data-bs-target="#rev-seg">
+                                            <i class="fas fa-shield-alt me-2 text-success"></i>
+                                            <span class="flex-grow-1 fw-semibold">Seguro</span>
+                                            <span class="badge bg-secondary ms-2">@proposta.Seguros.Count</span>
+                                        </button>
+                                    </h2>
+                                    <div id="rev-seg" class="accordion-collapse collapse">
+                                        <div class="accordion-body p-3">
+                                            @foreach (var seg in proposta.Seguros.OrderBy(s => s.Ordem))
+                                            {
+                                                <div class="rev-arr-item mb-2">
+                                                    <div class="d-flex justify-content-between align-items-start gap-2 mb-1">
+                                                        <span class="fw-semibold small">@seg.Titulo</span>
+                                                        @if (seg.Valor.HasValue) { <span class="badge bg-success flex-shrink-0">R$ @seg.Valor.Value.ToString("N2")</span> }
+                                                    </div>
+                                                    @if (!string.IsNullOrEmpty(seg.Descricao)) { <div class="small text-muted border-start border-2 ps-2 mb-1">@seg.Descricao</div> }
+                                                    @if (seg.Imagens.Any())
                                                     {
-                                                        <span class="badge bg-success flex-shrink-0">R$ @seg.Valor.Value.ToString("N2")</span>
+                                                        <div class="d-flex gap-1 mt-1 flex-wrap">
+                                                            @foreach (var _si in seg.Imagens.Take(8)) { <img src="@_si.CaminhoImagem" class="rounded" style="width:34px;height:26px;object-fit:cover;" /> }
+                                                        </div>
+                                                    }
+                                                    @if (seg.Documentos.Any())
+                                                    {
+                                                        <div class="d-flex flex-wrap gap-1 mt-1">
+                                                            @foreach (var _sd in seg.Documentos) { <span class="badge bg-light text-dark border" style="font-size:.68rem;"><i class="fas fa-file me-1"></i>@_sd.NomeOriginal</span> }
+                                                        </div>
                                                     }
                                                 </div>
-                                                @if (!string.IsNullOrEmpty(seg.Descricao))
-                                                {
-                                                    <div class="small text-muted mt-1">@seg.Descricao</div>
-                                                }
-                                            </div>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+
+                            <!-- ── 9. VALORES ──────────────────────────────────────  -->
+                            <div class="accordion-item border-0 shadow-sm mb-2 rounded-3 overflow-hidden">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed py-3 px-4" type="button"
+                                            data-bs-toggle="collapse" data-bs-target="#rev-val">
+                                        <i class="fas fa-money-bill-wave me-2 text-success"></i>
+                                        <span class="flex-grow-1 fw-semibold">Valores</span>
+                                        @if (!string.IsNullOrEmpty(proposta.ValoresPropostaHtml))
+                                        { <span class="badge bg-success ms-2">✓</span> }
+                                        else
+                                        { <span class="badge bg-warning text-dark ms-2">vazio</span> }
+                                    </button>
+                                </h2>
+                                <div id="rev-val" class="accordion-collapse collapse">
+                                    <div class="accordion-body p-3">
+                                        @if (!string.IsNullOrEmpty(proposta.ValoresPropostaHtml))
+                                        {
+                                            <div class="ql-editor" style="min-height:0;padding:0;">@Html.Raw(proposta.ValoresPropostaHtml)</div>
+                                        }
+                                        else
+                                        {
+                                            <div class="text-muted small"><i class="fas fa-exclamation-circle me-1"></i>Valores não preenchidos</div>
                                         }
                                     </div>
-                                }
-
+                                </div>
                             </div>
-                        </div>
+
+                            <!-- ── 10. CONDIÇÕES ───────────────────────────────────  -->
+                            <div class="accordion-item border-0 shadow-sm mb-2 rounded-3 overflow-hidden">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed py-3 px-4" type="button"
+                                            data-bs-toggle="collapse" data-bs-target="#rev-cond">
+                                        <i class="fas fa-file-contract me-2 text-muted"></i>
+                                        <span class="flex-grow-1 fw-semibold">Condições</span>
+                                        @if (!string.IsNullOrEmpty(proposta.CondicoesPropostaHtml))
+                                        { <span class="badge bg-success ms-2">✓</span> }
+                                        else
+                                        { <span class="badge bg-warning text-dark ms-2">vazio</span> }
+                                    </button>
+                                </h2>
+                                <div id="rev-cond" class="accordion-collapse collapse">
+                                    <div class="accordion-body p-3">
+                                        @if (!string.IsNullOrEmpty(proposta.CondicoesPropostaHtml))
+                                        {
+                                            <div class="ql-editor" style="min-height:0;padding:0;">@Html.Raw(proposta.CondicoesPropostaHtml)</div>
+                                        }
+                                        else
+                                        {
+                                            <div class="text-muted small"><i class="fas fa-exclamation-circle me-1"></i>Condições não preenchidas</div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- ── 11. AVALIAÇÃO ───────────────────────────────────  -->
+                            <div class="accordion-item border-0 shadow-sm mb-2 rounded-3 overflow-hidden">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed py-3 px-4" type="button"
+                                            data-bs-toggle="collapse" data-bs-target="#rev-aval">
+                                        <i class="fas fa-star-half-alt me-2 text-warning"></i>
+                                        <span class="flex-grow-1 fw-semibold">Avaliação pelo cliente</span>
+                                        @{ int _nAval = (proposta.SolicitarAvaliacaoHospedagem ? 1 : 0) + (proposta.SolicitarAvaliacaoAcomodacao ? 1 : 0) + (proposta.SolicitarAvaliacaoExperiencia ? 1 : 0); }
+                                        @if (_nAval > 0) { <span class="badge bg-warning text-dark ms-2">@_nAval ativo(s)</span> }
+                                        else { <span class="badge bg-light text-dark border ms-2">inativo</span> }
+                                    </button>
+                                </h2>
+                                <div id="rev-aval" class="accordion-collapse collapse">
+                                    <div class="accordion-body p-3">
+                                        <div class="d-flex flex-column gap-2" style="font-size:.85rem;">
+                                            <div class="d-flex align-items-center gap-2">
+                                                @if (proposta.SolicitarAvaliacaoHospedagem) { <i class="fas fa-check-circle text-success"></i> } else { <i class="fas fa-times-circle text-muted"></i> }
+                                                <span>Avaliação de hospedagens</span>
+                                            </div>
+                                            <div class="d-flex align-items-center gap-2">
+                                                @if (proposta.SolicitarAvaliacaoAcomodacao) { <i class="fas fa-check-circle text-success"></i> } else { <i class="fas fa-times-circle text-muted"></i> }
+                                                <span>Avaliação de acomodações</span>
+                                            </div>
+                                            <div class="d-flex align-items-center gap-2">
+                                                @if (proposta.SolicitarAvaliacaoExperiencia) { <i class="fas fa-check-circle text-success"></i> } else { <i class="fas fa-times-circle text-muted"></i> }
+                                                <span>Avaliação de experiências</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div><!-- /accordion rev-acc -->
 
                         <!-- Ações -->
-                        <div class="d-flex gap-2 flex-wrap mb-4">
+                        <div class="d-flex gap-2 flex-wrap mt-3 mb-4">
                             @if (proposta.LinkPublicoAtivo)
                             {
-                                <a href="/Proposta/Publico/@proposta.Id" target="_blank" class="btn btn-success">
+                                <a href="/Proposta/Publico/@proposta.Id" target="_blank" class="btn btn-success btn-sm">
                                     <i class="fas fa-external-link-alt me-1"></i>Abrir Link Público
                                 </a>
                             }
-                            <a href="/Proposta/Detalhes/@proposta.Id" class="btn btn-outline-info">
+                            <a href="/Proposta/Detalhes/@proposta.Id" class="btn btn-outline-info btn-sm">
                                 <i class="fas fa-eye me-1"></i>Pré-visualizar
                             </a>
-                            <button type="button" class="btn btn-outline-primary"
+                            <button type="button" class="btn btn-outline-primary btn-sm"
                                     onclick="document.getElementById('tab-destinos').click()">
                                 <i class="fas fa-map-marked-alt me-1"></i>Editar Destinos
                             </button>
                         </div>
 
-                    </div><!-- /col resumo -->
+                    </div><!-- /col principal -->
 
                     <!-- ════════════════════════════════════════════════════ -->
                     <!--   COLUNA DIREITA — INSIGHTS DO DESTINO              -->

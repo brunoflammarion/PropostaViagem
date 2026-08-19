@@ -1,0 +1,1105 @@
+@{
+    Layout = "_LayoutPublico";
+    ViewData["Title"] = Model.Titulo;
+}
+@model SistemaUsuarios.Models.Proposta
+@using SistemaUsuarios.Models
+
+@functions {
+    static string JnLighten(string hex, int amt)
+    {
+        if (string.IsNullOrEmpty(hex) || !hex.StartsWith("#") || hex.Length != 7) return hex;
+        try
+        {
+            int r = Math.Clamp(Convert.ToInt32(hex.Substring(1, 2), 16) + amt, 0, 255);
+            int g = Math.Clamp(Convert.ToInt32(hex.Substring(3, 2), 16) + amt, 0, 255);
+            int b = Math.Clamp(Convert.ToInt32(hex.Substring(5, 2), 16) + amt, 0, 255);
+            return $"#{r:X2}{g:X2}{b:X2}";
+        }
+        catch { return hex; }
+    }
+
+    static string JnContrast(string hex)
+    {
+        if (string.IsNullOrEmpty(hex) || !hex.StartsWith("#") || hex.Length != 7) return "#ffffff";
+        try
+        {
+            int r = Convert.ToInt32(hex.Substring(1, 2), 16);
+            int g = Convert.ToInt32(hex.Substring(3, 2), 16);
+            int b = Convert.ToInt32(hex.Substring(5, 2), 16);
+            return (0.299 * r + 0.587 * g + 0.114 * b) / 255.0 > 0.5 ? "#1a1a2e" : "#ffffff";
+        }
+        catch { return "#ffffff"; }
+    }
+
+    static string JnTint(string hex, double f = 0.91)
+    {
+        if (string.IsNullOrEmpty(hex) || !hex.StartsWith("#") || hex.Length != 7) return "#f0f4f8";
+        try
+        {
+            int r = Convert.ToInt32(hex.Substring(1, 2), 16);
+            int g = Convert.ToInt32(hex.Substring(3, 2), 16);
+            int b = Convert.ToInt32(hex.Substring(5, 2), 16);
+            return $"#{(int)(r + (255 - r) * f):X2}{(int)(g + (255 - g) * f):X2}{(int)(b + (255 - b) * f):X2}";
+        }
+        catch { return "#f0f4f8"; }
+    }
+
+    static DateTime JnLocal(DateTime utc, TimeZoneInfo tz)
+    {
+        var adj = utc.TimeOfDay == TimeSpan.Zero ? utc.AddHours(12) : utc;
+        return TimeZoneInfo.ConvertTimeFromUtc(adj, tz);
+    }
+
+    static string JnIcone(string tipo) => tipo switch
+    {
+        "voo"        => "fa-plane-departure",
+        "checkin"    => "fa-bed",
+        "checkout"   => "fa-sign-out-alt",
+        "experiencia"=> "fa-ticket-alt",
+        "destino"    => "fa-map-marker-alt",
+        "transporte" => "fa-bus",
+        _            => "fa-circle"
+    };
+
+    public class JnEvt
+    {
+        public string Tipo { get; set; } = "";
+        public DateTime Dt { get; set; }
+        public bool SoData { get; set; }
+        public string Titulo { get; set; } = "";
+        public string? Sub { get; set; }
+        public string? Detalhe { get; set; }
+        public double? Lat { get; set; }
+        public double? Lng { get; set; }
+        public string? FotoUrl { get; set; }
+        public List<string> Arquivos { get; set; } = new();
+    }
+}
+
+@{
+    // ── Timezone ──────────────────────────────────────────────────────────────
+    TimeZoneInfo brzTz;
+    try { brzTz = TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time"); }
+    catch { try { brzTz = TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo"); } catch { brzTz = TimeZoneInfo.Utc; } }
+
+    var agora = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, brzTz);
+    var hoje  = agora.Date;
+
+    // ── Agente / agência ──────────────────────────────────────────────────────
+    var agenteResp  = Model.UsuarioResponsavel ?? Model.Usuario;
+    var nomeAgente  = agenteResp?.Nome ?? "agente";
+    var fotoAgente  = agenteResp?.FotoPath ?? "";
+    var nomeAgencia = Model.Usuario?.NomeAgencia ?? "";
+    var logoUrl     = Model.Usuario?.LogoAgenciaPath ?? Model.Usuario?.UsuarioMaster?.LogoAgenciaPath ?? "";
+    var waMsgRaw    = $"Olá! Estou visualizando minha viagem \"{Model.Titulo}\" e gostaria de conversar.";
+    var waUrl       = WhatsAppHelper.MontarUrl(agenteResp?.Telefone, waMsgRaw);
+
+    // ── Cores da marca ────────────────────────────────────────────────────────
+    var corP    = !string.IsNullOrEmpty(Model.Usuario?.CorPrimaria) ? Model.Usuario.CorPrimaria : "#1a2744";
+    var corD    = !string.IsNullOrEmpty(Model.Usuario?.CorDestaque) ? Model.Usuario.CorDestaque : "#e8a027";
+    var corPTxt = JnContrast(corP);
+    var corDTxt = JnContrast(corD);
+    var corTint = JnTint(corP, 0.94);
+
+    // ── Countdown ─────────────────────────────────────────────────────────────
+    var statusViagem   = "pre";
+    int diasParaInicio = 0, diaAtual = 0, diasTotal = 0;
+    if (Model.DataInicio.HasValue)
+    {
+        var dtI = Model.DataInicio.Value.Date;
+        diasParaInicio = (dtI - hoje).Days;
+        if (Model.DataFim.HasValue)
+        {
+            var dtF = Model.DataFim.Value.Date;
+            diasTotal = (dtF - dtI).Days + 1;
+            if      (hoje < dtI) statusViagem = "pre";
+            else if (hoje > dtF) statusViagem = "pos";
+            else { statusViagem = "durante"; diaAtual = (hoje - dtI).Days + 1; }
+        }
+        else
+        {
+            statusViagem = hoje < dtI ? "pre" : "durante";
+        }
+    }
+
+    // ── Build DayByDay ────────────────────────────────────────────────────────
+    var todos = new List<JnEvt>();
+
+    foreach (var v in Model.Voos)
+    {
+        if (!v.HorarioSaida.HasValue) continue;
+        var dtL = JnLocal(v.HorarioSaida.Value, brzTz);
+        string? det = null;
+        if (v.HorarioChegada.HasValue)
+            det = $"Chegada: {JnLocal(v.HorarioChegada.Value, brzTz):dd/MM HH:mm}";
+        var sub = $"{v.Origem} → {v.Destino}".Trim();
+        if (sub == "→") sub = "";
+        var docs = new List<string>();
+        foreach (var a in v.Anexos)
+            if (!string.IsNullOrEmpty(a.CaminhoArquivo)) docs.Add(a.CaminhoArquivo);
+        todos.Add(new JnEvt { Tipo = "voo", Dt = dtL, SoData = v.HorarioSaida.Value.TimeOfDay == TimeSpan.Zero,
+            Titulo = $"{v.Companhia} {v.NumeroVoo}".Trim(), Sub = sub.Length > 0 ? sub : null,
+            Detalhe = det, Arquivos = docs });
+    }
+
+    foreach (var dest in Model.Destinos)
+    {
+        foreach (var h in dest.Hospedagens)
+        {
+            if (h.CheckIn.HasValue)
+            {
+                var dtL  = JnLocal(h.CheckIn.Value, brzTz);
+                var foto = h.Fotos.FirstOrDefault(f => f.Principal)?.CaminhoFoto ?? h.Fotos.FirstOrDefault()?.CaminhoFoto;
+                todos.Add(new JnEvt { Tipo = "checkin", Dt = dtL, SoData = h.CheckIn.Value.TimeOfDay == TimeSpan.Zero,
+                    Titulo = $"Check-in: {h.Nome}", Sub = h.Endereco,
+                    Lat = h.Latitude, Lng = h.Longitude, FotoUrl = foto });
+            }
+            if (h.CheckOut.HasValue)
+            {
+                var dtL = JnLocal(h.CheckOut.Value, brzTz);
+                todos.Add(new JnEvt { Tipo = "checkout", Dt = dtL, SoData = h.CheckOut.Value.TimeOfDay == TimeSpan.Zero,
+                    Titulo = $"Check-out: {h.Nome}", Sub = h.Endereco,
+                    Lat = h.Latitude, Lng = h.Longitude });
+            }
+        }
+
+        foreach (var e in dest.Experiencias)
+        {
+            if (!e.DataInicio.HasValue) continue;
+            var dtL  = JnLocal(e.DataInicio.Value, brzTz);
+            var foto = e.Imagens.FirstOrDefault()?.CaminhoImagem;
+            var docs = new List<string>();
+            foreach (var a in e.Arquivos)
+                if (!string.IsNullOrEmpty(a.CaminhoArquivo)) docs.Add(a.CaminhoArquivo);
+            todos.Add(new JnEvt { Tipo = "experiencia", Dt = dtL, SoData = e.DataInicio.Value.TimeOfDay == TimeSpan.Zero,
+                Titulo = e.TipoPasseio, Sub = dest.Nome, FotoUrl = foto, Arquivos = docs });
+        }
+    }
+
+    foreach (var d in Model.Destinos)
+    {
+        if (!d.DataChegada.HasValue) continue;
+        var dtL  = JnLocal(d.DataChegada.Value, brzTz);
+        var dtDt = dtL.Date;
+        bool temCI = d.Hospedagens.Any(h => h.CheckIn.HasValue && JnLocal(h.CheckIn.Value, brzTz).Date == dtDt);
+        if (temCI) continue;
+        var foto = d.Fotos.FirstOrDefault(f => f.Principal)?.CaminhoFoto ?? d.Fotos.FirstOrDefault()?.CaminhoFoto;
+        todos.Add(new JnEvt { Tipo = "destino", Dt = dtDt.AddHours(12), SoData = true,
+            Titulo = d.Nome, Sub = d.Pais, Lat = d.Latitude, Lng = d.Longitude, FotoUrl = foto });
+    }
+
+    var porDia = todos
+        .OrderBy(e => e.Dt)
+        .GroupBy(e => e.Dt.Date)
+        .Select(g => new { Date = g.Key, Evts = g.OrderBy(e => e.SoData ? 1 : 0).ThenBy(e => e.Dt).ToList() })
+        .OrderBy(g => g.Date)
+        .ToList();
+
+    var proximoEvt = todos.Where(e => e.SoData ? e.Dt.Date >= hoje : e.Dt > agora).OrderBy(e => e.Dt).FirstOrDefault();
+
+    // Hero foto: preferir foto de destino com capa, senão FotoCapa
+    var heroFoto = Model.Destinos.SelectMany(d => d.Fotos).FirstOrDefault(f => f.Principal)?.CaminhoFoto
+                ?? Model.Destinos.FirstOrDefault()?.Fotos?.FirstOrDefault()?.CaminhoFoto
+                ?? Model.FotoCapa ?? "";
+
+    var nomeDestinos = string.Join(" · ", Model.Destinos.Select(d => d.Nome).Take(4));
+
+    // Docs consolidados
+    var todosArqs = new List<(string Nome, string Url, string Cat)>();
+    foreach (var v in Model.Voos)
+        foreach (var a in v.Anexos)
+            if (!string.IsNullOrEmpty(a.CaminhoArquivo))
+                todosArqs.Add((a.NomeOriginal ?? "Documento", a.CaminhoArquivo, $"Voo {v.Origem}→{v.Destino}"));
+    foreach (var dest in Model.Destinos)
+    {
+        foreach (var e in dest.Experiencias)
+            foreach (var a in e.Arquivos)
+                if (!string.IsNullOrEmpty(a.CaminhoArquivo))
+                    todosArqs.Add((a.NomeOriginal ?? "Voucher", a.CaminhoArquivo, e.TipoPasseio));
+        foreach (var t in dest.Transportes)
+            foreach (var a in t.Documentos)
+                if (!string.IsNullOrEmpty(a.CaminhoArquivo))
+                    todosArqs.Add((a.NomeOriginal ?? "Documento", a.CaminhoArquivo, t.Titulo));
+    }
+    foreach (var s in Model.Seguros)
+        foreach (var a in s.Documentos)
+            if (!string.IsNullOrEmpty(a.CaminhoArquivo))
+                todosArqs.Add((a.NomeOriginal ?? "Apólice", a.CaminhoArquivo, s.Titulo));
+
+    var culturaPt = new System.Globalization.CultureInfo("pt-BR");
+    string FormatDate(DateTime? dt) => dt.HasValue ? dt.Value.ToString("dd 'de' MMMM", culturaPt) : "";
+    string FormatDay(DateTime dt)   => dt.ToString("dd 'de' MMMM", culturaPt);
+    string FormatDayShort(DateTime dt) => dt.ToString("dd MMM", culturaPt).ToUpper();
+}
+
+<title>@Model.Titulo — Jornada</title>
+
+<style>
+:root {
+    --jn-primary: @corP;
+    --jn-accent:  @corD;
+    --jn-ptxt:    @corPTxt;
+    --jn-dtxt:    @corDTxt;
+    --jn-tint:    @corTint;
+    --jn-surface: #ffffff;
+    --jn-border:  #e2e8f0;
+    --jn-text:    #1e293b;
+    --jn-muted:   #64748b;
+    --jn-line:    #c7d0dc;
+    --jn-checkin: #059669;
+    --jn-voo:     #2563eb;
+    --jn-exp:     #7c3aed;
+    --jn-dest:    #0891b2;
+}
+
+* { box-sizing: border-box; }
+
+body {
+    background: var(--jn-surface);
+    color: var(--jn-text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    margin: 0; padding: 0;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ── STICKY HEADER ───────────────────────────────────────────────────────── */
+.jn-sticky {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 300;
+    height: 52px;
+    background: var(--jn-primary);
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    gap: 10px;
+    transform: translateY(-100%);
+    transition: transform .3s ease;
+    box-shadow: 0 2px 10px rgba(0,0,0,.25);
+}
+.jn-sticky.visible { transform: translateY(0); }
+
+.jn-sticky-logo { height: 26px; object-fit: contain; border-radius: 3px; flex-shrink: 0; }
+.jn-sticky-title {
+    flex: 1;
+    color: var(--jn-ptxt);
+    font-size: .82rem;
+    font-weight: 700;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    opacity: .95;
+}
+.jn-sticky-wa {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.15);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--jn-ptxt);
+    text-decoration: none;
+    font-size: 17px;
+    flex-shrink: 0;
+}
+.jn-sticky-wa:hover { background: rgba(255,255,255,.28); color: var(--jn-ptxt); }
+
+/* ── HERO ─────────────────────────────────────────────────────────────────── */
+.jn-hero {
+    position: relative;
+    min-height: 100vh;
+    min-height: 100svh;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    overflow: hidden;
+}
+
+.jn-hero-img {
+    position: absolute;
+    inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    object-position: center;
+}
+
+.jn-hero-bg {
+    position: absolute;
+    inset: 0;
+    background: var(--jn-primary);
+}
+
+.jn-hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,.88) 0%, rgba(0,0,0,.35) 55%, rgba(0,0,0,.1) 100%);
+}
+
+.jn-hero-content {
+    position: relative;
+    padding: 0 24px 36px;
+    color: #fff;
+}
+
+.jn-hero-agency {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 18px 0 40px;
+    opacity: .9;
+}
+
+.jn-hero-logo { height: 28px; object-fit: contain; filter: brightness(0) invert(1); }
+.jn-hero-agname { font-size: .78rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+
+.jn-hero-pretitle {
+    font-size: .72rem;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    opacity: .7;
+    margin-bottom: 6px;
+}
+
+.jn-hero-title {
+    font-size: clamp(2rem, 8vw, 3.2rem);
+    font-weight: 800;
+    line-height: 1.05;
+    margin: 0 0 8px;
+    text-wrap: balance;
+}
+
+.jn-hero-dests {
+    font-size: .88rem;
+    opacity: .75;
+    margin-bottom: 20px;
+    letter-spacing: .02em;
+}
+
+.jn-hero-countdown {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+    background: rgba(255,255,255,.12);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,.2);
+    border-radius: 14px;
+    padding: 14px 18px;
+    margin-bottom: 24px;
+}
+
+.jn-hero-cd-num {
+    font-size: 2.4rem;
+    font-weight: 900;
+    line-height: 1;
+    color: var(--jn-accent);
+}
+
+.jn-hero-cd-label {
+    font-size: .78rem;
+    opacity: .85;
+    margin-top: 2px;
+    font-weight: 500;
+}
+
+.jn-hero-dates {
+    font-size: .8rem;
+    opacity: .7;
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.jn-hero-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--jn-accent);
+    color: var(--jn-dtxt);
+    padding: 13px 24px;
+    border-radius: 50px;
+    font-weight: 700;
+    font-size: .9rem;
+    text-decoration: none;
+    margin-top: 4px;
+    transition: opacity .2s;
+}
+.jn-hero-cta:hover { opacity: .9; color: var(--jn-dtxt); }
+
+/* ── PROGRESSO (durante a viagem) ────────────────────────────────────────── */
+.jn-progress-bar {
+    height: 3px;
+    background: var(--jn-border);
+    overflow: hidden;
+}
+.jn-progress-fill {
+    height: 100%;
+    background: var(--jn-accent);
+    transition: width .5s ease;
+}
+
+/* ── PRÓXIMO (durante a viagem) ──────────────────────────────────────────── */
+.jn-proximo {
+    background: var(--jn-primary);
+    color: var(--jn-ptxt);
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.jn-proximo-icon {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.15);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.jn-proximo-tag {
+    font-size: .65rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    opacity: .65;
+    margin-bottom: 2px;
+}
+
+.jn-proximo-titulo { font-weight: 700; font-size: .92rem; }
+.jn-proximo-sub    { font-size: .78rem; opacity: .75; margin-top: 1px; }
+.jn-proximo-hora   { margin-left: auto; font-weight: 700; font-size: .85rem; text-align: right; flex-shrink: 0; }
+
+/* ── MAIN CONTENT ────────────────────────────────────────────────────────── */
+.jn-main { background: #f8fafc; }
+
+/* ── CHAPTER HEADER (por dia) ────────────────────────────────────────────── */
+.jn-chapter {
+    background: var(--jn-surface);
+    margin-bottom: 2px;
+}
+
+.jn-chapter-hero {
+    position: relative;
+    height: 200px;
+    overflow: hidden;
+    display: none;
+}
+.jn-chapter-hero.has-photo { display: block; }
+
+.jn-chapter-hero img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+}
+
+.jn-chapter-hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,.6) 0%, transparent 60%);
+}
+
+.jn-chapter-header {
+    padding: 16px 20px 4px;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+}
+
+.jn-chapter-day-badge {
+    background: var(--jn-primary);
+    color: var(--jn-ptxt);
+    font-size: .62rem;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    padding: 3px 9px;
+    border-radius: 20px;
+    flex-shrink: 0;
+}
+
+.jn-chapter-day-badge.hoje { background: var(--jn-accent); color: var(--jn-dtxt); }
+
+.jn-chapter-date {
+    font-size: .92rem;
+    font-weight: 700;
+    color: var(--jn-text);
+}
+
+.jn-chapter-dest-name {
+    font-size: .72rem;
+    color: var(--jn-muted);
+    padding: 0 20px 12px;
+}
+
+/* ── TIMELINE ────────────────────────────────────────────────────────────── */
+.jn-tl {
+    padding: 8px 20px 20px 20px;
+    position: relative;
+}
+
+.jn-tl::before {
+    content: '';
+    position: absolute;
+    left: 38px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--jn-line);
+}
+
+.jn-tl-item {
+    display: flex;
+    gap: 14px;
+    position: relative;
+    margin-bottom: 0;
+}
+
+.jn-tl-icon {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+    z-index: 1;
+    border: 2px solid var(--jn-surface);
+    margin-top: 2px;
+}
+
+.jn-tl-icon.voo         { background: #dbeafe; color: var(--jn-voo); }
+.jn-tl-icon.checkin     { background: #d1fae5; color: var(--jn-checkin); }
+.jn-tl-icon.checkout    { background: #fee2e2; color: #dc2626; }
+.jn-tl-icon.experiencia { background: #ede9fe; color: var(--jn-exp); }
+.jn-tl-icon.destino     { background: #cffafe; color: var(--jn-dest); }
+.jn-tl-icon.transporte  { background: #fef3c7; color: #d97706; }
+
+.jn-tl-body {
+    flex: 1;
+    min-width: 0;
+    padding-bottom: 16px;
+}
+
+.jn-tl-time {
+    font-size: .68rem;
+    font-weight: 700;
+    color: var(--jn-muted);
+    letter-spacing: .04em;
+    margin-bottom: 2px;
+}
+
+.jn-tl-titulo {
+    font-weight: 600;
+    font-size: .9rem;
+    line-height: 1.3;
+}
+
+.jn-tl-sub {
+    font-size: .78rem;
+    color: var(--jn-muted);
+    margin-top: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Foto de experiência inline */
+.jn-evt-foto {
+    width: 100%;
+    height: 130px;
+    object-fit: cover;
+    border-radius: 10px;
+    margin-top: 8px;
+}
+
+.jn-tl-actions { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; }
+
+.jn-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: .76rem;
+    font-weight: 600;
+    color: var(--jn-accent);
+    text-decoration: none;
+    padding: 6px 10px;
+    background: var(--jn-tint);
+    border-radius: 8px;
+}
+
+.jn-tl-detalhe {
+    font-size: .8rem;
+    color: var(--jn-muted);
+    margin-top: 4px;
+}
+
+/* ── SEPARATOR (entre destinos) ──────────────────────────────────────────── */
+.jn-separator {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    background: #f8fafc;
+    color: var(--jn-muted);
+    font-size: .75rem;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+.jn-separator::before, .jn-separator::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--jn-border);
+}
+
+/* ── DOCS SECTION ────────────────────────────────────────────────────────── */
+.jn-docs {
+    background: var(--jn-surface);
+    margin-top: 2px;
+    padding: 20px;
+}
+
+.jn-docs-title {
+    font-size: .78rem;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--jn-muted);
+    margin-bottom: 14px;
+}
+
+.jn-doc-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 13px;
+    border-radius: 10px;
+    border: 1px solid var(--jn-border);
+    margin-bottom: 8px;
+    text-decoration: none;
+    color: var(--jn-text);
+    background: #f8fafc;
+}
+
+.jn-doc-icon {
+    width: 34px; height: 34px;
+    border-radius: 8px;
+    background: var(--jn-tint);
+    color: var(--jn-accent);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px;
+    flex-shrink: 0;
+}
+
+.jn-doc-nome { font-size: .83rem; font-weight: 600; }
+.jn-doc-cat  { font-size: .72rem; color: var(--jn-muted); margin-top: 1px; }
+
+/* ── AGENT FOOTER ────────────────────────────────────────────────────────── */
+.jn-footer {
+    background: var(--jn-primary);
+    color: var(--jn-ptxt);
+    padding: 24px 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    text-decoration: none;
+}
+
+.jn-footer-foto {
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(255,255,255,.3);
+    flex-shrink: 0;
+}
+
+.jn-footer-icon {
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.15);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+}
+
+.jn-footer-info { flex: 1; min-width: 0; }
+.jn-footer-tag  { font-size: .68rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; opacity: .65; }
+.jn-footer-nome { font-weight: 700; font-size: .95rem; }
+.jn-footer-sub  { font-size: .78rem; opacity: .75; margin-top: 2px; }
+.jn-footer-wa   { font-size: 26px; opacity: .9; flex-shrink: 0; }
+
+/* ── FAB (WhatsApp flutuante) ────────────────────────────────────────────── */
+.jn-fab {
+    position: fixed;
+    bottom: 24px;
+    right: 20px;
+    z-index: 200;
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    background: #25d366;
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px;
+    text-decoration: none;
+    box-shadow: 0 4px 16px rgba(37,211,102,.45);
+    transition: transform .2s, box-shadow .2s;
+}
+.jn-fab:hover { transform: scale(1.07); color: #fff; box-shadow: 0 6px 22px rgba(37,211,102,.55); }
+
+/* ── EMPTY STATE ─────────────────────────────────────────────────────────── */
+.jn-empty {
+    text-align: center;
+    padding: 60px 24px;
+    color: var(--jn-muted);
+}
+.jn-empty i { font-size: 40px; opacity: .3; margin-bottom: 12px; display: block; }
+
+/* ── DESKTOP ─────────────────────────────────────────────────────────────── */
+@@media (min-width: 640px) {
+    .jn-hero-title { font-size: 3rem; }
+    .jn-chapter-hero { height: 260px; }
+    .jn-fab { right: max(20px, calc(50vw - 330px)); }
+    .jn-sticky {
+        left: max(0px, calc(50vw - 330px));
+        right: max(0px, calc(50vw - 330px));
+        width: auto;
+        border-radius: 0 0 12px 12px;
+    }
+    .jn-main, .jn-progress-bar, .jn-proximo {
+        max-width: 660px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+}
+</style>
+
+@* ── STICKY HEADER ─────────────────────────────────────────────────────── *@
+<header class="jn-sticky" id="jn-sticky">
+    @if (!string.IsNullOrEmpty(logoUrl))
+    {
+        <img src="@logoUrl" class="jn-sticky-logo" alt="@nomeAgencia" />
+    }
+    <span class="jn-sticky-title">@Model.Titulo</span>
+    @if (!string.IsNullOrEmpty(waUrl))
+    {
+        <a href="@waUrl" class="jn-sticky-wa" title="Falar com agente">
+            <i class="fab fa-whatsapp"></i>
+        </a>
+    }
+</header>
+
+@* ── HERO ──────────────────────────────────────────────────────────────── *@
+<section class="jn-hero">
+    @if (!string.IsNullOrEmpty(heroFoto))
+    {
+        <img src="@heroFoto" class="jn-hero-img" alt="@Model.Titulo" loading="eager" />
+    }
+    else
+    {
+        <div class="jn-hero-bg"></div>
+    }
+    <div class="jn-hero-overlay"></div>
+
+    <div class="jn-hero-content">
+        @* Logo da agência no hero *@
+        @if (!string.IsNullOrEmpty(logoUrl) || !string.IsNullOrEmpty(nomeAgencia))
+        {
+            <div class="jn-hero-agency">
+                @if (!string.IsNullOrEmpty(logoUrl))
+                {
+                    <img src="@logoUrl" class="jn-hero-logo" alt="@nomeAgencia" />
+                }
+                @if (!string.IsNullOrEmpty(nomeAgencia))
+                {
+                    <span class="jn-hero-agname">@nomeAgencia</span>
+                }
+            </div>
+        }
+
+        <div class="jn-hero-pretitle">Sua jornada</div>
+        <h1 class="jn-hero-title">@Model.Titulo</h1>
+        @if (!string.IsNullOrEmpty(nomeDestinos))
+        {
+            <div class="jn-hero-dests">@nomeDestinos</div>
+        }
+
+        @* Countdown *@
+        @if (statusViagem == "pre" && Model.DataInicio.HasValue)
+        {
+            <div class="jn-hero-countdown">
+                @if (diasParaInicio > 0)
+                {
+                    <span class="jn-hero-cd-num">@diasParaInicio</span>
+                    <span class="jn-hero-cd-label">@(diasParaInicio == 1 ? "dia para embarcar" : "dias para embarcar")</span>
+                }
+                else
+                {
+                    <span class="jn-hero-cd-num">Hoje! ✈</span>
+                    <span class="jn-hero-cd-label">Sua jornada começa hoje</span>
+                }
+                @if (Model.DataFim.HasValue)
+                {
+                    <div class="jn-hero-dates">
+                        <i class="fas fa-calendar" style="font-size:.7rem;"></i>
+                        @Model.DataInicio.Value.ToString("dd MMM", culturaPt) → @Model.DataFim.Value.ToString("dd MMM yyyy", culturaPt)
+                        · @diasTotal dias
+                    </div>
+                }
+            </div>
+        }
+        else if (statusViagem == "durante")
+        {
+            <div class="jn-hero-countdown">
+                @if (diasTotal > 0)
+                {
+                    @if (diaAtual == diasTotal)
+                    {
+                        <span class="jn-hero-cd-num">Último dia</span>
+                    }
+                    else
+                    {
+                        <span class="jn-hero-cd-num">Dia @diaAtual</span>
+                    }
+                    <span class="jn-hero-cd-label">de @diasTotal da sua jornada</span>
+                }
+                else
+                {
+                    <span class="jn-hero-cd-num">Em jornada</span>
+                }
+                @if (Model.DataFim.HasValue)
+                {
+                    <div class="jn-hero-dates">
+                        <i class="fas fa-calendar" style="font-size:.7rem;"></i>
+                        Até @Model.DataFim.Value.ToString("dd MMM", culturaPt)
+                    </div>
+                }
+            </div>
+        }
+        else if (statusViagem == "pos")
+        {
+            <div class="jn-hero-countdown">
+                <span class="jn-hero-cd-num" style="font-size:1.5rem;">Jornada realizada</span>
+                <span class="jn-hero-cd-label">Boas memórias!</span>
+            </div>
+        }
+
+        @if (porDia.Count > 0)
+        {
+            <a href="#jornada-inicio" class="jn-hero-cta">
+                Explorar minha jornada <i class="fas fa-arrow-down"></i>
+            </a>
+        }
+    </div>
+</section>
+
+@* ── BARRA DE PROGRESSO (durante a viagem) ─────────────────────────────── *@
+@if (statusViagem == "durante" && diasTotal > 0)
+{
+    var progresso = Math.Round((double)(diaAtual - 1) / diasTotal * 100, 1);
+    <div class="jn-progress-bar"><div class="jn-progress-fill" style="width:@progresso%"></div></div>
+}
+
+@* ── PRÓXIMO COMPROMISSO (durante a viagem) ────────────────────────────── *@
+@if (statusViagem == "durante" && proximoEvt != null)
+{
+    <div class="jn-proximo">
+        <div class="jn-proximo-icon"><i class="fas @JnIcone(proximoEvt.Tipo)"></i></div>
+        <div style="flex:1;min-width:0;">
+            <div class="jn-proximo-tag">Próximo</div>
+            <div class="jn-proximo-titulo">@proximoEvt.Titulo</div>
+            @if (!string.IsNullOrEmpty(proximoEvt.Sub))
+            { <div class="jn-proximo-sub">@proximoEvt.Sub</div> }
+        </div>
+        <div class="jn-proximo-hora">
+            @if (proximoEvt.SoData)
+            { @proximoEvt.Dt.ToString("dd/MM", culturaPt) }
+            else if (proximoEvt.Dt.Date == hoje)
+            { <text>Hoje<br/>@proximoEvt.Dt.ToString("HH:mm")</text> }
+            else
+            { @proximoEvt.Dt.ToString("dd/MM", culturaPt) }
+        </div>
+    </div>
+}
+
+@* ── JORNADA: DAY BY DAY ──────────────────────────────────────────────── *@
+<main class="jn-main" id="jornada-inicio">
+    @if (porDia.Count == 0)
+    {
+        <div class="jn-empty">
+            <i class="fas fa-route"></i>
+            <p>Nenhum evento com data cadastrado ainda.</p>
+        </div>
+    }
+    else
+    {
+        string? ultimoDestino = null; int diaNum = 0;
+        @foreach (var dia in porDia)
+        {
+            diaNum++;
+            bool isHoje = dia.Date == hoje;
+            int numDia  = Model.DataInicio.HasValue ? (dia.Date - Model.DataInicio.Value.Date).Days + 1 : diaNum;
+
+            @* Detectar destino predominante do dia *@
+            var chkinsHoje   = dia.Evts.Where(e => e.Tipo == "checkin" || e.Tipo == "destino").FirstOrDefault();
+            string? destDia  = chkinsHoje?.Titulo.Replace("Chegada: ","").Replace("Check-in: ","");
+            var fotoCapitulo = dia.Evts.Where(e => !string.IsNullOrEmpty(e.FotoUrl)).Select(e => e.FotoUrl).FirstOrDefault();
+
+            @* Separador de destino *@
+            @if (destDia != null && destDia != ultimoDestino)
+            {
+                ultimoDestino = destDia;
+                <div class="jn-separator">@destDia</div>
+            }
+
+            <article class="jn-chapter" id="dia-@dia.Date.ToString("yyyyMMdd")">
+                @* Foto de capa do capítulo (experiência ou hospedagem) *@
+                @if (!string.IsNullOrEmpty(fotoCapitulo))
+                {
+                    <div class="jn-chapter-hero has-photo">
+                        <img src="@fotoCapitulo" alt="" loading="lazy" />
+                        <div class="jn-chapter-hero-overlay"></div>
+                    </div>
+                }
+
+                <div class="jn-chapter-header">
+                    <span class="jn-chapter-day-badge @(isHoje ? "hoje" : "")">
+                        @if (isHoje) { <text>Hoje</text> }
+                        else         { <text>Dia @numDia</text> }
+                    </span>
+                    <span class="jn-chapter-date">@FormatDay(dia.Date)</span>
+                </div>
+
+                <div class="jn-tl">
+                    @{int evtIdx = 0;}
+                    @foreach (var evt in dia.Evts)
+                    {
+                        evtIdx++;
+                        string detId = $"jdet-{dia.Date:yyyyMMdd}-{evtIdx}";
+                        bool temFoto  = !string.IsNullOrEmpty(evt.FotoUrl) && (evt.Tipo == "experiencia" || evt.Tipo == "checkin");
+                        bool temAcoes = (evt.Lat.HasValue && evt.Lng.HasValue) || evt.Arquivos.Count > 0 || !string.IsNullOrEmpty(evt.Detalhe);
+
+                        <div class="jn-tl-item">
+                            <div class="jn-tl-icon @evt.Tipo">
+                                <i class="fas @JnIcone(evt.Tipo)"></i>
+                            </div>
+                            <div class="jn-tl-body">
+                                @if (!evt.SoData)
+                                {
+                                    <div class="jn-tl-time">@evt.Dt.ToString("HH:mm")</div>
+                                }
+                                <div class="jn-tl-titulo">@evt.Titulo</div>
+                                @if (!string.IsNullOrEmpty(evt.Sub))
+                                {
+                                    <div class="jn-tl-sub">@evt.Sub</div>
+                                }
+                                @if (temFoto && !string.IsNullOrEmpty(evt.FotoUrl))
+                                {
+                                    <img src="@evt.FotoUrl" class="jn-evt-foto" alt="@evt.Titulo" loading="lazy" />
+                                }
+                                @if (temAcoes)
+                                {
+                                    <div class="jn-tl-actions">
+                                        @if (!string.IsNullOrEmpty(evt.Detalhe))
+                                        {
+                                            <span class="jn-tl-detalhe">@evt.Detalhe</span>
+                                        }
+                                        @if (evt.Lat.HasValue && evt.Lng.HasValue)
+                                        {
+                                            <a href="https://maps.google.com/?q=@evt.Lat,@evt.Lng" target="_blank" class="jn-action">
+                                                <i class="fas fa-map-marker-alt"></i> Mapa
+                                            </a>
+                                        }
+                                        @foreach (var url in evt.Arquivos)
+                                        {
+                                            <a href="@url" target="_blank" class="jn-action">
+                                                <i class="fas fa-file-alt"></i> Documento
+                                            </a>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            </article>
+        }
+    }
+
+    @* ── DOCUMENTOS ──────────────────────────────────────────────────────── *@
+    @if (todosArqs.Count > 0)
+    {
+        <div class="jn-docs">
+            <div class="jn-docs-title">Documentos da viagem</div>
+            @foreach (var (nome, url, cat) in todosArqs)
+            {
+                <a href="@url" target="_blank" class="jn-doc-item">
+                    <div class="jn-doc-icon"><i class="fas fa-file-alt"></i></div>
+                    <div style="flex:1;min-width:0;">
+                        <div class="jn-doc-nome">@nome</div>
+                        <div class="jn-doc-cat">@cat</div>
+                    </div>
+                    <i class="fas fa-external-link-alt" style="color:var(--jn-muted);font-size:.8rem;flex-shrink:0;"></i>
+                </a>
+            }
+        </div>
+    }
+
+    @* ── FOOTER DO AGENTE ─────────────────────────────────────────────────── *@
+    @if (!string.IsNullOrEmpty(waUrl))
+    {
+        <a href="@waUrl" class="jn-footer">
+            @if (!string.IsNullOrEmpty(fotoAgente))
+            {
+                <img src="@fotoAgente" class="jn-footer-foto" alt="@nomeAgente" />
+            }
+            else
+            {
+                <div class="jn-footer-icon"><i class="fas fa-user-tie"></i></div>
+            }
+            <div class="jn-footer-info">
+                <div class="jn-footer-tag">Seu agente de viagens</div>
+                <div class="jn-footer-nome">@nomeAgente</div>
+                @if (!string.IsNullOrEmpty(nomeAgencia))
+                {
+                    <div class="jn-footer-sub">@nomeAgencia</div>
+                }
+            </div>
+            <i class="fab fa-whatsapp jn-footer-wa"></i>
+        </a>
+    }
+</main>
+
+@* ── FAB WhatsApp ────────────────────────────────────────────────────────── *@
+@if (!string.IsNullOrEmpty(waUrl))
+{
+    <a href="@waUrl" class="jn-fab" title="Falar com @nomeAgente">
+        <i class="fab fa-whatsapp"></i>
+    </a>
+}
+
+<script>
+(function () {
+    // Sticky header aparece ao sair do hero
+    var sticky  = document.getElementById('jn-sticky');
+    var hero    = document.querySelector('.jn-hero');
+
+    if (sticky && hero) {
+        var obs = new IntersectionObserver(function (entries) {
+            sticky.classList.toggle('visible', !entries[0].isIntersecting);
+        }, { threshold: 0.05 });
+        obs.observe(hero);
+    }
+
+    // Highlight do dia de hoje no scroll (scroll suave para o dia atual)
+    var hojeEl = document.querySelector('.jn-chapter-day-badge.hoje');
+    if (hojeEl) {
+        setTimeout(function () {
+            hojeEl.closest('article')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 800);
+    }
+
+    // Smooth scroll para CTA do hero
+    document.querySelectorAll('a[href="#jornada-inicio"]').forEach(function (a) {
+        a.addEventListener('click', function (e) {
+            e.preventDefault();
+            document.getElementById('jornada-inicio')?.scrollIntoView({ behavior: 'smooth' });
+        });
+    });
+})();
+</script>

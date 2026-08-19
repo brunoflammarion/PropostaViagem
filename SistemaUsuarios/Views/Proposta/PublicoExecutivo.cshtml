@@ -97,9 +97,9 @@
     var execPtBR = new System.Globalization.CultureInfo("pt-BR");
 
     var gruposVooExec = new[] {
-        new { Titulo = "Ida",     Icone = "fas fa-plane",          Cor = "#3B82F6", Voos = Model.Voos.Where(v => v.TipoVoo == TipoVoo.Ida).OrderBy(v => v.Ordem).ToList() },
-        new { Titulo = "Internos",Icone = "fas fa-plane-departure", Cor = "#8B5CF6", Voos = Model.Voos.Where(v => v.TipoVoo == TipoVoo.Interno).OrderBy(v => v.Ordem).ToList() },
-        new { Titulo = "Volta",   Icone = "fas fa-plane-arrival",   Cor = "#10B981", Voos = Model.Voos.Where(v => v.TipoVoo == TipoVoo.Volta).OrderBy(v => v.Ordem).ToList() },
+        new { Titulo = "Ida",     Icone = "fas fa-plane",          Cor = "#3B82F6", Voos = Model.Voos.Where(v => v.TipoVoo == TipoVoo.Ida).OrderBy(v => v.HorarioSaida ?? DateTime.MaxValue).ToList() },
+        new { Titulo = "Internos",Icone = "fas fa-plane-departure", Cor = "#8B5CF6", Voos = Model.Voos.Where(v => v.TipoVoo == TipoVoo.Interno).OrderBy(v => v.HorarioSaida ?? DateTime.MaxValue).ToList() },
+        new { Titulo = "Volta",   Icone = "fas fa-plane-arrival",   Cor = "#10B981", Voos = Model.Voos.Where(v => v.TipoVoo == TipoVoo.Volta).OrderBy(v => v.HorarioSaida ?? DateTime.MaxValue).ToList() },
     };
 }
 

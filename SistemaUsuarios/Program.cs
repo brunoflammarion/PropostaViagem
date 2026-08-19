@@ -176,34 +176,29 @@ using (var scope = app.Services.CreateScope())
             context.SaveChanges();
         }
 
-        // Seed layouts se n�o existirem
-        if (!context.Layouts.Any())
+        // Seed layouts (incremental — não recria existentes)
+        var layoutsNecessarios = new[]
         {
-            context.Layouts.AddRange(
-                new SistemaUsuarios.Models.Layout
+            ("Layout Padrão",      "Layout padrão do sistema"),
+            ("Layout Executivo",   "Layout para viagens executivas"),
+            ("Layout Familiar",    "Layout para viagens em família"),
+            ("Layout Minha Viagem","Layout guia digital — roteiro e documentos no celular"),
+            ("Layout Jornada",     "Layout narrativo visual — destinos como capítulos"),
+        };
+        foreach (var (nome, desc) in layoutsNecessarios)
+        {
+            if (!context.Layouts.Any(l => l.Nome == nome))
+            {
+                context.Layouts.Add(new SistemaUsuarios.Models.Layout
                 {
-                    Nome = "Layout Padr�o",
-                    Descricao = "Layout padr�o do sistema",
+                    Nome = nome,
+                    Descricao = desc,
                     Ativo = true,
                     DataCriacao = DateTime.UtcNow
-                },
-                new SistemaUsuarios.Models.Layout
-                {
-                    Nome = "Layout Executivo",
-                    Descricao = "Layout para viagens executivas",
-                    Ativo = true,
-                    DataCriacao = DateTime.UtcNow
-                },
-                new SistemaUsuarios.Models.Layout
-                {
-                    Nome = "Layout Familiar",
-                    Descricao = "Layout para viagens em fam�lia",
-                    Ativo = true,
-                    DataCriacao = DateTime.UtcNow
-                }
-            );
-            context.SaveChanges();
+                });
+            }
         }
+        context.SaveChanges();
     }
     catch (Exception ex)
     {

@@ -802,14 +802,35 @@ namespace SistemaUsuarios.Controllers
                         .ThenInclude(t => t.Documentos.OrderBy(d => d.DataCriacao))
                 .Include(p => p.Voos.OrderBy(v => v.Ordem))
                     .ThenInclude(v => v.Passageiros.OrderBy(pv => pv.DataCriacao))
+                .Include(p => p.Voos)
+                    .ThenInclude(v => v.Anexos.OrderBy(a => a.DataCriacao))
                 .Include(p => p.Seguros.OrderBy(s => s.Ordem))
                     .ThenInclude(s => s.Imagens.OrderBy(i => i.Ordem))
+                .Include(p => p.Seguros)
+                    .ThenInclude(s => s.Documentos.OrderBy(d => d.DataCriacao))
                 .AsSplitQuery()
                 .AsNoTracking()
                 .FirstOrDefaultAsync(p => p.Id == id);
 
             if (proposta == null)
                 return NotFound();
+
+            // Ordenação cronológica para exibição pública (todos os layouts)
+            proposta.Voos = proposta.Voos
+                .OrderBy(v => v.HorarioSaida ?? DateTime.MaxValue)
+                .ToList();
+
+            foreach (var destino in proposta.Destinos)
+            {
+                destino.Hospedagens = destino.Hospedagens
+                    .OrderBy(h => h.CheckIn ?? DateTime.MaxValue)
+                    .ThenBy(h => h.Ordem)
+                    .ToList();
+                destino.Experiencias = destino.Experiencias
+                    .OrderBy(e => e.DataInicio ?? DateTime.MaxValue)
+                    .ThenBy(e => e.Ordem)
+                    .ToList();
+            }
 
             var avaliacoes = await _context.AvaliacoesCliente
                 .AsNoTracking()
@@ -826,8 +847,10 @@ namespace SistemaUsuarios.Controllers
             // Dados para analytics (layout público — cliente real)
             ViewBag.IsPreview = false;
             ViewBag.AnalyticsPropostaId = id.ToString();
-            ViewBag.AnalyticsLayoutName = layoutDispatch.Contains("executivo") ? "executive"
-                                        : layoutDispatch.Contains("familiar")  ? "family"
+            ViewBag.AnalyticsLayoutName = layoutDispatch.Contains("executivo")    ? "executive"
+                                        : layoutDispatch.Contains("familiar")     ? "family"
+                                        : layoutDispatch.Contains("minha viagem") ? "my_trip"
+                                        : layoutDispatch.Contains("jornada")      ? "journey"
                                         : "standard";
             ViewBag.AnalyticsDestinoCount = proposta.Destinos?.Count ?? 0;
 
@@ -835,6 +858,10 @@ namespace SistemaUsuarios.Controllers
                 return View("PublicoExecutivo", proposta);
             else if (layoutDispatch.Contains("familiar"))
                 return View("PublicoFamiliar", proposta);
+            else if (layoutDispatch.Contains("minha viagem"))
+                return View("PublicoMinhaViagem", proposta);
+            else if (layoutDispatch.Contains("jornada"))
+                return View("PublicoJornada", proposta);
             return View(proposta);
         }
 
@@ -1037,8 +1064,12 @@ namespace SistemaUsuarios.Controllers
                         .ThenInclude(t => t.Documentos.OrderBy(d => d.DataCriacao))
                 .Include(p => p.Voos.OrderBy(v => v.Ordem))
                     .ThenInclude(v => v.Passageiros.OrderBy(pv => pv.DataCriacao))
+                .Include(p => p.Voos)
+                    .ThenInclude(v => v.Anexos.OrderBy(a => a.DataCriacao))
                 .Include(p => p.Seguros.OrderBy(s => s.Ordem))
                     .ThenInclude(s => s.Imagens.OrderBy(i => i.Ordem))
+                .Include(p => p.Seguros)
+                    .ThenInclude(s => s.Documentos.OrderBy(d => d.DataCriacao))
                 .AsSplitQuery()
                 .FirstOrDefaultAsync(p => p.Id == id);
 
@@ -1074,6 +1105,10 @@ namespace SistemaUsuarios.Controllers
                 return View("PublicoExecutivo", proposta);
             if (layoutNome.Contains("familiar"))
                 return View("PublicoFamiliar", proposta);
+            if (layoutNome.Contains("minha viagem"))
+                return View("PublicoMinhaViagem", proposta);
+            if (layoutNome.Contains("jornada"))
+                return View("PublicoJornada", proposta);
             return View("Publico", proposta);
         }
 

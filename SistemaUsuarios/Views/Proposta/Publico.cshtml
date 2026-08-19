@@ -2267,7 +2267,7 @@ body.has-preview-bar { padding-top: 46px; }
                                 @(destino.Hospedagens.Count == 1 ? "Hospedagem" : "Hospedagens")
                             </h4>
 
-                            @foreach (var hosp in destino.Hospedagens.OrderBy(h => h.Ordem))
+                            @foreach (var hosp in destino.Hospedagens.OrderBy(h => h.CheckIn ?? DateTime.MaxValue).ThenBy(h => h.Ordem))
                             {
                                 var hospFotos    = hosp.Fotos.OrderBy(f => f.Ordem).ToList();
                                 var hospCarId    = $"ch-{hosp.Id:N}";

@@ -1,0 +1,1314 @@
+@{
+    Layout = "_LayoutPublico";
+    ViewData["Title"] = Model.Titulo;
+}
+@model SistemaUsuarios.Models.Proposta
+@using SistemaUsuarios.Models
+
+@functions {
+    static string MvLighten(string hex, int amt)
+    {
+        if (string.IsNullOrEmpty(hex) || !hex.StartsWith("#") || hex.Length != 7) return hex;
+        try
+        {
+            int r = Math.Clamp(Convert.ToInt32(hex.Substring(1, 2), 16) + amt, 0, 255);
+            int g = Math.Clamp(Convert.ToInt32(hex.Substring(3, 2), 16) + amt, 0, 255);
+            int b = Math.Clamp(Convert.ToInt32(hex.Substring(5, 2), 16) + amt, 0, 255);
+            return $"#{r:X2}{g:X2}{b:X2}";
+        }
+        catch { return hex; }
+    }
+
+    static string MvContrast(string hex)
+    {
+        if (string.IsNullOrEmpty(hex) || !hex.StartsWith("#") || hex.Length != 7) return "#ffffff";
+        try
+        {
+            int r = Convert.ToInt32(hex.Substring(1, 2), 16);
+            int g = Convert.ToInt32(hex.Substring(3, 2), 16);
+            int b = Convert.ToInt32(hex.Substring(5, 2), 16);
+            return (0.299 * r + 0.587 * g + 0.114 * b) / 255.0 > 0.5 ? "#1a1a2e" : "#ffffff";
+        }
+        catch { return "#ffffff"; }
+    }
+
+    static string MvTint(string hex, double f = 0.91)
+    {
+        if (string.IsNullOrEmpty(hex) || !hex.StartsWith("#") || hex.Length != 7) return "#f0f4f8";
+        try
+        {
+            int r = Convert.ToInt32(hex.Substring(1, 2), 16);
+            int g = Convert.ToInt32(hex.Substring(3, 2), 16);
+            int b = Convert.ToInt32(hex.Substring(5, 2), 16);
+            return $"#{(int)(r + (255 - r) * f):X2}{(int)(g + (255 - g) * f):X2}{(int)(b + (255 - b) * f):X2}";
+        }
+        catch { return "#f0f4f8"; }
+    }
+
+    // Converte UTC para horário de Brasília; se meia-noite UTC assume apenas data (adiciona 12h)
+    static DateTime MvLocal(DateTime utc, TimeZoneInfo tz)
+    {
+        var adj = utc.TimeOfDay == TimeSpan.Zero ? utc.AddHours(12) : utc;
+        return TimeZoneInfo.ConvertTimeFromUtc(adj, tz);
+    }
+
+    static string MvIcone(string tipo) => tipo switch
+    {
+        "voo"        => "fa-plane-departure",
+        "checkin"    => "fa-bed",
+        "checkout"   => "fa-sign-out-alt",
+        "experiencia"=> "fa-ticket-alt",
+        "destino"    => "fa-map-marker-alt",
+        "transporte" => "fa-bus",
+        _            => "fa-circle"
+    };
+
+    static string MvLabel(string tipo) => tipo switch
+    {
+        "voo"        => "Voo",
+        "checkin"    => "Check-in",
+        "checkout"   => "Check-out",
+        "experiencia"=> "Experiência",
+        "destino"    => "Destino",
+        "transporte" => "Transporte",
+        _            => ""
+    };
+
+    public class MvEvt
+    {
+        public string Tipo { get; set; } = "";
+        public DateTime Dt { get; set; }
+        public bool SoData { get; set; }
+        public string Titulo { get; set; } = "";
+        public string? Sub { get; set; }
+        public string? Detalhe { get; set; }
+        public double? Lat { get; set; }
+        public double? Lng { get; set; }
+        public string? FotoUrl { get; set; }
+        public List<string> Arquivos { get; set; } = new();
+    }
+}
+
+@{
+    // ── Timezone ──────────────────────────────────────────────────────────────
+    TimeZoneInfo brzTz;
+    try { brzTz = TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time"); }
+    catch { try { brzTz = TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo"); } catch { brzTz = TimeZoneInfo.Utc; } }
+
+    var agora  = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, brzTz);
+    var hoje   = agora.Date;
+
+    // ── Agente / agência ──────────────────────────────────────────────────────
+    var agenteResp  = Model.UsuarioResponsavel ?? Model.Usuario;
+    var nomeAgente  = agenteResp?.Nome ?? "agente";
+    var fotoAgente  = agenteResp?.FotoPath ?? "";
+    var nomeAgencia = Model.Usuario?.NomeAgencia ?? "";
+    var logoUrl     = Model.Usuario?.LogoAgenciaPath ?? Model.Usuario?.UsuarioMaster?.LogoAgenciaPath ?? "";
+    var waMsgRaw    = $"Olá! Estou com dúvidas sobre minha viagem \"{Model.Titulo}\". Pode me ajudar?";
+    var waUrl       = WhatsAppHelper.MontarUrl(agenteResp?.Telefone, waMsgRaw);
+
+    // ── Cores da marca ────────────────────────────────────────────────────────
+    var corP     = !string.IsNullOrEmpty(Model.Usuario?.CorPrimaria)  ? Model.Usuario.CorPrimaria  : "#1c2e4a";
+    var corD     = !string.IsNullOrEmpty(Model.Usuario?.CorDestaque)  ? Model.Usuario.CorDestaque  : "#3b82f6";
+    var corPTxt  = MvContrast(corP);
+    var corDTxt  = MvContrast(corD);
+    var corTint  = MvTint(corP, 0.93);
+    var corDTint = MvTint(corD, 0.90);
+
+    // ── Countdown ─────────────────────────────────────────────────────────────
+    var statusViagem   = "pre";
+    int diasParaInicio = 0, diaAtual = 0, diasTotal = 0;
+
+    if (Model.DataInicio.HasValue)
+    {
+        var dtI = Model.DataInicio.Value.Date;
+        diasParaInicio = (dtI - hoje).Days;
+        if (Model.DataFim.HasValue)
+        {
+            var dtF = Model.DataFim.Value.Date;
+            diasTotal = (dtF - dtI).Days + 1;
+            if      (hoje < dtI) statusViagem = "pre";
+            else if (hoje > dtF) statusViagem = "pos";
+            else { statusViagem = "durante"; diaAtual = (hoje - dtI).Days + 1; }
+        }
+        else
+        {
+            statusViagem = hoje < dtI ? "pre" : "durante";
+        }
+    }
+
+    // ── Build DayByDay ────────────────────────────────────────────────────────
+    var todos = new List<MvEvt>();
+
+    // Voos
+    foreach (var v in Model.Voos)
+    {
+        if (!v.HorarioSaida.HasValue) continue;
+        var dtL = MvLocal(v.HorarioSaida.Value, brzTz);
+        string? det = null;
+        if (v.HorarioChegada.HasValue)
+        {
+            var chL = MvLocal(v.HorarioChegada.Value, brzTz);
+            det = $"Chegada: {chL:dd/MM HH:mm}";
+        }
+        var sub = $"{v.Origem} → {v.Destino}".Trim();
+        if (sub == "→") sub = "";
+
+        var docs = new List<string>();
+        foreach (var a in v.Anexos)
+            if (!string.IsNullOrEmpty(a.CaminhoArquivo)) docs.Add(a.CaminhoArquivo);
+
+        todos.Add(new MvEvt { Tipo = "voo", Dt = dtL, SoData = v.HorarioSaida.Value.TimeOfDay == TimeSpan.Zero,
+            Titulo = $"{v.Companhia} {v.NumeroVoo}".Trim(), Sub = sub.Length > 0 ? sub : null,
+            Detalhe = det, Arquivos = docs });
+    }
+
+    // Hospedagens
+    foreach (var dest in Model.Destinos)
+    {
+        foreach (var h in dest.Hospedagens)
+        {
+            if (h.CheckIn.HasValue)
+            {
+                var dtL  = MvLocal(h.CheckIn.Value, brzTz);
+                var foto = h.Fotos.FirstOrDefault(f => f.Principal)?.CaminhoFoto ?? h.Fotos.FirstOrDefault()?.CaminhoFoto;
+                todos.Add(new MvEvt { Tipo = "checkin", Dt = dtL, SoData = h.CheckIn.Value.TimeOfDay == TimeSpan.Zero,
+                    Titulo = $"Check-in: {h.Nome}", Sub = h.Endereco, Lat = h.Latitude, Lng = h.Longitude, FotoUrl = foto });
+            }
+            if (h.CheckOut.HasValue)
+            {
+                var dtL = MvLocal(h.CheckOut.Value, brzTz);
+                todos.Add(new MvEvt { Tipo = "checkout", Dt = dtL, SoData = h.CheckOut.Value.TimeOfDay == TimeSpan.Zero,
+                    Titulo = $"Check-out: {h.Nome}", Sub = h.Endereco, Lat = h.Latitude, Lng = h.Longitude });
+            }
+        }
+
+        // Experiências
+        foreach (var e in dest.Experiencias)
+        {
+            if (!e.DataInicio.HasValue) continue;
+            var dtL  = MvLocal(e.DataInicio.Value, brzTz);
+            var foto = e.Imagens.FirstOrDefault()?.CaminhoImagem;
+            var docs = new List<string>();
+            foreach (var a in e.Arquivos)
+                if (!string.IsNullOrEmpty(a.CaminhoArquivo)) docs.Add(a.CaminhoArquivo);
+            todos.Add(new MvEvt { Tipo = "experiencia", Dt = dtL, SoData = e.DataInicio.Value.TimeOfDay == TimeSpan.Zero,
+                Titulo = e.TipoPasseio, Sub = dest.Nome, FotoUrl = foto, Arquivos = docs });
+        }
+    }
+
+    // Destinos — chegada (só se não houver check-in no mesmo dia)
+    foreach (var d in Model.Destinos)
+    {
+        if (!d.DataChegada.HasValue) continue;
+        var dtL    = MvLocal(d.DataChegada.Value, brzTz);
+        var dtDate = dtL.Date;
+        bool temCI = d.Hospedagens.Any(h => h.CheckIn.HasValue && MvLocal(h.CheckIn.Value, brzTz).Date == dtDate);
+        if (temCI) continue;
+        var foto = d.Fotos.FirstOrDefault(f => f.Principal)?.CaminhoFoto ?? d.Fotos.FirstOrDefault()?.CaminhoFoto;
+        todos.Add(new MvEvt { Tipo = "destino", Dt = dtDate.AddHours(12), SoData = true,
+            Titulo = $"Chegada: {d.Nome}", Sub = d.Pais, Lat = d.Latitude, Lng = d.Longitude, FotoUrl = foto });
+    }
+
+    // Agrupar por dia
+    var porDia = todos
+        .OrderBy(e => e.Dt)
+        .GroupBy(e => e.Dt.Date)
+        .Select(g => new { Date = g.Key, Evts = g.OrderBy(e => e.SoData ? 1 : 0).ThenBy(e => e.Dt).ToList() })
+        .OrderBy(g => g.Date)
+        .ToList();
+
+    // Próximo evento
+    var proximoEvt = todos
+        .Where(e => e.SoData ? e.Dt.Date >= hoje : e.Dt > agora)
+        .OrderBy(e => e.Dt)
+        .FirstOrDefault();
+
+    // Eventos hoje
+    var eventosHoje = todos.Where(e => e.Dt.Date == hoje).OrderBy(e => e.Dt).ToList();
+
+    // Docs consolidados
+    var todosArqs = new List<(string Nome, string Url, string Cat)>();
+    foreach (var v in Model.Voos)
+        foreach (var a in v.Anexos)
+            if (!string.IsNullOrEmpty(a.CaminhoArquivo))
+                todosArqs.Add((a.NomeOriginal ?? "Documento", a.CaminhoArquivo, $"Voo {v.Origem}→{v.Destino}"));
+    foreach (var dest in Model.Destinos)
+    {
+        foreach (var e in dest.Experiencias)
+            foreach (var a in e.Arquivos)
+                if (!string.IsNullOrEmpty(a.CaminhoArquivo))
+                    todosArqs.Add((a.NomeOriginal ?? "Voucher", a.CaminhoArquivo, e.TipoPasseio));
+        foreach (var t in dest.Transportes)
+            foreach (var a in t.Documentos)
+                if (!string.IsNullOrEmpty(a.CaminhoArquivo))
+                    todosArqs.Add((a.NomeOriginal ?? "Documento", a.CaminhoArquivo, t.Titulo));
+    }
+    foreach (var s in Model.Seguros)
+        foreach (var a in s.Documentos)
+            if (!string.IsNullOrEmpty(a.CaminhoArquivo))
+                todosArqs.Add((a.NomeOriginal ?? "Apólice", a.CaminhoArquivo, s.Titulo));
+
+    // Transportes sem data
+    var todosTransportes = Model.Destinos.SelectMany(d => d.Transportes).ToList();
+    var totalDestinos    = Model.Destinos.Count;
+    var totalPax         = Model.PassageirosProposta.Count;
+
+    // Data formatada
+    string FormatDate(DateTime? dt) => dt.HasValue ? dt.Value.ToString("dd 'de' MMMM", new System.Globalization.CultureInfo("pt-BR")) : "";
+    string FormatDay(DateTime dt)   => dt.ToString("ddd, dd MMM", new System.Globalization.CultureInfo("pt-BR"));
+}
+
+<title>@Model.Titulo — Minha Viagem</title>
+
+<style>
+:root {
+    --mv-primary:  @corP;
+    --mv-accent:   @corD;
+    --mv-ptxt:     @corPTxt;
+    --mv-dtxt:     @corDTxt;
+    --mv-tint:     @corTint;
+    --mv-dtint:    @corDTint;
+    --mv-surface:  #ffffff;
+    --mv-surface2: #f8fafc;
+    --mv-border:   #e2e8f0;
+    --mv-text:     #1e293b;
+    --mv-muted:    #64748b;
+    --mv-header-h: 56px;
+    --mv-nav-h:    64px;
+    --mv-checkin:  #059669;
+    --mv-voo:      #2563eb;
+    --mv-exp:      #7c3aed;
+    --mv-dest:     #0891b2;
+    --mv-checkout: #dc2626;
+}
+
+* { box-sizing: border-box; }
+
+body {
+    background: var(--mv-surface2);
+    color: var(--mv-text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ── HEADER ──────────────────────────────────────────────────────────────── */
+.mv-header {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: var(--mv-header-h);
+    background: var(--mv-primary);
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    padding: 0 14px;
+    gap: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.18);
+}
+
+.mv-logo {
+    height: 30px;
+    width: auto;
+    object-fit: contain;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
+.mv-header-title {
+    flex: 1;
+    color: var(--mv-ptxt);
+    font-size: .85rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    opacity: .92;
+    min-width: 0;
+}
+
+.mv-wa-btn {
+    flex-shrink: 0;
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.15);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--mv-ptxt);
+    text-decoration: none;
+    font-size: 18px;
+    transition: background .2s;
+}
+.mv-wa-btn:hover { background: rgba(255,255,255,.28); color: var(--mv-ptxt); }
+
+/* ── PANELS ──────────────────────────────────────────────────────────────── */
+.mv-panels {
+    margin-top: var(--mv-header-h);
+    padding-bottom: calc(var(--mv-nav-h) + 8px);
+    min-height: calc(100vh - var(--mv-header-h));
+}
+
+.mv-panel { display: none; padding: 14px; }
+.mv-panel.active { display: block; }
+
+/* ── BOTTOM NAV ──────────────────────────────────────────────────────────── */
+.mv-nav {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: var(--mv-nav-h);
+    background: var(--mv-surface);
+    border-top: 1px solid var(--mv-border);
+    display: flex;
+    z-index: 200;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.mv-nav-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    font-size: .65rem;
+    font-weight: 500;
+    color: var(--mv-muted);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px 0;
+    letter-spacing: .01em;
+    transition: color .18s;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.mv-nav-btn i { font-size: 20px; }
+.mv-nav-btn.active { color: var(--mv-accent); }
+.mv-nav-btn.active i { font-weight: 900; }
+
+/* ── CARDS ───────────────────────────────────────────────────────────────── */
+.mv-card {
+    background: var(--mv-surface);
+    border-radius: 14px;
+    border: 1px solid var(--mv-border);
+    padding: 16px;
+    margin-bottom: 12px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.06);
+}
+
+.mv-card-label {
+    font-size: .68rem;
+    font-weight: 700;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: var(--mv-muted);
+    margin-bottom: 8px;
+}
+
+/* ── COUNTDOWN ───────────────────────────────────────────────────────────── */
+.mv-countdown {
+    background: var(--mv-primary);
+    border-radius: 16px;
+    padding: 20px 16px;
+    margin-bottom: 12px;
+    color: var(--mv-ptxt);
+    position: relative;
+    overflow: hidden;
+}
+
+.mv-countdown::before {
+    content: '';
+    position: absolute;
+    top: -30px; right: -30px;
+    width: 110px; height: 110px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.06);
+}
+
+.mv-countdown-trip {
+    font-size: .78rem;
+    font-weight: 600;
+    opacity: .8;
+    margin-bottom: 4px;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.mv-countdown-main {
+    font-size: 1.75rem;
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 2px;
+}
+
+.mv-countdown-sub {
+    font-size: .8rem;
+    opacity: .75;
+    margin-bottom: 10px;
+}
+
+.mv-countdown-dates {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    font-size: .8rem;
+    opacity: .85;
+    flex-wrap: wrap;
+}
+
+.mv-countdown-dates i { font-size: .7rem; opacity: .7; }
+
+/* ── PRÓXIMO EVENTO ──────────────────────────────────────────────────────── */
+.mv-proximo {
+    background: var(--mv-surface);
+    border-radius: 14px;
+    border: 1px solid var(--mv-border);
+    margin-bottom: 12px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,.06);
+}
+
+.mv-proximo-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+}
+
+.mv-proximo-icon {
+    width: 42px; height: 42px;
+    border-radius: 12px;
+    background: var(--mv-dtint);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--mv-accent);
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.mv-proximo-info { flex: 1; min-width: 0; }
+.mv-proximo-titulo {
+    font-weight: 700;
+    font-size: .95rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.mv-proximo-sub { font-size: .78rem; color: var(--mv-muted); margin-top: 2px; }
+.mv-proximo-quando {
+    font-size: .75rem;
+    font-weight: 600;
+    color: var(--mv-accent);
+    text-align: right;
+    flex-shrink: 0;
+}
+
+.mv-proximo-body {
+    border-top: 1px solid var(--mv-border);
+    padding: 12px 16px;
+    display: none;
+}
+.mv-proximo-body.open { display: block; }
+
+.mv-proximo-toggle {
+    width: 100%;
+    background: none;
+    border: none;
+    border-top: 1px solid var(--mv-border);
+    padding: 10px 16px;
+    color: var(--mv-accent);
+    font-size: .8rem;
+    font-weight: 600;
+    text-align: center;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+/* ── TIMELINE ────────────────────────────────────────────────────────────── */
+.mv-day-header {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin: 20px 0 10px;
+}
+
+.mv-day-num {
+    background: var(--mv-primary);
+    color: var(--mv-ptxt);
+    font-size: .65rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 20px;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    flex-shrink: 0;
+}
+
+.mv-day-name {
+    font-size: .85rem;
+    font-weight: 600;
+    color: var(--mv-text);
+}
+
+.mv-day-hoje { background: var(--mv-accent); }
+
+.mv-day-divider { flex: 1; height: 1px; background: var(--mv-border); }
+
+.mv-tl {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.mv-tl-item {
+    display: flex;
+    gap: 12px;
+    position: relative;
+}
+
+.mv-tl-item:not(:last-child) .mv-tl-line {
+    position: absolute;
+    left: 18px;
+    top: 36px;
+    bottom: 0;
+    width: 2px;
+    background: var(--mv-border);
+}
+
+.mv-tl-icon {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+    z-index: 1;
+}
+
+.mv-tl-icon.voo        { background: #dbeafe; color: var(--mv-voo); }
+.mv-tl-icon.checkin    { background: #d1fae5; color: var(--mv-checkin); }
+.mv-tl-icon.checkout   { background: #fee2e2; color: var(--mv-checkout); }
+.mv-tl-icon.experiencia{ background: #ede9fe; color: var(--mv-exp); }
+.mv-tl-icon.destino    { background: #cffafe; color: var(--mv-dest); }
+.mv-tl-icon.transporte { background: #fef3c7; color: #d97706; }
+
+.mv-tl-body {
+    flex: 1;
+    min-width: 0;
+    padding-bottom: 14px;
+}
+
+.mv-tl-time {
+    font-size: .7rem;
+    font-weight: 700;
+    color: var(--mv-muted);
+    margin-bottom: 1px;
+    letter-spacing: .04em;
+}
+
+.mv-tl-titulo {
+    font-weight: 600;
+    font-size: .9rem;
+    line-height: 1.3;
+}
+
+.mv-tl-sub {
+    font-size: .78rem;
+    color: var(--mv-muted);
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.mv-tl-toggle {
+    background: none;
+    border: none;
+    padding: 4px 0;
+    font-size: .75rem;
+    color: var(--mv-accent);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-weight: 600;
+    margin-top: 4px;
+}
+
+.mv-tl-detail {
+    background: var(--mv-tint);
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin-top: 8px;
+    font-size: .8rem;
+    line-height: 1.5;
+}
+
+.mv-tl-detail .mv-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: .78rem;
+    font-weight: 600;
+    color: var(--mv-accent);
+    text-decoration: none;
+    padding: 6px 10px;
+    background: var(--mv-surface);
+    border-radius: 8px;
+    margin: 6px 6px 0 0;
+    border: 1px solid var(--mv-border);
+}
+
+/* ── SECTION HEADER ──────────────────────────────────────────────────────── */
+.mv-section-title {
+    font-size: .78rem;
+    font-weight: 700;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: var(--mv-muted);
+    margin: 20px 0 10px;
+}
+
+/* ── AGENTE CARD ─────────────────────────────────────────────────────────── */
+.mv-agente-card {
+    background: var(--mv-primary);
+    border-radius: 16px;
+    padding: 16px;
+    color: var(--mv-ptxt);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 16px;
+    text-decoration: none;
+}
+
+.mv-agente-foto {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(255,255,255,.3);
+    flex-shrink: 0;
+}
+
+.mv-agente-icon {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.15);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.mv-agente-info { flex: 1; min-width: 0; }
+.mv-agente-nome { font-weight: 700; font-size: .9rem; }
+.mv-agente-sub  { font-size: .78rem; opacity: .8; }
+.mv-agente-wa   { flex-shrink: 0; font-size: 22px; opacity: .9; }
+
+/* ── DOCS LIST ───────────────────────────────────────────────────────────── */
+.mv-doc-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    background: var(--mv-surface);
+    border-radius: 12px;
+    border: 1px solid var(--mv-border);
+    margin-bottom: 8px;
+    text-decoration: none;
+    color: var(--mv-text);
+}
+
+.mv-doc-icon {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    background: var(--mv-dtint);
+    color: var(--mv-accent);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.mv-doc-nome { font-size: .85rem; font-weight: 600; }
+.mv-doc-cat  { font-size: .73rem; color: var(--mv-muted); margin-top: 1px; }
+.mv-doc-arrow{ color: var(--mv-muted); font-size: .8rem; flex-shrink: 0; }
+
+/* ── DESTINO CHIP ────────────────────────────────────────────────────────── */
+.mv-destino-item {
+    background: var(--mv-surface);
+    border-radius: 14px;
+    border: 1px solid var(--mv-border);
+    padding: 14px;
+    margin-bottom: 10px;
+}
+
+.mv-destino-nome {
+    font-weight: 700;
+    font-size: 1rem;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.mv-destino-meta { font-size: .78rem; color: var(--mv-muted); }
+
+/* ── EMPTY STATE ─────────────────────────────────────────────────────────── */
+.mv-empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--mv-muted);
+    font-size: .88rem;
+}
+.mv-empty i { font-size: 32px; margin-bottom: 8px; display: block; opacity: .4; }
+
+/* ── DESKTOP ─────────────────────────────────────────────────────────────── */
+@@media (min-width: 640px) {
+    .mv-header, .mv-nav {
+        left: max(0px, calc(50vw - 300px));
+        right: max(0px, calc(50vw - 300px));
+        width: auto;
+    }
+    .mv-panels {
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    .mv-header { border-radius: 0 0 12px 12px; }
+}
+</style>
+
+<div class="mv-header">
+    @if (!string.IsNullOrEmpty(logoUrl))
+    {
+        <img src="@logoUrl" class="mv-logo" alt="@nomeAgencia" />
+    }
+    else if (!string.IsNullOrEmpty(nomeAgencia))
+    {
+        <span style="color:var(--mv-ptxt);font-weight:700;font-size:.8rem;opacity:.9;flex-shrink:0;">@nomeAgencia</span>
+    }
+    <span class="mv-header-title">@Model.Titulo</span>
+    @if (!string.IsNullOrEmpty(waUrl))
+    {
+        <a href="@waUrl" class="mv-wa-btn" title="Falar com agente">
+            <i class="fab fa-whatsapp"></i>
+        </a>
+    }
+</div>
+
+<div class="mv-panels">
+
+    @* ─── TAB 0: HOJE ────────────────────────────────────────────────────── *@
+    <div id="panel-hoje" class="mv-panel active">
+
+        @* Countdown *@
+        <div class="mv-countdown">
+            <div class="mv-countdown-trip">
+                @if (!string.IsNullOrEmpty(nomeAgencia)) { @nomeAgencia } else { <text>Sua viagem</text> }
+            </div>
+            @if (statusViagem == "pre" && Model.DataInicio.HasValue)
+            {
+                @if (diasParaInicio > 1)
+                {
+                    <div class="mv-countdown-main">@diasParaInicio dias</div>
+                    <div class="mv-countdown-sub">para o início da sua viagem</div>
+                }
+                else if (diasParaInicio == 1)
+                {
+                    <div class="mv-countdown-main">Amanhã!</div>
+                    <div class="mv-countdown-sub">Sua viagem começa amanhã</div>
+                }
+                else
+                {
+                    <div class="mv-countdown-main">Hoje! ✈</div>
+                    <div class="mv-countdown-sub">Sua viagem começa hoje</div>
+                }
+            }
+            else if (statusViagem == "durante")
+            {
+                @if (diasTotal > 0 && diaAtual == diasTotal)
+                {
+                    <div class="mv-countdown-main">Último dia</div>
+                }
+                else if (diasTotal > 0)
+                {
+                    <div class="mv-countdown-main">Dia @diaAtual de @diasTotal</div>
+                }
+                else
+                {
+                    <div class="mv-countdown-main">Em viagem</div>
+                }
+                <div class="mv-countdown-sub">de @Model.Titulo</div>
+            }
+            else if (statusViagem == "pos")
+            {
+                <div class="mv-countdown-main">Viagem realizada</div>
+                <div class="mv-countdown-sub">@Model.Titulo</div>
+            }
+            else
+            {
+                <div class="mv-countdown-main">@Model.Titulo</div>
+            }
+
+            <div class="mv-countdown-dates">
+                @if (Model.DataInicio.HasValue)
+                {
+                    <i class="fas fa-calendar"></i>
+                    <span>@Model.DataInicio.Value.ToString("dd MMM", new System.Globalization.CultureInfo("pt-BR"))</span>
+                }
+                @if (Model.DataInicio.HasValue && Model.DataFim.HasValue)
+                {
+                    <span style="opacity:.5">→</span>
+                    <span>@Model.DataFim.Value.ToString("dd MMM yyyy", new System.Globalization.CultureInfo("pt-BR"))</span>
+                    <span style="opacity:.6; font-size:.72rem;">· @diasTotal dias</span>
+                }
+            </div>
+        </div>
+
+        @* Próximo compromisso *@
+        @if (proximoEvt != null && statusViagem != "pos")
+        {
+            <div class="mv-card-label">PRÓXIMO COMPROMISSO</div>
+            <div class="mv-proximo">
+                <div class="mv-proximo-header">
+                    <div class="mv-proximo-icon">
+                        <i class="fas @MvIcone(proximoEvt.Tipo)"></i>
+                    </div>
+                    <div class="mv-proximo-info">
+                        <div class="mv-proximo-titulo">@proximoEvt.Titulo</div>
+                        @if (!string.IsNullOrEmpty(proximoEvt.Sub))
+                        {
+                            <div class="mv-proximo-sub">@proximoEvt.Sub</div>
+                        }
+                    </div>
+                    <div class="mv-proximo-quando">
+                        @if (proximoEvt.SoData)
+                        {
+                            @proximoEvt.Dt.ToString("dd/MM", new System.Globalization.CultureInfo("pt-BR"))
+                        }
+                        else if (proximoEvt.Dt.Date == hoje)
+                        {
+                            <text>Hoje</text><br/>@proximoEvt.Dt.ToString("HH:mm")
+                        }
+                        else
+                        {
+                            @proximoEvt.Dt.ToString("dd/MM", new System.Globalization.CultureInfo("pt-BR"))<br/>@proximoEvt.Dt.ToString("HH:mm")
+                        }
+                    </div>
+                </div>
+
+                @{
+                    bool temDetalheProximo = !string.IsNullOrEmpty(proximoEvt.Detalhe)
+                        || proximoEvt.Arquivos.Count > 0
+                        || (proximoEvt.Lat.HasValue && proximoEvt.Lng.HasValue);
+                }
+                @if (temDetalheProximo)
+                {
+                    <div id="prox-body" class="mv-proximo-body">
+                        @if (!string.IsNullOrEmpty(proximoEvt.Detalhe))
+                        {
+                            <p style="font-size:.83rem;color:var(--mv-muted);margin:0 0 8px;">@proximoEvt.Detalhe</p>
+                        }
+                        @if (proximoEvt.Lat.HasValue && proximoEvt.Lng.HasValue)
+                        {
+                            <a href="https://maps.google.com/?q=@proximoEvt.Lat,@proximoEvt.Lng" target="_blank" class="mv-action">
+                                <i class="fas fa-map-marker-alt"></i> Ver no mapa
+                            </a>
+                        }
+                        @foreach (var url in proximoEvt.Arquivos.Take(2))
+                        {
+                            <a href="@url" target="_blank" class="mv-action">
+                                <i class="fas fa-file-alt"></i> Voucher
+                            </a>
+                        }
+                    </div>
+                    <button class="mv-proximo-toggle" onclick="toggleProximo(this)">
+                        <span>Ver detalhes</span> <i class="fas fa-chevron-down" id="prox-chev"></i>
+                    </button>
+                }
+            </div>
+        }
+
+        @* Programação de hoje *@
+        @if (statusViagem == "durante" && eventosHoje.Count > 0)
+        {
+            <div class="mv-card-label">HOJE · @hoje.ToString("dd 'de' MMMM", new System.Globalization.CultureInfo("pt-BR")).ToUpper()</div>
+            <div class="mv-tl">
+                @foreach (var evt in eventosHoje)
+                {
+                    <div class="mv-tl-item">
+                        <div class="mv-tl-line"></div>
+                        <div class="mv-tl-icon @evt.Tipo">
+                            <i class="fas @MvIcone(evt.Tipo)"></i>
+                        </div>
+                        <div class="mv-tl-body">
+                            @if (!evt.SoData)
+                            {
+                                <div class="mv-tl-time">@evt.Dt.ToString("HH:mm")</div>
+                            }
+                            <div class="mv-tl-titulo">@evt.Titulo</div>
+                            @if (!string.IsNullOrEmpty(evt.Sub)) { <div class="mv-tl-sub">@evt.Sub</div> }
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else if (statusViagem == "durante" && eventosHoje.Count == 0)
+        {
+            <div class="mv-card" style="text-align:center;color:var(--mv-muted);font-size:.85rem;padding:20px;">
+                <i class="fas fa-sun" style="font-size:24px;margin-bottom:8px;display:block;opacity:.4;"></i>
+                Nenhum evento agendado para hoje
+            </div>
+        }
+        else if (statusViagem == "pre" && porDia.Count > 0)
+        {
+            <div class="mv-card-label">PRIMEIRO DIA</div>
+            <div class="mv-tl">
+                @foreach (var evt in porDia.First().Evts)
+                {
+                    <div class="mv-tl-item">
+                        <div class="mv-tl-line"></div>
+                        <div class="mv-tl-icon @evt.Tipo">
+                            <i class="fas @MvIcone(evt.Tipo)"></i>
+                        </div>
+                        <div class="mv-tl-body">
+                            @if (!evt.SoData) { <div class="mv-tl-time">@evt.Dt.ToString("HH:mm")</div> }
+                            <div class="mv-tl-titulo">@evt.Titulo</div>
+                            @if (!string.IsNullOrEmpty(evt.Sub)) { <div class="mv-tl-sub">@evt.Sub</div> }
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+
+        @* Card do agente *@
+        @if (!string.IsNullOrEmpty(waUrl))
+        {
+            <a href="@waUrl" class="mv-agente-card">
+                @if (!string.IsNullOrEmpty(fotoAgente))
+                {
+                    <img src="@fotoAgente" class="mv-agente-foto" alt="@nomeAgente" />
+                }
+                else
+                {
+                    <div class="mv-agente-icon"><i class="fas fa-user-tie"></i></div>
+                }
+                <div class="mv-agente-info">
+                    <div class="mv-agente-nome">@nomeAgente</div>
+                    <div class="mv-agente-sub">Falar pelo WhatsApp</div>
+                </div>
+                <i class="fab fa-whatsapp mv-agente-wa"></i>
+            </a>
+        }
+    </div>
+
+    @* ─── TAB 1: ROTEIRO ─────────────────────────────────────────────────── *@
+    <div id="panel-roteiro" class="mv-panel">
+        @if (porDia.Count == 0)
+        {
+            <div class="mv-empty">
+                <i class="fas fa-route"></i>
+                Nenhum evento com data cadastrado ainda.
+            </div>
+        }
+        else
+        {
+            int diaNum = 0;
+            @foreach (var dia in porDia)
+            {
+                diaNum++;
+                bool isHoje = dia.Date == hoje;
+                bool isDia  = Model.DataInicio.HasValue && dia.Date >= Model.DataInicio.Value.Date;
+                int numDia  = Model.DataInicio.HasValue ? (dia.Date - Model.DataInicio.Value.Date).Days + 1 : diaNum;
+
+                <div class="mv-day-header">
+                    <span class="mv-day-num @(isHoje ? "mv-day-hoje" : "")">
+                        @if (isHoje) { <text>HOJE</text> }
+                        else         { <text>DIA @numDia</text> }
+                    </span>
+                    <span class="mv-day-name">@FormatDay(dia.Date)</span>
+                    <span class="mv-day-divider"></span>
+                </div>
+
+                <div class="mv-tl">
+                    @{int evtIdx = 0;}
+                    @foreach (var evt in dia.Evts)
+                    {
+                        evtIdx++;
+                        string collapseId = $"det-{dia.Date:yyyyMMdd}-{evtIdx}";
+                        bool temDetalhe = !string.IsNullOrEmpty(evt.Detalhe)
+                            || evt.Arquivos.Count > 0
+                            || (evt.Lat.HasValue && evt.Lng.HasValue);
+
+                        <div class="mv-tl-item">
+                            <div class="mv-tl-line"></div>
+                            <div class="mv-tl-icon @evt.Tipo">
+                                <i class="fas @MvIcone(evt.Tipo)"></i>
+                            </div>
+                            <div class="mv-tl-body">
+                                @if (!evt.SoData)
+                                {
+                                    <div class="mv-tl-time">@evt.Dt.ToString("HH:mm")</div>
+                                }
+                                <div class="mv-tl-titulo">@evt.Titulo</div>
+                                @if (!string.IsNullOrEmpty(evt.Sub))
+                                {
+                                    <div class="mv-tl-sub">@evt.Sub</div>
+                                }
+                                @if (temDetalhe)
+                                {
+                                    <button class="mv-tl-toggle" onclick="toggleDet('@collapseId', this)">
+                                        <i class="fas fa-chevron-down"></i> Detalhes
+                                    </button>
+                                    <div id="@collapseId" class="mv-tl-detail" style="display:none;">
+                                        @if (!string.IsNullOrEmpty(evt.Detalhe))
+                                        {
+                                            <p style="margin:0 0 8px;color:var(--mv-muted);">@evt.Detalhe</p>
+                                        }
+                                        <div>
+                                            @if (evt.Lat.HasValue && evt.Lng.HasValue)
+                                            {
+                                                <a href="https://maps.google.com/?q=@evt.Lat,@evt.Lng" target="_blank" class="mv-action">
+                                                    <i class="fas fa-map-marker-alt"></i> Ver no mapa
+                                                </a>
+                                            }
+                                            @foreach (var url in evt.Arquivos)
+                                            {
+                                                <a href="@url" target="_blank" class="mv-action">
+                                                    <i class="fas fa-file-alt"></i> Documento
+                                                </a>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        }
+    </div>
+
+    @* ─── TAB 2: VIAGEM ──────────────────────────────────────────────────── *@
+    <div id="panel-viagem" class="mv-panel">
+
+        @* Info geral *@
+        <div class="mv-card">
+            <div class="mv-card-label">INFORMAÇÕES GERAIS</div>
+            <div style="display:flex;flex-wrap:wrap;gap:16px;">
+                @if (totalDestinos > 0)
+                {
+                    <div>
+                        <div style="font-size:.7rem;color:var(--mv-muted);font-weight:600;letter-spacing:.04em;text-transform:uppercase;">Destinos</div>
+                        <div style="font-weight:700;font-size:1.1rem;">@totalDestinos</div>
+                    </div>
+                }
+                @if (totalPax > 0)
+                {
+                    <div>
+                        <div style="font-size:.7rem;color:var(--mv-muted);font-weight:600;letter-spacing:.04em;text-transform:uppercase;">Passageiros</div>
+                        <div style="font-weight:700;font-size:1.1rem;">@totalPax</div>
+                    </div>
+                }
+                @if (diasTotal > 0)
+                {
+                    <div>
+                        <div style="font-size:.7rem;color:var(--mv-muted);font-weight:600;letter-spacing:.04em;text-transform:uppercase;">Duração</div>
+                        <div style="font-weight:700;font-size:1.1rem;">@diasTotal dias</div>
+                    </div>
+                }
+            </div>
+            @if (!string.IsNullOrWhiteSpace(Model.ObservacoesGerais))
+            {
+                <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--mv-border);font-size:.83rem;color:var(--mv-muted);white-space:pre-wrap;">@Model.ObservacoesGerais</div>
+            }
+        </div>
+
+        @* Destinos *@
+        @if (Model.Destinos.Count > 0)
+        {
+            <div class="mv-section-title">Destinos</div>
+            @foreach (var d in Model.Destinos)
+            {
+                var fotoD = d.Fotos.FirstOrDefault(f => f.Principal)?.CaminhoFoto ?? d.Fotos.FirstOrDefault()?.CaminhoFoto;
+                <div class="mv-destino-item">
+                    @if (!string.IsNullOrEmpty(fotoD))
+                    {
+                        <img src="@fotoD" style="width:100%;height:120px;object-fit:cover;border-radius:10px;margin-bottom:10px;" loading="lazy" />
+                    }
+                    <div class="mv-destino-nome">
+                        <i class="fas fa-map-marker-alt" style="color:var(--mv-accent);font-size:.85rem;"></i>
+                        @d.Nome
+                        @if (!string.IsNullOrEmpty(d.Pais)) { <span style="font-weight:400;color:var(--mv-muted);font-size:.85rem;">· @d.Pais</span> }
+                    </div>
+                    <div class="mv-destino-meta">
+                        @if (d.DataChegada.HasValue) { <text>Chegada: @FormatDate(d.DataChegada)  </text> }
+                        @if (d.DataSaida.HasValue) { <text>· Saída: @FormatDate(d.DataSaida)</text> }
+                    </div>
+                    @foreach (var h in d.Hospedagens)
+                    {
+                        <div style="margin-top:8px;padding:8px;background:var(--mv-tint);border-radius:8px;font-size:.8rem;">
+                            <i class="fas fa-bed" style="color:var(--mv-checkin);margin-right:4px;"></i>
+                            <strong>@h.Nome</strong>
+                            @if (h.CheckIn.HasValue || h.CheckOut.HasValue)
+                            {
+                                <span style="color:var(--mv-muted);margin-left:6px;">
+                                    @(h.CheckIn.HasValue ? h.CheckIn.Value.ToString("dd/MM") : "") – @(h.CheckOut.HasValue ? h.CheckOut.Value.ToString("dd/MM") : "")
+                                </span>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        }
+
+        @* Passageiros *@
+        @if (Model.PassageirosProposta.Count > 0)
+        {
+            <div class="mv-section-title">Passageiros</div>
+            <div class="mv-card" style="padding:12px 14px;">
+                @foreach (var p in Model.PassageirosProposta)
+                {
+                    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;@(p != Model.PassageirosProposta.Last() ? "border-bottom:1px solid var(--mv-border);" : "")">
+                        <div style="width:34px;height:34px;border-radius:50%;background:var(--mv-dtint);display:flex;align-items:center;justify-content:center;color:var(--mv-accent);font-size:14px;flex-shrink:0;">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div style="flex:1;min-width:0;">
+                            <div style="font-weight:600;font-size:.87rem;">@p.Nome</div>
+                            @if (p.IsTitular) { <div style="font-size:.72rem;color:var(--mv-accent);font-weight:600;">Titular</div> }
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+
+        @* Transportes *@
+        @if (todosTransportes.Count > 0)
+        {
+            <div class="mv-section-title">Transportes</div>
+            @foreach (var t in todosTransportes)
+            {
+                <div class="mv-card" style="padding:12px 14px;">
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <div style="width:36px;height:36px;border-radius:8px;background:#fef3c7;color:#d97706;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;">
+                            <i class="fas fa-bus"></i>
+                        </div>
+                        <div style="flex:1;min-width:0;">
+                            <div style="font-weight:600;font-size:.88rem;">@t.Titulo</div>
+                        </div>
+                    </div>
+                    @foreach (var doc in t.Documentos)
+                    {
+                        if (!string.IsNullOrEmpty(doc.CaminhoArquivo))
+                        {
+                            <a href="@doc.CaminhoArquivo" target="_blank" style="display:inline-flex;align-items:center;gap:5px;margin-top:8px;font-size:.78rem;color:var(--mv-accent);font-weight:600;">
+                                <i class="fas fa-file-alt"></i> @(doc.NomeOriginal ?? "Documento")
+                            </a>
+                        }
+                    }
+                </div>
+            }
+        }
+    </div>
+
+    @* ─── TAB 3: DOCS ────────────────────────────────────────────────────── *@
+    <div id="panel-docs" class="mv-panel">
+        @if (todosArqs.Count == 0)
+        {
+            <div class="mv-empty">
+                <i class="fas fa-folder-open"></i>
+                Nenhum documento cadastrado ainda.
+            </div>
+        }
+        else
+        {
+            <p style="font-size:.8rem;color:var(--mv-muted);margin-bottom:14px;">Todos os seus documentos e vouchers em um só lugar.</p>
+            @foreach (var (nome, url, cat) in todosArqs)
+            {
+                <a href="@url" target="_blank" class="mv-doc-item">
+                    <div class="mv-doc-icon">
+                        <i class="fas fa-file-alt"></i>
+                    </div>
+                    <div style="flex:1;min-width:0;">
+                        <div class="mv-doc-nome">@nome</div>
+                        <div class="mv-doc-cat">@cat</div>
+                    </div>
+                    <i class="fas fa-external-link-alt mv-doc-arrow"></i>
+                </a>
+            }
+        }
+    </div>
+
+</div>
+
+@* ── BOTTOM NAV ─────────────────────────────────────────────────────────── *@
+<nav class="mv-nav">
+    <button class="mv-nav-btn active" data-panel="hoje" onclick="switchPanel('hoje', this)">
+        <i class="fas fa-home"></i>
+        <span>Hoje</span>
+    </button>
+    <button class="mv-nav-btn" data-panel="roteiro" onclick="switchPanel('roteiro', this)">
+        <i class="fas fa-route"></i>
+        <span>Roteiro</span>
+    </button>
+    <button class="mv-nav-btn" data-panel="viagem" onclick="switchPanel('viagem', this)">
+        <i class="fas fa-globe-americas"></i>
+        <span>Viagem</span>
+    </button>
+    <button class="mv-nav-btn" data-panel="docs" onclick="switchPanel('docs', this)">
+        <i class="fas fa-folder-open"></i>
+        <span>Docs</span>
+        @if (todosArqs.Count > 0)
+        {
+            <span style="font-size:.6rem;background:var(--mv-accent);color:var(--mv-dtxt);border-radius:10px;padding:1px 5px;font-weight:700;line-height:1.4;margin-top:-2px;">@todosArqs.Count</span>
+        }
+    </button>
+</nav>
+
+<script>
+(function () {
+    function switchPanel(id, btn) {
+        document.querySelectorAll('.mv-panel').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.mv-nav-btn').forEach(b => b.classList.remove('active'));
+        var panel = document.getElementById('panel-' + id);
+        if (panel) { panel.classList.add('active'); panel.scrollTop = 0; }
+        if (btn) btn.classList.add('active');
+        window.scrollTo(0, 0);
+    }
+    window.switchPanel = switchPanel;
+
+    function toggleProximo(btn) {
+        var body = document.getElementById('prox-body');
+        var chev = document.getElementById('prox-chev');
+        if (!body) return;
+        var open = body.classList.toggle('open');
+        if (chev) chev.style.transform = open ? 'rotate(180deg)' : '';
+        btn.querySelector('span').textContent = open ? 'Fechar' : 'Ver detalhes';
+    }
+    window.toggleProximo = toggleProximo;
+
+    function toggleDet(id, btn) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        var open = el.style.display === 'block';
+        el.style.display = open ? 'none' : 'block';
+        var icon = btn.querySelector('i');
+        if (icon) icon.style.transform = open ? '' : 'rotate(180deg)';
+        btn.childNodes[1] && (btn.childNodes[1].textContent = open ? ' Detalhes' : ' Fechar');
+    }
+    window.toggleDet = toggleDet;
+
+    // Scroll automático para o dia de hoje no roteiro
+    var pRot = document.getElementById('panel-roteiro');
+    if (pRot) {
+        var btn = document.querySelector('[data-panel="roteiro"]');
+        if (btn) btn.addEventListener('click', function () {
+            setTimeout(function () {
+                var hoje = pRot.querySelector('.mv-day-hoje');
+                if (hoje) hoje.closest('.mv-day-header')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 50);
+        });
+    }
+})();
+</script>

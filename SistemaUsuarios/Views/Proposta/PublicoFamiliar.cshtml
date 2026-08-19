@@ -916,7 +916,7 @@ body.has-preview-bar { padding-top: 46px; }
                 ? (int?)(_dFim.Value.Date - _dInicio.Value.Date).TotalDays : null;
 
             var _dHosp = _d.Hospedagens.OrderBy(h => h.CheckIn ?? DateTime.MaxValue).ToList();
-            var _dExps = _d.Experiencias.OrderBy(e => e.Ordem).ToList();
+            var _dExps = _d.Experiencias.OrderBy(e => e.DataInicio ?? DateTime.MaxValue).ThenBy(e => e.Ordem).ToList();
 
             <div class="fam-dest-period" style="--dest-cor: @_dc;">
                 <div class="fam-dp-num">@(_di + 1)</div>
@@ -1195,7 +1195,7 @@ body.has-preview-bar { padding-top: 46px; }
             @foreach (var dest in famDestOrd)
             {
                 var _destCor4 = famDestCores.GetValueOrDefault(dest.Id, famPaleta[0]);
-                @foreach (var exp in dest.Experiencias.OrderBy(e => e.Ordem))
+                @foreach (var exp in dest.Experiencias.OrderBy(e => e.DataInicio ?? DateTime.MaxValue).ThenBy(e => e.Ordem))
                 {
                     var _expImgs  = exp.Imagens.OrderBy(i => i.Ordem).ToList();
                     var _expImg   = _expImgs.FirstOrDefault();
@@ -1313,9 +1313,9 @@ body.has-preview-bar { padding-top: 46px; }
 @if (temVoos)
 {
     var gruposVooFam = new[] {
-        new { Titulo = "Voos de Ida",    Cor = "#3B82F6", Icone = "fas fa-plane",          Voos = Model.Voos.Where(v => v.TipoVoo == TipoVoo.Ida).OrderBy(v => v.Ordem).ToList() },
-        new { Titulo = "Voos Internos",  Cor = "#8B5CF6", Icone = "fas fa-plane-departure", Voos = Model.Voos.Where(v => v.TipoVoo == TipoVoo.Interno).OrderBy(v => v.Ordem).ToList() },
-        new { Titulo = "Voos de Volta",  Cor = "#10B981", Icone = "fas fa-plane-arrival",   Voos = Model.Voos.Where(v => v.TipoVoo == TipoVoo.Volta).OrderBy(v => v.Ordem).ToList() },
+        new { Titulo = "Voos de Ida",    Cor = "#3B82F6", Icone = "fas fa-plane",          Voos = Model.Voos.Where(v => v.TipoVoo == TipoVoo.Ida).OrderBy(v => v.HorarioSaida ?? DateTime.MaxValue).ToList() },
+        new { Titulo = "Voos Internos",  Cor = "#8B5CF6", Icone = "fas fa-plane-departure", Voos = Model.Voos.Where(v => v.TipoVoo == TipoVoo.Interno).OrderBy(v => v.HorarioSaida ?? DateTime.MaxValue).ToList() },
+        new { Titulo = "Voos de Volta",  Cor = "#10B981", Icone = "fas fa-plane-arrival",   Voos = Model.Voos.Where(v => v.TipoVoo == TipoVoo.Volta).OrderBy(v => v.HorarioSaida ?? DateTime.MaxValue).ToList() },
     };
 <section class="fam-section" id="sec-voos">
     <div class="fam-container">
