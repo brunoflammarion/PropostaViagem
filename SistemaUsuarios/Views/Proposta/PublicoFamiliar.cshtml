@@ -54,21 +54,22 @@
         : $"Olá! Estou visualizando a proposta \"{Model.Titulo}\" e gostaria de conversar sobre a viagem.";
     var waUrl         = WhatsAppHelper.MontarUrl(agenteResponsavel?.Telefone, waMsgRaw);
 
-    bool temPassageiros = Model.PassageirosProposta.Any();
+    bool isSite         = (bool)(ViewBag.IsSite ?? false);
+    bool temPassageiros = !isSite && Model.PassageirosProposta.Any();
     bool temVoos        = Model.Voos.Any();
     bool temSeguros     = Model.Seguros.Any();
     bool temResumo      = !string.IsNullOrWhiteSpace(Model.ResumoProposta);
-    bool temCondicoes   = !string.IsNullOrWhiteSpace(Model.CondicoesPropostaHtml);
-    bool temValores     = !string.IsNullOrWhiteSpace(Model.ValoresPropostaHtml);
+    bool temCondicoes   = !isSite && !string.IsNullOrWhiteSpace(Model.CondicoesPropostaHtml);
+    bool temValores     = !isSite && !string.IsNullOrWhiteSpace(Model.ValoresPropostaHtml);
     bool temJornada     = Model.DataInicio.HasValue && Model.DataFim.HasValue;
 
     var todasHospedagens  = Model.Destinos.SelectMany(d => d.Hospedagens).ToList();
     var todasAcomodacoes  = Model.Destinos.SelectMany(d => d.Hospedagens).SelectMany(h => h.Acomodacoes).ToList();
     var todasExperiencias = Model.Destinos.SelectMany(d => d.Experiencias).ToList();
 
-    bool mostrarAvalHospedagem  = Model.SolicitarAvaliacaoHospedagem  && todasHospedagens.Count  > 1;
-    bool mostrarAvalAcomodacao  = Model.SolicitarAvaliacaoAcomodacao  && todasAcomodacoes.Count  > 1;
-    bool mostrarAvalExperiencia = Model.SolicitarAvaliacaoExperiencia && todasExperiencias.Count > 1;
+    bool mostrarAvalHospedagem  = !isSite && Model.SolicitarAvaliacaoHospedagem  && todasHospedagens.Count  > 1;
+    bool mostrarAvalAcomodacao  = !isSite && Model.SolicitarAvaliacaoAcomodacao  && todasAcomodacoes.Count  > 1;
+    bool mostrarAvalExperiencia = !isSite && Model.SolicitarAvaliacaoExperiencia && todasExperiencias.Count > 1;
     bool temAvaliacao = mostrarAvalHospedagem || mostrarAvalAcomodacao || mostrarAvalExperiencia;
 
     var uCorP  = Model.Usuario.CorPrimaria;
@@ -472,11 +473,29 @@ body { font-family: var(--ff-body); background: var(--c-bg); color: var(--c-text
 .fam-acmd-card {
     border: 1px solid var(--c-line); border-radius: var(--radius-sm);
     overflow: hidden; background: var(--c-bg);
+    display: flex; flex-direction: column;
 }
-.fam-acmd-card img { width: 100%; height: 130px; object-fit: cover; }
-.fam-acmd-body { padding: 12px 14px; }
-.fam-acmd-name { font-weight: 700; font-size: .88rem; color: var(--c-text); margin-bottom: 4px; }
-.fam-acmd-sub  { font-size: .77rem; color: var(--c-text-mid); }
+.fam-acmd-img-wrap {
+    position: relative; cursor: zoom-in; flex-shrink: 0;
+}
+.fam-acmd-img-wrap img { width: 100%; height: 130px; object-fit: cover; display: block; }
+.fam-acmd-extra-badge {
+    position: absolute; bottom: 7px; right: 8px;
+    background: rgba(0,0,0,.52); color: #fff;
+    font-size: .67rem; font-weight: 700; padding: 2px 8px;
+    border-radius: 50px; pointer-events: none; letter-spacing: .02em;
+}
+.fam-acmd-body { padding: 12px 14px; flex: 1; }
+.fam-acmd-name { font-weight: 700; font-size: .92rem; color: var(--c-text); margin-bottom: 4px; }
+.fam-acmd-desc { font-size: .78rem; color: var(--c-text-mid); margin-bottom: 8px; }
+.fam-acmd-comod { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+.fam-acmd-comod-chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: .72rem; color: var(--c-text-mid);
+    background: var(--c-bg-alt); border: 1px solid var(--c-line);
+    border-radius: 50px; padding: 2px 9px;
+}
+.fam-acmd-comod-chip i { color: var(--c-accent); font-size: .62rem; }
 
 /* ── EXPERIÊNCIAS ── */
 .fam-exp-list { display: flex; flex-direction: column; gap: 24px; }
@@ -848,7 +867,7 @@ body.has-preview-bar { padding-top: 46px; }
             &nbsp;·&nbsp;<span>@Model.Usuario.Nome</span>
         </div>
         <h1>@Model.Titulo</h1>
-        @if (!string.IsNullOrEmpty(Model.ObservacoesGerais))
+        @if (!isSite && !string.IsNullOrEmpty(Model.ObservacoesGerais))
         {
             <p class="fam-hero-sub">@(Model.ObservacoesGerais.Length > 140 ? Model.ObservacoesGerais.Substring(0,140) + "…" : Model.ObservacoesGerais)</p>
         }
@@ -1156,18 +1175,46 @@ body.has-preview-bar { padding-top: 46px; }
                             <div class="fam-acmd-grid">
                                 @foreach (var acmd in hosp.Acomodacoes.OrderBy(a => a.Ordem))
                                 {
-                                    var _acFoto = acmd.Fotos.OrderBy(f => f.Ordem).FirstOrDefault();
+                                    var _acFotos = acmd.Fotos.OrderBy(f => f.Ordem).ToList();
+                                    var _acGid   = "gal-ac-" + acmd.Id.ToString("N");
+                                    var _acExtra = _acFotos.Count > 1 ? _acFotos.Count - 1 : 0;
                                     <div class="fam-acmd-card">
-                                        @if (_acFoto != null)
+                                        @if (_acFotos.Count > 0)
                                         {
-                                            <img src="@_acFoto.CaminhoFoto" alt="@acmd.Nome"
-                                                 onclick="openLightbox('@_acFoto.CaminhoFoto','@acmd.Nome')" style="cursor:zoom-in;" />
+                                            <div class="fam-acmd-img-wrap"
+                                                 data-gallery-group="@_acGid"
+                                                 data-gallery-src="@_acFotos[0].CaminhoFoto"
+                                                 data-gallery-caption="@acmd.Nome">
+                                                @foreach (var _acf in _acFotos.Skip(1))
+                                                {
+                                                    <span class="d-none"
+                                                          data-gallery-group="@_acGid"
+                                                          data-gallery-src="@_acf.CaminhoFoto"
+                                                          data-gallery-caption="@acmd.Nome"></span>
+                                                }
+                                                <img src="@_acFotos[0].CaminhoFoto" alt="@acmd.Nome" loading="lazy" />
+                                                @if (_acExtra > 0)
+                                                {
+                                                    <span class="fam-acmd-extra-badge">+@_acExtra</span>
+                                                }
+                                            </div>
                                         }
                                         <div class="fam-acmd-body">
                                             <div class="fam-acmd-name">@acmd.Nome</div>
                                             @if (!string.IsNullOrEmpty(acmd.Descricao))
                                             {
-                                                <div class="fam-acmd-sub">@(acmd.Descricao.Length > 90 ? acmd.Descricao.Substring(0,90) + "…" : acmd.Descricao)</div>
+                                                <div class="proposal-rich-content fam-acmd-desc">@Html.Raw(acmd.Descricao)</div>
+                                            }
+                                            @if (acmd.Comodidades.Any())
+                                            {
+                                                <div class="fam-acmd-comod">
+                                                    @foreach (var _com in acmd.Comodidades.OrderBy(c => c.Ordem))
+                                                    {
+                                                        <span class="fam-acmd-comod-chip">
+                                                            <i class="fas fa-check-circle"></i>@_com.Nome
+                                                        </span>
+                                                    }
+                                                </div>
                                             }
                                         </div>
                                     </div>

@@ -807,6 +807,74 @@ Sobre o campo numeroEstrelas: informe a classificação oficial do hotel em estr
             return Ok(new { success = true });
         }
 
+        // POST: Hospedagem/AdicionarComodidadeAcomodacaoAjax  (retorna JSON, sem redirect)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AdicionarComodidadeAcomodacaoAjax(Guid acomodacaoId, string nome)
+        {
+            if (!UsuarioLogado()) return Unauthorized();
+
+            var usuarioId = ObterUsuarioLogadoId();
+            var isMaster = SessaoIsMaster();
+
+            var acomodacao = await _context.Acomodacoes
+                .Include(a => a.Comodidades)
+                .Include(a => a.Hospedagem)
+                    .ThenInclude(h => h.Destino).ThenInclude(d => d.Proposta)
+                .FirstOrDefaultAsync(a => a.Id == acomodacaoId &&
+                    (isMaster ? a.Hospedagem.Destino.Proposta.UsuarioMasterId == usuarioId
+                              : a.Hospedagem.Destino.Proposta.UsuarioResponsavelId == usuarioId));
+
+            if (acomodacao == null)
+                return Json(new { success = false, erro = "Acomodação não encontrada." });
+
+            var nomeTrimmed = nome?.Trim();
+            if (string.IsNullOrWhiteSpace(nomeTrimmed))
+                return Json(new { success = false, erro = "Nome da comodidade é obrigatório." });
+
+            if (acomodacao.Comodidades.Any(c => c.Nome.Equals(nomeTrimmed, StringComparison.OrdinalIgnoreCase)))
+                return Json(new { success = false, erro = $"'{nomeTrimmed}' já existe nesta acomodação." });
+
+            var maxOrdem = acomodacao.Comodidades.Any() ? acomodacao.Comodidades.Max(c => c.Ordem) : 0;
+            var comodidade = new AcomodacaoComodidade
+            {
+                AcomodacaoId = acomodacaoId,
+                Nome = nomeTrimmed,
+                Ordem = maxOrdem + 1
+            };
+            _context.AcomodacaoComodidades.Add(comodidade);
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true, id = comodidade.Id, nome = comodidade.Nome });
+        }
+
+        // POST: Hospedagem/ExcluirComodidadeAcomodacaoAjax  (retorna JSON, sem redirect)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ExcluirComodidadeAcomodacaoAjax(Guid id)
+        {
+            if (!UsuarioLogado()) return Unauthorized();
+
+            var usuarioId = ObterUsuarioLogadoId();
+            var isMaster = SessaoIsMaster();
+
+            var comodidade = await _context.AcomodacaoComodidades
+                .Include(c => c.Acomodacao)
+                    .ThenInclude(a => a.Hospedagem)
+                        .ThenInclude(h => h.Destino).ThenInclude(d => d.Proposta)
+                .FirstOrDefaultAsync(c => c.Id == id &&
+                    (isMaster ? c.Acomodacao.Hospedagem.Destino.Proposta.UsuarioMasterId == usuarioId
+                              : c.Acomodacao.Hospedagem.Destino.Proposta.UsuarioResponsavelId == usuarioId));
+
+            if (comodidade == null)
+                return Json(new { success = false, erro = "Comodidade não encontrada." });
+
+            _context.AcomodacaoComodidades.Remove(comodidade);
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true });
+        }
+
         // POST: Hospedagem/AdicionarComodidadeAcomodacao
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -895,7 +963,12 @@ Sobre o campo numeroEstrelas: informe a classificação oficial do hotel em estr
         // POST: Hospedagem/AdicionarAcomodacao
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AdicionarAcomodacao(Guid hospedagemId, string nome, string? descricao)
+        public async Task<IActionResult> AdicionarAcomodacao(
+            Guid hospedagemId,
+            string nome,
+            string? descricao,
+            string? comodidadesJson,
+            IFormFile[]? fotos)
         {
             if (!UsuarioLogado())
                 return RedirectToAction("Login", "Auth");
@@ -935,7 +1008,63 @@ Sobre o campo numeroEstrelas: informe a classificação oficial do hotel em estr
             _context.Acomodacoes.Add(acomodacao);
             await _context.SaveChangesAsync();
 
-            TempData["Sucesso"] = $"Acomodação '{nome}' adicionada com sucesso!";
+            // Persistir comodidades
+            if (!string.IsNullOrWhiteSpace(comodidadesJson))
+            {
+                var nomesComod = comodidadesJson
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
+                int ordemComod = 1;
+                foreach (var nomeComod in nomesComod)
+                {
+                    _context.AcomodacaoComodidades.Add(new AcomodacaoComodidade
+                    {
+                        AcomodacaoId = acomodacao.Id,
+                        Nome = nomeComod,
+                        Ordem = ordemComod++
+                    });
+                }
+                await _context.SaveChangesAsync();
+            }
+
+            // Persistir fotos (opcional)
+            var fotosValidas = (fotos ?? Array.Empty<IFormFile>())
+                .Where(f => f != null && f.Length > 0).ToList();
+
+            if (fotosValidas.Any())
+            {
+                var errosFoto = new List<string>();
+                for (int i = 0; i < fotosValidas.Count; i++)
+                {
+                    try
+                    {
+                        var caminho = await SalvarFotoAsync(fotosValidas[i]);
+                        _context.AcomodacaoFotos.Add(new AcomodacaoFoto
+                        {
+                            AcomodacaoId = acomodacao.Id,
+                            CaminhoFoto  = caminho,
+                            Principal    = i == 0,
+                            Ordem        = i + 1
+                        });
+                    }
+                    catch (InvalidOperationException ex)
+                    {
+                        errosFoto.Add($"{fotosValidas[i].FileName}: {ex.Message}");
+                    }
+                }
+                await _context.SaveChangesAsync();
+
+                TempData["Sucesso"] = errosFoto.Any()
+                    ? $"Acomodação '{nome}' criada, mas {errosFoto.Count} foto(s) não puderam ser salvas."
+                    : $"Acomodação '{nome}' criada com {fotosValidas.Count} foto(s)!";
+            }
+            else
+            {
+                TempData["Sucesso"] = $"Acomodação '{nome}' adicionada com sucesso!";
+            }
+
             return RedirectToEditar(hospedagem.Destino.PropostaId, hospedagem.DestinoId, $"hosp-card-{HospSafeId(hospedagem.Id)}");
         }
 

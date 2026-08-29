@@ -30,13 +30,16 @@ namespace SistemaUsuarios.Controllers
             if (request?.PropostaId == Guid.Empty || request?.Itens == null || !request.Itens.Any())
                 return BadRequest(new { ok = false, erro = "Dados inválidos." });
 
-            // Confirm proposal exists and link is active
+            // Confirm proposal exists, link is active, and is not a public Site vitrine
             var proposta = await _context.Propostas
                 .AsNoTracking()
                 .FirstOrDefaultAsync(p => p.Id == request.PropostaId && p.LinkPublicoAtivo);
 
             if (proposta == null)
                 return NotFound(new { ok = false, erro = "Proposta não encontrada." });
+
+            if (proposta.StatusProposta == StatusProposta.Site)
+                return BadRequest(new { ok = false, erro = "Avaliação não disponível para viagens da vitrine." });
 
             foreach (var item in request.Itens)
             {

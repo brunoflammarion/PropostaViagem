@@ -7,6 +7,9 @@ namespace SistemaUsuarios.Models.ViewModels
     {
         public Guid? Id { get; set; }
 
+        /// <summary>Cliente pré-vinculado (passado via query string ao criar a partir do detalhe do cliente).</summary>
+        public Guid? ClienteId { get; set; }
+
         [Required(ErrorMessage = "Título é obrigatório")]
         [StringLength(500, ErrorMessage = "Título deve ter no máximo 500 caracteres")]
         [Display(Name = "Título")]
@@ -118,6 +121,7 @@ namespace SistemaUsuarios.Models.ViewModels
                     StatusProposta.Aprovada => "Aprovada",
                     StatusProposta.Rejeitada => "Rejeitada",
                     StatusProposta.Cancelada => "Cancelada",
+                    StatusProposta.Site => "Site",
                     _ => "Desconhecido"
                 };
             }
@@ -137,6 +141,7 @@ namespace SistemaUsuarios.Models.ViewModels
                     StatusProposta.Aprovada => "success",
                     StatusProposta.Rejeitada => "danger",
                     StatusProposta.Cancelada => "dark",
+                    StatusProposta.Site => "info",
                     _ => "secondary"
                 };
             }
@@ -360,7 +365,8 @@ namespace SistemaUsuarios.Models.ViewModels
                     { (int)StatusProposta.Enviada, "Enviada" },
                     { (int)StatusProposta.Aprovada, "Aprovada" },
                     { (int)StatusProposta.Rejeitada, "Rejeitada" },
-                    { (int)StatusProposta.Cancelada, "Cancelada" }
+                    { (int)StatusProposta.Cancelada, "Cancelada" },
+                    { (int)StatusProposta.Site, "Site (Vitrine pública)" }
                 };
 
                 // Se for nova proposta, só mostrar Rascunho

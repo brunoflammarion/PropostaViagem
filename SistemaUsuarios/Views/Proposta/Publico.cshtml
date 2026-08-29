@@ -70,23 +70,24 @@
         : $"Olá! Estou visualizando a proposta \"{Model.Titulo}\" e gostaria de conversar sobre a viagem.";
     var waUrl         = WhatsAppHelper.MontarUrl(agenteResponsavel?.Telefone, waMsgRaw);
 
-    bool temPassageiros = Model.PassageirosProposta.Any();
+    bool isSite         = (bool)(ViewBag.IsSite ?? false);
+    bool temPassageiros = !isSite && Model.PassageirosProposta.Any();
     bool temVoos        = Model.Voos.Any();
     bool temSeguros     = Model.Seguros.Any();
     bool temResumo      = !string.IsNullOrWhiteSpace(Model.ResumoProposta);
-    bool temCondicoes   = !string.IsNullOrWhiteSpace(Model.CondicoesPropostaHtml);
-    bool temValores     = !string.IsNullOrWhiteSpace(Model.ValoresPropostaHtml);
+    bool temCondicoes   = !isSite && !string.IsNullOrWhiteSpace(Model.CondicoesPropostaHtml);
+    bool temValores     = !isSite && !string.IsNullOrWhiteSpace(Model.ValoresPropostaHtml);
     // Jornada/calendário: existe quando há datas definidas (o mapa é bônus se houver coordenadas)
     bool temJornada     = Model.DataInicio.HasValue && Model.DataFim.HasValue;
 
-    // ── Avaliação comparativa ─────────────────────────────────────────────────
+    // ── Avaliação comparativa — desabilitada para propostas Site ─────────────
     var todasHospedagens = Model.Destinos.SelectMany(d => d.Hospedagens).ToList();
     var todasAcomodacoes = Model.Destinos.SelectMany(d => d.Hospedagens).SelectMany(h => h.Acomodacoes).ToList();
     var todasExperiencias = Model.Destinos.SelectMany(d => d.Experiencias).ToList();
 
-    bool mostrarAvalHospedagem  = Model.SolicitarAvaliacaoHospedagem  && todasHospedagens.Count  > 1;
-    bool mostrarAvalAcomodacao  = Model.SolicitarAvaliacaoAcomodacao  && todasAcomodacoes.Count  > 1;
-    bool mostrarAvalExperiencia = Model.SolicitarAvaliacaoExperiencia && todasExperiencias.Count > 1;
+    bool mostrarAvalHospedagem  = !isSite && Model.SolicitarAvaliacaoHospedagem  && todasHospedagens.Count  > 1;
+    bool mostrarAvalAcomodacao  = !isSite && Model.SolicitarAvaliacaoAcomodacao  && todasAcomodacoes.Count  > 1;
+    bool mostrarAvalExperiencia = !isSite && Model.SolicitarAvaliacaoExperiencia && todasExperiencias.Count > 1;
     bool temAvaliacao = mostrarAvalHospedagem || mostrarAvalAcomodacao || mostrarAvalExperiencia;
 
     // Tema personalizado do usuário/agente
@@ -466,13 +467,55 @@ body {
 .proposal-rich-content li { margin-bottom: .15rem; line-height: 1.45; }
 .proposal-rich-content a { color: inherit; }
 
-.acomoda-row {
-    display:grid; grid-template-columns:repeat(auto-fill, minmax(220px,1fr)); gap:14px;
-    margin-top:14px;
+.acomoda-row { display:flex; flex-direction:column; gap:10px; margin-top:12px; }
+
+.acomoda-card {
+    border-radius: var(--radius-md);
+    border: 1px solid #edf2f7;
+    background: #fff;
+    display: flex;
+    align-items: flex-start;
+    gap: 0;
+    overflow: hidden;
 }
-.acomoda-card { border-radius: var(--radius-md); border:1px solid #edf2f7; overflow:hidden; background:#fff; }
-.acomoda-img { width:100%; height:130px; object-fit:cover; }
-.theme-familiar .acomoda-img { height:160px; }
+.acomoda-card-thumb {
+    flex-shrink: 0;
+    width: 100px;
+    align-self: stretch;
+    position: relative;
+    cursor: zoom-in;
+}
+.acomoda-card-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+.acomoda-card-thumb .acomoda-extra-badge {
+    position: absolute;
+    bottom: 6px;
+    right: 6px;
+    background: rgba(0,0,0,.55);
+    color: #fff;
+    font-size: .66rem;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 50px;
+    pointer-events: none;
+    letter-spacing: .02em;
+    white-space: nowrap;
+}
+.acomoda-card-body { flex: 1; padding: 12px 14px; min-width: 0; }
+.acomoda-card-nome { font-weight: 600; font-size: .9rem; color: var(--c-h2); margin-bottom: 4px; }
+.acomoda-card-desc { font-size: .8rem; color: #64748b; line-height: 1.5; margin-bottom: 6px; }
+.acomoda-card-comod { display: flex; flex-wrap: wrap; gap: 4px; }
+
+@@media (max-width: 480px) {
+    .acomoda-card { flex-direction: column; }
+    .acomoda-card-thumb { width: 100%; height: 140px; align-self: auto; }
+    .acomoda-card-thumb img { height: 140px; }
+    .acomoda-card-body { padding: 10px 12px; }
+}
 
 /* ── EXPERIÊNCIAS ── */
 .exp-card { margin-bottom:20px; }
@@ -1404,6 +1447,20 @@ body.has-preview-bar { padding-top: 46px; }
 </nav>
 
 <!-- ═══════════════════════════════════════════
+     BACK-LINK PARA AGÊNCIA (apenas Site)
+═══════════════════════════════════════════ -->
+@if (isSite && !string.IsNullOrEmpty(Model.Usuario.SlugAgencia))
+{
+    var _agSlug = Model.Usuario.SlugAgencia;
+    <div style="background:rgba(0,0,0,.04);border-bottom:1px solid rgba(0,0,0,.07);padding:10px 20px;">
+        <a href="/@_agSlug" style="font-size:.82rem;color:inherit;text-decoration:none;display:inline-flex;align-items:center;gap:6px;opacity:.7;">
+            <i class="fas fa-arrow-left" style="font-size:.7rem;"></i>
+            Voltar para @(Model.Usuario.NomeAgencia ?? Model.Usuario.Nome)
+        </a>
+    </div>
+}
+
+<!-- ═══════════════════════════════════════════
      HERO
 ═══════════════════════════════════════════ -->
 <section class="hero" id="top">
@@ -1446,6 +1503,23 @@ body.has-preview-bar { padding-top: 46px; }
         </div>
     </div>
 </section>
+
+<!-- ═══════════════════════════════════════════
+     CTA INTERESSE (apenas Site)
+═══════════════════════════════════════════ -->
+@if (isSite && !string.IsNullOrEmpty(Model.Usuario.SlugAgencia))
+{
+    var _agSlugCta = Model.Usuario.SlugAgencia;
+    var _origemCta = Uri.EscapeDataString(Model.Titulo);
+    <div style="background:var(--c-accent);color:#fff;padding:14px 20px;text-align:center;">
+        <a href="/@_agSlugCta?origem=@_origemCta"
+           style="color:#fff;font-weight:700;font-size:.95rem;text-decoration:none;display:inline-flex;align-items:center;gap:8px;">
+            <i class="fas fa-heart"></i>
+            Tenho interesse nesta viagem — falar com a agência
+            <i class="fas fa-arrow-right" style="font-size:.8rem;"></i>
+        </a>
+    </div>
+}
 
 <!-- ═══════════════════════════════════════════
      HIGHLIGHTS BAR — o que está incluído
@@ -1784,7 +1858,7 @@ body.has-preview-bar { padding-top: 46px; }
 <!-- ═══════════════════════════════════════════
      OBSERVAÇÕES GERAIS  (Padrão / Familiar)
 ═══════════════════════════════════════════ -->
-@if (!string.IsNullOrEmpty(Model.ObservacoesGerais) && !isExecutivo)
+@if (!isSite && !string.IsNullOrEmpty(Model.ObservacoesGerais) && !isExecutivo)
 {
     <section class="prop-section bg-alt" id="sec-sobre">
         <div class="container">
@@ -2405,59 +2479,41 @@ body.has-preview-bar { padding-top: 46px; }
                                                 @foreach (var ac in hosp.Acomodacoes.OrderBy(a => a.Ordem))
                                                 {
                                                     var acFotos  = ac.Fotos.OrderBy(f => f.Ordem).ToList();
-                                                    var acCarId  = $"ca-{ac.Id:N}";
                                                     var acGallId = "gal-ac-" + ac.Id.ToString("N");
+                                                    var acFotoExtra = acFotos.Count > 1 ? acFotos.Count - 1 : 0;
                                                     <div class="acomoda-card">
-                                                        @if (acFotos.Count == 1)
+                                                        @if (acFotos.Count > 0)
                                                         {
-                                                            <img src="@acFotos[0].CaminhoFoto" alt="@ac.Nome" class="acomoda-img" loading="lazy"
+                                                            <div class="acomoda-card-thumb"
                                                                  data-gallery-group="@acGallId"
                                                                  data-gallery-src="@acFotos[0].CaminhoFoto"
-                                                                 data-gallery-caption="@ac.Nome"
-                                                                 style="cursor:zoom-in;" />
-                                                        }
-                                                        else if (acFotos.Count > 1)
-                                                        {
-                                                            <div id="@acCarId" class="carousel slide" data-bs-ride="false" style="position:relative;">
-                                                                <div class="carousel-inner">
-                                                                    @for (int fi = 0; fi < acFotos.Count; fi++)
-                                                                    {
-                                                                        <div class="carousel-item @(fi == 0 ? "active" : "")">
-                                                                            <img src="@acFotos[fi].CaminhoFoto" alt="@ac.Nome"
-                                                                                 class="d-block w-100 acomoda-img"
-                                                                                 data-gallery-group="@acGallId"
-                                                                                 data-gallery-src="@acFotos[fi].CaminhoFoto"
-                                                                                 data-gallery-caption="@ac.Nome"
-                                                                                 style="cursor:zoom-in;" />
-                                                                        </div>
-                                                                    }
-                                                                </div>
-                                                                <button class="carousel-control-prev" type="button" data-bs-target="#@acCarId" data-bs-slide="prev">
-                                                                    <span class="carousel-control-prev-icon"></span>
-                                                                </button>
-                                                                <button class="carousel-control-next" type="button" data-bs-target="#@acCarId" data-bs-slide="next">
-                                                                    <span class="carousel-control-next-icon"></span>
-                                                                </button>
-                                                                <div class="carousel-counter">
-                                                                    <span class="cur-slide">1</span>/<span>@acFotos.Count</span>
-                                                                </div>
+                                                                 data-gallery-caption="@ac.Nome">
+                                                                @foreach (var acf in acFotos.Skip(1))
+                                                                {
+                                                                    <span class="d-none"
+                                                                          data-gallery-group="@acGallId"
+                                                                          data-gallery-src="@acf.CaminhoFoto"
+                                                                          data-gallery-caption="@ac.Nome"></span>
+                                                                }
+                                                                <img src="@acFotos[0].CaminhoFoto" alt="@ac.Nome" loading="lazy" />
+                                                                @if (acFotoExtra > 0)
+                                                                {
+                                                                    <span class="acomoda-extra-badge">+@acFotoExtra</span>
+                                                                }
                                                             </div>
                                                         }
-                                                        <div class="p-3">
-                                                            <div class="fw-600 mb-1">@ac.Nome</div>
+                                                        <div class="acomoda-card-body">
+                                                            <div class="acomoda-card-nome">@ac.Nome</div>
                                                             @if (!string.IsNullOrEmpty(ac.Descricao))
                                                             {
-                                                                <p class="text-muted small mb-1">@ac.Descricao</p>
+                                                                <div class="proposal-rich-content acomoda-card-desc">@Html.Raw(ac.Descricao)</div>
                                                             }
                                                             @if (ac.Comodidades.Any())
                                                             {
-                                                                <div class="d-flex flex-wrap gap-1 mt-1">
+                                                                <div class="acomoda-card-comod">
                                                                     @foreach (var com in ac.Comodidades.OrderBy(c => c.Ordem))
                                                                     {
-                                                                        <span class="badge bg-light text-dark border"
-                                                                              style="font-size:.7rem;font-weight:500;">
-                                                                            @com.Nome
-                                                                        </span>
+                                                                        <span class="comod-chip"><i class="fas fa-check-circle" style="color:var(--c-accent);font-size:.7rem;"></i>@com.Nome</span>
                                                                     }
                                                                 </div>
                                                             }

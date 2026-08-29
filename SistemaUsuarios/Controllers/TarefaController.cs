@@ -223,6 +223,39 @@ namespace SistemaUsuarios.Controllers
             return RedirectToAction(nameof(Configuracoes));
         }
 
+        // ── Dados para modal compartilhado ───────────────────────────────────────
+
+        [HttpGet]
+        public async Task<IActionResult> DadosParaModal(Guid? filtrarPropostasClienteId = null)
+        {
+            if (!UsuarioLogado()) return Json(new { ok = false });
+            var uid      = UsuarioId();
+            var clientes = await ClientesSelectList(uid);
+            var propostas = filtrarPropostasClienteId.HasValue
+                ? await PropostasSelectListPorCliente(uid, filtrarPropostasClienteId.Value)
+                : await PropostasSelectList(uid);
+            return Json(new {
+                ok        = true,
+                clientes  = clientes.Select(c => new { value = c.Value, text = c.Text }),
+                propostas = propostas.Select(p => new { value = p.Value, text = p.Text })
+            });
+        }
+
+        private async Task<List<SelectListItem>> PropostasSelectListPorCliente(Guid uid, Guid clienteId)
+        {
+            var lista = await _context.Propostas
+                .Where(p => (p.UsuarioResponsavelId == uid || p.UsuarioMasterId == uid)
+                    && p.ClienteId == clienteId
+                    && p.StatusProposta != StatusProposta.Cancelada)
+                .OrderByDescending(p => p.DataCriacao)
+                .Select(p => new SelectListItem { Value = p.Id.ToString(), Text = p.Titulo })
+                .AsNoTracking()
+                .ToListAsync();
+
+            lista.Insert(0, new SelectListItem { Value = "", Text = "— Nenhuma —" });
+            return lista;
+        }
+
         // ── Gatilho manual (scheduler) ───────────────────────────────────────────
 
         [HttpPost]

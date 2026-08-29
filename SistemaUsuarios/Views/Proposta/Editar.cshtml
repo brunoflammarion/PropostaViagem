@@ -320,7 +320,8 @@
                                         <span class="text-danger">*</span> @Html.DisplayNameFor(m => m.Titulo)
                                     </label>
                                     <input asp-for="Titulo" class="form-control form-control-lg"
-                                           placeholder="Ex: Viagem dos Sonhos - Europa 2024" maxlength="500" required />
+                                           placeholder="Ex: Viagem dos Sonhos - Europa 2024" maxlength="500" required
+                                           data-char-counter />
                                     <span asp-validation-for="Titulo" class="text-danger"></span>
                                 </div>
                                 <div class="row">
@@ -372,7 +373,8 @@
                                         <i class="fas fa-sticky-note me-1"></i>Informações iniciais
                                     </label>
                                     <textarea asp-for="ObservacoesGerais" class="form-control" rows="4"
-                                              placeholder="Descreva detalhes importantes sobre a viagem..."></textarea>
+                                              placeholder="Descreva detalhes importantes sobre a viagem..."
+                                              maxlength="2000" data-char-counter></textarea>
                                 </div>
                             </div>
                         </div>
@@ -391,6 +393,7 @@
                                             <option value="Aprovada">Aprovada</option>
                                             <option value="Rejeitada">Rejeitada</option>
                                             <option value="Cancelada">Cancelada</option>
+                                            <option value="Site">Site (Vitrine pública)</option>
                                         </select>
                                     </div>
                                     <div class="col-md-6 mb-3">
@@ -784,14 +787,14 @@
                                                         <form asp-controller="Destino" asp-action="EditarDestino" method="post">
                                                             <input type="hidden" name="id" value="@destino.Id" />
                                                             <div class="mb-2">
-                                                                <input type="text" name="nome" id="nome-dest-@destino.Id" class="form-control form-control-sm" value="@destino.Nome" placeholder="Nome" />
+                                                                <input type="text" name="nome" id="nome-dest-@destino.Id" class="form-control form-control-sm" value="@destino.Nome" placeholder="Nome" maxlength="200" data-char-counter />
                                                             </div>
                                                             <div class="row">
                                                                 <div class="col-6 mb-2">
-                                                                    <input type="text" name="pais" class="form-control form-control-sm" value="@destino.Pais" placeholder="País" />
+                                                                    <input type="text" name="pais" class="form-control form-control-sm" value="@destino.Pais" placeholder="País" maxlength="100" data-char-counter />
                                                                 </div>
                                                                 <div class="col-6 mb-2">
-                                                                    <input type="text" name="cidade" class="form-control form-control-sm" value="@destino.Cidade" placeholder="Cidade" />
+                                                                    <input type="text" name="cidade" class="form-control form-control-sm" value="@destino.Cidade" placeholder="Cidade" maxlength="100" data-char-counter />
                                                                 </div>
                                                             </div>
                                                             <div class="row">
@@ -807,6 +810,7 @@
                                                             <div class="mb-2">
                                                                 <div id="desc-dest-@destino.Id"
                                                                      class="ql-desc-container"
+                                                                     data-quill-limit="1000"
                                                                      data-content="@(destino.Descricao ?? "")"></div>
                                                                 <input type="hidden" name="descricao"
                                                                        data-quill-target="desc-dest-@destino.Id" />
@@ -923,7 +927,8 @@
                                                                 <input type="text" name="nome"
                                                                        class="form-control form-control-sm hosp-nome-input"
                                                                        required autocomplete="off"
-                                                                       placeholder="Ex: Hotel Marriott..." />
+                                                                       placeholder="Ex: Hotel Marriott..."
+                                                                       maxlength="200" data-char-counter />
                                                                 <div class="hosp-sugestoes-list list-group mt-1"
                                                                      style="position:absolute;z-index:9999;width:100%;max-height:220px;overflow-y:auto;"></div>
                                                             </div>
@@ -959,7 +964,8 @@
                                                                 <div class="input-group input-group-sm">
                                                                     <input type="text" name="endereco"
                                                                            class="form-control hosp-endereco-input"
-                                                                           placeholder="Preenchido ao selecionar sugestão" />
+                                                                           placeholder="Preenchido ao selecionar sugestão"
+                                                                           maxlength="500" data-char-counter />
                                                                     <span class="input-group-text hosp-coord-badge d-none"
                                                                           style="font-size:0.75rem;">
                                                                         <i class="fas fa-map-pin me-1 text-success"></i>
@@ -978,6 +984,7 @@
                                                                 </div>
                                                                 <div id="new-hosp-desc-@destino.Id.ToString("N")"
                                                                      class="ql-desc-container"
+                                                                     data-quill-limit="4000"
                                                                      data-placeholder="Selecione sugestão ou use Gerar com IA..."
                                                                      data-content=""></div>
                                                                 <input type="hidden" name="descricao"
@@ -1097,15 +1104,21 @@
                                                         </div>
 
                                                         <div class="collapse" id="hosp-edit-@hospedagem.Id">
-                                                            <div class="card-body pt-2 hosp-form-container"
+                                                            <div class="card-body pt-3 hosp-form-container"
                                                                  data-cidade="@(destino.Cidade ?? destino.Nome)">
-                                                                <!-- Editar hospedagem — campos pré-preenchidos pelo servidor -->
                                                                 @{
                                                                     var _ic = System.Globalization.CultureInfo.InvariantCulture;
                                                                     var _latStr = hospedagem.Latitude?.ToString("G17", _ic) ?? "";
                                                                     var _lngStr = hospedagem.Longitude?.ToString("G17", _ic) ?? "";
                                                                 }
-                                                                <form id="form-editar-hosp-@hospSafeId" asp-controller="Hospedagem" asp-action="Editar" method="post" class="mb-3">
+
+                                                                <!-- ── BLOCO 1: Informações da Hospedagem ──────── -->
+                                                                <div class="mb-3 p-3 rounded" style="background:#f8f9fa;border:1px solid #e9ecef;">
+                                                                    <div class="d-flex align-items-center gap-2 mb-3">
+                                                                        <i class="fas fa-hotel" style="color:var(--bs-primary);opacity:.7;"></i>
+                                                                        <span class="fw-semibold small text-uppercase text-secondary" style="letter-spacing:.05em;">Informações da Hospedagem</span>
+                                                                    </div>
+                                                                <form id="form-editar-hosp-@hospSafeId" asp-controller="Hospedagem" asp-action="Editar" method="post">
                                                                     @Html.AntiForgeryToken()
                                                                     <input type="hidden" name="id" value="@hospedagem.Id" />
                                                                     <input type="hidden" name="latitude" class="hosp-lat" value="@_latStr" />
@@ -1115,7 +1128,8 @@
                                                                         <input type="text" name="nome"
                                                                                class="form-control form-control-sm hosp-nome-input"
                                                                                value="@hospedagem.Nome"
-                                                                               required autocomplete="off" />
+                                                                               required autocomplete="off"
+                                                                               maxlength="200" data-char-counter />
                                                                         <div class="hosp-sugestoes-list list-group mt-1"
                                                                              style="position:absolute;z-index:9999;width:100%;max-height:220px;overflow-y:auto;"></div>
                                                                     </div>
@@ -1153,7 +1167,8 @@
                                                                         <div class="input-group input-group-sm">
                                                                             <input type="text" name="endereco"
                                                                                    class="form-control hosp-endereco-input"
-                                                                                   value="@hospedagem.Endereco" />
+                                                                                   value="@hospedagem.Endereco"
+                                                                                   maxlength="500" data-char-counter />
                                                                             @if (hospedagem.Latitude.HasValue && hospedagem.Longitude.HasValue)
                                                                             {
                                                                                 <span class="input-group-text hosp-coord-badge"
@@ -1191,6 +1206,7 @@
                                                                         </div>
                                                                         <div id="hosp-desc-@hospedagem.Id.ToString("N")"
                                                                              class="ql-desc-container"
+                                                                             data-quill-limit="4000"
                                                                              data-placeholder="Descreva o hotel..."
                                                                              data-content="@(hospedagem.Descricao ?? "")"></div>
                                                                         <input type="hidden" name="descricao"
@@ -1230,67 +1246,33 @@
                                                                         <label class="form-label form-label-sm mb-0">Reserva</label>
                                                                         <textarea name="reserva"
                                                                                   class="form-control form-control-sm"
-                                                                                  rows="1">@hospedagem.Reserva</textarea>
+                                                                                  rows="1"
+                                                                                  maxlength="2000" data-char-counter>@hospedagem.Reserva</textarea>
+                                                                    </div>
+                                                                    <div class="d-flex justify-content-end mt-3 pt-2 border-top">
+                                                                        <button type="submit" class="btn btn-sm btn-primary px-4">
+                                                                            <i class="fas fa-save me-1"></i>Salvar hotel
+                                                                        </button>
                                                                     </div>
                                                                 </form>
+                                                                </div><!-- /Informações da Hospedagem -->
 
-                                                                <hr class="my-2" />
-
-                                                                <!-- Comodidades -->
-                                                                <div class="mb-3">
-                                                                    <h6 class="text-muted mb-2">
-                                                                        <i class="fas fa-concierge-bell me-1"></i>Comodidades
-                                                                    </h6>
-                                                                    @if (hospedagem.Comodidades.Any())
-                                                                    {
-                                                                        <div class="d-flex flex-wrap gap-1 mb-2">
-                                                                            @foreach (var comodidade in hospedagem.Comodidades.OrderBy(c => c.Ordem))
-                                                                            {
-                                                                                <span class="badge bg-light text-dark border d-inline-flex align-items-center gap-1 py-1 px-2">
-                                                                                    <i class="fas fa-check-circle text-success" style="font-size:0.7rem;"></i>
-                                                                                    @comodidade.Nome
-                                                                                    <form asp-controller="Hospedagem" asp-action="ExcluirComodidade"
-                                                                                          method="post" style="display:inline;"
-                                                                                          onsubmit="return confirm('Remover comodidade?');">
-                                                                                        <input type="hidden" name="id" value="@comodidade.Id" />
-                                                                                        <button type="submit"
-                                                                                                class="btn p-0 ms-1 border-0 bg-transparent lh-1"
-                                                                                                title="Remover">
-                                                                                            <i class="fas fa-times text-muted" style="font-size:0.6rem;"></i>
-                                                                                        </button>
-                                                                                    </form>
-                                                                                </span>
-                                                                            }
-                                                                        </div>
-                                                                    }
-                                                                    else
-                                                                    {
-                                                                        <p class="small text-muted mb-2">Nenhuma comodidade cadastrada.</p>
-                                                                    }
-                                                                    <form asp-controller="Hospedagem" asp-action="AdicionarComodidade"
-                                                                          method="post" class="d-flex gap-1">
-                                                                        <input type="hidden" name="hospedagemId" value="@hospedagem.Id" />
-                                                                        <input type="text" name="nome" class="form-control form-control-sm"
-                                                                               placeholder="Adicionar comodidade..." maxlength="200"
-                                                                               style="max-width:220px;" />
-                                                                        <button type="submit" class="btn btn-sm btn-outline-secondary flex-shrink-0">
-                                                                            <i class="fas fa-plus me-1"></i>Adicionar
-                                                                        </button>
-                                                                    </form>
+                                                                <!-- ── RECURSOS DO HOTEL ──────────────── -->
+                                                                <div class="d-flex align-items-center gap-2 mb-3 mt-1">
+                                                                    <div class="flex-grow-1" style="height:1px;background:#dee2e6;"></div>
+                                                                    <span class="small fw-semibold text-uppercase" style="letter-spacing:.05em;color:#9ca3af;white-space:nowrap;">Recursos do Hotel</span>
+                                                                    <div class="flex-grow-1" style="height:1px;background:#dee2e6;"></div>
                                                                 </div>
 
-                                                                <hr class="my-2" />
-
-                                                                <!-- Fotos do Hotel -->
+                                                                <!-- 1. Fotos do Hotel -->
                                                                 <div class="mb-3">
-                                                                    <h6 class="text-muted mb-2">
+                                                                    <h6 class="text-muted mb-2 d-flex align-items-center gap-1">
                                                                         <i class="fas fa-images me-1"></i>Fotos do Hotel
                                                                         @if (hospedagem.Fotos.Any())
                                                                         {
                                                                             <span class="badge bg-secondary ms-1">@hospedagem.Fotos.Count</span>
                                                                         }
                                                                     </h6>
-
                                                                     @if (hospedagem.Fotos.Any())
                                                                     {
                                                                         <div class="img-upload-grid img-upload-grid--lg"
@@ -1298,8 +1280,7 @@
                                                                              data-hospedagem-id="@hospedagem.Id">
                                                                             @foreach (var fotoH in hospedagem.Fotos.OrderBy(f => f.Ordem))
                                                                             {
-                                                                                <div class="img-thumb"
-                                                                                     data-foto-hosp-id="@fotoH.Id">
+                                                                                <div class="img-thumb" data-foto-hosp-id="@fotoH.Id">
                                                                                     <div class="img-thumb-frame">
                                                                                         <img src="@fotoH.CaminhoFoto" alt="" />
                                                                                     </div>
@@ -1314,8 +1295,7 @@
                                                                                           onsubmit="return confirm('Excluir foto do hotel?');">
                                                                                         <input type="hidden" name="id" value="@fotoH.Id" />
                                                                                         <button type="submit" class="itp-btn itp-btn--del"
-                                                                                                aria-label="Excluir foto"
-                                                                                                title="Excluir foto">
+                                                                                                aria-label="Excluir foto" title="Excluir foto">
                                                                                             <i class="fas fa-times"></i>
                                                                                         </button>
                                                                                     </form>
@@ -1328,28 +1308,76 @@
                                                                     }
                                                                     else
                                                                     {
-                                                                        <p class="small text-muted mb-2">Nenhuma foto do hotel cadastrada.</p>
+                                                                        <p class="small text-muted mb-2">Nenhuma foto cadastrada.</p>
                                                                     }
-
                                                                     <form asp-controller="Hospedagem" asp-action="AdicionarFotoHospedagem"
                                                                           method="post" enctype="multipart/form-data">
                                                                         <input type="hidden" name="hospedagemId" value="@hospedagem.Id" />
                                                                         <label class="form-label form-label-sm text-muted small mb-1">
-                                                                            <i class="fas fa-plus me-1"></i>Adicionar imagens
+                                                                            <i class="fas fa-plus me-1"></i>Adicionar fotos
                                                                         </label>
-                                                                        <input type="file" name="fotos" multiple
-                                                                               accept="image/*"
-                                                                               class="form-control form-control-sm"
-                                                                               data-auto-upload />
+                                                                        <input type="file" name="fotos" multiple accept="image/*"
+                                                                               class="form-control form-control-sm" data-auto-upload />
                                                                         <p class="img-upload-hint">As imagens serão enviadas automaticamente. Depois, arraste para ordenar.</p>
                                                                     </form>
                                                                 </div>
 
-                                                                <hr class="my-2" />
+                                                                <hr class="my-1 mb-3" />
 
-                                                                <!-- Acomodações -->
-                                                                <h6 class="text-muted mb-2">
+                                                                <!-- 2. Comodidades -->
+                                                                <div class="mb-3">
+                                                                    <h6 class="text-muted mb-2 d-flex align-items-center gap-1">
+                                                                        <i class="fas fa-concierge-bell me-1"></i>Comodidades
+                                                                        @if (hospedagem.Comodidades.Any())
+                                                                        {
+                                                                            <span class="badge bg-secondary ms-1">@hospedagem.Comodidades.Count</span>
+                                                                        }
+                                                                    </h6>
+                                                                    @if (hospedagem.Comodidades.Any())
+                                                                    {
+                                                                        <div class="d-flex flex-wrap gap-1 mb-2">
+                                                                            @foreach (var comodidade in hospedagem.Comodidades.OrderBy(c => c.Ordem))
+                                                                            {
+                                                                                <span class="badge bg-light text-dark border d-inline-flex align-items-center gap-1 py-1 px-2">
+                                                                                    <i class="fas fa-check-circle text-success" style="font-size:0.7rem;"></i>
+                                                                                    @comodidade.Nome
+                                                                                    <form asp-controller="Hospedagem" asp-action="ExcluirComodidade"
+                                                                                          method="post" style="display:inline;"
+                                                                                          onsubmit="return confirm('Remover comodidade?');">
+                                                                                        <input type="hidden" name="id" value="@comodidade.Id" />
+                                                                                        <button type="submit" class="btn p-0 ms-1 border-0 bg-transparent lh-1" title="Remover">
+                                                                                            <i class="fas fa-times text-muted" style="font-size:0.6rem;"></i>
+                                                                                        </button>
+                                                                                    </form>
+                                                                                </span>
+                                                                            }
+                                                                        </div>
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        <p class="small text-muted mb-2">Nenhuma comodidade cadastrada.</p>
+                                                                    }
+                                                                    <form asp-controller="Hospedagem" asp-action="AdicionarComodidade"
+                                                                          method="post" class="d-flex gap-1 align-items-center flex-wrap">
+                                                                        <input type="hidden" name="hospedagemId" value="@hospedagem.Id" />
+                                                                        <input type="text" name="nome" class="form-control form-control-sm"
+                                                                               placeholder="Nome da comodidade..." maxlength="200"
+                                                                               style="max-width:220px;" />
+                                                                        <button type="submit" class="btn btn-sm btn-outline-secondary flex-shrink-0">
+                                                                            <i class="fas fa-plus me-1"></i>Adicionar comodidade
+                                                                        </button>
+                                                                    </form>
+                                                                </div>
+
+                                                                <hr class="my-1 mb-3" />
+
+                                                                <!-- 3. Acomodações -->
+                                                                <h6 class="text-muted mb-2 d-flex align-items-center gap-1">
                                                                     <i class="fas fa-bed me-1"></i>Acomodações
+                                                                    @if (hospedagem.Acomodacoes.Any())
+                                                                    {
+                                                                        <span class="badge bg-secondary ms-1">@hospedagem.Acomodacoes.Count</span>
+                                                                    }
                                                                 </h6>
                                                                 @foreach (var acomodacao in hospedagem.Acomodacoes.OrderBy(a => a.Ordem))
                                                                 {
@@ -1397,8 +1425,7 @@
                                                                                                   onsubmit="return confirm('Excluir foto?');">
                                                                                                 <input type="hidden" name="id" value="@fotoAcmd.Id" />
                                                                                                 <button type="submit" class="itp-btn itp-btn--del"
-                                                                                                        aria-label="Excluir foto"
-                                                                                                        title="Excluir foto">
+                                                                                                        aria-label="Excluir foto" title="Excluir foto">
                                                                                                     <i class="fas fa-times"></i>
                                                                                                 </button>
                                                                                             </form>
@@ -1412,97 +1439,84 @@
                                                                                     <input type="hidden" name="id" value="@acomodacao.Id" />
                                                                                     <div class="mb-1">
                                                                                         <input type="text" name="nome" class="form-control form-control-sm"
-                                                                                               value="@acomodacao.Nome" required />
+                                                                                               value="@acomodacao.Nome" required
+                                                                                               maxlength="200" data-char-counter />
                                                                                     </div>
                                                                                     <div class="mb-1">
                                                                                         <textarea name="descricao" class="form-control form-control-sm"
-                                                                                                  rows="2">@acomodacao.Descricao</textarea>
+                                                                                                  rows="2"
+                                                                                                  maxlength="4000" data-char-counter>@acomodacao.Descricao</textarea>
                                                                                     </div>
                                                                                     <button type="submit" class="btn btn-sm btn-primary">
                                                                                         <i class="fas fa-save me-1"></i>Salvar
                                                                                     </button>
                                                                                 </form>
-
                                                                                 <hr class="my-2" />
-
-                                                                                <!-- Comodidades da Acomodação -->
+                                                                                <!-- Comodidades da Acomodação (AJAX inline) -->
                                                                                 <div class="mb-1">
                                                                                     <p class="small fw-semibold text-muted mb-1">
                                                                                         <i class="fas fa-check-circle me-1"></i>Comodidades da Acomodação
                                                                                     </p>
-                                                                                    @if (acomodacao.Comodidades.Any())
-                                                                                    {
-                                                                                        <div class="d-flex flex-wrap gap-1 mb-2">
-                                                                                            @foreach (var comAcmd in acomodacao.Comodidades.OrderBy(c => c.Ordem))
-                                                                                            {
-                                                                                                <span class="badge bg-light text-dark border d-flex align-items-center gap-1 ps-2 pe-1 py-1">
-                                                                                                    @comAcmd.Nome
-                                                                                                    <form asp-controller="Hospedagem" asp-action="ExcluirComodidadeAcomodacao"
-                                                                                                          method="post" class="d-inline m-0 p-0">
-                                                                                                        <input type="hidden" name="id" value="@comAcmd.Id" />
-                                                                                                        <button type="submit"
-                                                                                                                class="btn btn-link p-0 text-danger"
-                                                                                                                style="font-size:0.65rem;line-height:1;"
-                                                                                                                title="Remover">
-                                                                                                            <i class="fas fa-times"></i>
-                                                                                                        </button>
-                                                                                                    </form>
-                                                                                                </span>
-                                                                                            }
+                                                                                    <div class="d-flex flex-wrap gap-1 mb-2 acmd-comod-chips"
+                                                                                         data-acomodacao-id="@acomodacao.Id">
+                                                                                        @foreach (var comAcmd in acomodacao.Comodidades.OrderBy(c => c.Ordem))
+                                                                                        {
+                                                                                            <span class="badge bg-light text-dark border d-inline-flex align-items-center gap-1 ps-2 pe-1 py-1">
+                                                                                                @comAcmd.Nome
+                                                                                                <button type="button"
+                                                                                                        class="btn btn-link p-0 text-danger acmd-comod-remove"
+                                                                                                        data-comodidade-id="@comAcmd.Id"
+                                                                                                        data-acomodacao-id="@acomodacao.Id"
+                                                                                                        style="font-size:0.65rem;line-height:1;" title="Remover">
+                                                                                                    <i class="fas fa-times"></i>
+                                                                                                </button>
+                                                                                            </span>
+                                                                                        }
+                                                                                    </div>
+                                                                                    <!-- Botão disparador -->
+                                                                                    <button type="button"
+                                                                                            class="btn btn-sm btn-outline-secondary acmd-comod-toggle"
+                                                                                            data-acomodacao-id="@acomodacao.Id">
+                                                                                        <i class="fas fa-plus me-1"></i>Adicionar comodidade
+                                                                                    </button>
+                                                                                    <!-- Expansão inline (oculta por padrão) -->
+                                                                                    <div class="acmd-comod-form mt-2"
+                                                                                         data-acomodacao-id="@acomodacao.Id"
+                                                                                         style="display:none;">
+                                                                                        <div class="d-flex gap-1 align-items-center flex-wrap">
+                                                                                            <input type="text"
+                                                                                                   class="form-control form-control-sm acmd-comod-input"
+                                                                                                   data-acomodacao-id="@acomodacao.Id"
+                                                                                                   placeholder="Nome da comodidade..."
+                                                                                                   maxlength="200"
+                                                                                                   style="max-width:220px;" />
+                                                                                            <button type="button"
+                                                                                                    class="btn btn-sm btn-outline-secondary acmd-comod-save"
+                                                                                                    data-acomodacao-id="@acomodacao.Id">
+                                                                                                <i class="fas fa-check me-1"></i>Adicionar
+                                                                                            </button>
+                                                                                            <button type="button"
+                                                                                                    class="btn btn-sm btn-link text-secondary p-0 acmd-comod-cancel"
+                                                                                                    data-acomodacao-id="@acomodacao.Id">
+                                                                                                Cancelar
+                                                                                            </button>
                                                                                         </div>
-                                                                                    }
-                                                                                    else
-                                                                                    {
-                                                                                        <p class="small text-muted mb-2">Nenhuma comodidade da acomodação.</p>
-                                                                                    }
-                                                                                    <form asp-controller="Hospedagem" asp-action="AdicionarComodidadeAcomodacao"
-                                                                                          method="post" class="d-flex gap-1">
-                                                                                        <input type="hidden" name="acomodacaoId" value="@acomodacao.Id" />
-                                                                                        <input type="text" name="nome" class="form-control form-control-sm"
-                                                                                               placeholder="Ex: Ar-condicionado, TV..." maxlength="200"
-                                                                                               style="max-width:200px;" />
-                                                                                        <button type="submit" class="btn btn-sm btn-outline-secondary flex-shrink-0">
-                                                                                            <i class="fas fa-plus me-1"></i>Adicionar
-                                                                                        </button>
-                                                                                    </form>
+                                                                                        <div class="acmd-comod-msg small mt-1 text-danger"
+                                                                                             data-acomodacao-id="@acomodacao.Id"
+                                                                                             style="display:none;"></div>
+                                                                                    </div>
                                                                                 </div>
                                                                             </div>
                                                                         </div>
                                                                     </div>
                                                                 }
 
-                                                                <!-- Adicionar acomodação -->
-                                                                <div class="card border-light bg-light mt-2">
-                                                                    <div class="card-body p-2">
-                                                                        <p class="small text-muted mb-2 fw-semibold">
-                                                                            <i class="fas fa-plus-circle me-1 text-success"></i>Nova Acomodação
-                                                                        </p>
-                                                                        <form asp-controller="Hospedagem" asp-action="AdicionarAcomodacao" method="post">
-                                                                            <input type="hidden" name="hospedagemId" value="@hospedagem.Id" />
-                                                                            <div class="row g-1 mb-1">
-                                                                                <div class="col-sm-4">
-                                                                                    <input type="text" name="nome" class="form-control form-control-sm"
-                                                                                           placeholder="Nome (ex: Suíte...)" required />
-                                                                                </div>
-                                                                                <div class="col-sm-8">
-                                                                                    <input type="text" name="descricao" class="form-control form-control-sm"
-                                                                                           placeholder="Descrição..." />
-                                                                                </div>
-                                                                            </div>
-                                                                            <button type="submit" class="btn btn-sm btn-outline-success">
-                                                                                <i class="fas fa-plus me-1"></i>Adicionar
-                                                                            </button>
-                                                                        </form>
-                                                                    </div>
-                                                                </div>
+                                                                <!-- + Adicionar acomodação → modal completo -->
+                                                                <button type="button" class="btn btn-sm btn-outline-secondary mt-1"
+                                                                        onclick="abrirModalNovaAcomodacao('@hospedagem.Id')">
+                                                                    <i class="fas fa-plus me-1"></i>Adicionar acomodação
+                                                                </button>
 
-                                                                <div class="mt-3 pt-2 border-top d-grid d-md-flex justify-content-md-end">
-                                                                    <button type="submit"
-                                                                            form="form-editar-hosp-@hospSafeId"
-                                                                            class="btn btn-sm btn-primary px-4">
-                                                                        <i class="fas fa-save me-1"></i>Salvar
-                                                                    </button>
-                                                                </div>
 
                                                             </div>
                                                         </div>
@@ -1543,7 +1557,7 @@
                                                                 <label class="form-label form-label-sm mb-0">Título<span class="text-danger">*</span></label>
                                                                 <input type="text" name="tipoPasseio"
                                                                        class="form-control form-control-sm"
-                                                                       required maxlength="200"
+                                                                       required maxlength="200" data-char-counter
                                                                        placeholder="City tour, Trilha, Mergulho..." />
                                                             </div>
                                                             <div class="col-sm-3">
@@ -1557,7 +1571,8 @@
                                                                 <label class="form-label form-label-sm mb-0">URL de Vídeo</label>
                                                                 <input type="url" name="videoUrl"
                                                                        class="form-control form-control-sm"
-                                                                       placeholder="https://youtube.com/watch?v=..." />
+                                                                       placeholder="https://youtube.com/watch?v=..."
+                                                                       maxlength="500" data-char-counter />
                                                             </div>
                                                             <div class="col-sm-6">
                                                                 <label class="form-label form-label-sm mb-0">Início da experiência</label>
@@ -1574,6 +1589,7 @@
                                                                 <label class="form-label form-label-sm mb-0">Descrição</label>
                                                                 <div id="add-exp-desc-@destino.Id.ToString("N")"
                                                                      class="ql-desc-container"
+                                                                     data-quill-limit="4000"
                                                                      data-content=""
                                                                      data-placeholder="Descreva a experiência para o cliente..."></div>
                                                                 <input type="hidden" name="descricao"
@@ -1698,7 +1714,7 @@
                                                                             <input type="text" name="tipoPasseio"
                                                                                    class="form-control form-control-sm"
                                                                                    value="@exp.TipoPasseio"
-                                                                                   required maxlength="200" />
+                                                                                   required maxlength="200" data-char-counter />
                                                                         </div>
                                                                         <div class="col-sm-3">
                                                                             <label class="form-label form-label-sm mb-0">Valor (R$)</label>
@@ -1711,7 +1727,8 @@
                                                                             <input type="url" name="videoUrl"
                                                                                    class="form-control form-control-sm"
                                                                                    value="@exp.VideoUrl"
-                                                                                   placeholder="https://youtube.com/..." />
+                                                                                   placeholder="https://youtube.com/..."
+                                                                                   maxlength="500" data-char-counter />
                                                                         </div>
                                                                         <div class="col-sm-6">
                                                                             <label class="form-label form-label-sm mb-0">Início da experiência</label>
@@ -1730,6 +1747,7 @@
                                                                             <label class="form-label form-label-sm mb-0">Descrição</label>
                                                                             <div id="edit-exp-desc-@exp.Id.ToString("N")"
                                                                                  class="ql-desc-container"
+                                                                                 data-quill-limit="4000"
                                                                                  data-content="@(exp.Descricao ?? "")"></div>
                                                                             <input type="hidden" name="descricao"
                                                                                    data-quill-target="edit-exp-desc-@exp.Id.ToString("N")" />
@@ -1895,7 +1913,7 @@
                                                                 <label class="form-label form-label-sm mb-0">Título <span class="text-danger">*</span></label>
                                                                 <input type="text" name="titulo"
                                                                        class="form-control form-control-sm"
-                                                                       required maxlength="200"
+                                                                       required maxlength="200" data-char-counter
                                                                        placeholder="Transfer, Aluguel de carro, Van..." />
                                                             </div>
                                                             <div class="col-sm-3">
@@ -1909,6 +1927,7 @@
                                                                 <label class="form-label form-label-sm mb-0">Descrição</label>
                                                                 <div id="add-transp-desc-@destino.Id.ToString("N")"
                                                                      class="ql-desc-container"
+                                                                     data-quill-limit="4000"
                                                                      data-content=""
                                                                      data-placeholder="Descreva o transporte para o cliente..."></div>
                                                                 <input type="hidden" name="descricao"
@@ -2017,7 +2036,7 @@
                                                                             <input type="text" name="titulo"
                                                                                    class="form-control form-control-sm"
                                                                                    value="@transp.Titulo"
-                                                                                   required maxlength="200" />
+                                                                                   required maxlength="200" data-char-counter />
                                                                         </div>
                                                                         <div class="col-sm-3">
                                                                             <label class="form-label form-label-sm mb-0">Valor (R$)</label>
@@ -2029,6 +2048,7 @@
                                                                             <label class="form-label form-label-sm mb-0">Descrição</label>
                                                                             <div id="edit-transp-desc-@transp.Id.ToString("N")"
                                                                                  class="ql-desc-container"
+                                                                                 data-quill-limit="4000"
                                                                                  data-content="@(transp.Descricao ?? "")"></div>
                                                                             <input type="hidden" name="descricao"
                                                                                    data-quill-target="edit-transp-desc-@transp.Id.ToString("N")" />
@@ -2238,6 +2258,7 @@
                                 <label class="form-label">Descrição</label>
                                 <div id="add-dest-novo"
                                      class="ql-desc-container mb-2"
+                                     data-quill-limit="1000"
                                      data-content=""></div>
                                 <input type="hidden" id="Descricao" name="descricao"
                                        data-quill-target="add-dest-novo" />
@@ -2448,7 +2469,7 @@
                                                                class="form-control form-control-sm airline-ac"
                                                                data-iata="" data-icao=""
                                                                value="@voo.Companhia" required maxlength="100"
-                                                               autocomplete="off"
+                                                               autocomplete="off" data-char-counter
                                                                placeholder="Buscar por nome, IATA ou ICAO..." />
                                                         <ul class="airline-ac-dropdown list-unstyled m-0 d-none" role="listbox"></ul>
                                                     </div>
@@ -2477,14 +2498,14 @@
                                                     <label class="form-label small fw-semibold mb-1">Origem <span class="text-danger">*</span></label>
                                                     <input type="text" name="origem" id="origem-@vooSafeId"
                                                            class="form-control form-control-sm"
-                                                           value="@voo.Origem" required maxlength="200"
+                                                           value="@voo.Origem" required maxlength="200" data-char-counter
                                                            placeholder="São Paulo (GRU)" />
                                                 </div>
                                                 <div class="col-sm-6">
                                                     <label class="form-label small fw-semibold mb-1">Destino <span class="text-danger">*</span></label>
                                                     <input type="text" name="destino" id="destino-@vooSafeId"
                                                            class="form-control form-control-sm"
-                                                           value="@voo.Destino" required maxlength="200"
+                                                           value="@voo.Destino" required maxlength="200" data-char-counter
                                                            placeholder="Rio de Janeiro (GIG)" />
                                                 </div>
                                             </div>
@@ -2564,7 +2585,7 @@
                                                         <div class="col-sm-5">
                                                             <input type="text" name="bagagemItemPessoalDescricao"
                                                                    class="form-control form-control-sm"
-                                                                   value="@voo.BagagemItemPessoalDescricao" maxlength="200"
+                                                                   value="@voo.BagagemItemPessoalDescricao" maxlength="200" data-char-counter
                                                                    placeholder="Tipo / descrição (ex: bolsa, mochila)" />
                                                         </div>
                                                         <div class="col-sm-4">
@@ -2634,7 +2655,7 @@
                                             <input type="hidden" name="vooId" value="@voo.Id" />
                                             <div class="mb-2">
                                                 <textarea name="observacao" class="form-control form-control-sm"
-                                                          rows="3" maxlength="4000"
+                                                          rows="3" maxlength="4000" data-char-counter
                                                           placeholder="Observações sobre o voo (informações relevantes, instruções, etc.)">@voo.Observacao</textarea>
                                             </div>
                                             @if (!string.IsNullOrEmpty(voo.ObservacaoImagemPath))
@@ -3059,7 +3080,7 @@
                                 <div class="col-md-4">
                                     <label class="form-label form-label-sm mb-0">Nome <span class="text-danger">*</span></label>
                                     <input type="text" name="nome" class="form-control form-control-sm"
-                                           required maxlength="200" placeholder="Nome completo..." />
+                                           required maxlength="200" data-char-counter placeholder="Nome completo..." />
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label form-label-sm mb-0">Data de Nascimento</label>
@@ -3260,7 +3281,7 @@
                                         <div class="col-md-4">
                                             <label class="form-label form-label-sm mb-0">Nome *</label>
                                             <input type="text" name="nome" class="form-control form-control-sm"
-                                                   value="@pax.Nome" required maxlength="200" />
+                                                   value="@pax.Nome" required maxlength="200" data-char-counter />
                                         </div>
                                         <div class="col-md-3">
                                             <label class="form-label form-label-sm mb-0">Data de Nascimento</label>
@@ -3330,7 +3351,7 @@
                                         <div class="col-12">
                                             <label class="form-label form-label-sm mb-0">Observações</label>
                                             <input type="text" name="observacoes" class="form-control form-control-sm"
-                                                   value="@pax.Observacoes" maxlength="2000" />
+                                                   value="@pax.Observacoes" maxlength="2000" data-char-counter />
                                         </div>
                                     </div>
                                     <button type="submit" class="btn btn-sm btn-primary">
@@ -3387,7 +3408,7 @@
                                     <label class="form-label form-label-sm mb-0">Título <span class="text-danger">*</span></label>
                                     <input type="text" name="titulo"
                                            class="form-control form-control-sm"
-                                           required maxlength="200"
+                                           required maxlength="200" data-char-counter
                                            placeholder="Ex: Seguro Viagem Internacional..." />
                                 </div>
                                 <div class="col-md-3">
@@ -3402,7 +3423,7 @@
                                 <label class="form-label form-label-sm mb-0">Descrição</label>
                                 <textarea name="descricao"
                                           class="form-control form-control-sm"
-                                          rows="2" maxlength="4000"
+                                          rows="2" maxlength="4000" data-char-counter
                                           placeholder="Cobertura, franquia, contato da seguradora..."></textarea>
                             </div>
                             <div class="d-flex gap-2">
@@ -3487,7 +3508,7 @@
                                                 <input type="text" name="titulo"
                                                        class="form-control form-control-sm"
                                                        value="@seguro.Titulo"
-                                                       required maxlength="200" />
+                                                       required maxlength="200" data-char-counter />
                                             </div>
                                             <div class="col-md-3">
                                                 <label class="form-label form-label-sm mb-0">Valor (R$)</label>
@@ -3501,7 +3522,7 @@
                                             <label class="form-label form-label-sm mb-0">Descrição</label>
                                             <textarea name="descricao"
                                                       class="form-control form-control-sm"
-                                                      rows="3" maxlength="4000">@seguro.Descricao</textarea>
+                                                      rows="3" maxlength="4000" data-char-counter>@seguro.Descricao</textarea>
                                         </div>
                                         <button type="submit" class="btn btn-sm btn-primary">
                                             <i class="fas fa-save me-1"></i>Salvar
@@ -3833,19 +3854,37 @@
                     !string.IsNullOrEmpty(d.MalaViagemLLM) ||
                     !string.IsNullOrEmpty(d.PratosTipicosLLM));
 
-                // ── Painel de alertas ─────────────────────────────────────────────
-                if (revAlertas.Any())
-                {
-                    <div class="alert border-start border-4 border-warning bg-warning bg-opacity-10 px-3 py-2 mb-3" role="alert">
-                        <div class="d-flex align-items-center gap-2 mb-1">
-                            <i class="fas fa-triangle-exclamation text-warning"></i>
-                            <strong class="small">@revAlertas.Count alerta(s) de revisão</strong>
+                // ── Painel de alertas + botão criar tarefa ─────────────────────
+                <div class="d-flex align-items-start gap-3 mb-3 flex-wrap">
+                    @if (revAlertas.Any())
+                    {
+                        <div class="alert border-start border-4 border-warning bg-warning bg-opacity-10 px-3 py-2 mb-0 flex-grow-1" role="alert">
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <i class="fas fa-triangle-exclamation text-warning"></i>
+                                <strong class="small">@revAlertas.Count alerta(s) de revisão</strong>
+                            </div>
+                            <ul class="mb-0 ps-3" style="font-size:.82rem;">
+                                @foreach (var _al in revAlertas) { <li>@_al</li> }
+                            </ul>
                         </div>
-                        <ul class="mb-0 ps-3" style="font-size:.82rem;">
-                            @foreach (var _al in revAlertas) { <li>@_al</li> }
-                        </ul>
-                    </div>
-                }
+                    }
+                    else
+                    {
+                        <div class="flex-grow-1"></div>
+                    }
+                    <button type="button"
+                            class="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-2 flex-shrink-0"
+                            onclick="abrirCriarTarefaDaProposta()"
+                            title="Criar tarefa vinculada a esta proposta">
+                        <i class="fas fa-plus"></i> Criar tarefa
+                    </button>
+                </div>
+                <div id="rev-tarefa-toast" style="display:none;position:fixed;bottom:24px;right:24px;z-index:2000;
+                     background:#10b981;color:#fff;border-radius:10px;padding:12px 20px;
+                     font-weight:600;font-size:.88rem;box-shadow:0 4px 16px rgba(0,0,0,.18);
+                     align-items:center;gap:8px;">
+                    <i class="fas fa-check-circle me-2"></i> Tarefa criada com sucesso!
+                </div>
 
                 <div class="row g-4">
 
@@ -3880,6 +3919,7 @@
                                             StatusProposta.Aprovada  => "success",
                                             StatusProposta.Rejeitada => "danger",
                                             StatusProposta.Cancelada => "dark",
+                                            StatusProposta.Site      => "info",
                                             _ => "secondary"
                                         }; }
                                         <div class="d-flex gap-3 align-items-start">
@@ -4697,7 +4737,7 @@
                             <div class="position-relative">
                                 <input type="text" name="companhia" id="novo-companhia" class="form-control airline-ac"
                                        data-iata="" data-icao=""
-                                       required maxlength="100"
+                                       required maxlength="100" data-char-counter
                                        autocomplete="off"
                                        placeholder="Buscar por nome, IATA ou ICAO..." />
                                 <ul class="airline-ac-dropdown list-unstyled m-0 d-none" role="listbox"></ul>
@@ -4724,12 +4764,12 @@
                         <div class="col-sm-6">
                             <label class="form-label fw-semibold">Origem <span class="text-danger">*</span></label>
                             <input type="text" name="origem" id="novo-origem" class="form-control"
-                                   required maxlength="200" placeholder="São Paulo (GRU)" />
+                                   required maxlength="200" data-char-counter placeholder="São Paulo (GRU)" />
                         </div>
                         <div class="col-sm-6">
                             <label class="form-label fw-semibold">Destino <span class="text-danger">*</span></label>
                             <input type="text" name="destino" id="novo-destino" class="form-control"
-                                   required maxlength="200" placeholder="Rio de Janeiro (GIG)" />
+                                   required maxlength="200" data-char-counter placeholder="Rio de Janeiro (GIG)" />
                         </div>
                     </div>
 
@@ -4886,8 +4926,77 @@
     </div>
 </div>
 
+<!-- Modal: Nova Acomodação -->
+<div class="modal fade" id="modalNovaAcomodacao" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-bed me-2"></i>Nova Acomodação
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="formNovaAcomodacao" asp-controller="Hospedagem" asp-action="AdicionarAcomodacao"
+                  method="post" enctype="multipart/form-data">
+                <input type="hidden" name="hospedagemId" id="novaAcmdHospedagemId" />
+                <input type="hidden" name="comodidadesJson" id="novaAcmdComodidadesJson" />
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Nome <span class="text-danger">*</span></label>
+                        <input type="text" name="nome" id="novaAcmdNome"
+                               class="form-control" placeholder="Ex: Suíte Master, Quarto Standard..."
+                               maxlength="200" data-char-counter required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Descrição</label>
+                        <textarea name="descricao" id="novaAcmdDescricao" class="form-control" rows="3"
+                                  maxlength="4000" data-char-counter
+                                  placeholder="Descreva a acomodação..."></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            <i class="fas fa-check-circle me-1 text-muted"></i>Comodidades
+                        </label>
+                        <div id="novaAcmdComodidadesList" class="d-flex flex-wrap gap-1 mb-2"></div>
+                        <div class="d-flex gap-1 align-items-center">
+                            <input type="text" id="novaAcmdComodidadeInput"
+                                   class="form-control form-control-sm"
+                                   placeholder="Ex: Ar-condicionado, TV, Frigobar..."
+                                   maxlength="200" style="max-width:260px;" />
+                            <button type="button" class="btn btn-sm btn-outline-secondary flex-shrink-0"
+                                    onclick="adicionarComodidadeNovAcmd()">
+                                <i class="fas fa-plus me-1"></i>Adicionar
+                            </button>
+                        </div>
+                        <div class="form-text">Pressione Enter ou clique em Adicionar</div>
+                    </div>
+                    <div class="mb-1">
+                        <label class="form-label fw-semibold">
+                            <i class="fas fa-camera me-1 text-muted"></i>Foto
+                            <span class="text-muted fw-normal small">(opcional)</span>
+                        </label>
+                        <input type="file" name="fotos" id="novaAcmdFotos"
+                               class="form-control form-control-sm"
+                               accept="image/*" multiple />
+                        <div class="form-text">JPG, PNG, WebP — máx. 10 MB por foto. A acomodação pode ser criada sem foto.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-plus me-1"></i>Criar acomodação
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 @* ── AI Copilot Panel (proposta ID passado como model) ── *@
 @await Html.PartialAsync("_CopilotPanel", (Guid?)Model.Id)
+
+@* ── Modal de nova tarefa (compartilhado) ── *@
+@await Html.PartialAsync("_ModalNovaTarefa")
 
 @section Scripts {
     <script src="~/js/copilot.js" asp-append-version="true"></script>
@@ -4898,11 +5007,26 @@
 
     <script>
 
-    
+        // ── Criar tarefa vinculada à proposta atual ──────────────────────────────
+        function abrirCriarTarefaDaProposta() {
+            window.abrirModalNovaTarefa({
+                propostaId:   '@(proposta?.Id)',
+                propostaNome: '@Html.Raw(System.Web.HttpUtility.JavaScriptStringEncode(proposta?.Titulo ?? ""))',
+                clienteId:    '@(proposta?.ClienteId)',
+                onSuccess: function() {
+                    var t = document.getElementById('rev-tarefa-toast');
+                    if (!t) return;
+                    t.style.display = 'flex';
+                    setTimeout(function() { t.style.display = 'none'; }, 3500);
+                }
+            });
+        }
+
         // ============================================================
         // INSTÂNCIAS DE MODAL — criadas uma única vez
         // ============================================================
-        let modalUploadFoto, modalFotoAcomodacao, modalAdicionarVoo;
+        let modalUploadFoto, modalFotoAcomodacao, modalAdicionarVoo, modalNovaAcomodacao;
+        let _novaAcmdComodidades = [];
 
         // ─── Passageiros — FaixaEtaria / ModoBebe ────────────────────────────────
 
@@ -5246,15 +5370,28 @@
             modalUploadFoto     = new bootstrap.Modal(document.getElementById('modalUploadFoto'),     { backdrop: 'static', keyboard: false });
             modalFotoAcomodacao = new bootstrap.Modal(document.getElementById('modalFotoAcomodacao'), { backdrop: 'static' });
             modalAdicionarVoo   = new bootstrap.Modal(document.getElementById('modalAdicionarVoo'),   { backdrop: 'static' });
+            modalNovaAcomodacao = new bootstrap.Modal(document.getElementById('modalNovaAcomodacao'), { backdrop: 'static' });
 
             // Limpeza de backdrop ao fechar qualquer modal
-            ['modalUploadFoto', 'modalFotoAcomodacao', 'modalAdicionarVoo'].forEach(function (id) {
+            ['modalUploadFoto', 'modalFotoAcomodacao', 'modalAdicionarVoo', 'modalNovaAcomodacao'].forEach(function (id) {
                 document.getElementById(id).addEventListener('hidden.bs.modal', function () {
                     document.querySelectorAll('.modal-backdrop').forEach(function (el) { el.remove(); });
                     document.body.classList.remove('modal-open');
                     document.body.style.removeProperty('overflow');
                     document.body.style.removeProperty('padding-right');
                 });
+            });
+
+            // Reset do modal Nova Acomodação ao fechar
+            document.getElementById('modalNovaAcomodacao').addEventListener('hidden.bs.modal', function () {
+                document.getElementById('formNovaAcomodacao').reset();
+                _novaAcmdComodidades = [];
+                _renderNovaAcmdComodidades();
+            });
+
+            // Enter no campo de comodidade do modal nova acomodação
+            document.getElementById('novaAcmdComodidadeInput').addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') { e.preventDefault(); adicionarComodidadeNovAcmd(); }
             });
 
             configurarEventListeners();
@@ -5460,6 +5597,212 @@
             if (fotoAcEl) fotoAcEl.value = '';
             modalFotoAcomodacao.show();
         };
+
+        // ── Modal Nova Acomodação ──────────────────────────────────────────────────
+        function _escapeHtml(str) {
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+
+        function _renderNovaAcmdComodidades() {
+            var list = document.getElementById('novaAcmdComodidadesList');
+            var csvInput = document.getElementById('novaAcmdComodidadesJson');
+            list.innerHTML = _novaAcmdComodidades.map(function (c, i) {
+                return '<span class="badge bg-light text-dark border d-inline-flex align-items-center gap-1 py-1 px-2">' +
+                    _escapeHtml(c) +
+                    '<button type="button" class="btn btn-link p-0 text-danger" style="font-size:0.65rem;line-height:1;" ' +
+                    'onclick="removerComodidadeNovAcmd(' + i + ')" title="Remover">' +
+                    '<i class="fas fa-times"></i></button></span>';
+            }).join('');
+            csvInput.value = _novaAcmdComodidades.join(',');
+        }
+
+        window.abrirModalNovaAcomodacao = function (hospedagemId) {
+            document.getElementById('novaAcmdHospedagemId').value = hospedagemId;
+            _novaAcmdComodidades = [];
+            _renderNovaAcmdComodidades();
+            document.getElementById('novaAcmdNome').value = '';
+            document.getElementById('novaAcmdDescricao').value = '';
+            document.getElementById('novaAcmdFotos').value = '';
+            modalNovaAcomodacao.show();
+            setTimeout(function () { document.getElementById('novaAcmdNome').focus(); }, 300);
+        };
+
+        window.adicionarComodidadeNovAcmd = function () {
+            var input = document.getElementById('novaAcmdComodidadeInput');
+            var val = input.value.trim();
+            if (!val) return;
+            if (_novaAcmdComodidades.some(function (c) { return c.toLowerCase() === val.toLowerCase(); })) {
+                input.value = '';
+                return;
+            }
+            _novaAcmdComodidades.push(val);
+            input.value = '';
+            _renderNovaAcmdComodidades();
+        };
+
+        window.removerComodidadeNovAcmd = function (idx) {
+            _novaAcmdComodidades.splice(idx, 1);
+            _renderNovaAcmdComodidades();
+        };
+
+        // ============================================================
+        // COMODIDADES DA ACOMODAÇÃO — AJAX inline (edição)
+        // ============================================================
+        (function () {
+            var urlAdd = '@Url.Action("AdicionarComodidadeAcomodacaoAjax", "Hospedagem")';
+            var urlDel = '@Url.Action("ExcluirComodidadeAcomodacaoAjax", "Hospedagem")';
+
+            function getToken() {
+                var el = document.querySelector('input[name="__RequestVerificationToken"]');
+                return el ? el.value : '';
+            }
+
+            function hideForm(acomodacaoId) {
+                var form   = document.querySelector('.acmd-comod-form[data-acomodacao-id="' + acomodacaoId + '"]');
+                var toggle = document.querySelector('.acmd-comod-toggle[data-acomodacao-id="' + acomodacaoId + '"]');
+                var input  = form ? form.querySelector('.acmd-comod-input') : null;
+                var msg    = form ? form.querySelector('.acmd-comod-msg')   : null;
+                if (form)   { form.style.display = 'none'; }
+                if (toggle) { toggle.style.display = ''; }
+                if (input)  { input.value = ''; }
+                if (msg)    { msg.style.display = 'none'; msg.textContent = ''; }
+            }
+
+            async function saveComodidade(acomodacaoId, inputEl, btnEl) {
+                var nome = inputEl.value.trim();
+                var msg  = document.querySelector('.acmd-comod-msg[data-acomodacao-id="' + acomodacaoId + '"]');
+
+                if (!nome) {
+                    if (msg) { msg.textContent = 'Informe o nome da comodidade.'; msg.style.display = ''; }
+                    inputEl.focus();
+                    return;
+                }
+
+                var orig = btnEl.innerHTML;
+                btnEl.disabled = true;
+                btnEl.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>';
+                if (msg) { msg.style.display = 'none'; msg.textContent = ''; }
+
+                try {
+                    var body = new URLSearchParams();
+                    body.append('__RequestVerificationToken', getToken());
+                    body.append('acomodacaoId', acomodacaoId);
+                    body.append('nome', nome);
+
+                    var res  = await fetch(urlAdd, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: body.toString() });
+                    var data = await res.json();
+
+                    if (data.success) {
+                        var chips = document.querySelector('.acmd-comod-chips[data-acomodacao-id="' + acomodacaoId + '"]');
+                        if (chips) {
+                            var span = document.createElement('span');
+                            span.className = 'badge bg-light text-dark border d-inline-flex align-items-center gap-1 ps-2 pe-1 py-1';
+                            var label = document.createTextNode(data.nome + ' ');
+                            var btn   = document.createElement('button');
+                            btn.type = 'button';
+                            btn.className = 'btn btn-link p-0 text-danger acmd-comod-remove';
+                            btn.dataset.comodidadeId = data.id;
+                            btn.dataset.acomodacaoId = acomodacaoId;
+                            btn.title = 'Remover';
+                            btn.style.cssText = 'font-size:0.65rem;line-height:1;';
+                            btn.innerHTML = '<i class="fas fa-times"></i>';
+                            span.appendChild(label);
+                            span.appendChild(btn);
+                            chips.appendChild(span);
+                        }
+                        hideForm(acomodacaoId);
+                    } else {
+                        if (msg) { msg.textContent = data.erro || 'Erro ao adicionar.'; msg.style.display = ''; }
+                    }
+                } catch (_) {
+                    if (msg) { msg.textContent = 'Erro de comunicação. Tente novamente.'; msg.style.display = ''; }
+                } finally {
+                    btnEl.disabled = false;
+                    btnEl.innerHTML = orig;
+                }
+            }
+
+            async function removeComodidade(comodidadeId, acomodacaoId, chipEl, btnEl) {
+                if (!confirm('Remover esta comodidade?')) return;
+
+                chipEl.style.opacity = '0.4';
+                btnEl.disabled = true;
+
+                try {
+                    var body = new URLSearchParams();
+                    body.append('__RequestVerificationToken', getToken());
+                    body.append('id', comodidadeId);
+
+                    var res  = await fetch(urlDel, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: body.toString() });
+                    var data = await res.json();
+
+                    if (data.success) {
+                        chipEl.remove();
+                    } else {
+                        chipEl.style.opacity = '';
+                        btnEl.disabled = false;
+                    }
+                } catch (_) {
+                    chipEl.style.opacity = '';
+                    btnEl.disabled = false;
+                }
+            }
+
+            // Delegação de eventos (funciona para chips gerados dinamicamente)
+            document.addEventListener('click', function (e) {
+                // Abrir form inline
+                var toggle = e.target.closest('.acmd-comod-toggle');
+                if (toggle) {
+                    var id     = toggle.dataset.acomodacaoId;
+                    var formEl = document.querySelector('.acmd-comod-form[data-acomodacao-id="' + id + '"]');
+                    if (formEl) {
+                        toggle.style.display = 'none';
+                        formEl.style.display = '';
+                        var inp = formEl.querySelector('.acmd-comod-input');
+                        if (inp) setTimeout(function () { inp.focus(); }, 50);
+                    }
+                    return;
+                }
+
+                // Cancelar
+                var cancel = e.target.closest('.acmd-comod-cancel');
+                if (cancel) {
+                    hideForm(cancel.dataset.acomodacaoId);
+                    return;
+                }
+
+                // Salvar
+                var save = e.target.closest('.acmd-comod-save');
+                if (save) {
+                    var id  = save.dataset.acomodacaoId;
+                    var inp = document.querySelector('.acmd-comod-input[data-acomodacao-id="' + id + '"]');
+                    if (inp) saveComodidade(id, inp, save);
+                    return;
+                }
+
+                // Remover chip
+                var remove = e.target.closest('.acmd-comod-remove');
+                if (remove) {
+                    var chip = remove.closest('.badge');
+                    if (chip) removeComodidade(remove.dataset.comodidadeId, remove.dataset.acomodacaoId, chip, remove);
+                    return;
+                }
+            });
+
+            // Enter no campo de texto
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter' && e.target.classList.contains('acmd-comod-input')) {
+                    e.preventDefault();
+                    var id  = e.target.dataset.acomodacaoId;
+                    var btn = document.querySelector('.acmd-comod-save[data-acomodacao-id="' + id + '"]');
+                    if (btn) saveComodidade(id, e.target, btn);
+                }
+            });
+        })();
 
         // ============================================================
         // HOSPEDAGEM — INLINE AUTOCOMPLETE + IA (class-based delegation)
@@ -6501,6 +6844,27 @@
         // ── Quill — registry e fábrica para editores de descrição (destino/hospedagem/exp/transp) ──
         const _qlDesc = {};
 
+        // ── Contador de caracteres para inputs/textareas normais ─────────────
+        function initCharCounters() {
+            document.querySelectorAll('[data-char-counter]').forEach(function (el) {
+                const max = parseInt(el.getAttribute('maxlength') || '0');
+                if (!max) return;
+                const counter = document.createElement('span');
+                counter.className = 'char-counter';
+                function update() {
+                    const len = el.value.length;
+                    counter.textContent = len + ' / ' + max;
+                    counter.className = 'char-counter' +
+                        (len >= max ? ' cc-over' : len >= max * 0.8 ? ' cc-warn' : '');
+                }
+                el.insertAdjacentElement('afterend', counter);
+                update();
+                el.addEventListener('input', update);
+                el.addEventListener('paste', function () { setTimeout(update, 0); });
+            });
+        }
+        initCharCounters();
+
         function criarEditorDescricao(containerId, conteudoInicial) {
             const container = document.getElementById(containerId);
             if (!container || _qlDesc[containerId] || typeof Quill === 'undefined') return null;
@@ -6532,6 +6896,33 @@
                         hi.value = (html === '<p><br></p>') ? '' : html;
                     }
                 }, { once: false });
+            }
+
+            // ── Contador de caracteres para editores Quill ────────────────────
+            const qlLimit = parseInt(container.dataset.quillLimit || '0');
+            if (qlLimit > 0) {
+                const qlCounter = document.createElement('div');
+                qlCounter.className = 'ql-char-counter';
+                container.appendChild(qlCounter);
+
+                function updateQlCounter() {
+                    const len = Math.max(0, quill.getText().length - 1);
+                    qlCounter.textContent = len + ' / ' + qlLimit;
+                    qlCounter.className = 'ql-char-counter' +
+                        (len >= qlLimit ? ' cc-over' : len >= qlLimit * 0.8 ? ' cc-warn' : '');
+                }
+
+                quill.on('text-change', function (delta, oldDelta, source) {
+                    if (source === 'user') {
+                        const len = quill.getText().length - 1;
+                        if (len > qlLimit) {
+                            quill.deleteText(qlLimit, len - qlLimit, 'api');
+                        }
+                    }
+                    updateQlCounter();
+                });
+
+                updateQlCounter();
             }
 
             _qlDesc[containerId] = quill;
@@ -6807,6 +7198,23 @@
     /* Neutralizar cor de agência no conteúdo rico das descrições */
     .ql-desc-container .ql-editor strong,
     .ql-desc-container .ql-editor b { color: inherit; font-weight: 700; }
+
+    /* ── Contador de caracteres ──────────────────────────────────────── */
+    .char-counter {
+        display: block; text-align: right; font-size: .7rem;
+        color: #adb5bd; margin-top: 2px; user-select: none;
+        transition: color .18s;
+    }
+    .char-counter.cc-warn { color: #f59e0b; }
+    .char-counter.cc-over { color: #ef4444; font-weight: 600; }
+    /* Contador embutido no Quill (aparece abaixo do editor, dentro do container) */
+    .ql-desc-container .ql-char-counter {
+        display: block; text-align: right; font-size: .7rem;
+        color: #adb5bd; padding: 2px 10px 4px; background: #fff;
+        border-top: 1px solid #f0f2f5; user-select: none; transition: color .18s;
+    }
+    .ql-desc-container .ql-char-counter.cc-warn { color: #f59e0b; }
+    .ql-desc-container .ql-char-counter.cc-over { color: #ef4444; font-weight: 600; }
 
     .img-thumbnail {
         border: 1px solid #dee2e6;

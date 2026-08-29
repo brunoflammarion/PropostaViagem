@@ -1,0 +1,294 @@
+@* Partial reutilizável: modal de criação de tarefa.
+   Contextos:
+     /Tarefa              → genérico, sem pré-seleção
+     /Proposta/Editar     → opts.propostaId + propostaNome (proposta travada)
+     /Cliente/Detalhe     → opts.clienteId + clienteNome + clienteFixed (cliente travado)
+                            + propostas filtradas ao cliente
+
+   JS exposto:
+     window.abrirModalNovaTarefa(opts)    — abre o modal
+     window.fecharModalNovaTarefa()       — fecha o modal
+     window.salvarNovaTarefa()            — chamado pelo botão do modal
+
+   Estrutura de opts:
+     propostaId?    string GUID    — pré-seleciona proposta
+     propostaNome?  string         — label exibido no chip read-only
+     clienteId?     string GUID    — pré-seleciona cliente
+     clienteNome?   string         — label exibido no chip read-only
+     clienteFixed?  bool           — trava o campo cliente (chip read-only)
+     onSuccess?     function       — callback pós-criação (padrão: location.reload)
+*@
+
+<style>
+.tf-modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.45); z-index: 1050;
+    align-items: center; justify-content: center;
+}
+.tf-modal-overlay.open { display: flex; }
+.tf-modal {
+    background: #fff; border-radius: 14px;
+    padding: 28px 28px 24px; width: 100%; max-width: 500px; max-height: 90vh;
+    overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,.2);
+    margin: 16px;
+}
+.tf-modal h5 { font-weight: 800; color: #1e293b; margin-bottom: 20px; }
+.tf-modal label { font-size: .8rem; font-weight: 600; color: #475569; margin-bottom: 4px; display: block; }
+.tf-modal input, .tf-modal select, .tf-modal textarea {
+    width: 100%; border: 1.5px solid #e2e8f0; border-radius: 7px;
+    padding: 9px 12px; font-size: .9rem; margin-bottom: 14px;
+    transition: border-color .15s; box-sizing: border-box;
+}
+.tf-modal input:focus, .tf-modal select:focus, .tf-modal textarea:focus {
+    outline: none; border-color: #6366f1;
+}
+.tf-modal textarea { resize: vertical; min-height: 70px; }
+.tf-modal-footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; align-items: center; }
+.btn-tf-cancel { background: #f1f5f9; border: none; border-radius: 7px; padding: 9px 20px; font-weight: 600; font-size: .87rem; cursor: pointer; }
+.btn-tf-save   { background: #6366f1; color: #fff; border: none; border-radius: 7px; padding: 9px 22px; font-weight: 700; font-size: .87rem; cursor: pointer; }
+.btn-tf-save:hover { background: #4f46e5; }
+
+/* Chip read-only (cliente ou proposta travados) */
+.tf-modal-field-fixed {
+    display: none;
+    background: #f1f5f9; border: 1.5px solid #e2e8f0; border-radius: 7px;
+    padding: 9px 12px; font-size: .9rem; margin-bottom: 14px; color: #1e293b;
+    font-weight: 600;
+}
+.tf-modal-field-fixed .tf-fixed-badge {
+    display: inline-block; background: #e0e7ff; color: #4338ca;
+    font-size: .72rem; font-weight: 700; border-radius: 20px;
+    padding: 2px 8px; margin-right: 6px; vertical-align: middle;
+}
+
+@@media (max-width: 480px) {
+    .tf-modal { padding: 20px 16px 18px; margin: 8px; }
+}
+</style>
+
+<!-- Modal nova tarefa -->
+<div class="tf-modal-overlay" id="modalNovaTarefa" role="dialog" aria-modal="true" aria-label="Nova Tarefa">
+    <div class="tf-modal">
+        <h5><i class="fas fa-plus-circle me-2" style="color:#6366f1"></i>Nova Tarefa</h5>
+
+        <label for="nTitulo">Título *</label>
+        <input type="text" id="nTitulo" placeholder="Ex: Ligar para o cliente..." maxlength="200" autocomplete="off" />
+
+        <label for="nData">Data de vencimento *</label>
+        <input type="date" id="nData" />
+
+        <div class="row g-2">
+            <div class="col-6">
+                <label for="nTipo">Tipo</label>
+                <select id="nTipo">
+                    <option value="Geral">Geral</option>
+                    <option value="Followup">Follow-up</option>
+                    <option value="Operacional">Operacional</option>
+                    <option value="Comercial">Comercial</option>
+                </select>
+            </div>
+            <div class="col-6">
+                <label for="nPrioridade">Prioridade</label>
+                <select id="nPrioridade">
+                    <option value="Media">Média</option>
+                    <option value="Alta">Alta</option>
+                    <option value="Baixa">Baixa</option>
+                </select>
+            </div>
+        </div>
+
+        <label>Cliente (opcional)</label>
+        <!-- Chip read-only quando clienteFixed = true -->
+        <div class="tf-modal-field-fixed" id="nCliente-fixed">
+            <span class="tf-fixed-badge">Cliente</span>
+            <span id="nCliente-nome"></span>
+        </div>
+        <select id="nCliente">
+            <option value="">— carregando... —</option>
+        </select>
+
+        <label>Proposta (opcional)</label>
+        <!-- Chip read-only quando propostaId + propostaNome são fornecidos -->
+        <div class="tf-modal-field-fixed" id="nProposta-fixed">
+            <span class="tf-fixed-badge">Proposta</span>
+            <span id="nProposta-nome"></span>
+        </div>
+        <select id="nProposta">
+            <option value="">— carregando... —</option>
+        </select>
+
+        <label for="nDescricao">Descrição</label>
+        <textarea id="nDescricao" placeholder="Detalhes da tarefa..."></textarea>
+
+        <div class="tf-modal-footer">
+            <button class="btn-tf-cancel" onclick="fecharModalNovaTarefa()">Cancelar</button>
+            <button class="btn-tf-save" id="btnSalvarNovaTarefa" onclick="salvarNovaTarefa()">
+                <i class="fas fa-check me-1"></i>Criar Tarefa
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    var _dadosCarregados   = false;
+    var _clienteIdFiltrado = null;  // qual cliente estava filtrado no cache
+    var _opts = {};
+
+    function _hoje() {
+        var d = new Date();
+        return d.getFullYear() + '-'
+            + String(d.getMonth() + 1).padStart(2, '0') + '-'
+            + String(d.getDate()).padStart(2, '0');
+    }
+
+    function _escHtml(str) {
+        var el = document.createElement('div');
+        el.textContent = str ?? '';
+        return el.innerHTML;
+    }
+
+    async function _carregarDados() {
+        // Proposta filtrada pelo cliente quando clienteFixed = true
+        var filtroCliente = (_opts.clienteFixed && _opts.clienteId) ? _opts.clienteId : null;
+
+        // Usa cache somente se o filtro de cliente é o mesmo
+        if (_dadosCarregados && _clienteIdFiltrado === filtroCliente) return;
+
+        try {
+            var url = '/Tarefa/DadosParaModal';
+            if (filtroCliente) url += '?filtrarPropostasClienteId=' + encodeURIComponent(filtroCliente);
+
+            var r = await fetch(url);
+            var d = await r.json();
+            if (!d.ok) return;
+
+            document.getElementById('nCliente').innerHTML =
+                d.clientes.map(function(c) {
+                    return '<option value="' + _escHtml(c.value) + '">' + _escHtml(c.text) + '</option>';
+                }).join('');
+
+            document.getElementById('nProposta').innerHTML =
+                d.propostas.map(function(p) {
+                    return '<option value="' + _escHtml(p.value) + '">' + _escHtml(p.text) + '</option>';
+                }).join('');
+
+            _dadosCarregados   = true;
+            _clienteIdFiltrado = filtroCliente;
+        } catch(e) {
+            console.error('Erro ao carregar dados do modal de tarefa:', e);
+        }
+    }
+
+    window.abrirModalNovaTarefa = async function(opts) {
+        _opts = opts || {};
+        await _carregarDados();
+
+        // Reset campos
+        document.getElementById('nTitulo').value     = '';
+        document.getElementById('nData').value       = _hoje();
+        document.getElementById('nTipo').value       = 'Geral';
+        document.getElementById('nPrioridade').value = 'Media';
+        document.getElementById('nDescricao').value  = '';
+
+        // ── Cliente ───────────────────────────────────────────────────────────
+        var selC    = document.getElementById('nCliente');
+        var fixedC  = document.getElementById('nCliente-fixed');
+        if (_opts.clienteFixed && _opts.clienteId) {
+            // Travado: exibe chip, esconde select
+            selC.style.display   = 'none';
+            fixedC.style.display = 'block';
+            document.getElementById('nCliente-nome').textContent =
+                _opts.clienteNome || _opts.clienteId;
+            selC.value = _opts.clienteId;
+        } else {
+            selC.style.display   = '';
+            fixedC.style.display = 'none';
+            selC.value = _opts.clienteId || '';
+        }
+
+        // ── Proposta ──────────────────────────────────────────────────────────
+        var selP   = document.getElementById('nProposta');
+        var fixedP = document.getElementById('nProposta-fixed');
+        if (_opts.propostaId) {
+            // Travada: exibe chip, esconde select
+            selP.style.display   = 'none';
+            fixedP.style.display = 'block';
+            document.getElementById('nProposta-nome').textContent =
+                _opts.propostaNome || _opts.propostaId;
+            selP.value = _opts.propostaId;
+        } else {
+            selP.style.display   = '';
+            fixedP.style.display = 'none';
+            selP.value = '';
+        }
+
+        document.getElementById('modalNovaTarefa').classList.add('open');
+        setTimeout(function() { document.getElementById('nTitulo').focus(); }, 80);
+    };
+
+    window.fecharModalNovaTarefa = function() {
+        // Restaura selects ao estado normal
+        var selC = document.getElementById('nCliente');
+        var selP = document.getElementById('nProposta');
+        selC.style.display = ''; document.getElementById('nCliente-fixed').style.display = 'none';
+        selP.style.display = ''; document.getElementById('nProposta-fixed').style.display = 'none';
+        document.getElementById('modalNovaTarefa').classList.remove('open');
+        _opts = {};
+    };
+
+    window.salvarNovaTarefa = async function() {
+        var titulo = (document.getElementById('nTitulo').value || '').trim();
+        var data   = document.getElementById('nData').value;
+        if (!titulo) { document.getElementById('nTitulo').focus(); return; }
+        if (!data)   { document.getElementById('nData').focus();   return; }
+
+        var fd = new FormData();
+        fd.append('Titulo',         titulo);
+        fd.append('DataVencimento', data);
+        fd.append('Tipo',           document.getElementById('nTipo').value);
+        fd.append('Prioridade',     document.getElementById('nPrioridade').value);
+        fd.append('Descricao',      document.getElementById('nDescricao').value);
+
+        var clienteId  = document.getElementById('nCliente').value;
+        var propostaId = document.getElementById('nProposta').value;
+        if (clienteId)  fd.append('ClienteId',  clienteId);
+        if (propostaId) fd.append('PropostaId', propostaId);
+
+        var btn = document.getElementById('btnSalvarNovaTarefa');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Salvando...';
+
+        try {
+            var r = await fetch('/Tarefa/Criar', { method: 'POST', body: fd });
+            var d = await r.json();
+
+            if (d.ok) {
+                fecharModalNovaTarefa();
+                if (typeof _opts.onSuccess === 'function') {
+                    _opts.onSuccess();
+                } else {
+                    location.reload();
+                }
+            } else {
+                alert(d.erro || 'Erro ao criar tarefa.');
+            }
+        } catch(e) {
+            alert('Erro de conexão. Tente novamente.');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-check me-1"></i>Criar Tarefa';
+        }
+    };
+
+    // Fechar ao clicar no overlay ou pressionar Esc
+    document.getElementById('modalNovaTarefa').addEventListener('click', function(e) {
+        if (e.target === e.currentTarget) window.fecharModalNovaTarefa();
+    });
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && document.getElementById('modalNovaTarefa').classList.contains('open')) {
+            window.fecharModalNovaTarefa();
+        }
+    });
+})();
+</script>

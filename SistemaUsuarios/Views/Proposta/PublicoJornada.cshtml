@@ -74,10 +74,17 @@
         public double? Lng { get; set; }
         public string? FotoUrl { get; set; }
         public List<string> Arquivos { get; set; } = new();
+        public List<string> ArquivosNomes { get; set; } = new();
+        public string? Descricao { get; set; }
+        public DateTime? DataFim { get; set; }
+        public decimal? Valor { get; set; }
+        public List<string> Fotos { get; set; } = new();
     }
 }
 
 @{
+    bool isSite = (bool)(ViewBag.IsSite ?? false);
+
     // ── Timezone ──────────────────────────────────────────────────────────────
     TimeZoneInfo brzTz;
     try { brzTz = TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time"); }
@@ -135,12 +142,12 @@
             det = $"Chegada: {JnLocal(v.HorarioChegada.Value, brzTz):dd/MM HH:mm}";
         var sub = $"{v.Origem} → {v.Destino}".Trim();
         if (sub == "→") sub = "";
-        var docs = new List<string>();
+        var docs = new List<string>(); var docsNomes = new List<string>();
         foreach (var a in v.Anexos)
-            if (!string.IsNullOrEmpty(a.CaminhoArquivo)) docs.Add(a.CaminhoArquivo);
+            if (!string.IsNullOrEmpty(a.CaminhoArquivo)) { docs.Add(a.CaminhoArquivo); docsNomes.Add(a.NomeOriginal ?? "Documento"); }
         todos.Add(new JnEvt { Tipo = "voo", Dt = dtL, SoData = v.HorarioSaida.Value.TimeOfDay == TimeSpan.Zero,
             Titulo = $"{v.Companhia} {v.NumeroVoo}".Trim(), Sub = sub.Length > 0 ? sub : null,
-            Detalhe = det, Arquivos = docs });
+            Detalhe = det, Arquivos = docs, ArquivosNomes = docsNomes });
     }
 
     foreach (var dest in Model.Destinos)
@@ -167,13 +174,17 @@
         foreach (var e in dest.Experiencias)
         {
             if (!e.DataInicio.HasValue) continue;
-            var dtL  = JnLocal(e.DataInicio.Value, brzTz);
-            var foto = e.Imagens.FirstOrDefault()?.CaminhoImagem;
-            var docs = new List<string>();
+            var dtL    = JnLocal(e.DataInicio.Value, brzTz);
+            var dtFimE = e.DataFim.HasValue ? (DateTime?)JnLocal(e.DataFim.Value, brzTz) : null;
+            var fotosE = e.Imagens.OrderBy(i => i.Ordem).Select(i => i.CaminhoImagem).Where(u => !string.IsNullOrEmpty(u)).ToList();
+            var fotoE  = fotosE.FirstOrDefault();
+            var docsE  = new List<string>(); var docsNomE = new List<string>();
             foreach (var a in e.Arquivos)
-                if (!string.IsNullOrEmpty(a.CaminhoArquivo)) docs.Add(a.CaminhoArquivo);
+                if (!string.IsNullOrEmpty(a.CaminhoArquivo)) { docsE.Add(a.CaminhoArquivo); docsNomE.Add(a.NomeOriginal ?? "Voucher"); }
             todos.Add(new JnEvt { Tipo = "experiencia", Dt = dtL, SoData = e.DataInicio.Value.TimeOfDay == TimeSpan.Zero,
-                Titulo = e.TipoPasseio, Sub = dest.Nome, FotoUrl = foto, Arquivos = docs });
+                Titulo = e.TipoPasseio, Sub = dest.Nome, FotoUrl = fotoE, Fotos = fotosE,
+                Descricao = e.Descricao, DataFim = dtFimE, Valor = e.Valor,
+                Arquivos = docsE, ArquivosNomes = docsNomE });
         }
     }
 
@@ -750,6 +761,107 @@ body {
 }
 .jn-empty i { font-size: 40px; opacity: .3; margin-bottom: 12px; display: block; }
 
+/* ── CHAPTER ACCORDION ───────────────────────────────────────────────────── */
+.jn-chapter-acc-hdr {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 20px;
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    position: relative;
+    overflow: hidden;
+    min-height: 62px;
+    background: var(--jn-surface);
+}
+.jn-chapter-acc-hdr-bg {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    opacity: .15;
+    transition: opacity .3s;
+}
+.jn-chapter.open .jn-chapter-acc-hdr-bg { opacity: 0; }
+.jn-chapter-acc-left { flex: 1; min-width: 0; }
+.jn-chapter-acc-meta {
+    display: flex;
+    align-items: baseline;
+    gap: 9px;
+    flex-wrap: wrap;
+}
+.jn-chapter-acc-count {
+    font-size: .7rem;
+    color: var(--jn-muted);
+    margin-top: 3px;
+}
+.jn-chapter-acc-chev {
+    color: var(--jn-muted);
+    font-size: .85rem;
+    transition: transform .3s ease;
+    flex-shrink: 0;
+}
+.jn-chapter.open .jn-chapter-acc-chev { transform: rotate(180deg); }
+
+.jn-chapter-body {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows .35s ease;
+}
+.jn-chapter.open .jn-chapter-body { grid-template-rows: 1fr; }
+.jn-chapter-inner { overflow: hidden; min-height: 0; }
+
+/* Toggle de detalhe por evento */
+.jn-tl-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: .76rem;
+    font-weight: 600;
+    color: var(--jn-accent);
+    background: var(--jn-tint);
+    border: none;
+    border-radius: 8px;
+    padding: 6px 10px;
+    cursor: pointer;
+    margin-top: 8px;
+}
+.jn-tl-toggle i { transition: transform .2s; }
+.jn-tl-detail { display: none; margin-top: 10px; }
+
+/* Foto grade adicional */
+.jn-fotos-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+    margin: 8px 0;
+    border-radius: 8px;
+    overflow: hidden;
+}
+.jn-fotos-grid img { width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block; }
+
+/* Linhas de detalhe */
+.jn-det-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 7px;
+    font-size: .8rem;
+    color: var(--jn-muted);
+    margin-bottom: 5px;
+}
+.jn-det-row i { font-size: .76rem; width: 14px; flex-shrink: 0; margin-top: 2px; color: var(--jn-accent); }
+.jn-det-row span { flex: 1; }
+
+/* Rich text na Jornada */
+.jn-richtext { font-size: .83rem; line-height: 1.6; color: var(--jn-text); margin-bottom: 10px; }
+.jn-richtext p { margin: 0 0 .5em; }
+.jn-richtext p:last-child { margin-bottom: 0; }
+.jn-richtext strong, .jn-richtext b { font-weight: 700; }
+.jn-richtext em { font-style: italic; }
+.jn-richtext ul, .jn-richtext ol { padding-left: 1.3rem; margin: .3rem 0; }
+.jn-richtext a { color: var(--jn-accent); }
+
 /* ── DESKTOP ─────────────────────────────────────────────────────────────── */
 @@media (min-width: 640px) {
     .jn-hero-title { font-size: 3rem; }
@@ -929,11 +1041,14 @@ body {
     else
     {
         string? ultimoDestino = null; int diaNum = 0;
+        var ptBR = new System.Globalization.CultureInfo("pt-BR");
         @foreach (var dia in porDia)
         {
             diaNum++;
             bool isHoje = dia.Date == hoje;
             int numDia  = Model.DataInicio.HasValue ? (dia.Date - Model.DataInicio.Value.Date).Days + 1 : diaNum;
+            string diaId = $"jnd-{dia.Date:yyyyMMdd}";
+            int nEvts = dia.Evts.Count;
 
             @* Detectar destino predominante do dia *@
             var chkinsHoje   = dia.Evts.Where(e => e.Tipo == "checkin" || e.Tipo == "destino").FirstOrDefault();
@@ -947,75 +1062,163 @@ body {
                 <div class="jn-separator">@destDia</div>
             }
 
-            <article class="jn-chapter" id="dia-@dia.Date.ToString("yyyyMMdd")">
-                @* Foto de capa do capítulo (experiência ou hospedagem) *@
-                @if (!string.IsNullOrEmpty(fotoCapitulo))
-                {
-                    <div class="jn-chapter-hero has-photo">
-                        <img src="@fotoCapitulo" alt="" loading="lazy" />
-                        <div class="jn-chapter-hero-overlay"></div>
+            <article class="jn-chapter @(isHoje ? "jn-chapter-atual" : "")" id="@diaId">
+                @* Cabeçalho accordion (toggle) *@
+                <div class="jn-chapter-acc-hdr" onclick="jnToggleDia('@diaId')">
+                    @if (!string.IsNullOrEmpty(fotoCapitulo))
+                    {
+                        <div class="jn-chapter-acc-hdr-bg" style="background-image:url('@fotoCapitulo')"></div>
+                    }
+                    <div class="jn-chapter-acc-left">
+                        <div class="jn-chapter-acc-meta">
+                            <span class="jn-chapter-day-badge @(isHoje ? "hoje" : "")">
+                                @if (isHoje) { <text>Hoje</text> } else { <text>Dia @numDia</text> }
+                            </span>
+                            <span class="jn-chapter-date">@FormatDay(dia.Date)</span>
+                        </div>
+                        <div class="jn-chapter-acc-count">@nEvts @(nEvts == 1 ? "evento" : "eventos")</div>
                     </div>
-                }
-
-                <div class="jn-chapter-header">
-                    <span class="jn-chapter-day-badge @(isHoje ? "hoje" : "")">
-                        @if (isHoje) { <text>Hoje</text> }
-                        else         { <text>Dia @numDia</text> }
-                    </span>
-                    <span class="jn-chapter-date">@FormatDay(dia.Date)</span>
+                    <i class="fas fa-chevron-down jn-chapter-acc-chev"></i>
                 </div>
 
-                <div class="jn-tl">
-                    @{int evtIdx = 0;}
-                    @foreach (var evt in dia.Evts)
-                    {
-                        evtIdx++;
-                        string detId = $"jdet-{dia.Date:yyyyMMdd}-{evtIdx}";
-                        bool temFoto  = !string.IsNullOrEmpty(evt.FotoUrl) && (evt.Tipo == "experiencia" || evt.Tipo == "checkin");
-                        bool temAcoes = (evt.Lat.HasValue && evt.Lng.HasValue) || evt.Arquivos.Count > 0 || !string.IsNullOrEmpty(evt.Detalhe);
-
-                        <div class="jn-tl-item">
-                            <div class="jn-tl-icon @evt.Tipo">
-                                <i class="fas @JnIcone(evt.Tipo)"></i>
+                @* Corpo do capítulo (expande) *@
+                <div class="jn-chapter-body">
+                    <div class="jn-chapter-inner">
+                        @if (!string.IsNullOrEmpty(fotoCapitulo))
+                        {
+                            <div class="jn-chapter-hero has-photo">
+                                <img src="@fotoCapitulo" alt="" loading="lazy" />
+                                <div class="jn-chapter-hero-overlay"></div>
                             </div>
-                            <div class="jn-tl-body">
-                                @if (!evt.SoData)
-                                {
-                                    <div class="jn-tl-time">@evt.Dt.ToString("HH:mm")</div>
-                                }
-                                <div class="jn-tl-titulo">@evt.Titulo</div>
-                                @if (!string.IsNullOrEmpty(evt.Sub))
-                                {
-                                    <div class="jn-tl-sub">@evt.Sub</div>
-                                }
-                                @if (temFoto && !string.IsNullOrEmpty(evt.FotoUrl))
-                                {
-                                    <img src="@evt.FotoUrl" class="jn-evt-foto" alt="@evt.Titulo" loading="lazy" />
-                                }
-                                @if (temAcoes)
-                                {
-                                    <div class="jn-tl-actions">
-                                        @if (!string.IsNullOrEmpty(evt.Detalhe))
+                        }
+
+                        <div class="jn-tl">
+                            @{int evtIdx = 0;}
+                            @foreach (var evt in dia.Evts)
+                            {
+                                evtIdx++;
+                                string detId  = $"jdet-{dia.Date:yyyyMMdd}-{evtIdx}";
+                                bool isExp    = evt.Tipo == "experiencia";
+                                bool temDesc  = !string.IsNullOrEmpty(evt.Descricao);
+                                bool temFotos = evt.Fotos.Count > 1;
+                                bool temValor = evt.Valor.HasValue;
+                                bool temFim   = evt.DataFim.HasValue && !evt.SoData;
+                                bool temMapa  = evt.Lat.HasValue && evt.Lng.HasValue;
+                                bool temDocs  = evt.Arquivos.Count > 0;
+                                bool temDetSimples = !string.IsNullOrEmpty(evt.Detalhe);
+                                bool temRich  = isExp && (temDesc || temFotos || temValor || temFim || temDocs || temMapa);
+                                bool temToggle = temRich || (!isExp && (temDocs || temMapa || temDetSimples));
+
+                                <div class="jn-tl-item">
+                                    <div class="jn-tl-icon @evt.Tipo">
+                                        <i class="fas @JnIcone(evt.Tipo)"></i>
+                                    </div>
+                                    <div class="jn-tl-body">
+                                        @if (!evt.SoData)
+                                        { <div class="jn-tl-time">@evt.Dt.ToString("HH:mm")</div> }
+                                        <div class="jn-tl-titulo">@evt.Titulo</div>
+                                        @if (!string.IsNullOrEmpty(evt.Sub))
+                                        { <div class="jn-tl-sub">@evt.Sub</div> }
+
+                                        @* Foto inline — experiências sem rich content *@
+                                        @if (!string.IsNullOrEmpty(evt.FotoUrl) && (evt.Tipo == "checkin") && !temRich)
                                         {
-                                            <span class="jn-tl-detalhe">@evt.Detalhe</span>
+                                            <img src="@evt.FotoUrl" class="jn-evt-foto" alt="@evt.Titulo" loading="lazy" />
                                         }
-                                        @if (evt.Lat.HasValue && evt.Lng.HasValue)
+
+                                        @if (temToggle)
                                         {
-                                            <a href="https://maps.google.com/?q=@evt.Lat,@evt.Lng" target="_blank" class="jn-action">
-                                                <i class="fas fa-map-marker-alt"></i> Mapa
-                                            </a>
+                                            <button class="jn-tl-toggle" onclick="jnToggleDet('@detId',this)">
+                                                <i class="fas fa-chevron-down"></i><span> Ver detalhes</span>
+                                            </button>
+                                            <div id="@detId" class="jn-tl-detail">
+
+                                                @* Foto principal dentro dos detalhes (experiências) *@
+                                                @if (!string.IsNullOrEmpty(evt.FotoUrl) && isExp)
+                                                {
+                                                    <img src="@evt.FotoUrl" class="jn-evt-foto" alt="@evt.Titulo" loading="lazy" style="margin-bottom:10px;" />
+                                                }
+
+                                                @* Rich text *@
+                                                @if (temDesc)
+                                                {
+                                                    <div class="jn-richtext">@Html.Raw(evt.Descricao)</div>
+                                                }
+
+                                                @* Horário de término *@
+                                                @if (temFim)
+                                                {
+                                                    <div class="jn-det-row">
+                                                        <i class="fas fa-hourglass-end"></i>
+                                                        <span>Término: @evt.DataFim!.Value.ToString("HH:mm")</span>
+                                                    </div>
+                                                }
+
+                                                @* Valor *@
+                                                @if (temValor)
+                                                {
+                                                    <div class="jn-det-row">
+                                                        <i class="fas fa-tag"></i>
+                                                        <span>R$ @evt.Valor!.Value.ToString("N2", ptBR)</span>
+                                                    </div>
+                                                }
+
+                                                @* Detalhe simples (voo: chegada, etc.) *@
+                                                @if (temDetSimples && !isExp)
+                                                {
+                                                    <div class="jn-det-row">
+                                                        <i class="fas fa-info-circle"></i>
+                                                        <span>@evt.Detalhe</span>
+                                                    </div>
+                                                }
+
+                                                @* Fotos adicionais *@
+                                                @if (temFotos)
+                                                {
+                                                    <div class="jn-fotos-grid">
+                                                        @foreach (var fUrl in evt.Fotos.Skip(1).Take(6))
+                                                        { <img src="@fUrl" loading="lazy" alt="" /> }
+                                                    </div>
+                                                }
+
+                                                @* Mapa e documentos *@
+                                                <div class="jn-tl-actions" style="margin-top:6px;">
+                                                    @if (temMapa)
+                                                    {
+                                                        <a href="https://maps.google.com/?q=@evt.Lat,@evt.Lng" target="_blank" class="jn-action">
+                                                            <i class="fas fa-map-marker-alt"></i> Mapa
+                                                        </a>
+                                                    }
+                                                    @for (int ai = 0; ai < evt.Arquivos.Count; ai++)
+                                                    {
+                                                        var arqUrl  = evt.Arquivos[ai];
+                                                        var arqNome = ai < evt.ArquivosNomes.Count ? evt.ArquivosNomes[ai] : "Documento";
+                                                        <a href="@arqUrl" target="_blank" class="jn-action">
+                                                            <i class="fas fa-file-alt"></i> @arqNome
+                                                        </a>
+                                                    }
+                                                </div>
+                                            </div>
                                         }
-                                        @foreach (var url in evt.Arquivos)
+                                        @* Ações diretas para eventos sem toggle *@
+                                        @if (!temToggle && (temMapa || temDetSimples))
                                         {
-                                            <a href="@url" target="_blank" class="jn-action">
-                                                <i class="fas fa-file-alt"></i> Documento
-                                            </a>
+                                            <div class="jn-tl-actions">
+                                                @if (temDetSimples)
+                                                { <span class="jn-tl-detalhe">@evt.Detalhe</span> }
+                                                @if (temMapa)
+                                                {
+                                                    <a href="https://maps.google.com/?q=@evt.Lat,@evt.Lng" target="_blank" class="jn-action">
+                                                        <i class="fas fa-map-marker-alt"></i> Mapa
+                                                    </a>
+                                                }
+                                            </div>
                                         }
                                     </div>
-                                }
-                            </div>
+                                </div>
+                            }
                         </div>
-                    }
+                    </div>
                 </div>
             </article>
         }
@@ -1086,13 +1289,36 @@ body {
         obs.observe(hero);
     }
 
-    // Highlight do dia de hoje no scroll (scroll suave para o dia atual)
-    var hojeEl = document.querySelector('.jn-chapter-day-badge.hoje');
-    if (hojeEl) {
-        setTimeout(function () {
-            hojeEl.closest('article')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 800);
+    function jnToggleDia(id) {
+        var art = document.getElementById(id);
+        if (!art) return;
+        art.classList.toggle('open');
     }
+    window.jnToggleDia = jnToggleDia;
+
+    function jnToggleDet(id, btn) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        var open = el.style.display === 'block';
+        el.style.display = open ? 'none' : 'block';
+        var icon = btn.querySelector('i');
+        if (icon) icon.style.transform = open ? '' : 'rotate(180deg)';
+        var span = btn.querySelector('span');
+        if (span) span.textContent = open ? ' Ver detalhes' : ' Fechar';
+    }
+    window.jnToggleDet = jnToggleDet;
+
+    // Estado inicial: abre o dia de hoje ou o primeiro dia
+    (function () {
+        var atual = document.querySelector('.jn-chapter.jn-chapter-atual');
+        if (atual) {
+            atual.classList.add('open');
+            setTimeout(function () { atual.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 600);
+        } else {
+            var primeiro = document.querySelector('.jn-chapter');
+            if (primeiro) primeiro.classList.add('open');
+        }
+    })();
 
     // Smooth scroll para CTA do hero
     document.querySelectorAll('a[href="#jornada-inicio"]').forEach(function (a) {

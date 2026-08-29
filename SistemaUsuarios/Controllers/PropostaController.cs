@@ -177,7 +177,7 @@ namespace SistemaUsuarios.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Criar()
+        public async Task<IActionResult> Criar(Guid? clienteId = null)
         {
             if (!UsuarioLogado())
                 return RedirectToAction("Login", "Auth");
@@ -187,7 +187,8 @@ namespace SistemaUsuarios.Controllers
             var layoutPadrao = layouts?.FirstOrDefault(l => l.Nome.Contains("Padrão") || l.Nome.Contains("Padrao"));
             var model = new PropostaViewModel
             {
-                LayoutId = layoutPadrao?.Id ?? layouts?.FirstOrDefault()?.Id
+                LayoutId  = layoutPadrao?.Id ?? layouts?.FirstOrDefault()?.Id,
+                ClienteId = clienteId
             };
             return View(model);
         }
@@ -257,6 +258,7 @@ namespace SistemaUsuarios.Controllers
                 UsuarioId = model.UsuarioId.Value,
                 UsuarioMasterId = masterIdParaProposta,
                 UsuarioResponsavelId = model.UsuarioId.Value,  // criador é o responsável inicial
+                ClienteId = model.ClienteId,
                 DataInicio = model.DataInicio,
                 DataFim = model.DataFim,
                 NumeroPassageiros = model.NumeroPassageiros,
@@ -717,6 +719,7 @@ namespace SistemaUsuarios.Controllers
                 StatusProposta.Aprovada => "Proposta aprovada! 🎉",
                 StatusProposta.Rejeitada => "Proposta rejeitada",
                 StatusProposta.Cancelada => "Proposta cancelada",
+                StatusProposta.Site => "Viagem publicada na vitrine da agência!",
                 _ => "Status alterado com sucesso!"
             };
 
@@ -736,32 +739,37 @@ namespace SistemaUsuarios.Controllers
             // Validação leve antes de carregar tudo
             var meta = await _context.Propostas
                 .Where(p => p.Id == id)
-                .Select(p => new { p.Id, p.LinkPublicoAtivo, p.DataExpiracaoLink, p.CodigoAcesso, p.Titulo, p.ExigirCodigoAcesso })
+                .Select(p => new { p.Id, p.LinkPublicoAtivo, p.DataExpiracaoLink, p.CodigoAcesso, p.Titulo, p.ExigirCodigoAcesso, p.StatusProposta })
                 .FirstOrDefaultAsync();
 
             if (meta == null)
                 return NotFound();
 
-            if (!meta.LinkPublicoAtivo)
-            {
-                ViewBag.Mensagem = "Esta proposta não está disponível ao público no momento.";
-                ViewBag.Subtitulo = "O link pode ter sido desativado pelo agente responsável.";
-                return View("PropostaIndisponivel");
-            }
+            var isSite = meta.StatusProposta == StatusProposta.Site;
 
-            if (meta.DataExpiracaoLink.HasValue && meta.DataExpiracaoLink.Value < DateTime.UtcNow)
+            if (!isSite)
             {
-                ViewBag.Mensagem = "Esta proposta expirou e não está mais disponível.";
-                ViewBag.Subtitulo = "Entre em contato com o agente para receber uma nova proposta atualizada.";
-                return View("PropostaIndisponivel");
-            }
+                // Propostas normais: verificar link ativo, expiração e código de acesso
+                if (!meta.LinkPublicoAtivo)
+                {
+                    ViewBag.Mensagem = "Esta proposta não está disponível ao público no momento.";
+                    ViewBag.Subtitulo = "O link pode ter sido desativado pelo agente responsável.";
+                    return View("PropostaIndisponivel");
+                }
 
-            // Portão de código de acesso
-            if (meta.ExigirCodigoAcesso && !string.IsNullOrEmpty(meta.CodigoAcesso))
-            {
-                var sessionKey = $"proposta_acesso_{id}";
-                if (HttpContext.Session.GetString(sessionKey) != "ok")
-                    return RedirectToAction("AcessoProposta", new { id });
+                if (meta.DataExpiracaoLink.HasValue && meta.DataExpiracaoLink.Value < DateTime.UtcNow)
+                {
+                    ViewBag.Mensagem = "Esta proposta expirou e não está mais disponível.";
+                    ViewBag.Subtitulo = "Entre em contato com o agente para receber uma nova proposta atualizada.";
+                    return View("PropostaIndisponivel");
+                }
+
+                if (meta.ExigirCodigoAcesso && !string.IsNullOrEmpty(meta.CodigoAcesso))
+                {
+                    var sessionKey = $"proposta_acesso_{id}";
+                    if (HttpContext.Session.GetString(sessionKey) != "ok")
+                        return RedirectToAction("AcessoProposta", new { id });
+                }
             }
 
             // Carga completa
@@ -845,6 +853,7 @@ namespace SistemaUsuarios.Controllers
             var layoutDispatch = (proposta.Layout?.Nome ?? "Padrão").ToLower();
 
             // Dados para analytics (layout público — cliente real)
+            ViewBag.IsSite = isSite;
             ViewBag.IsPreview = false;
             ViewBag.AnalyticsPropostaId = id.ToString();
             ViewBag.AnalyticsLayoutName = layoutDispatch.Contains("executivo")    ? "executive"

@@ -127,6 +127,8 @@ namespace SistemaUsuarios.Models
         Enviada = 2,
         Aprovada = 3,
         Rejeitada = 4,
-        Cancelada = 5
+        Cancelada = 5,
+        /// <summary>Viagem publicada na vitrine pública da agência.</summary>
+        Site = 6
     }
 }

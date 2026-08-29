@@ -437,62 +437,8 @@
 
 </div><!-- /#tarefas-page -->
 
-<!-- ── Modal nova tarefa ── -->
-<div class="tf-modal-overlay" id="modalNovaTarefa">
-    <div class="tf-modal">
-        <h5><i class="fas fa-plus-circle me-2" style="color:#6366f1"></i>Nova Tarefa</h5>
-
-        <label>Título *</label>
-        <input type="text" id="nTitulo" placeholder="Ex: Ligar para o cliente..." maxlength="200" />
-
-        <label>Data de vencimento *</label>
-        <input type="date" id="nData" value="@DateTime.UtcNow.ToBrazilTime().Date.ToString("yyyy-MM-dd")" />
-
-        <div class="row g-2">
-            <div class="col-6">
-                <label>Tipo</label>
-                <select id="nTipo">
-                    <option value="Geral">Geral</option>
-                    <option value="Followup">Follow-up</option>
-                    <option value="Operacional">Operacional</option>
-                    <option value="Comercial">Comercial</option>
-                </select>
-            </div>
-            <div class="col-6">
-                <label>Prioridade</label>
-                <select id="nPrioridade">
-                    <option value="Media">Média</option>
-                    <option value="Alta">Alta</option>
-                    <option value="Baixa">Baixa</option>
-                </select>
-            </div>
-        </div>
-
-        <label>Cliente (opcional)</label>
-        <select id="nCliente">
-            @foreach (var item in Model.Clientes)
-            {
-                <option value="@item.Value">@item.Text</option>
-            }
-        </select>
-
-        <label>Proposta (opcional)</label>
-        <select id="nProposta">
-            @foreach (var item in Model.Propostas)
-            {
-                <option value="@item.Value">@item.Text</option>
-            }
-        </select>
-
-        <label>Descrição</label>
-        <textarea id="nDescricao" placeholder="Detalhes da tarefa..."></textarea>
-
-        <div class="tf-modal-footer">
-            <button class="btn-tf-cancel" onclick="fecharModalNova()">Cancelar</button>
-            <button class="btn-tf-save" onclick="salvarNovaTarefa()"><i class="fas fa-check me-1"></i>Criar Tarefa</button>
-        </div>
-    </div>
-</div>
+@* Modal de nova tarefa — componente compartilhado *@
+@await Html.PartialAsync("_ModalNovaTarefa")
 
 <!-- ── Modal sincronização ICS (Phase 3) ── -->
 <div class="tf-modal-overlay" id="modalSync">
@@ -705,49 +651,12 @@ function atualizarContadores() {
     });
 }
 
-// ── Modal nova tarefa ─────────────────────────────────────────────────────────
+// ── Modal nova tarefa — delega ao componente compartilhado ────────────────────
 function abrirModalNova() {
-    document.getElementById('modalNovaTarefa').classList.add('open');
-    document.getElementById('nTitulo').focus();
+    window.abrirModalNovaTarefa({ onSuccess: () => location.reload() });
 }
 function fecharModalNova() {
-    document.getElementById('modalNovaTarefa').classList.remove('open');
-}
-document.getElementById('modalNovaTarefa').addEventListener('click', e => {
-    if (e.target === e.currentTarget) fecharModalNova();
-});
-
-async function salvarNovaTarefa() {
-    const titulo = document.getElementById('nTitulo').value.trim();
-    const data   = document.getElementById('nData').value;
-    if (!titulo) { document.getElementById('nTitulo').focus(); return; }
-    if (!data)   { document.getElementById('nData').focus(); return; }
-
-    const fd = new FormData();
-    fd.append('Titulo',         titulo);
-    fd.append('DataVencimento', data);
-    fd.append('Tipo',           document.getElementById('nTipo').value);
-    fd.append('Prioridade',     document.getElementById('nPrioridade').value);
-    fd.append('Descricao',      document.getElementById('nDescricao').value);
-    const clienteId  = document.getElementById('nCliente').value;
-    const propostaId = document.getElementById('nProposta').value;
-    if (clienteId)  fd.append('ClienteId',  clienteId);
-    if (propostaId) fd.append('PropostaId', propostaId);
-
-    const btn = document.querySelector('.btn-tf-save');
-    btn.disabled = true; btn.textContent = 'Salvando...';
-
-    const r = await fetch('/Tarefa/Criar', { method: 'POST', body: fd });
-    const d = await r.json();
-
-    btn.disabled = false; btn.innerHTML = '<i class="fas fa-check me-1"></i>Criar Tarefa';
-
-    if (d.ok) {
-        fecharModalNova();
-        location.reload();
-    } else {
-        alert(d.erro || 'Erro ao criar tarefa.');
-    }
+    window.fecharModalNovaTarefa();
 }
 
 // ── Calendário (Phase 2) ──────────────────────────────────────────────────────

@@ -20,7 +20,7 @@ namespace SistemaUsuarios.Controllers
         }
 
         // GET /{agencySlug}
-        public async Task<IActionResult> Index(string agencySlug)
+        public async Task<IActionResult> Index(string agencySlug, string? origem = null)
         {
             if (string.IsNullOrWhiteSpace(agencySlug))
                 return NotFound();
@@ -36,17 +36,22 @@ namespace SistemaUsuarios.Controllers
             var settings = await _context.LeadCaptureSettings
                 .FirstOrDefaultAsync(s => s.UsuarioId == usuario.Id);
 
+            var viagens = await CarregarViagensSite(usuario.Id);
+
             var vm = new AgencyPublicViewModel
             {
-                NomeAgencia   = usuario.NomeAgencia ?? usuario.Nome,
-                SlugAgencia   = usuario.SlugAgencia!,
-                FotoPath      = usuario.FotoPath,
-                CorPrimaria   = usuario.CorPrimaria,
-                CorSecundaria = usuario.CorSecundaria,
-                CorDestaque   = usuario.CorDestaque,
-                CaptacaoAtiva = settings?.IsActive ?? false,
-                WelcomeMessage        = settings?.WelcomeMessage,
-                ResponseTimeText      = settings?.ResponseTimeText,
+                NomeAgencia      = usuario.NomeAgencia ?? usuario.Nome,
+                SlugAgencia      = usuario.SlugAgencia!,
+                LogoAgenciaPath  = usuario.LogoAgenciaPath,
+                FotoPath         = usuario.FotoPath,
+                NomeAgente       = usuario.Nome,
+                TelefoneAgente   = usuario.Telefone,
+                CorPrimaria      = usuario.CorPrimaria,
+                CorSecundaria    = usuario.CorSecundaria,
+                CorDestaque      = usuario.CorDestaque,
+                CaptacaoAtiva    = settings?.IsActive ?? false,
+                WelcomeMessage   = settings?.WelcomeMessage,
+                ResponseTimeText = settings?.ResponseTimeText,
                 ShowEmail                   = settings?.ShowEmail ?? true,
                 ShowOriginCity              = settings?.ShowOriginCity ?? false,
                 ShowTravelDates             = settings?.ShowTravelDates ?? false,
@@ -57,6 +62,8 @@ namespace SistemaUsuarios.Controllers
                 ShowAccommodationPreference = settings?.ShowAccommodationPreference ?? false,
                 ShowNotes                   = settings?.ShowNotes ?? false,
                 ShowBestContactTime         = settings?.ShowBestContactTime ?? false,
+                Viagens          = viagens,
+                OrigemViagem     = SanitizeOptional(origem, 80),
             };
 
             return View(vm);
@@ -70,7 +77,7 @@ namespace SistemaUsuarios.Controllers
             string? email, string? originCity, string? travelDates,
             int? adults, int? children, string? budget,
             string? tripType, string? accommodationPreference,
-            string? notes, string? bestContactTime)
+            string? notes, string? bestContactTime, string? origemViagem)
         {
             if (string.IsNullOrWhiteSpace(agencySlug))
                 return NotFound();
@@ -86,17 +93,22 @@ namespace SistemaUsuarios.Controllers
             var settings = await _context.LeadCaptureSettings
                 .FirstOrDefaultAsync(s => s.UsuarioId == usuario.Id);
 
+            var viagens = await CarregarViagensSite(usuario.Id);
+
             var vm = new AgencyPublicViewModel
             {
-                NomeAgencia   = usuario.NomeAgencia ?? usuario.Nome,
-                SlugAgencia   = usuario.SlugAgencia!,
-                FotoPath      = usuario.FotoPath,
-                CorPrimaria   = usuario.CorPrimaria,
-                CorSecundaria = usuario.CorSecundaria,
-                CorDestaque   = usuario.CorDestaque,
-                CaptacaoAtiva = settings?.IsActive ?? false,
-                WelcomeMessage        = settings?.WelcomeMessage,
-                ResponseTimeText      = settings?.ResponseTimeText,
+                NomeAgencia      = usuario.NomeAgencia ?? usuario.Nome,
+                SlugAgencia      = usuario.SlugAgencia!,
+                LogoAgenciaPath  = usuario.LogoAgenciaPath,
+                FotoPath         = usuario.FotoPath,
+                NomeAgente       = usuario.Nome,
+                TelefoneAgente   = usuario.Telefone,
+                CorPrimaria      = usuario.CorPrimaria,
+                CorSecundaria    = usuario.CorSecundaria,
+                CorDestaque      = usuario.CorDestaque,
+                CaptacaoAtiva    = settings?.IsActive ?? false,
+                WelcomeMessage   = settings?.WelcomeMessage,
+                ResponseTimeText = settings?.ResponseTimeText,
                 ShowEmail                   = settings?.ShowEmail ?? true,
                 ShowOriginCity              = settings?.ShowOriginCity ?? false,
                 ShowTravelDates             = settings?.ShowTravelDates ?? false,
@@ -107,6 +119,8 @@ namespace SistemaUsuarios.Controllers
                 ShowAccommodationPreference = settings?.ShowAccommodationPreference ?? false,
                 ShowNotes                   = settings?.ShowNotes ?? false,
                 ShowBestContactTime         = settings?.ShowBestContactTime ?? false,
+                Viagens          = viagens,
+                OrigemViagem     = SanitizeOptional(origemViagem, 80),
             };
 
             if (!vm.CaptacaoAtiva)
@@ -141,7 +155,9 @@ namespace SistemaUsuarios.Controllers
                 AccommodationPreference = SanitizeOptional(accommodationPreference, 150),
                 Notes                  = SanitizeOptional(notes, 1000),
                 BestContactTime        = SanitizeOptional(bestContactTime, 100),
-                Source                 = "Landing Page Pública",
+                Source                 = string.IsNullOrWhiteSpace(origemViagem)
+                                           ? "Landing Page Pública"
+                                           : $"Viagem: {SanitizeOptional(origemViagem, 60)}",
                 Status                 = LeadStatus.Novo,
                 CreatedAt              = DateTime.UtcNow,
             };
@@ -154,6 +170,46 @@ namespace SistemaUsuarios.Controllers
             vm.Enviado = true;
             ViewBag.AnalyticsGenerateLead = true;
             return View(vm);
+        }
+
+        private async Task<List<PropostaSiteCardViewModel>> CarregarViagensSite(Guid usuarioId)
+        {
+            var hoje = DateTime.UtcNow.Date;
+
+            var propostas = await _context.Propostas
+                .Where(p => (p.UsuarioId == usuarioId || p.UsuarioMasterId == usuarioId)
+                            && p.StatusProposta == StatusProposta.Site)
+                .OrderBy(p => p.DataInicio == null ? 1 : 0)          // nulls por último
+                .ThenByDescending(p => p.DataInicio >= hoje ? 1 : 0)  // futuras antes das passadas
+                .ThenBy(p => p.DataInicio)
+                .Take(6)
+                .Select(p => new
+                {
+                    p.Id, p.Titulo, p.FotoCapa, p.DataInicio, p.DataFim,
+                    Destinos = p.Destinos.OrderBy(d => d.Ordem).Select(d => d.Cidade ?? d.Nome).ToList(),
+                    TemVoo          = p.Voos.Any(),
+                    TemHospedagem   = p.Destinos.Any(d => d.Hospedagens.Any()),
+                    TemExperiencia  = p.Destinos.Any(d => d.Experiencias.Any()),
+                    TemTransporte   = p.Destinos.Any(d => d.Transportes.Any()),
+                    TemSeguro       = p.Seguros.Any()
+                })
+                .AsNoTracking()
+                .ToListAsync();
+
+            return propostas.Select(p => new PropostaSiteCardViewModel
+            {
+                Id             = p.Id,
+                Titulo         = p.Titulo,
+                FotoCapa       = p.FotoCapa,
+                DataInicio     = p.DataInicio,
+                DataFim        = p.DataFim,
+                Destinos       = p.Destinos.Where(d => !string.IsNullOrEmpty(d)).Distinct().ToList(),
+                TemVoo         = p.TemVoo,
+                TemHospedagem  = p.TemHospedagem,
+                TemExperiencia = p.TemExperiencia,
+                TemTransporte  = p.TemTransporte,
+                TemSeguro      = p.TemSeguro
+            }).ToList();
         }
 
         private static string Sanitize(string? value, int maxLen)

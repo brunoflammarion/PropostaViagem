@@ -54,20 +54,21 @@
         : $"Olá! Estou visualizando a proposta \"{Model.Titulo}\" e gostaria de conversar sobre a viagem.";
     var waUrl         = WhatsAppHelper.MontarUrl(agenteResponsavel?.Telefone, waMsgRaw);
 
-    bool temPassageiros = Model.PassageirosProposta.Any();
+    bool isSite         = (bool)(ViewBag.IsSite ?? false);
+    bool temPassageiros = !isSite && Model.PassageirosProposta.Any();
     bool temVoos        = Model.Voos.Any();
     bool temSeguros     = Model.Seguros.Any();
     bool temResumo      = !string.IsNullOrWhiteSpace(Model.ResumoProposta);
-    bool temCondicoes   = !string.IsNullOrWhiteSpace(Model.CondicoesPropostaHtml);
-    bool temValores     = !string.IsNullOrWhiteSpace(Model.ValoresPropostaHtml);
+    bool temCondicoes   = !isSite && !string.IsNullOrWhiteSpace(Model.CondicoesPropostaHtml);
+    bool temValores     = !isSite && !string.IsNullOrWhiteSpace(Model.ValoresPropostaHtml);
 
     var todasHospedagens  = Model.Destinos.SelectMany(d => d.Hospedagens).ToList();
     var todasAcomodacoes  = Model.Destinos.SelectMany(d => d.Hospedagens).SelectMany(h => h.Acomodacoes).ToList();
     var todasExperiencias = Model.Destinos.SelectMany(d => d.Experiencias).ToList();
 
-    bool mostrarAvalHospedagem  = Model.SolicitarAvaliacaoHospedagem  && todasHospedagens.Count  > 1;
-    bool mostrarAvalAcomodacao  = Model.SolicitarAvaliacaoAcomodacao  && todasAcomodacoes.Count  > 1;
-    bool mostrarAvalExperiencia = Model.SolicitarAvaliacaoExperiencia && todasExperiencias.Count > 1;
+    bool mostrarAvalHospedagem  = !isSite && Model.SolicitarAvaliacaoHospedagem  && todasHospedagens.Count  > 1;
+    bool mostrarAvalAcomodacao  = !isSite && Model.SolicitarAvaliacaoAcomodacao  && todasAcomodacoes.Count  > 1;
+    bool mostrarAvalExperiencia = !isSite && Model.SolicitarAvaliacaoExperiencia && todasExperiencias.Count > 1;
     bool temAvaliacao = mostrarAvalHospedagem || mostrarAvalAcomodacao || mostrarAvalExperiencia;
 
     var uCorP = Model.Usuario.CorPrimaria;
@@ -898,7 +899,7 @@ html, body { max-width: 100%; overflow-x: hidden; }
                 var _execAtualizada = Model.DataModificacao.HasValue;
             }
         </div>
-        @if (!string.IsNullOrEmpty(Model.ObservacoesGerais))
+        @if (!isSite && !string.IsNullOrEmpty(Model.ObservacoesGerais))
         {
             <div style="margin-top:16px;padding:14px 16px;background:var(--c-bg-alt);border-radius:10px;font-size:.84rem;color:var(--c-text-mid);">
                 @Model.ObservacoesGerais
