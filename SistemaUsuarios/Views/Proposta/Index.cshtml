@@ -1,5 +1,16 @@
 @model SistemaUsuarios.Models.ViewModels.PropostaFiltroViewModel
 @using SistemaUsuarios.Models
+@functions {
+    // Reconstrói a URL da página corrente trocando apenas o parâmetro "pagina"
+    string UrlPagina(int p) {
+        var pares = Context.Request.Query
+            .Where(kv => !string.Equals(kv.Key, "pagina", StringComparison.OrdinalIgnoreCase))
+            .Select(kv => Uri.EscapeDataString(kv.Key) + "=" + Uri.EscapeDataString(kv.Value.ToString()))
+            .ToList();
+        pares.Add("pagina=" + p);
+        return "/Proposta?" + string.Join("&", pares);
+    }
+}
 @{
     ViewData["Title"] = "Propostas de Viagem";
     ViewData["IsMaster"] = Model.IsMaster;
@@ -99,6 +110,7 @@
 ═══════════════════════════════════════════════════════ -->
 <div class="exec-filters">
     <form method="get" asp-action="Index">
+        <input asp-for="Modo" type="hidden" />
         <div class="filters-row">
             <div class="filter-compact">
                 <input asp-for="TermoBusca" class="form-control exec-search"
@@ -150,6 +162,46 @@
                 @await Html.PartialAsync("_PropostaCard", proposta)
             }
         </div>
+
+        @if (Model.TotalPaginas > 1)
+        {
+            <div class="exec-pagination">
+                <span class="pagination-info">
+                    @{
+                        var inicio = (Model.PaginaAtual - 1) * Model.TamanhoPagina + 1;
+                        var fim = Math.Min(Model.PaginaAtual * Model.TamanhoPagina, Model.TotalPropostas);
+                    }
+                    Exibindo @inicio–@fim de @Model.TotalPropostas propostas
+                </span>
+                <nav aria-label="Paginação de propostas">
+                    <ul class="pagination mb-0">
+                        <li class="page-item @(!Model.TemPaginacaoAnterior ? "disabled" : "")">
+                            <a class="page-link" href="@UrlPagina(Model.PaginaAtual - 1)" aria-label="Anterior">Anterior</a>
+                        </li>
+                        @for (int i = 1; i <= Model.TotalPaginas; i++)
+                        {
+                            bool mostrar = i == 1 || i == Model.TotalPaginas || Math.Abs(i - Model.PaginaAtual) <= 2;
+                            bool reticAntes = i == 2 && Model.PaginaAtual > 4;
+                            bool reticDepois = i == Model.TotalPaginas - 1 && Model.PaginaAtual < Model.TotalPaginas - 3;
+
+                            if (reticAntes || reticDepois)
+                            {
+                                <li class="page-item disabled"><span class="page-link">…</span></li>
+                            }
+                            else if (mostrar)
+                            {
+                                <li class="page-item @(i == Model.PaginaAtual ? "active" : "")">
+                                    <a class="page-link" href="@UrlPagina(i)">@i</a>
+                                </li>
+                            }
+                        }
+                        <li class="page-item @(!Model.TemPaginacaoProxima ? "disabled" : "")">
+                            <a class="page-link" href="@UrlPagina(Model.PaginaAtual + 1)" aria-label="Próxima">Próxima</a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        }
     }
     else
     {
@@ -171,13 +223,21 @@
         {
             var meta = statusMeta[status];
             var colPropostas = Model.Propostas.Where(p => p.StatusProposta == status).ToList();
+            var colTotal = status switch {
+                StatusProposta.Rascunho  => Model.TotalRascunhos,
+                StatusProposta.Enviada   => Model.TotalEnviadas,
+                StatusProposta.Aprovada  => Model.TotalAprovadas,
+                StatusProposta.Rejeitada => Model.TotalRejeitadas,
+                StatusProposta.Cancelada => Model.TotalCanceladas,
+                _                        => colPropostas.Count
+            };
             <div class="kanban-col" data-status="@((int)status)">
                 <div class="kanban-col-header" style="--col-color:@meta.Color;">
                     <div class="d-flex align-items-center gap-2">
                         <span class="kanban-col-dot" style="background:@meta.Color;"></span>
                         <span class="kanban-col-title">@meta.Label</span>
                     </div>
-                    <span class="kanban-col-count">@colPropostas.Count</span>
+                    <span class="kanban-col-count">@colTotal</span>
                 </div>
                 <div class="kanban-col-body" data-status="@((int)status)">
                     @if (colPropostas.Any())
@@ -628,6 +688,38 @@
 }
 
 /* ════════════════════════════════════════
+   PAGINAÇÃO
+════════════════════════════════════════ */
+.exec-pagination {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: .75rem;
+    margin-top: 1.5rem; padding-top: 1.25rem;
+    border-top: 1px solid var(--exec-border);
+}
+.pagination-info { font-size: .8rem; color: #6c757d; }
+.pagination { gap: .25rem; }
+.pagination .page-link {
+    border: 1px solid var(--exec-border);
+    color: var(--exec-primary);
+    border-radius: var(--exec-radius) !important;
+    font-size: .8rem; padding: .3rem .65rem;
+    min-width: 32px; text-align: center;
+    transition: all .2s ease;
+}
+.pagination .page-item.active .page-link {
+    background: var(--exec-primary);
+    border-color: var(--exec-primary);
+    color: white;
+}
+.pagination .page-item.disabled .page-link { color: #adb5bd; pointer-events: none; }
+.pagination .page-link:hover:not(.page-item.disabled .page-link) {
+    background: var(--exec-light); border-color: var(--exec-primary);
+}
+@@media (max-width: 576px) {
+    .exec-pagination { flex-direction: column; align-items: center; }
+}
+
+/* ════════════════════════════════════════
    ANIMAÇÕES (lista)
 ════════════════════════════════════════ */
 .exec-propostas-grid .exec-proposta-card { animation: fadeInUp .4s ease-out both; }
@@ -660,31 +752,20 @@ const STATUS_MAP = {
 
 /* ────────────────────────────────────────────────
    TOGGLE DE VISUALIZAÇÃO
+   Navega para URL com Modo=lista|kanban preservando
+   todos os filtros ativos. Page reload garante que:
+   - Lista receba dados paginados (20/pág)
+   - Kanban receba todas as propostas
 ──────────────────────────────────────────────── */
 function setView(view) {
-    const lista  = document.getElementById('view-lista');
-    const kanban = document.getElementById('view-kanban');
-    const btnL   = document.getElementById('btn-lista');
-    const btnK   = document.getElementById('btn-kanban');
+    // Feedback visual imediato no botão enquanto a página carrega
+    document.getElementById('btn-lista').classList.toggle('active', view === 'lista');
+    document.getElementById('btn-kanban').classList.toggle('active', view === 'kanban');
 
-    if (view === 'kanban') {
-        lista.style.display  = 'none';
-        kanban.style.display = '';
-        btnL.classList.remove('active');
-        btnK.classList.add('active');
-    } else {
-        kanban.style.display = 'none';
-        lista.style.display  = '';
-        btnL.classList.add('active');
-        btnK.classList.remove('active');
-    }
-
-    // Persiste sem bloquear o UI
-    fetch('/Proposta/SalvarVisualizacao', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ visualizacao: view })
-    }).catch(() => {}); // falha silenciosa — preferência será salva na próxima troca bem-sucedida
+    const url = new URL(window.location.href);
+    url.searchParams.set('Modo', view);
+    url.searchParams.delete('pagina'); // sempre volta à pág 1 na troca de modo
+    window.location.href = url.toString();
 }
 
 /* ────────────────────────────────────────────────

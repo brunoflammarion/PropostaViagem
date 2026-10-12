@@ -68,20 +68,38 @@ namespace SistemaUsuarios.Controllers
             return Guid.Parse(usuarioIdString);
         }
 
-        public async Task<IActionResult> Index(PropostaFiltroViewModel filtro)
+        public async Task<IActionResult> Index(PropostaFiltroViewModel filtro, int pagina = 1)
         {
             if (!UsuarioLogado())
                 return RedirectToAction("Login", "Auth");
 
-            // Carregar preferência de visualização do usuário
+            const int TamanhoPagina = 20;
+            pagina = Math.Max(1, pagina);
+
             var usuarioId = ObterUsuarioLogadoId();
             var usuario = await _context.Usuarios.AsNoTracking().FirstOrDefaultAsync(u => u.Id == usuarioId);
-            filtro.VisualizacaoAtual = usuario?.PreferenciaVisualizacao ?? "lista";
+
+            // Modo explícito (query param) sobrepõe preferência do BD e salva o novo valor
+            var modo = string.IsNullOrEmpty(filtro.Modo) ? null : filtro.Modo;
+            if (modo is "lista" or "kanban")
+            {
+                var usuarioAtualizar = await _context.Usuarios.FirstOrDefaultAsync(u => u.Id == usuarioId);
+                if (usuarioAtualizar != null && usuarioAtualizar.PreferenciaVisualizacao != modo)
+                {
+                    usuarioAtualizar.PreferenciaVisualizacao = modo;
+                    await _context.SaveChangesAsync();
+                }
+                filtro.VisualizacaoAtual = modo;
+            }
+            else
+            {
+                filtro.VisualizacaoAtual = usuario?.PreferenciaVisualizacao ?? "lista";
+            }
 
             var tipoUsuario = usuario?.TipoUsuario ?? TipoUsuario.Master;
             filtro.IsMaster = tipoUsuario == TipoUsuario.Master;
 
-            // Usuários visíveis no dropdown: Master vê a si mesmo + associados; Associado vê só a si
+            // Usuários visíveis no dropdown
             if (tipoUsuario == TipoUsuario.Master)
                 filtro.Usuarios = await _context.Usuarios
                     .Where(u => u.Id == usuarioId || u.UsuarioMasterId == usuarioId)
@@ -89,89 +107,93 @@ namespace SistemaUsuarios.Controllers
             else
                 filtro.Usuarios = new List<Usuario> { usuario! };
 
-            // Query base: escopo por hierarquia
+            // Query base: escopo por hierarquia (sem Include — projeção cuida dos JOINs)
             IQueryable<Proposta> query;
             if (tipoUsuario == TipoUsuario.Master)
+                query = _context.Propostas.AsNoTracking().Where(p => p.UsuarioMasterId == usuarioId);
+            else
+                query = _context.Propostas.AsNoTracking().Where(p => p.UsuarioResponsavelId == usuarioId);
+
+            // Filtros (preservados integralmente)
+            if (!string.IsNullOrEmpty(filtro.TermoBusca))
+                query = query.Where(p => p.Titulo.Contains(filtro.TermoBusca));
+
+            if (filtro.FiltroStatus.HasValue)
+                query = query.Where(p => p.StatusProposta == filtro.FiltroStatus.Value);
+
+            if (filtro.DataInicioFiltro.HasValue)
+                query = query.Where(p => p.DataInicio >= filtro.DataInicioFiltro.Value);
+
+            if (filtro.DataFimFiltro.HasValue)
+                query = query.Where(p => p.DataFim <= filtro.DataFimFiltro.Value);
+
+            if (filtro.FiltroUsuario.HasValue)
+                query = query.Where(p => p.UsuarioId == filtro.FiltroUsuario.Value);
+
+            if (filtro.FiltroLinkAtivo.HasValue)
+                query = query.Where(p => p.LinkPublicoAtivo == filtro.FiltroLinkAtivo.Value);
+
+            // Estatísticas por status no banco (universo completo filtrado)
+            var contagensPorStatus = await query
+                .GroupBy(p => p.StatusProposta)
+                .Select(g => new { Status = g.Key, Total = g.Count() })
+                .ToListAsync();
+
+            filtro.TotalPropostas  = contagensPorStatus.Sum(x => x.Total);
+            filtro.TotalRascunhos  = contagensPorStatus.FirstOrDefault(x => x.Status == StatusProposta.Rascunho)?.Total  ?? 0;
+            filtro.TotalEnviadas   = contagensPorStatus.FirstOrDefault(x => x.Status == StatusProposta.Enviada)?.Total   ?? 0;
+            filtro.TotalAprovadas  = contagensPorStatus.FirstOrDefault(x => x.Status == StatusProposta.Aprovada)?.Total  ?? 0;
+            filtro.TotalRejeitadas = contagensPorStatus.FirstOrDefault(x => x.Status == StatusProposta.Rejeitada)?.Total ?? 0;
+            filtro.TotalCanceladas = contagensPorStatus.FirstOrDefault(x => x.Status == StatusProposta.Cancelada)?.Total ?? 0;
+
+            // Projeção sem Include:
+            //  - Usuario/UsuarioResponsavel → EF gera LEFT JOINs automáticos
+            //  - PassageirosProposta.Count() → EF gera COUNT subquery (sem carregar registros)
+            var projecaoOrdenada = query
+                .OrderByDescending(p => p.DataCriacao)
+                .ThenByDescending(p => p.Id)
+                .Select(p => new PropostaListViewModel
+                {
+                    Id                     = p.Id,
+                    Titulo                 = p.Titulo,
+                    DataCriacao            = p.DataCriacao,
+                    DataInicio             = p.DataInicio,
+                    DataFim                = p.DataFim,
+                    NumeroPassageiros      = p.NumeroPassageiros,
+                    NumeroCriancas         = p.NumeroCriancas,
+                    TotalPassageiros       = p.PassageirosProposta.Count(),
+                    StatusProposta         = p.StatusProposta,
+                    NomeUsuario            = p.Usuario != null ? p.Usuario.Nome : "N/A",
+                    NomeResponsavel        = p.UsuarioResponsavel != null ? p.UsuarioResponsavel.Nome
+                                             : (p.Usuario != null ? p.Usuario.Nome : "N/A"),
+                    UsuarioId              = p.UsuarioId,
+                    UsuarioResponsavelId   = p.UsuarioResponsavelId,
+                    LinkPublicoAtivo       = p.LinkPublicoAtivo,
+                    FotoCapa               = p.FotoCapa,
+                    DataModificacao        = p.DataModificacao,
+                    IsConteudoDemonstracao = p.IsConteudoDemonstracao
+                });
+
+            filtro.TamanhoPagina = TamanhoPagina;
+
+            if (filtro.VisualizacaoAtual == "kanban")
             {
-                // Master vê todas as propostas da equipe (UsuarioMasterId == seu Id)
-                query = _context.Propostas
-                    .Include(p => p.Usuario)
-                    .Include(p => p.UsuarioResponsavel)
-                    .Where(p => p.UsuarioMasterId == usuarioId);
+                // Kanban precisa de todas as propostas para exibir todas as colunas
+                filtro.Propostas    = await projecaoOrdenada.ToListAsync();
+                filtro.PaginaAtual  = 1;
+                filtro.TotalPaginas = 1;
             }
             else
             {
-                // Associado vê apenas as propostas das quais é responsável
-                query = _context.Propostas
-                    .Include(p => p.Usuario)
-                    .Include(p => p.UsuarioResponsavel)
-                    .Where(p => p.UsuarioResponsavelId == usuarioId);
+                filtro.TotalPaginas = filtro.TotalPropostas == 0
+                    ? 1
+                    : (int)Math.Ceiling((double)filtro.TotalPropostas / TamanhoPagina);
+                filtro.PaginaAtual = Math.Min(pagina, filtro.TotalPaginas);
+                filtro.Propostas = await projecaoOrdenada
+                    .Skip((filtro.PaginaAtual - 1) * TamanhoPagina)
+                    .Take(TamanhoPagina)
+                    .ToListAsync();
             }
-
-            // Aplicar filtros
-            if (!string.IsNullOrEmpty(filtro.TermoBusca))
-            {
-                query = query.Where(p => p.Titulo.Contains(filtro.TermoBusca));
-            }
-
-            if (filtro.FiltroStatus.HasValue)
-            {
-                query = query.Where(p => p.StatusProposta == filtro.FiltroStatus.Value);
-            }
-
-            if (filtro.DataInicioFiltro.HasValue)
-            {
-                query = query.Where(p => p.DataInicio >= filtro.DataInicioFiltro.Value);
-            }
-
-            if (filtro.DataFimFiltro.HasValue)
-            {
-                query = query.Where(p => p.DataFim <= filtro.DataFimFiltro.Value);
-            }
-
-            if (filtro.FiltroUsuario.HasValue)
-            {
-                query = query.Where(p => p.UsuarioId == filtro.FiltroUsuario.Value);
-            }
-
-            if (filtro.FiltroLinkAtivo.HasValue)
-            {
-                query = query.Where(p => p.LinkPublicoAtivo == filtro.FiltroLinkAtivo.Value);
-            }
-
-            // Buscar propostas
-            var propostas = await query
-                .Include(p => p.PassageirosProposta)
-                .OrderByDescending(p => p.DataCriacao)
-                .ToListAsync();
-
-            // Converter para ViewModel
-            filtro.Propostas = propostas.Select(p => new PropostaListViewModel
-            {
-                Id = p.Id,
-                Titulo = p.Titulo,
-                DataCriacao = p.DataCriacao,
-                DataInicio = p.DataInicio,
-                DataFim = p.DataFim,
-                NumeroPassageiros = p.NumeroPassageiros,
-                NumeroCriancas = p.NumeroCriancas,
-                TotalPassageiros = p.PassageirosProposta.Count,
-                StatusProposta = p.StatusProposta,
-                NomeUsuario = p.Usuario?.Nome ?? "N/A",
-                NomeResponsavel = p.UsuarioResponsavel?.Nome ?? p.Usuario?.Nome ?? "N/A",
-                UsuarioId = p.UsuarioId,
-                UsuarioResponsavelId = p.UsuarioResponsavelId,
-                LinkPublicoAtivo = p.LinkPublicoAtivo,
-                FotoCapa = p.FotoCapa,
-                DataModificacao = p.DataModificacao,
-                IsConteudoDemonstracao = p.IsConteudoDemonstracao,
-            }).ToList();
-
-            // Calcular estatísticas
-            filtro.TotalPropostas = filtro.Propostas.Count;
-            filtro.TotalRascunhos = filtro.Propostas.Count(p => p.StatusProposta == StatusProposta.Rascunho);
-            filtro.TotalEnviadas = filtro.Propostas.Count(p => p.StatusProposta == StatusProposta.Enviada);
-            filtro.TotalAprovadas = filtro.Propostas.Count(p => p.StatusProposta == StatusProposta.Aprovada);
 
             return View(filtro);
         }

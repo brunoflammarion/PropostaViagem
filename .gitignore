@@ -8,4 +8,14 @@ bin/
 obj/
 
 # Logs
-*.logappsettings.Development.json
+*.log
+
+# Configurações locais com segredos (não commitar)
+appsettings.Development.json
+SistemaUsuarios/appsettings.Development.json
+
+# Artefatos de deploy
+deploy-agenttools.zip
+SistemaUsuarios/deploy-agenttools.zip
+SistemaUsuarios/publish-agenttools/
+publish-agenttools/

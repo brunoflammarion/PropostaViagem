@@ -288,23 +288,33 @@ namespace SistemaUsuarios.Controllers
 
         private async Task<EstatisticasGeraisViewModel> ObterEstatisticasGerais(Guid usuarioId, bool isMaster)
         {
-            var visualizacoes = await _context.PropostaVisualizacoes
-                .Include(v => v.Proposta)
-                .Where(v => isMaster ? v.Proposta.UsuarioMasterId == usuarioId : v.Proposta.UsuarioResponsavelId == usuarioId)
-                .ToListAsync();
+            var query = _context.PropostaVisualizacoes
+                .Where(v => isMaster
+                    ? v.Proposta.UsuarioMasterId == usuarioId
+                    : v.Proposta.UsuarioResponsavelId == usuarioId);
+
+            var total = await query.CountAsync();
+
+            if (total == 0)
+                return new EstatisticasGeraisViewModel();
+
+            var tempoMedio    = await query.AverageAsync(v => (double?)v.TempoVisualizacaoSegundos) ?? 0;
+            var scrollMedio   = await query.AverageAsync(v => (double?)v.ScrollMaximoPercentual) ?? 0;
+            var totalCliques  = await query.SumAsync(v => v.NumeroCliques);
+            var interacoes    = await query.CountAsync(v => v.ClicouEmail || v.ClicouWhatsApp);
+            var uniqueDevices = await query
+                .Where(v => v.DeviceFingerprint != null && v.DeviceFingerprint != "")
+                .Select(v => v.DeviceFingerprint)
+                .Distinct()
+                .CountAsync();
 
             return new EstatisticasGeraisViewModel
             {
-                TempoMedioVisualizacao = visualizacoes.Any() ? visualizacoes.Average(v => v.TempoVisualizacaoSegundos) : 0,
-                ScrollMedioPercentual = visualizacoes.Any() ? visualizacoes.Average(v => v.ScrollMaximoPercentual) : 0,
-                TaxaInteracao = visualizacoes.Any() ?
-                    (double)visualizacoes.Count(v => v.ClicouEmail || v.ClicouWhatsApp) / visualizacoes.Count * 100 : 0,
-                TotalCliques = visualizacoes.Sum(v => v.NumeroCliques),
-                VisualizacoesUnicasPorDispositivo = visualizacoes
-                    .Where(v => !string.IsNullOrEmpty(v.DeviceFingerprint))
-                    .Select(v => v.DeviceFingerprint)
-                    .Distinct()
-                    .Count()
+                TempoMedioVisualizacao          = tempoMedio,
+                ScrollMedioPercentual           = scrollMedio,
+                TaxaInteracao                   = (double)interacoes / total * 100,
+                TotalCliques                    = totalCliques,
+                VisualizacoesUnicasPorDispositivo = uniqueDevices
             };
         }
 

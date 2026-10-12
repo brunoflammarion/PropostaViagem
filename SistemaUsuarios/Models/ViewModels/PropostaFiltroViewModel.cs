@@ -46,6 +46,15 @@ namespace SistemaUsuarios.Models.ViewModels
         public int TotalRejeitadas { get; set; }
         public int TotalCanceladas { get; set; }
 
+        // === PAGINAÇÃO ===
+        /// <summary>Modo de visualização transmitido via URL; sobrepõe a preferência do BD nesta requisição.</summary>
+        public string? Modo { get; set; }
+        public int PaginaAtual { get; set; } = 1;
+        public int TotalPaginas { get; set; } = 1;
+        public int TamanhoPagina { get; set; } = 20;
+        public bool TemPaginacaoAnterior => PaginaAtual > 1;
+        public bool TemPaginacaoProxima  => PaginaAtual < TotalPaginas;
+
         // === PROPRIEDADES CALCULADAS ===
 
         /// <summary>
